@@ -2,16 +2,15 @@ import { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
 import { getPuzzleById, getPuzzles } from '../../lib/utils/reader';
 
-type PuzzleProps = { message: 'hello' };
+type PuzzleProps = { puzzleData: any };
 
-export default function Puzzle({ message }: PuzzleProps) {
+export default function Puzzle({ puzzleData }: PuzzleProps) {
   const router = useRouter();
   const { slug } = router.query;
+  console.log(puzzleData);
   return (
     <h1>
-      <>
-        {slug} {message}
-      </>
+      <>hi</>
     </h1>
   );
 }
@@ -28,13 +27,12 @@ const getStaticPaths: GetStaticPaths = async () => {
   };
 };
 
-const getStaticProps: GetStaticProps<
-  { message: 'hello' },
-  { slug: string }
-> = async ({ params }) => {
+const getStaticProps: GetStaticProps<PuzzleProps, { slug: string }> = async ({
+  params,
+}) => {
   const puzzleData = await getPuzzleById(params?.slug ?? '');
   return {
-    props: { message: 'hello' },
+    props: { puzzleData },
   };
 };
 
