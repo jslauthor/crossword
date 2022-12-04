@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import THREE, { useFrame } from '@react-three/fiber';
 
 interface BoxProps {
-  position: THREE.Vector3;
+  position?: THREE.Vector3;
 }
 
 const Box: React.FC<BoxProps> = ({ position = [1, 1, 1] }) => {
@@ -15,7 +15,7 @@ const Box: React.FC<BoxProps> = ({ position = [1, 1, 1] }) => {
   return (
     <mesh
       ref={ref}
-      scale={clicked ? 1.5 : 1}
+      scale={1}
       onClick={(event) => click(!clicked)}
       onPointerOver={(event) => hover(true)}
       onPointerOut={(event) => hover(false)}
