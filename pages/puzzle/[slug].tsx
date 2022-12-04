@@ -1,6 +1,12 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
 import { useRouter } from 'next/router';
 import { getPuzzleById, getPuzzles } from '../../lib/utils/reader';
+import styled from '@emotion/styled';
+
+const Container = styled.div`
+  width: 100%;
+  height: 100%;
+`;
 
 type PuzzleProps = { puzzleData: any };
 
@@ -9,9 +15,9 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
   const { slug } = router.query;
   console.log(puzzleData);
   return (
-    <h1>
-      <>hi</>
-    </h1>
+    <Container>
+      <h1>hi</h1>
+    </Container>
   );
 }
 

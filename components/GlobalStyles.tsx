@@ -128,6 +128,20 @@ const GlobalStyles = () => {
           border-collapse: collapse;
           border-spacing: 0;
         }
+
+        :root {
+          --white: #ffffff;
+          --black: #131414;
+        }
+
+        // Theme variables
+        .dark {
+          --primary-text: var(--white);
+          --primary-bg: var(--black);
+
+          background-color: var(--primary-bg);
+          color: var(--primary-text);
+        }
       `}
     />
   );
