@@ -29,7 +29,12 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
       const { puzzle } = puzzleData[s];
       for (let y = 0; y < puzzle.length; y++) {
         for (let x = 0; x < puzzle[y].length; x++) {
-          if (typeof puzzle[y][x] === 'number' || puzzle[y][x] === ':') {
+          // skip the first item in each row other than the first side
+          const isRepeated = s !== 0 && x === 0;
+          if (
+            !isRepeated &&
+            (typeof puzzle[y][x] === 'number' || puzzle[y][x] === ':')
+          ) {
             const position = [x, y, 0];
             cells.push(<Box position={position} />);
           }
