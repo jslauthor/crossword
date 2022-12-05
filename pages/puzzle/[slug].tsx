@@ -22,27 +22,50 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
   const { slug } = router.query;
 
   const cells = useMemo(() => {
-    const cells: THREE.MeshProps[] = [];
-    // for (const side of puzzleData) {
-    const { puzzle } = puzzleData[0];
+    const sides: THREE.GroupProps[] = [];
     const { width, height } = puzzleData[0].dimensions;
-    for (let y = 0; y < puzzle.length; y++) {
-      for (let x = 0; x < puzzle[y].length; x++) {
-        if (typeof puzzle[y][x] === 'number' || puzzle[y][x] === ':') {
-          console.log(puzzle[y][x]);
-          const position = [x, y, 0];
-          cells.push(<Box position={position} />);
+    for (let s = 0; s < puzzleData.length; s++) {
+      const cells: THREE.MeshProps[] = [];
+      const { puzzle } = puzzleData[s];
+      for (let y = 0; y < puzzle.length; y++) {
+        for (let x = 0; x < puzzle[y].length; x++) {
+          if (typeof puzzle[y][x] === 'number' || puzzle[y][x] === ':') {
+            const position = [x, y, 0];
+            cells.push(<Box position={position} />);
+          }
         }
+
+        let position = [0, 0, 0];
+        let rotation = [0, 0, 0];
+
+        if (s === 0) {
+          position = [0, 0, -width];
+          rotation = [0, 0, 0];
+        } else if (s === 1) {
+          position = [0, 0, -1];
+          rotation = [0, Math.PI / 2, 0];
+        } else if (s === 2) {
+          position = [width - 1, 0, -1];
+          rotation = [0, Math.PI, 0];
+        } else if (s === 3) {
+          position = [width - 1, 0, -width];
+          rotation = [0, -Math.PI / 2, 0];
+        }
+
+        const group = (
+          <group position={position} rotation={rotation}>
+            {cells}
+          </group>
+        );
+        sides.push(group);
       }
-      console.log('next');
     }
-    // }
     return (
       <group
-        position={[width / 2 - 0.5, -height / 2 + 0.5, 0]}
+        position={[width / 2 - 0.5, -height / 2 + 0.5, -width / 2 - 0.5]}
         rotation={[0, -Math.PI, 0]}
       >
-        {cells}
+        {sides}
       </group>
     );
   }, [puzzleData]);
@@ -53,7 +76,7 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
         {/** @ts-ignore */}
         <OrthographicCamera
           makeDefault
-          zoom={100}
+          zoom={50}
           near={1}
           far={2000}
           position={[0, 0, 200]}
