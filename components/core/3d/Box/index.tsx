@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { MutableRefObject, Ref, useRef, useState } from 'react';
 import THREE, { useFrame } from '@react-three/fiber';
+import { BufferGeometry, Mesh } from 'three';
 
 interface BoxProps {
   position?: THREE.Vector3;
@@ -7,7 +8,7 @@ interface BoxProps {
 
 const Box: React.FC<BoxProps> = ({ position = [1, 1, 1] }) => {
   // This reference gives us direct access to the THREE.Mesh object
-  const ref = useRef();
+  const ref = useRef<Mesh | null>(null);
   // Hold state for hovered and clicked events
   const [hovered, hover] = useState(false);
   const [clicked, click] = useState(false);
