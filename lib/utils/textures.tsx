@@ -37,7 +37,7 @@ const TEXTURE_RECORD_ITEMS = Object.keys(TEXTURE_RECORD).map((item: string) => (
       justifyContent: 'center',
       alignItems: 'center',
       fontFamily: 'Franklin Gothic',
-      fontSize: '320px',
+      fontSize: '200px',
       color: 'white',
     }}
     key={item}
