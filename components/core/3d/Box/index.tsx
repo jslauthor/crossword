@@ -1,6 +1,7 @@
 import React, { MutableRefObject, Ref, useRef, useState } from 'react';
 import THREE, { useFrame } from '@react-three/fiber';
 import { BufferGeometry, Mesh } from 'three';
+import { Color, LayerMaterial } from 'lamina';
 
 interface BoxProps {
   position?: THREE.Vector3;

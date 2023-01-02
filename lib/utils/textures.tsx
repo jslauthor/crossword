@@ -2,9 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import satori, { init } from 'satori';
 import Yoga from 'yoga-wasm-web';
-import { svg2png, initialize } from 'svg2png-wasm';
-
-let isSvgToPngInitialized = false;
+import { Resvg, ResvgRenderOptions } from '@resvg/resvg-js';
 
 const generateTextureRecord = () => {
   const items: string[] = [];
@@ -95,26 +93,21 @@ export const generateTextures = async () => {
     ],
   });
 
-  if (isSvgToPngInitialized === false) {
-    await initialize(
-      fs.readFileSync(nodeDir + '/svg2png-wasm/svg2png_wasm_bg.wasm')
-    );
-    isSvgToPngInitialized = true;
-  }
-
-  const png = await svg2png(svg, {
-    // scale: 2, // optional
-    width: 2048, // optional
-    height: 2048, // optional
-    fonts: [
-      // optional
-      font, // require, If you use text in svg
-    ],
-    defaultFontFamily: {
-      // optional
-      sansSerifFamily: 'Franklin Gothic',
+  const opts: ResvgRenderOptions = {
+    background: 'rgba(0, 0, 0, 0)',
+    fitTo: {
+      mode: 'width',
+      value: 2048,
     },
-  });
+    font: {
+      fontFiles: [nodeDir + '/public/franklin_gothic_regular.ttf'], // Load custom fonts.
+      loadSystemFonts: false, // It will be faster to disable loading system fonts.
+      defaultFontFamily: 'Franklin Gothic',
+    },
+  };
+  const resvg = new Resvg(svg, opts);
+  const pngData = resvg.render();
+  const pngBuffer = pngData.asPng();
 
-  fs.writeFileSync(publicDir + '/texture_atlas.png', png);
+  fs.writeFileSync(publicDir + '/texture_atlas.png', pngBuffer);
 };

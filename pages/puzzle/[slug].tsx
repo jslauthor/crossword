@@ -88,8 +88,6 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
     );
   }, [puzzleData]);
 
-  // TODO: Render the texture atlases server-side so the client doesn't have to
-  // TODO: Builder texture atlas with satori and load the svg texture for the boxes
   // TODO: is there a way to build the boxes as one mesh?
   // TODO: Create buttons to orient to a new face
   // TODO: Change color when changing sides
