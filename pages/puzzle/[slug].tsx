@@ -15,6 +15,7 @@ import Box from '../../components/core/3d/Box';
 import { PuzzleData } from '../../types/types';
 import { useMemo } from 'react';
 import { Euler, Vector3 } from 'three';
+import { generateTextures } from '../../lib/utils/textures';
 
 const Container = styled.div`
   position: relative;
@@ -23,10 +24,6 @@ const Container = styled.div`
 `;
 
 type PuzzleProps = { puzzleData: PuzzleData[] };
-
-const TextureAtlas: React.FC = () => {
-  return <div>HEllo</div>;
-};
 
 export default function Puzzle({ puzzleData }: PuzzleProps) {
   const router = useRouter();
@@ -91,6 +88,7 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
     );
   }, [puzzleData]);
 
+  // TODO: Render the texture atlases server-side so the client doesn't have to
   // TODO: Builder texture atlas with satori and load the svg texture for the boxes
   // TODO: is there a way to build the boxes as one mesh?
   // TODO: Create buttons to orient to a new face
@@ -112,7 +110,6 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
         <pointLight position={[10, 10, 10]} />
         <PresentationControls global>{cells}</PresentationControls>
       </Canvas>
-      <TextureAtlas />
       <Stats />
     </Container>
   );
@@ -133,6 +130,8 @@ const getStaticPaths: GetStaticPaths = async () => {
 const getStaticProps: GetStaticProps<PuzzleProps, { slug: string }> = async ({
   params,
 }) => {
+  await generateTextures();
+
   const puzzleData = await getPuzzleById(params?.slug ?? '');
   return {
     props: { puzzleData },

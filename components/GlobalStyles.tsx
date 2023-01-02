@@ -129,6 +129,15 @@ const GlobalStyles = () => {
           border-spacing: 0;
         }
 
+        @font-face {
+          font-family: 'Franklin Gothic';
+          src: url('/franklin_gothic_regular.ttf') format('truetype');
+        }
+
+        body {
+          font-family: 'Franklin Gothic', sans-serif;
+        }
+
         :root {
           --white: #ffffff;
           --black: #131414;

@@ -1,6 +1,5 @@
 import type { AppProps } from 'next/app';
 import GlobalStyles from '../components/GlobalStyles';
-import styled from '@emotion/styled';
 import { useEffect } from 'react';
 
 export default function App({ Component, pageProps }: AppProps) {
