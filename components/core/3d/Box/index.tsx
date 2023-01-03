@@ -2,6 +2,7 @@ import React, {
   MutableRefObject,
   Ref,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -12,6 +13,8 @@ import {
   TextureLoader,
   Vector2,
   RepeatWrapping,
+  Vector3,
+  Vector4,
 } from 'three';
 import { Color, Depth, LayerMaterial } from 'lamina';
 
@@ -19,6 +22,42 @@ interface BoxProps {
   position?: THREE.Vector3;
   letterCoordinates?: Vector2;
 }
+
+const vertexShader = `
+  varying vec2 vUv;
+
+  void main()
+  {
+      vUv = uv;
+      vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+      gl_Position = projectionMatrix * mvPosition;
+  }
+`;
+
+const fragmentShader = `
+  #ifdef GL_ES
+  precision highp float;
+  #endif
+
+  uniform vec2 characterPosition;
+  uniform sampler2D numberTexture;
+  uniform sampler2D characterTexture;
+
+  varying vec2 vUv;
+
+  void main(void)
+  {
+    vec2 position = vec2(characterPosition.x/6.0, -(characterPosition.y/6.0 + 1.0/6.0));
+    vec2 size = vec2(1.0 / 6.0, 1.0 / 6.0);
+    vec2 coord = position + size * fract(vUv);
+
+    vec3 c;
+    vec4 Ca = texture2D(numberTexture, coord);
+    vec4 Cb = texture2D(characterTexture, coord);
+    c = Ca.rgb * Ca.a + Cb.rgb * Cb.a * (1.0 - Ca.a);  // blending equation
+    gl_FragColor= vec4(c, 1.0);
+  }
+`;
 
 const Box: React.FC<BoxProps> = ({
   position = [1, 1, 1],
@@ -34,14 +73,21 @@ const Box: React.FC<BoxProps> = ({
   useEffect(() => {
     colorMap.wrapS = RepeatWrapping;
     colorMap.wrapT = RepeatWrapping;
-    // 0.1666 = letterWidth / totalWidth (here there are 6 letters per row/col)
-    colorMap.repeat = new Vector2(0.1666, 0.1666);
-    colorMap.center = new Vector2(0, 1);
-    colorMap.offset = new Vector2(
-      0.1666 * letterCoordinates.x,
-      letterCoordinates.y
-    );
   }, [colorMap, letterCoordinates.x, letterCoordinates.y]);
+
+  const data = useMemo(
+    () => ({
+      uniforms: {
+        color: { value: new Vector4(0, 1, 0, 1) },
+        characterPosition: { value: new Vector2(0, 0) },
+        numberTexture: { value: colorMap },
+        characterTexture: { value: colorMap },
+      },
+      fragmentShader,
+      vertexShader,
+    }),
+    [colorMap]
+  );
 
   return (
     <mesh
@@ -53,8 +99,7 @@ const Box: React.FC<BoxProps> = ({
       position={position}
     >
       <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="#FFFFFF" />
-      <meshStandardMaterial map={colorMap} />
+      <shaderMaterial {...data} />
     </mesh>
   );
 };
