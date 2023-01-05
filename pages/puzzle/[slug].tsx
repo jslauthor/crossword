@@ -88,6 +88,9 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
     );
   }, [puzzleData]);
 
+  // TODO: Need to figure out how to light this damn mesh
+  // https://github.com/pschroen/alien.js/blob/master/examples/shader_text.html
+  // https://github.com/pmndrs/react-three-fiber/discussions/2494
   // TODO: is there a way to build the boxes as one mesh?
   // TODO: Create buttons to orient to a new face
   // TODO: Change color when changing sides

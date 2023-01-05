@@ -39,6 +39,7 @@ const fragmentShader = `
   precision highp float;
   #endif
 
+  uniform vec3 backgroundColor;
   uniform vec2 characterPosition;
   uniform sampler2D numberTexture;
   uniform sampler2D characterTexture;
@@ -53,9 +54,10 @@ const fragmentShader = `
 
     vec3 c;
     vec4 Ca = texture2D(numberTexture, coord);
-    vec4 Cb = texture2D(characterTexture, coord);
-    c = Ca.rgb * Ca.a + Cb.rgb * Cb.a * (1.0 - Ca.a);  // blending equation
-    gl_FragColor= vec4(c, 1.0);
+    c = Ca.rgb * Ca.a + backgroundColor.rgb * (1.0 - Ca.a);  // blending equation
+    // vec4 Cb = texture2D(characterTexture, coord);
+    // c = Ca.rgb * Ca.a + Cb.rgb * Cb.a * (1.0 - Ca.a);  // blending equation
+    gl_FragColor = vec4(c, 1.0);
   }
 `;
 
@@ -78,7 +80,7 @@ const Box: React.FC<BoxProps> = ({
   const data = useMemo(
     () => ({
       uniforms: {
-        color: { value: new Vector4(0, 1, 0, 1) },
+        backgroundColor: { value: new Vector3(0.5, 0, 0.75) },
         characterPosition: { value: new Vector2(0, 0) },
         numberTexture: { value: colorMap },
         characterTexture: { value: colorMap },
@@ -99,7 +101,7 @@ const Box: React.FC<BoxProps> = ({
       position={position}
     >
       <boxGeometry args={[1, 1, 1]} />
-      <shaderMaterial {...data} />
+      <shaderMaterial {...data} transparent />
     </mesh>
   );
 };
