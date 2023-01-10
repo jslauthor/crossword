@@ -5,17 +5,26 @@ function isSolutionCellValue(cell: SolutionCell): cell is SolutionCellValue {
 }
 
 export const getCharacterRecord = (puzzleData: PuzzleData[]) => {
-  let id = 0;
+  let runningCellNumbers = 0;
   return puzzleData.reduce<SolutionCell[]>((value, { solution }) => {
     const flattened = solution.flatMap((s) => s);
+    let highest: number = 0;
     for (let x = 0; x < flattened.length; x++) {
       const currentCell = flattened[x];
-      if (isSolutionCellValue(currentCell)) {
-        currentCell.cell = id;
+      if (
+        isSolutionCellValue(currentCell) &&
+        typeof currentCell.cell === 'number'
+      ) {
+        value.push({
+          cell: currentCell.cell + runningCellNumbers,
+          value: currentCell.value,
+        });
+        highest = currentCell.cell > highest ? currentCell.cell : highest;
+      } else {
+        value.push(currentCell);
       }
-      value[id] = currentCell;
-      id += 1;
     }
+    runningCellNumbers = runningCellNumbers + highest;
     return value;
   }, []);
 };

@@ -13,6 +13,7 @@ import { MeshPhysicalMaterial } from 'three';
 import { InstancedMesh } from 'three';
 import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/matrix';
+import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 
 const vertexShader = `
   varying vec2 vUv;
@@ -63,15 +64,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onHovered,
   onSelected,
 }) => {
-  const size = useMemo(
-    () =>
-      puzzleData[0].dimensions.width *
-        puzzleData[0].dimensions.height *
-        puzzleData.length -
-      64, // TODO: FIX THIS
-    [puzzleData]
-  );
-  console.log(size);
+  const [record, size] = useMemo(() => {
+    const record = getCharacterRecord(puzzleData);
+    return [record, record.filter((cell) => cell !== '#').length];
+  }, [puzzleData]);
+
   const colorArray = useMemo(
     () =>
       Float32Array.from(

@@ -27,6 +27,9 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
   // TODO: Create buttons to orient to a new face
   // TODO: Change color when changing sides
   // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
+  // TODO: Make this multiplayer where different people can work on different sides?
+  // TODO: Add top and bottom sides?
+  // TODO: When you complete a side, animate it and change the color
 
   return (
     <Container>
