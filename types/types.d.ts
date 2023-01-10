@@ -1,13 +1,12 @@
 export type BlankCell = '#';
 
 export type StandardCell = number | ':';
+export type SolutionCellValue = {
+  value: string;
+  cell: StandardCell;
+};
 
-export type SolutionCell =
-  | BlankCell
-  | {
-      value: string;
-      cell: StandardCell;
-    };
+export type SolutionCell = BlankCell | SolutionCellValue;
 
 export type PuzzleCell =
   | BlankCell

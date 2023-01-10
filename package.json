@@ -25,6 +25,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "satori": "^0.0.44",
+    "three-custom-shader-material": "^5.0.0",
     "typescript": "4.9.3",
     "yoga-wasm-web": "^0.2.0"
   },

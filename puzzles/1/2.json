@@ -1,1 +1,155 @@
-{"showenumerations":false,"notes":"","puzzle":[[1,2,3,"#",4,5,6,7],[8,":",":","#",9,":",":",":"],[10,":",":",11,":",":",":",":"],[12,":",":",":",":","#","#",{"style":{"barred":"L"},"cell":"#"}],[{"style":{"barred":"T"},"cell":"#"},{"style":{"barred":"L"},"cell":"#"},"#",13,":",14,15,{"style":{"barred":"T"},"cell":16}],[17,18,19,":",":",":",":",":"],[20,":",":",":","#",21,":",":"],[22,":",":",":","#",23,":",":"]],"copyright":"","intro":"","version":"http://ipuz.org/v2","origin":"Crossword Compiler 11.15","empty":":","title":"","kind":["http://ipuz.org/crossword#1"],"clues":{"Across":[{"number":1,"clue":""},{"number":4,"clue":""},{"number":8,"clue":""},{"number":9,"clue":""},{"number":10,"clue":""},{"number":12,"clue":""},{"number":13,"clue":"V.I.P."},{"number":17,"clue":""},{"number":20,"clue":"It's pumped in a gym"},{"number":21,"clue":""},{"number":22,"clue":""},{"number":23,"clue":""}],"Down":[{"number":1,"clue":""},{"number":2,"clue":""},{"number":3,"clue":""},{"number":4,"clue":""},{"number":5,"clue":""},{"number":6,"clue":""},{"number":7,"clue":""},{"number":11,"clue":""},{"number":14,"clue":""},{"answer":"et al","number":15,"clue":""},{"number":16,"clue":""},{"number":17,"clue":""},{"number":18,"clue":""},{"number":19,"clue":"Prince, e.g."}]},"dimensions":{"width":8,"height":8},"author":"","solution":[[{"value":"S","cell":1},{"value":"U","cell":2},{"value":"M","cell":3},"#",{"value":"I","cell":4},{"value":"R","cell":5},{"value":"A","cell":6},{"value":"N","cell":7}],[{"value":"U","cell":8},{"value":"S","cell":":"},{"value":"A","cell":":"},"#",{"value":"B","cell":9},{"value":"O","cell":":"},{"value":"S","cell":":"},{"value":"E","cell":":"}],[{"value":"N","cell":10},{"value":"E","cell":":"},{"value":"R","cell":":"},{"value":"D","cell":11},{"value":"I","cell":":"},{"value":"E","cell":":"},{"value":"S","cell":":"},{"value":"T","cell":":"}],[{"value":"G","cell":12},{"value":"R","cell":":"},{"value":"E","cell":":"},{"value":"E","cell":":"},{"value":"D","cell":":"},"#","#","#"],["#","#","#",{"value":"C","cell":13},{"value":"E","cell":":"},{"value":"L","cell":14},{"value":"E","cell":15},{"value":"B","cell":16}],[{"value":"Y","cell":17},{"value":"O","cell":18},{"value":"S","cell":19},{"value":"E","cell":":"},{"value":"M","cell":":"},{"value":"I","cell":":"},{"value":"T","cell":":"},{"value":"E","cell":":"}],[{"value":"I","cell":20},{"value":"R","cell":":"},{"value":"O","cell":":"},{"value":"N","cell":":"},"#",{"value":"F","cell":21},{"value":"A","cell":":"},{"value":"A","cell":":"}],[{"value":"P","cell":22},{"value":"E","cell":":"},{"value":"N","cell":":"},{"value":"T","cell":":"},"#",{"value":"E","cell":23},{"value":"L","cell":":"},{"value":"M","cell":":"}]]}
+{
+  "showenumerations": false,
+  "notes": "",
+  "puzzle": [
+    [1, 2, 3, "#", 4, 5, 6, 7],
+    [8, ":", ":", "#", 9, ":", ":", ":"],
+    [10, ":", ":", 11, ":", ":", ":", ":"],
+    [
+      12,
+      ":",
+      ":",
+      ":",
+      ":",
+      "#",
+      "#",
+      { "style": { "barred": "L" }, "cell": "#" }
+    ],
+    [
+      { "style": { "barred": "T" }, "cell": "#" },
+      { "style": { "barred": "L" }, "cell": "#" },
+      "#",
+      13,
+      ":",
+      14,
+      15,
+      { "style": { "barred": "T" }, "cell": 16 }
+    ],
+    [17, 18, 19, ":", ":", ":", ":", ":"],
+    [20, ":", ":", ":", "#", 21, ":", ":"],
+    [22, ":", ":", ":", "#", 23, ":", ":"]
+  ],
+  "copyright": "",
+  "intro": "",
+  "version": "http://ipuz.org/v2",
+  "origin": "Crossword Compiler 11.15",
+  "empty": ":",
+  "title": "",
+  "kind": ["http://ipuz.org/crossword#1"],
+  "clues": {
+    "Across": [
+      { "number": 1, "clue": "" },
+      { "number": 4, "clue": "" },
+      { "number": 8, "clue": "" },
+      { "number": 9, "clue": "" },
+      { "number": 10, "clue": "" },
+      { "number": 12, "clue": "" },
+      { "number": 13, "clue": "V.I.P." },
+      { "number": 17, "clue": "" },
+      { "number": 20, "clue": "It's pumped in a gym" },
+      { "number": 21, "clue": "" },
+      { "number": 22, "clue": "" },
+      { "number": 23, "clue": "" }
+    ],
+    "Down": [
+      { "number": 1, "clue": "" },
+      { "number": 2, "clue": "" },
+      { "number": 3, "clue": "" },
+      { "number": 4, "clue": "" },
+      { "number": 5, "clue": "" },
+      { "number": 6, "clue": "" },
+      { "number": 7, "clue": "" },
+      { "number": 11, "clue": "" },
+      { "number": 14, "clue": "" },
+      { "answer": "et al", "number": 15, "clue": "" },
+      { "number": 16, "clue": "" },
+      { "number": 17, "clue": "" },
+      { "number": 18, "clue": "" },
+      { "number": 19, "clue": "Prince, e.g." }
+    ]
+  },
+  "dimensions": { "width": 8, "height": 8 },
+  "author": "",
+  "solution": [
+    [
+      { "value": "S", "cell": 1 },
+      { "value": "U", "cell": 2 },
+      { "value": "M", "cell": 3 },
+      "#",
+      { "value": "I", "cell": 4 },
+      { "value": "R", "cell": 5 },
+      { "value": "A", "cell": 6 },
+      { "value": "N", "cell": 7 }
+    ],
+    [
+      { "value": "U", "cell": 8 },
+      { "value": "S", "cell": ":" },
+      { "value": "A", "cell": ":" },
+      "#",
+      { "value": "B", "cell": 9 },
+      { "value": "O", "cell": ":" },
+      { "value": "S", "cell": ":" },
+      { "value": "E", "cell": ":" }
+    ],
+    [
+      { "value": "N", "cell": 10 },
+      { "value": "E", "cell": ":" },
+      { "value": "R", "cell": ":" },
+      { "value": "D", "cell": 11 },
+      { "value": "I", "cell": ":" },
+      { "value": "E", "cell": ":" },
+      { "value": "S", "cell": ":" },
+      { "value": "T", "cell": ":" }
+    ],
+    [
+      { "value": "G", "cell": 12 },
+      { "value": "R", "cell": ":" },
+      { "value": "E", "cell": ":" },
+      { "value": "E", "cell": ":" },
+      { "value": "D", "cell": ":" },
+      "#",
+      "#",
+      "#"
+    ],
+    [
+      "#",
+      "#",
+      "#",
+      { "value": "C", "cell": 13 },
+      { "value": "E", "cell": ":" },
+      { "value": "L", "cell": 14 },
+      { "value": "E", "cell": 15 },
+      { "value": "B", "cell": 16 }
+    ],
+    [
+      { "value": "Y", "cell": 17 },
+      { "value": "O", "cell": 18 },
+      { "value": "S", "cell": 19 },
+      { "value": "E", "cell": ":" },
+      { "value": "M", "cell": ":" },
+      { "value": "I", "cell": ":" },
+      { "value": "T", "cell": ":" },
+      { "value": "E", "cell": ":" }
+    ],
+    [
+      { "value": "I", "cell": 20 },
+      { "value": "R", "cell": ":" },
+      { "value": "O", "cell": ":" },
+      { "value": "N", "cell": ":" },
+      "#",
+      { "value": "F", "cell": 21 },
+      { "value": "A", "cell": ":" },
+      { "value": "A", "cell": ":" }
+    ],
+    [
+      { "value": "P", "cell": 22 },
+      { "value": "E", "cell": ":" },
+      { "value": "N", "cell": ":" },
+      { "value": "T", "cell": ":" },
+      "#",
+      { "value": "E", "cell": 23 },
+      { "value": "L", "cell": ":" },
+      { "value": "M", "cell": ":" }
+    ]
+  ]
+}
