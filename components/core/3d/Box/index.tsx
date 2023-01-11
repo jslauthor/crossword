@@ -29,7 +29,6 @@ const fragmentShader = `
   precision highp float;
   #endif
 
-  uniform vec3 backgroundColor;
   uniform vec2 characterPosition;
   uniform sampler2D numberTexture;
   uniform sampler2D characterTexture;
@@ -44,7 +43,7 @@ const fragmentShader = `
 
     vec3 c;
     vec4 Ca = texture2D(numberTexture, coord);
-    c = Ca.rgb * Ca.a + backgroundColor.rgb * (1.0 - Ca.a);  // blending equation
+    c = Ca.rgb * Ca.a + diffuse.rgb * (1.0 - Ca.a);  // blending equation
     // vec4 Cb = texture2D(characterTexture, coord);
     // c = Ca.rgb * Ca.a + Cb.rgb * Cb.a * (1.0 - Ca.a);  // blending equation
     csm_DiffuseColor = vec4(c, 1.0);
@@ -69,15 +68,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     return [record, record.filter((cell) => cell !== '#').length];
   }, [puzzleData]);
 
-  const colorArray = useMemo(
-    () =>
-      Float32Array.from(
-        new Array(size)
-          .fill(null)
-          .flatMap(() => new Color().setRGB(0.5, 0.01, 0.15).toArray())
-      ),
-    [size]
-  );
   const ref = useRef<InstancedMesh | null>(null);
 
   useEffect(() => {
@@ -136,7 +126,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         ref.current.instanceMatrix.needsUpdate = true;
       }
     }
-  }, [colorArray, puzzleData]);
+  }, [puzzleData]);
 
   const colorMap = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {
@@ -147,7 +137,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const data = useMemo(
     () => ({
       uniforms: {
-        backgroundColor: { value: new Vector3(1, 0, 0.1) },
         characterPosition: { value: new Vector2(1, 0) },
         numberTexture: { value: colorMap },
         characterTexture: { value: colorMap },
@@ -161,7 +150,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   return (
     <instancedMesh
       ref={ref}
-      args={[undefined, undefined, size]}
+      args={[undefined, undefined, size - 32]}
       onPointerMove={(e) => (
         e.stopPropagation(), onHovered && onHovered(e.instanceId)
       )}
@@ -170,8 +159,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     >
       <boxGeometry args={[1, 1, 1]} />
       <CustomShaderMaterial
-        baseMaterial={MeshPhysicalMaterial} //
+        baseMaterial={MeshPhysicalMaterial}
         transparent
+        color="#cc0a95"
         {...data}
       />
     </instancedMesh>
