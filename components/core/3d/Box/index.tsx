@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import THREE, { useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
@@ -14,13 +14,18 @@ import { InstancedMesh } from 'three';
 import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/matrix';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
+import { randomIntFromInterval } from '../../../../lib/utils/math';
 
 const vertexShader = `
+  attribute vec2 characterPosition;
+
   varying vec2 vUv;
+  varying vec2 vCharacterPosition;
 
   void main()
   {
       vUv = uv;
+      vCharacterPosition = characterPosition;
   }
 `;
 
@@ -29,15 +34,16 @@ const fragmentShader = `
   precision highp float;
   #endif
 
-  uniform vec2 characterPosition;
+  uniform uint index;
   uniform sampler2D numberTexture;
   uniform sampler2D characterTexture;
-
+  
   varying vec2 vUv;
+  varying vec2 vCharacterPosition;
 
   void main(void)
   {
-    vec2 position = vec2(characterPosition.x/6.0, -(characterPosition.y/6.0 + 1.0/6.0));
+    vec2 position = vec2(vCharacterPosition.x/6.0, -(vCharacterPosition.y/6.0 + 1.0/6.0));
     vec2 size = vec2(1.0 / 6.0, 1.0 / 6.0);
     vec2 coord = position + size * fract(vUv);
 
@@ -63,6 +69,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onHovered,
   onSelected,
 }) => {
+  const characterPositionArray = useMemo(
+    () =>
+      Float32Array.from(
+        new Array(1000).fill(0).flatMap((_, i) => randomIntFromInterval(1, 6))
+      ),
+    []
+  );
+  console.log(characterPositionArray);
   const [record, size] = useMemo(() => {
     const record = getCharacterRecord(puzzleData);
     return [record, record.filter((cell) => cell !== '#').length];
@@ -70,6 +84,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const ref = useRef<InstancedMesh | null>(null);
 
+  // Initial setup
   useEffect(() => {
     if (ref.current == null) return;
     let id = 0;
@@ -119,32 +134,37 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
             tempObject.updateMatrix();
             ref.current.setMatrixAt(id, tempObject.matrix);
-            // console.log(id, tempObject.position, tempObject.rotation);
             id = id + 1;
           }
         }
+        ref.current.geometry.attributes.characterPosition.needsUpdate = true;
         ref.current.instanceMatrix.needsUpdate = true;
       }
     }
   }, [puzzleData]);
 
-  const colorMap = useLoader(TextureLoader, '/texture_atlas.png');
-  useEffect(() => {
-    colorMap.wrapS = RepeatWrapping;
-    colorMap.wrapT = RepeatWrapping;
-  }, [colorMap]);
+  useFrame((state) => {
+    if (ref?.current == null) return;
+    ref.current.geometry.attributes.characterPosition.needsUpdate = true;
+  });
 
-  const data = useMemo(
-    () => ({
+  const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
+  useEffect(() => {
+    characterTextureAtlas.wrapS = RepeatWrapping;
+    characterTextureAtlas.wrapT = RepeatWrapping;
+  }, [characterTextureAtlas]);
+
+  const getUniform = useCallback(
+    (index: number) => ({
       uniforms: {
-        characterPosition: { value: new Vector2(1, 0) },
-        numberTexture: { value: colorMap },
-        characterTexture: { value: colorMap },
+        index,
+        numberTexture: { value: characterTextureAtlas },
+        characterTexture: { value: characterTextureAtlas },
       },
       fragmentShader,
       vertexShader,
     }),
-    [colorMap]
+    [characterTextureAtlas]
   );
 
   return (
@@ -157,13 +177,62 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       onPointerOut={() => onHovered && onHovered(undefined)}
       onPointerDown={(e) => onSelected && onSelected(e.instanceId)}
     >
-      <boxGeometry args={[1, 1, 1]} />
+      <boxGeometry args={[1, 1, 1]}>
+        <instancedBufferAttribute
+          attach="attributes-characterPosition"
+          count={characterPositionArray.length}
+          itemSize={2}
+          array={characterPositionArray}
+        />
+      </boxGeometry>
       <CustomShaderMaterial
         baseMaterial={MeshPhysicalMaterial}
         transparent
         color="#cc0a95"
-        {...data}
+        // @ts-ignore
+        attach="material-0"
+        {...getUniform(0)}
       />
+      {/* <CustomShaderMaterial
+        baseMaterial={MeshPhysicalMaterial}
+        transparent
+        color="#cc0a95"
+        // @ts-ignore
+        attach="material-1"
+        {...getUniform(1)}
+      />
+      <CustomShaderMaterial
+        baseMaterial={MeshPhysicalMaterial}
+        transparent
+        color="#cc0a95"
+        // @ts-ignore
+        attach="material-2"
+        {...getUniform(2)}
+      />
+      <CustomShaderMaterial
+        baseMaterial={MeshPhysicalMaterial}
+        transparent
+        color="#cc0a95"
+        // @ts-ignore
+        attach="material-3"
+        {...getUniform(3)}
+      />
+      <CustomShaderMaterial
+        baseMaterial={MeshPhysicalMaterial}
+        transparent
+        color="#cc0a95"
+        // @ts-ignore
+        attach="material-4"
+        {...getUniform(4)}
+      />
+      <CustomShaderMaterial
+        baseMaterial={MeshPhysicalMaterial}
+        transparent
+        color="#cc0a95"
+        // @ts-ignore
+        attach="material-5"
+        {...getUniform(5)}
+      /> */}
     </instancedMesh>
   );
 };

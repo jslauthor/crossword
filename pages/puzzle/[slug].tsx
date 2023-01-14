@@ -24,6 +24,9 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
   const router = useRouter();
   // const { slug } = router.query;
 
+  // TODO: Merge the cell labels with the characters
+  // - Create texture map that goes to 5000
+  // TODO: Only show number on correct side
   // TODO: Create buttons to orient to a new face
   // TODO: Change color when changing sides
   // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
@@ -42,9 +45,9 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
           position={[0, 0, 200]}
         />
         <ambientLight />
-        <pointLight position={[10, 10, 10]} />
+        <pointLight position={[5, 5, 5]} />
         <PresentationControls global>
-          <group position={[-3, -3, 3]}>
+          <group position={[-4, -4, 4]}>
             <LetterBoxes puzzleData={puzzleData} />
           </group>
         </PresentationControls>
