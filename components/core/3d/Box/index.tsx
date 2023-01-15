@@ -1,14 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import THREE, { useFrame, useLoader } from '@react-three/fiber';
-import {
-  TextureLoader,
-  Vector2,
-  RepeatWrapping,
-  Vector3,
-  Object3D,
-  Color,
-} from 'three';
-import CustomShaderMaterial from 'three-custom-shader-material';
+import { TextureLoader, RepeatWrapping, Vector3, Object3D, Color } from 'three';
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { MeshPhysicalMaterial } from 'three';
 import { InstancedMesh } from 'three';
 import { PuzzleData } from '../../../../types/types';
@@ -18,14 +11,20 @@ import { randomIntFromInterval } from '../../../../lib/utils/math';
 
 const vertexShader = `
   attribute vec2 characterPosition;
+  attribute float showOnSide123;
+  attribute float showOnSide456;
 
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
+  varying float vShowOnSide123;
+  varying float vShowOnSide456;
 
   void main()
   {
       vUv = uv;
       vCharacterPosition = characterPosition;
+      vShowOnSide123 = showOnSide123;
+      vShowOnSide456 = showOnSide456;
   }
 `;
 
@@ -34,25 +33,30 @@ const fragmentShader = `
   precision highp float;
   #endif
 
-  uniform uint index;
   uniform sampler2D numberTexture;
   uniform sampler2D characterTexture;
   
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
+  varying float vShowOnSide123;
+  varying float vShowOnSide456;
 
   void main(void)
   {
     vec2 position = vec2(vCharacterPosition.x/6.0, -(vCharacterPosition.y/6.0 + 1.0/6.0));
     vec2 size = vec2(1.0 / 6.0, 1.0 / 6.0);
     vec2 coord = position + size * fract(vUv);
+    vec3 c = diffuse.rgb;
 
-    vec3 c;
-    vec4 Ca = texture2D(numberTexture, coord);
-    c = Ca.rgb * Ca.a + diffuse.rgb * (1.0 - Ca.a);  // blending equation
-    // vec4 Cb = texture2D(characterTexture, coord);
-    // c = Ca.rgb * Ca.a + Cb.rgb * Cb.a * (1.0 - Ca.a);  // blending equation
-    csm_DiffuseColor = vec4(c, 1.0);
+    if (vShowOnSide123 == float(0) && vShowOnSide456 == float(0)) {
+      csm_DiffuseColor = vec4(c, 1.0);
+    } else {
+      vec4 Ca = texture2D(numberTexture, coord);
+      c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
+      // vec4 Cb = texture2D(characterTexture, coord);
+      // c = Ca.rgb * Ca.a + Cb.rgb * Cb.a * (1.0 - Ca.a);  // blending equation
+      csm_DiffuseColor = vec4(c, 1.0);
+    }
   }
 `;
 
@@ -69,20 +73,30 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onHovered,
   onSelected,
 }) => {
-  const characterPositionArray = useMemo(
-    () =>
-      Float32Array.from(
-        new Array(1000).fill(0).flatMap((_, i) => randomIntFromInterval(1, 6))
-      ),
-    []
-  );
-  console.log(characterPositionArray);
+  const ref = useRef<InstancedMesh | null>(null);
+
   const [record, size] = useMemo(() => {
     const record = getCharacterRecord(puzzleData);
     return [record, record.filter((cell) => cell !== '#').length];
   }, [puzzleData]);
 
-  const ref = useRef<InstancedMesh | null>(null);
+  const characterPositionArray = useMemo(
+    () =>
+      Float32Array.from(
+        new Array(size).fill(0).flatMap((_, i) => randomIntFromInterval(1, 6))
+      ),
+    [size]
+  );
+
+  const showOnSide123Array = useMemo(
+    () => Float32Array.from(new Array(size * 3).fill(1)),
+    [size]
+  );
+
+  const showOnSide456Array = useMemo(
+    () => Float32Array.from(new Array(size * 3).fill(1)),
+    [size]
+  );
 
   // Initial setup
   useEffect(() => {
@@ -143,10 +157,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   }, [puzzleData]);
 
-  useFrame((state) => {
-    if (ref?.current == null) return;
-    ref.current.geometry.attributes.characterPosition.needsUpdate = true;
-  });
+  // useFrame((state) => {
+  //   if (ref?.current == null) return;
+  //   ref.current.geometry.attributes.characterPosition.needsUpdate = true;
+  // });
 
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {
@@ -154,16 +168,89 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     characterTextureAtlas.wrapT = RepeatWrapping;
   }, [characterTextureAtlas]);
 
-  const getUniform = useCallback(
-    (index: number) => ({
-      uniforms: {
-        index,
-        numberTexture: { value: characterTextureAtlas },
-        characterTexture: { value: characterTextureAtlas },
-      },
-      fragmentShader,
-      vertexShader,
-    }),
+  // Material setup
+  const side0 = useMemo(
+    () =>
+      new CustomShaderMaterial({
+        baseMaterial: MeshPhysicalMaterial,
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          numberTexture: { value: characterTextureAtlas },
+          characterTexture: { value: characterTextureAtlas },
+        },
+        color: '#cc0a95',
+      }),
+    [characterTextureAtlas]
+  );
+  const side1 = useMemo(
+    () =>
+      new CustomShaderMaterial({
+        baseMaterial: MeshPhysicalMaterial,
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          numberTexture: { value: characterTextureAtlas },
+          characterTexture: { value: characterTextureAtlas },
+        },
+        color: '#cc0a95',
+      }),
+    [characterTextureAtlas]
+  );
+  const side2 = useMemo(
+    () =>
+      new CustomShaderMaterial({
+        baseMaterial: MeshPhysicalMaterial,
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          numberTexture: { value: characterTextureAtlas },
+          characterTexture: { value: characterTextureAtlas },
+        },
+        color: '#cc0a95',
+      }),
+    [characterTextureAtlas]
+  );
+  const side3 = useMemo(
+    () =>
+      new CustomShaderMaterial({
+        baseMaterial: MeshPhysicalMaterial,
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          numberTexture: { value: characterTextureAtlas },
+          characterTexture: { value: characterTextureAtlas },
+        },
+        color: '#cc0a95',
+      }),
+    [characterTextureAtlas]
+  );
+  const side4 = useMemo(
+    () =>
+      new CustomShaderMaterial({
+        baseMaterial: MeshPhysicalMaterial,
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          numberTexture: { value: characterTextureAtlas },
+          characterTexture: { value: characterTextureAtlas },
+        },
+        color: '#cc0a95',
+      }),
+    [characterTextureAtlas]
+  );
+  const side5 = useMemo(
+    () =>
+      new CustomShaderMaterial({
+        baseMaterial: MeshPhysicalMaterial,
+        vertexShader,
+        fragmentShader,
+        uniforms: {
+          numberTexture: { value: characterTextureAtlas },
+          characterTexture: { value: characterTextureAtlas },
+        },
+        color: '#cc0a95',
+      }),
     [characterTextureAtlas]
   );
 
@@ -176,6 +263,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       )}
       onPointerOut={() => onHovered && onHovered(undefined)}
       onPointerDown={(e) => onSelected && onSelected(e.instanceId)}
+      material={[side0, side1, side2, side3, side4, side5]}
     >
       <boxGeometry args={[1, 1, 1]}>
         <instancedBufferAttribute
@@ -184,55 +272,19 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           itemSize={2}
           array={characterPositionArray}
         />
+        <instancedBufferAttribute
+          attach="attributes-showOnSide123"
+          count={showOnSide123Array.length}
+          itemSize={3}
+          array={showOnSide123Array}
+        />
+        <instancedBufferAttribute
+          attach="attributes-showOnSide456"
+          count={showOnSide456Array.length}
+          itemSize={3}
+          array={showOnSide456Array}
+        />
       </boxGeometry>
-      <CustomShaderMaterial
-        baseMaterial={MeshPhysicalMaterial}
-        transparent
-        color="#cc0a95"
-        // @ts-ignore
-        attach="material-0"
-        {...getUniform(0)}
-      />
-      {/* <CustomShaderMaterial
-        baseMaterial={MeshPhysicalMaterial}
-        transparent
-        color="#cc0a95"
-        // @ts-ignore
-        attach="material-1"
-        {...getUniform(1)}
-      />
-      <CustomShaderMaterial
-        baseMaterial={MeshPhysicalMaterial}
-        transparent
-        color="#cc0a95"
-        // @ts-ignore
-        attach="material-2"
-        {...getUniform(2)}
-      />
-      <CustomShaderMaterial
-        baseMaterial={MeshPhysicalMaterial}
-        transparent
-        color="#cc0a95"
-        // @ts-ignore
-        attach="material-3"
-        {...getUniform(3)}
-      />
-      <CustomShaderMaterial
-        baseMaterial={MeshPhysicalMaterial}
-        transparent
-        color="#cc0a95"
-        // @ts-ignore
-        attach="material-4"
-        {...getUniform(4)}
-      />
-      <CustomShaderMaterial
-        baseMaterial={MeshPhysicalMaterial}
-        transparent
-        color="#cc0a95"
-        // @ts-ignore
-        attach="material-5"
-        {...getUniform(5)}
-      /> */}
     </instancedMesh>
   );
 };
