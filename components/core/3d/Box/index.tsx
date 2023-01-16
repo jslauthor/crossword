@@ -9,22 +9,28 @@ import { rotateAroundPoint } from '../../../../lib/utils/matrix';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 import { randomIntFromInterval } from '../../../../lib/utils/math';
 
+enum CubeSidesEnum {
+  one = 1 << 0,
+  two = 1 << 1,
+  three = 1 << 2,
+  four = 1 << 3,
+  five = 1 << 4,
+  six = 1 << 5,
+}
+
 const vertexShader = `
   attribute vec2 characterPosition;
-  attribute float showOnSide123;
-  attribute float showOnSide456;
+  attribute vec2 cubeSideDisplay;
 
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
-  varying float vShowOnSide123;
-  varying float vShowOnSide456;
+  varying vec2 vCubeSideDisplay;
 
   void main()
   {
       vUv = uv;
       vCharacterPosition = characterPosition;
-      vShowOnSide123 = showOnSide123;
-      vShowOnSide456 = showOnSide456;
+      vCubeSideDisplay = cubeSideDisplay;
   }
 `;
 
@@ -33,13 +39,14 @@ const fragmentShader = `
   precision highp float;
   #endif
 
+
   uniform sampler2D numberTexture;
   uniform sampler2D characterTexture;
+  uniform uint sideIndex;
   
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
-  varying float vShowOnSide123;
-  varying float vShowOnSide456;
+  varying vec2 vCubeSideDisplay;
 
   void main(void)
   {
@@ -48,13 +55,13 @@ const fragmentShader = `
     vec2 coord = position + size * fract(vUv);
     vec3 c = diffuse.rgb;
 
-    if (vShowOnSide123 == float(0) && vShowOnSide456 == float(0)) {
-      csm_DiffuseColor = vec4(c, 1.0);
-    } else {
+    if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
       vec4 Ca = texture2D(numberTexture, coord);
       c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
       // vec4 Cb = texture2D(characterTexture, coord);
       // c = Ca.rgb * Ca.a + Cb.rgb * Cb.a * (1.0 - Ca.a);  // blending equation
+      csm_DiffuseColor = vec4(c, 1.0);
+    } else {
       csm_DiffuseColor = vec4(c, 1.0);
     }
   }
@@ -83,22 +90,19 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const characterPositionArray = useMemo(
     () =>
       Float32Array.from(
-        new Array(size).fill(0).flatMap((_, i) => randomIntFromInterval(1, 6))
+        new Array(size * 2)
+          .fill(0)
+          .flatMap((_, i) => randomIntFromInterval(1, 6))
       ),
     [size]
   );
 
-  const showOnSide123Array = useMemo(
-    () => Float32Array.from(new Array(size * 3).fill(1)),
+  const cubeSideDisplayArray = useMemo(
+    () => Float32Array.from(new Array(size * 2).fill(0)),
     [size]
   );
 
-  const showOnSide456Array = useMemo(
-    () => Float32Array.from(new Array(size * 3).fill(1)),
-    [size]
-  );
-
-  // Initial setup
+  // Initial setup (orient the instanced boxes)
   useEffect(() => {
     if (ref.current == null) return;
     let id = 0;
@@ -116,8 +120,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
             if (sides === 0) {
               tempObject.position.set(x, y, -width);
+              cubeSideDisplayArray[id] = CubeSidesEnum.six;
             } else if (sides === 1) {
               tempObject.position.set(x + 1, y, 0);
+              cubeSideDisplayArray[id] = CubeSidesEnum.six;
               rotateAroundPoint(
                 tempObject,
                 new Vector3(0, 0, 0),
@@ -152,6 +158,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
         ref.current.geometry.attributes.characterPosition.needsUpdate = true;
+        ref.current.geometry.attributes.cubeSideDisplay.needsUpdate = true;
         ref.current.instanceMatrix.needsUpdate = true;
       }
     }
@@ -176,6 +183,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         vertexShader,
         fragmentShader,
         uniforms: {
+          sideIndex: { value: CubeSidesEnum.one },
           numberTexture: { value: characterTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -190,6 +198,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         vertexShader,
         fragmentShader,
         uniforms: {
+          sideIndex: { value: CubeSidesEnum.two },
           numberTexture: { value: characterTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -204,6 +213,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         vertexShader,
         fragmentShader,
         uniforms: {
+          sideIndex: { value: CubeSidesEnum.three },
           numberTexture: { value: characterTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -218,6 +228,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         vertexShader,
         fragmentShader,
         uniforms: {
+          sideIndex: { value: CubeSidesEnum.four },
           numberTexture: { value: characterTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -232,6 +243,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         vertexShader,
         fragmentShader,
         uniforms: {
+          sideIndex: { value: CubeSidesEnum.five },
           numberTexture: { value: characterTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -246,6 +258,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         vertexShader,
         fragmentShader,
         uniforms: {
+          sideIndex: { value: CubeSidesEnum.six },
           numberTexture: { value: characterTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -257,7 +270,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   return (
     <instancedMesh
       ref={ref}
-      args={[undefined, undefined, size - 32]}
+      args={[undefined, undefined, size - 28]}
+      // args={[undefined, undefined, 1]}
       onPointerMove={(e) => (
         e.stopPropagation(), onHovered && onHovered(e.instanceId)
       )}
@@ -273,16 +287,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           array={characterPositionArray}
         />
         <instancedBufferAttribute
-          attach="attributes-showOnSide123"
-          count={showOnSide123Array.length}
-          itemSize={3}
-          array={showOnSide123Array}
-        />
-        <instancedBufferAttribute
-          attach="attributes-showOnSide456"
-          count={showOnSide456Array.length}
-          itemSize={3}
-          array={showOnSide456Array}
+          attach="attributes-cubeSideDisplay"
+          count={cubeSideDisplayArray.length}
+          itemSize={2}
+          array={cubeSideDisplayArray}
         />
       </boxGeometry>
     </instancedMesh>
