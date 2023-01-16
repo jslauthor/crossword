@@ -26,9 +26,9 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
 
   // TODO: Merge the cell labels with the characters
   // - Create texture map that goes to 5000
-  // TODO: Only show number on correct side
   // TODO: Create buttons to orient to a new face
   // TODO: Change color when changing sides
+  // TODO: When selecting a cell, change the color of its word
   // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
   // TODO: Make this multiplayer where different people can work on different sides?
   // TODO: Add top and bottom sides?

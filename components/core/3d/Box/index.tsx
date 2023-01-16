@@ -107,23 +107,27 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     if (ref.current == null) return;
     let id = 0;
     const { width, height } = puzzleData[0].dimensions;
-    for (let sides = 0; sides < puzzleData.length; sides++) {
-      const { puzzle } = puzzleData[sides];
+    for (let side = 0; side < puzzleData.length; side++) {
+      const { puzzle } = puzzleData[side];
       for (let y = 0; y < puzzle.length; y++) {
         for (let x = 0; x < puzzle[y].length; x++) {
           // skip the first item in each row other than the first side
-          const isRepeated =
-            sides !== 0 && (x === 7 || (sides === 3 && x === 0));
+          const isRepeated = side !== 0 && (x === 7 || (side === 3 && x === 0));
           const isNumber = typeof puzzle[y][x] === 'number';
           if (!isRepeated && (isNumber || puzzle[y][x] === ':')) {
             tempObject.rotation.set(0, 0, 0);
 
-            if (sides === 0) {
+            cubeSideDisplayArray[id * 2] =
+              CubeSidesEnum.six | (x === 0 ? CubeSidesEnum.two : 0);
+
+            if (side === 0) {
               tempObject.position.set(x, y, -width);
-              cubeSideDisplayArray[id] = CubeSidesEnum.six;
-            } else if (sides === 1) {
+              if (x === 7) {
+                cubeSideDisplayArray[id * 2] =
+                  cubeSideDisplayArray[id * 2] | CubeSidesEnum.one;
+              }
+            } else if (side === 1) {
               tempObject.position.set(x + 1, y, 0);
-              cubeSideDisplayArray[id] = CubeSidesEnum.six;
               rotateAroundPoint(
                 tempObject,
                 new Vector3(0, 0, 0),
@@ -131,7 +135,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 Math.PI / 2,
                 true
               );
-            } else if (sides === 2) {
+            } else if (side === 2) {
               tempObject.position.set(x - width + 1, y, 1);
               rotateAroundPoint(
                 tempObject,
@@ -140,7 +144,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 Math.PI,
                 true
               );
-            } else if (sides === 3) {
+            } else if (side === 3) {
               //
               tempObject.position.set(x - width, y, -width + 1);
               rotateAroundPoint(
