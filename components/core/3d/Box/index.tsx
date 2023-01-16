@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
-import THREE, { useFrame, useLoader } from '@react-three/fiber';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { useFrame, useLoader } from '@react-three/fiber';
 import { TextureLoader, RepeatWrapping, Vector3, Object3D, Color } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { MeshPhysicalMaterial } from 'three';
@@ -39,7 +39,6 @@ const fragmentShader = `
   precision highp float;
   #endif
 
-
   uniform sampler2D numberTexture;
   uniform sampler2D characterTexture;
   uniform uint sideIndex;
@@ -55,6 +54,7 @@ const fragmentShader = `
     vec2 coord = position + size * fract(vUv);
     vec3 c = diffuse.rgb;
 
+    // Show character when the side is flipped on
     if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
       vec4 Ca = texture2D(numberTexture, coord);
       c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
