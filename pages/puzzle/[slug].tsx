@@ -25,7 +25,6 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
   // const { slug } = router.query;
 
   // TODO: Merge the cell labels with the characters
-  // - Create texture map that goes to 5000
   // TODO: Create buttons to orient to a new face
   // TODO: Change color when changing sides
   // TODO: When selecting a cell, change the color of its word
@@ -36,7 +35,7 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
 
   return (
     <Container>
-      <Canvas>
+      <Canvas dpr={[1, 2]}>
         <OrthographicCamera
           makeDefault
           zoom={50}

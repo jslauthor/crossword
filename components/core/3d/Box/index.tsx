@@ -20,16 +20,19 @@ enum CubeSidesEnum {
 
 const vertexShader = `
   attribute vec2 characterPosition;
+  attribute vec2 cellNumberPosition;
   attribute vec2 cubeSideDisplay;
 
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
+  varying vec2 vCellNumberPosition;
   varying vec2 vCubeSideDisplay;
 
   void main()
   {
       vUv = uv;
       vCharacterPosition = characterPosition;
+      vCellNumberPosition = cellNumberPosition;
       vCubeSideDisplay = cubeSideDisplay;
   }
 `;
@@ -45,25 +48,29 @@ const fragmentShader = `
   
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
+  varying vec2 vCellNumberPosition;
   varying vec2 vCubeSideDisplay;
 
   void main(void)
   {
-    vec2 position = vec2(vCharacterPosition.x/6.0, -(vCharacterPosition.y/6.0 + 1.0/6.0));
-    vec2 size = vec2(1.0 / 6.0, 1.0 / 6.0);
-    vec2 coord = position + size * fract(vUv);
     vec3 c = diffuse.rgb;
-
+    
     // Show character when the side is flipped on
     if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
-      vec4 Ca = texture2D(numberTexture, coord);
+      vec2 position = vec2(vCharacterPosition.x/6.0, -(vCharacterPosition.y/6.0 + 1.0/6.0));
+      vec2 size = vec2(1.0 / 6.0, 1.0 / 6.0);
+      vec2 coord = position + size * fract(vUv);
+      vec4 Ca = texture2D(characterTexture, coord);
       c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
-      // vec4 Cb = texture2D(characterTexture, coord);
-      // c = Ca.rgb * Ca.a + Cb.rgb * Cb.a * (1.0 - Ca.a);  // blending equation
-      csm_DiffuseColor = vec4(c, 1.0);
-    } else {
-      csm_DiffuseColor = vec4(c, 1.0);
     }
+    
+    vec2 position = vec2(vCellNumberPosition.x/31.0, -(vCellNumberPosition.y/31.0 + 1.0/31.0));
+    vec2 size = vec2(1.0 / 31.0, 1.0 / 31.0);
+    vec2 coord = position + size * fract(vUv);
+    vec4 Cb = texture2D(numberTexture, coord);
+    c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a);  // blending equation
+    
+    csm_DiffuseColor = vec4(c, 1.0);
   }
 `;
 
@@ -93,6 +100,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         new Array(size * 2)
           .fill(0)
           .flatMap((_, i) => randomIntFromInterval(1, 6))
+      ),
+    [size]
+  );
+
+  const cellNumberPositionArray = useMemo(
+    () =>
+      Float32Array.from(
+        new Array(size * 2)
+          .fill(0)
+          .flatMap((_, i) => randomIntFromInterval(1, 31))
       ),
     [size]
   );
@@ -162,6 +179,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
         ref.current.geometry.attributes.characterPosition.needsUpdate = true;
+        ref.current.geometry.attributes.cellNumberPosition.needsUpdate = true;
         ref.current.geometry.attributes.cubeSideDisplay.needsUpdate = true;
         ref.current.instanceMatrix.needsUpdate = true;
       }
@@ -179,6 +197,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     characterTextureAtlas.wrapT = RepeatWrapping;
   }, [characterTextureAtlas]);
 
+  const numberTextureAtlas = useLoader(TextureLoader, '/number_atlas.png');
+  useEffect(() => {
+    numberTextureAtlas.wrapS = RepeatWrapping;
+    numberTextureAtlas.wrapT = RepeatWrapping;
+  }, [numberTextureAtlas]);
+
   // Material setup
   const side0 = useMemo(
     () =>
@@ -188,12 +212,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.one },
-          numberTexture: { value: characterTextureAtlas },
+          numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
         color: '#cc0a95',
       }),
-    [characterTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas]
   );
   const side1 = useMemo(
     () =>
@@ -203,12 +227,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.two },
-          numberTexture: { value: characterTextureAtlas },
+          numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
         color: '#cc0a95',
       }),
-    [characterTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas]
   );
   const side2 = useMemo(
     () =>
@@ -218,12 +242,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.three },
-          numberTexture: { value: characterTextureAtlas },
+          numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
         color: '#cc0a95',
       }),
-    [characterTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas]
   );
   const side3 = useMemo(
     () =>
@@ -233,12 +257,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.four },
-          numberTexture: { value: characterTextureAtlas },
+          numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
         color: '#cc0a95',
       }),
-    [characterTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas]
   );
   const side4 = useMemo(
     () =>
@@ -248,12 +272,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.five },
-          numberTexture: { value: characterTextureAtlas },
+          numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
         color: '#cc0a95',
       }),
-    [characterTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas]
   );
   const side5 = useMemo(
     () =>
@@ -263,12 +287,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.six },
-          numberTexture: { value: characterTextureAtlas },
+          numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
         color: '#cc0a95',
       }),
-    [characterTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas]
   );
 
   return (
@@ -289,6 +313,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           count={characterPositionArray.length}
           itemSize={2}
           array={characterPositionArray}
+        />
+        <instancedBufferAttribute
+          attach="attributes-cellNumberPosition"
+          count={cellNumberPositionArray.length}
+          itemSize={2}
+          array={cellNumberPositionArray}
         />
         <instancedBufferAttribute
           attach="attributes-cubeSideDisplay"

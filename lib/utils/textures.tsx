@@ -42,12 +42,12 @@ const TEXTURE_RECORD_ITEMS = Object.keys(TEXTURE_RECORD).map((item: string) => (
       justifyContent: 'center',
       alignItems: 'center',
       fontFamily: 'Franklin Gothic',
-      fontSize: '200px',
+      fontSize: '225px',
       color: 'white',
     }}
     key={item}
   >
-    {item}
+    <div style={{ marginTop: '100px' }}>{item}</div>
   </div>
 ));
 
@@ -78,20 +78,37 @@ export const TextureAtlas: React.FC = () => (
 const NUMBER_RECORD = generateTextureRecord(numberItems, 31);
 const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) => (
   <div
+    key={item}
     style={{
       display: 'flex',
+      padding: '2px',
       width: '66.06px',
       height: '66.06px',
-      aspectRatio: '1',
-      justifyContent: 'center',
-      alignItems: 'center',
-      fontFamily: 'Franklin Gothic',
-      fontSize: '20px',
-      color: 'white',
     }}
-    key={item}
   >
-    {item}
+    <div
+      style={{
+        position: 'relative',
+        display: 'flex',
+        width: '100%',
+        height: '100%',
+        aspectRatio: '1',
+        fontFamily: 'Franklin Gothic',
+        fontSize: '14px',
+        color: 'white',
+        border: '2px solid white',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: 5,
+          left: 5,
+        }}
+      >
+        {item}
+      </div>
+    </div>
   </div>
 ));
 
