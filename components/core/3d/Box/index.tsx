@@ -62,13 +62,15 @@ const fragmentShader = `
       vec2 coord = position + size * fract(vUv);
       vec4 Ca = texture2D(characterTexture, coord);
       c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
+
+      position = vec2(vCellNumberPosition.x/31.0, -(vCellNumberPosition.y/31.0 + 1.0/31.0));
+      size = vec2(1.0 / 31.0, 1.0 / 31.0);
+      coord = position + size * fract(vUv);
+      vec4 Cb = texture2D(numberTexture, coord);
+      c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a);  // blending equation
+    } else {
+      c = vec3(0.02, 0.02, 0.02) * c.rgb;  // blending equation
     }
-    
-    vec2 position = vec2(vCellNumberPosition.x/31.0, -(vCellNumberPosition.y/31.0 + 1.0/31.0));
-    vec2 size = vec2(1.0 / 31.0, 1.0 / 31.0);
-    vec2 coord = position + size * fract(vUv);
-    vec4 Cb = texture2D(numberTexture, coord);
-    c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a);  // blending equation
     
     csm_DiffuseColor = vec4(c, 1.0);
   }
@@ -93,6 +95,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     const record = getCharacterRecord(puzzleData);
     return [record, record.filter((cell) => cell !== '#').length];
   }, [puzzleData]);
+
+  console.log(record);
 
   const characterPositionArray = useMemo(
     () =>

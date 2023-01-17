@@ -24,7 +24,11 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
   const router = useRouter();
   // const { slug } = router.query;
 
-  // TODO: Merge the cell labels with the characters
+  // TODO: Switch rendering to use the character record
+  // TODO: Map correct cell numbers to cells (need to update data structure?)
+  // TODO: Add cell selection with bg color change
+  // TODO: When selecting a cell, change bg for all letters in word
+  // TODO: Create separate answer record and show in grid
   // TODO: Create buttons to orient to a new face
   // TODO: Change color when changing sides
   // TODO: When selecting a cell, change the color of its word
@@ -35,7 +39,7 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
 
   return (
     <Container>
-      <Canvas dpr={[1, 2]}>
+      <Canvas>
         <OrthographicCamera
           makeDefault
           zoom={50}
