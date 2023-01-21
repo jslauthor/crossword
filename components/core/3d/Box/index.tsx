@@ -95,10 +95,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const [record, size] = useMemo(() => {
     const record = getCharacterRecord(puzzleData);
-    return [record, record.solution.filter((cell) => cell !== '#').length];
+    return [record, record.solution.length];
   }, [puzzleData]);
 
-  console.log(characterTextureAtlasLookup);
+  console.log(record, size);
 
   const characterPositionArray = useMemo(
     () =>
@@ -134,12 +134,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       const cell = record.solution[j];
       if (cell !== '#') {
         tempObject.rotation.set(0, 0, 0);
+        tempObject.scale.set(1, 1, 1);
         const side = Math.ceil(j / totalPerSide) - 1;
         const x = (j % width) - 1;
         const y = Math.max(0, Math.ceil((j - side * totalPerSide) / width) - 1);
 
         cubeSideDisplayArray[j * 2] =
-          CubeSidesEnum.six | (j % width === 1 ? CubeSidesEnum.two : 0);
+          CubeSidesEnum.six | (j % width === width - 1 ? CubeSidesEnum.two : 0);
 
         characterPositionArray[j * 2] =
           characterTextureAtlasLookup[cell.value][0];
@@ -148,48 +149,52 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
         if (side === 0) {
           tempObject.position.set(-x + height, -y + height, -height);
+        } else if (side === 1) {
+          tempObject.position.set(-x + height - 1, -y + height, 2);
+          rotateAroundPoint(
+            tempObject,
+            new Vector3(0, 0, 0),
+            new Vector3(0, 1, 0),
+            Math.PI / 2,
+            true
+          );
+        } else if (side === 2) {
+          tempObject.position.set(-x - 3, -y + height, 1);
+          rotateAroundPoint(
+            tempObject,
+            new Vector3(0, 0, 0),
+            new Vector3(0, 1, 0),
+            Math.PI,
+            true
+          );
+        } else if (side === 3) {
+          tempObject.position.set(-x - 2, -y + height, -height - 1);
+          rotateAroundPoint(
+            tempObject,
+            new Vector3(0, 0, 0),
+            new Vector3(0, 1, 0),
+            -Math.PI / 2,
+            true
+          );
         }
-
-        // if (side === 0) {
-        //   tempObject.position.set(x, y, -width);
-        // } else if (side === 1) {
-        //   tempObject.position.set(x + 1, y, 0);
-        //   rotateAroundPoint(
-        //     tempObject,
-        //     new Vector3(0, 0, 0),
-        //     new Vector3(0, 1, 0),
-        //     Math.PI / 2,
-        //     true
-        //   );
-        // } else if (side === 2) {
-        //   tempObject.position.set(x - width + 1, y, 1);
-        //   rotateAroundPoint(
-        //     tempObject,
-        //     new Vector3(0, 0, 0),
-        //     new Vector3(0, 1, 0),
-        //     Math.PI,
-        //     true
-        //   );
-        // } else if (side === 3) {
-        //   tempObject.position.set(x - width, y, -width + 1);
-        //   rotateAroundPoint(
-        //     tempObject,
-        //     new Vector3(0, 0, 0),
-        //     new Vector3(0, 1, 0),
-        //     -Math.PI / 2,
-        //     true
-        //   );
-        // }
-
-        tempObject.updateMatrix();
-        ref.current.setMatrixAt(j, tempObject.matrix);
+      } else {
+        // Hide the empty square
+        tempObject.scale.set(0, 0, 0);
       }
+      tempObject.updateMatrix();
+      ref.current.setMatrixAt(j, tempObject.matrix);
     }
     ref.current.geometry.attributes.characterPosition.needsUpdate = true;
     ref.current.geometry.attributes.cellNumberPosition.needsUpdate = true;
     ref.current.geometry.attributes.cubeSideDisplay.needsUpdate = true;
     ref.current.instanceMatrix.needsUpdate = true;
-  }, [cubeSideDisplayArray, puzzleData, record.solution]);
+  }, [
+    characterPositionArray,
+    characterTextureAtlasLookup,
+    cubeSideDisplayArray,
+    puzzleData,
+    record.solution,
+  ]);
 
   // useFrame((state) => {
   //   if (ref?.current == null) return;
@@ -304,7 +309,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     <instancedMesh
       ref={ref}
       args={[undefined, undefined, size]}
-      // args={[undefined, undefined, 1]}
       onPointerMove={(e) => (
         e.stopPropagation(), onHovered && onHovered(e.instanceId)
       )}
