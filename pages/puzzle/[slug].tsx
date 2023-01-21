@@ -56,7 +56,7 @@ export default function Puzzle({
         <ambientLight />
         <pointLight position={[5, 5, 5]} />
         <PresentationControls global>
-          <group position={[-4, -4, 4]}>
+          <group position={[-3.5, -3.5, 3.5]}>
             <LetterBoxes
               puzzleData={puzzleData}
               characterTextureAtlasLookup={characterTextureAtlasLookup}

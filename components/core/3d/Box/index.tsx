@@ -148,9 +148,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           characterTextureAtlasLookup[cell.value][1];
 
         if (side === 0) {
-          tempObject.position.set(-x + height, -y + height, -height);
+          tempObject.position.set(
+            -x + height - 2,
+            -y + height - 1,
+            -height + 1
+          );
         } else if (side === 1) {
-          tempObject.position.set(-x + height - 1, -y + height, 2);
+          tempObject.position.set(-x + height - 2, -y + height - 1, 0);
           rotateAroundPoint(
             tempObject,
             new Vector3(0, 0, 0),
@@ -159,7 +163,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             true
           );
         } else if (side === 2) {
-          tempObject.position.set(-x - 3, -y + height, 1);
+          tempObject.position.set(-x - 1, -y + height - 1, 0);
           rotateAroundPoint(
             tempObject,
             new Vector3(0, 0, 0),
@@ -168,7 +172,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             true
           );
         } else if (side === 3) {
-          tempObject.position.set(-x - 2, -y + height, -height - 1);
+          tempObject.position.set(-x - 1, -y + height - 1, -height + 1);
           rotateAroundPoint(
             tempObject,
             new Vector3(0, 0, 0),
