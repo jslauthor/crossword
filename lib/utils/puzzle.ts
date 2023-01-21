@@ -1,21 +1,46 @@
-import { PuzzleData, SolutionCell, SolutionCellValue } from '../../types/types';
+import {
+  Clue,
+  PuzzleData,
+  SolutionCell,
+  SolutionCellValue,
+} from '../../types/types';
 
 function isSolutionCellValue(cell: SolutionCell): cell is SolutionCellValue {
   return (cell as SolutionCellValue).value !== undefined;
 }
 
 export const getCharacterRecord = (puzzleData: PuzzleData[]) => {
-  let runningCellNumbers = 0;
-  return puzzleData.reduce<SolutionCell[]>(
-    (value, { solution, dimensions }) => {
+  let runningTotal = 0;
+  return puzzleData.reduce<{
+    solution: SolutionCell[];
+    clues: {
+      across: Clue[];
+      down: Clue[];
+    };
+  }>(
+    (value, { solution, dimensions, clues }) => {
       const { width } = dimensions;
       const flattened = solution.flatMap((s) => s);
       let highest: number = 0;
-      // TODO: add clues to this data type as well
+
+      value.clues.across = value.clues.across.concat(
+        clues.Across.map((clue) => ({
+          ...clue,
+          number: clue.number + runningTotal,
+        }))
+      );
+
+      value.clues.down = value.clues.down.concat(
+        clues.Down.map((clue) => ({
+          ...clue,
+          number: clue.number + runningTotal,
+        }))
+      );
+
       for (let x = 0; x < flattened.length; x++) {
-        if ((x + 1) % width === 0) {
-          // we skip the last column since the first column
-          // in the following grid is the same as the previous last
+        if (x % width === 0) {
+          // we skip the first column since the last column
+          // in the following grid is the same
           continue;
         }
         const currentCell = flattened[x];
@@ -23,18 +48,24 @@ export const getCharacterRecord = (puzzleData: PuzzleData[]) => {
           isSolutionCellValue(currentCell) &&
           typeof currentCell.cell === 'number'
         ) {
-          value.push({
-            cell: currentCell.cell + runningCellNumbers,
+          value.solution.push({
+            cell: currentCell.cell + runningTotal,
             value: currentCell.value,
           });
           highest = currentCell.cell > highest ? currentCell.cell : highest;
         } else {
-          value.push(currentCell);
+          value.solution.push(currentCell);
         }
       }
-      runningCellNumbers = runningCellNumbers + highest;
+      runningTotal = runningTotal + highest;
       return value;
     },
-    []
+    {
+      solution: [],
+      clues: {
+        across: [],
+        down: [],
+      },
+    }
   );
 };

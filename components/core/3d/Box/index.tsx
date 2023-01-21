@@ -93,7 +93,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const [record, size] = useMemo(() => {
     const record = getCharacterRecord(puzzleData);
-    return [record, record.filter((cell) => cell !== '#').length];
+    return [record, record.solution.filter((cell) => cell !== '#').length];
   }, [puzzleData]);
 
   console.log(record);

@@ -16,6 +16,12 @@ export type PuzzleCell =
       style: { barred: 'L' | 'T' | 'R' | 'B' };
     };
 
+export type Clue = {
+  answer: string;
+  number: number;
+  clue: string;
+};
+
 export interface PuzzleData {
   author: string;
   copyright: string;
@@ -25,4 +31,8 @@ export interface PuzzleData {
   };
   puzzle: PuzzleCell[][];
   solution: SolutionCell[][];
+  clues: {
+    Across: Clue[];
+    Down: Clue[];
+  };
 }
