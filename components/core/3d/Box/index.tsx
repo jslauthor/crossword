@@ -188,7 +188,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         ref.current.instanceMatrix.needsUpdate = true;
       }
     }
-  }, [puzzleData]);
+  }, [cubeSideDisplayArray, puzzleData]);
 
   // useFrame((state) => {
   //   if (ref?.current == null) return;
