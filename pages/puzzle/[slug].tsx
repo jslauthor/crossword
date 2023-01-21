@@ -28,7 +28,7 @@ export default function Puzzle({ puzzleData }: PuzzleProps) {
   // TODO: Map correct cell numbers to cells (need to update data structure?)
   // TODO: Add cell selection with bg color change
   // TODO: When selecting a cell, change bg for all letters in word
-  // TODO: Create separate answer record and show in grid
+  // TODO: Create separate answer record and show in grid on letter
   // TODO: Create buttons to orient to a new face
   // TODO: Change color when changing sides
   // TODO: When selecting a cell, change the color of its word

@@ -302,7 +302,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   return (
     <instancedMesh
       ref={ref}
-      args={[undefined, undefined, size - 28]}
+      args={[undefined, undefined, size]}
       // args={[undefined, undefined, 1]}
       onPointerMove={(e) => (
         e.stopPropagation(), onHovered && onHovered(e.instanceId)
