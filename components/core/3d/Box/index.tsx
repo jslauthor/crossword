@@ -78,6 +78,7 @@ const fragmentShader = `
 
 type LetterBoxesProps = {
   puzzleData: PuzzleData[];
+  characterTextureAtlasLookup: Record<string, [number, number]>;
   onHovered?: (e: number | undefined) => void;
   onSelected?: (e: number | undefined) => void;
 };
@@ -86,6 +87,7 @@ const tempColor = new Color();
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzleData,
+  characterTextureAtlasLookup,
   onHovered,
   onSelected,
 }) => {
@@ -96,7 +98,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     return [record, record.solution.filter((cell) => cell !== '#').length];
   }, [puzzleData]);
 
-  console.log(record);
+  console.log(characterTextureAtlasLookup);
 
   const characterPositionArray = useMemo(
     () =>
@@ -126,69 +128,68 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   // Initial setup (orient the instanced boxes)
   useEffect(() => {
     if (ref.current == null) return;
-    let id = 0;
-    const { width, height } = puzzleData[0].dimensions;
-    for (let side = 0; side < puzzleData.length; side++) {
-      const { puzzle } = puzzleData[side];
-      for (let y = 0; y < puzzle.length; y++) {
-        for (let x = 0; x < puzzle[y].length; x++) {
-          // skip the first item in each row other than the first side
-          const isRepeated = side !== 0 && (x === 7 || (side === 3 && x === 0));
-          const isNumber = typeof puzzle[y][x] === 'number';
-          if (!isRepeated && (isNumber || puzzle[y][x] === ':')) {
-            tempObject.rotation.set(0, 0, 0);
+    let { width, height } = puzzleData[0].dimensions;
+    const totalPerSide = width * height;
+    for (let j = 0; j < record.solution.length; j++) {
+      const cell = record.solution[j];
+      if (cell !== '#') {
+        tempObject.rotation.set(0, 0, 0);
+        const side = Math.ceil(j / totalPerSide) - 1;
+        const x = (j % width) - 1;
+        const y = Math.max(0, Math.ceil((j - side * totalPerSide) / width) - 1);
 
-            cubeSideDisplayArray[id * 2] =
-              CubeSidesEnum.six | (x === 0 ? CubeSidesEnum.two : 0);
+        cubeSideDisplayArray[j * 2] =
+          CubeSidesEnum.six | (j % width === 1 ? CubeSidesEnum.two : 0);
 
-            if (side === 0) {
-              tempObject.position.set(x, y, -width);
-              if (x === 7) {
-                cubeSideDisplayArray[id * 2] =
-                  cubeSideDisplayArray[id * 2] | CubeSidesEnum.one;
-              }
-            } else if (side === 1) {
-              tempObject.position.set(x + 1, y, 0);
-              rotateAroundPoint(
-                tempObject,
-                new Vector3(0, 0, 0),
-                new Vector3(0, 1, 0),
-                Math.PI / 2,
-                true
-              );
-            } else if (side === 2) {
-              tempObject.position.set(x - width + 1, y, 1);
-              rotateAroundPoint(
-                tempObject,
-                new Vector3(0, 0, 0),
-                new Vector3(0, 1, 0),
-                Math.PI,
-                true
-              );
-            } else if (side === 3) {
-              //
-              tempObject.position.set(x - width, y, -width + 1);
-              rotateAroundPoint(
-                tempObject,
-                new Vector3(0, 0, 0),
-                new Vector3(0, 1, 0),
-                -Math.PI / 2,
-                true
-              );
-            }
+        characterPositionArray[j * 2] =
+          characterTextureAtlasLookup[cell.value][0];
+        characterPositionArray[j * 2 + 1] =
+          characterTextureAtlasLookup[cell.value][1];
 
-            tempObject.updateMatrix();
-            ref.current.setMatrixAt(id, tempObject.matrix);
-            id = id + 1;
-          }
+        if (side === 0) {
+          tempObject.position.set(-x + height, -y + height, -height);
         }
-        ref.current.geometry.attributes.characterPosition.needsUpdate = true;
-        ref.current.geometry.attributes.cellNumberPosition.needsUpdate = true;
-        ref.current.geometry.attributes.cubeSideDisplay.needsUpdate = true;
-        ref.current.instanceMatrix.needsUpdate = true;
+
+        // if (side === 0) {
+        //   tempObject.position.set(x, y, -width);
+        // } else if (side === 1) {
+        //   tempObject.position.set(x + 1, y, 0);
+        //   rotateAroundPoint(
+        //     tempObject,
+        //     new Vector3(0, 0, 0),
+        //     new Vector3(0, 1, 0),
+        //     Math.PI / 2,
+        //     true
+        //   );
+        // } else if (side === 2) {
+        //   tempObject.position.set(x - width + 1, y, 1);
+        //   rotateAroundPoint(
+        //     tempObject,
+        //     new Vector3(0, 0, 0),
+        //     new Vector3(0, 1, 0),
+        //     Math.PI,
+        //     true
+        //   );
+        // } else if (side === 3) {
+        //   tempObject.position.set(x - width, y, -width + 1);
+        //   rotateAroundPoint(
+        //     tempObject,
+        //     new Vector3(0, 0, 0),
+        //     new Vector3(0, 1, 0),
+        //     -Math.PI / 2,
+        //     true
+        //   );
+        // }
+
+        tempObject.updateMatrix();
+        ref.current.setMatrixAt(j, tempObject.matrix);
       }
     }
-  }, [cubeSideDisplayArray, puzzleData]);
+    ref.current.geometry.attributes.characterPosition.needsUpdate = true;
+    ref.current.geometry.attributes.cellNumberPosition.needsUpdate = true;
+    ref.current.geometry.attributes.cubeSideDisplay.needsUpdate = true;
+    ref.current.instanceMatrix.needsUpdate = true;
+  }, [cubeSideDisplayArray, puzzleData, record.solution]);
 
   // useFrame((state) => {
   //   if (ref?.current == null) return;

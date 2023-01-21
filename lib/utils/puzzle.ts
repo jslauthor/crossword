@@ -41,6 +41,7 @@ export const getCharacterRecord = (puzzleData: PuzzleData[]) => {
         if (x % width === 0) {
           // we skip the first column since the last column
           // in the following grid is the same
+          value.solution.push('#');
           continue;
         }
         const currentCell = flattened[x];
