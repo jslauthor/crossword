@@ -10,7 +10,11 @@ import {
 } from '@react-three/drei';
 import LetterBoxes from '../../components/core/3d/Box';
 import { PuzzleData } from '../../types/types';
-import { generateTextures, TEXTURE_RECORD } from '../../lib/utils/textures';
+import {
+  generateTextures,
+  NUMBER_RECORD,
+  TEXTURE_RECORD,
+} from '../../lib/utils/textures';
 
 const Container = styled.div`
   position: relative;
@@ -21,11 +25,13 @@ const Container = styled.div`
 type PuzzleProps = {
   puzzleData: PuzzleData[];
   characterTextureAtlasLookup: Record<string, [number, number]>;
+  cellNumberTextureAtlasLookup: Record<string, [number, number]>;
 };
 
 export default function Puzzle({
   puzzleData,
   characterTextureAtlasLookup,
+  cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
   const router = useRouter();
   // const { slug } = router.query;
@@ -60,6 +66,7 @@ export default function Puzzle({
             <LetterBoxes
               puzzleData={puzzleData}
               characterTextureAtlasLookup={characterTextureAtlasLookup}
+              cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
             />
           </group>
         </PresentationControls>
@@ -88,8 +95,13 @@ const getStaticProps: GetStaticProps<PuzzleProps, { slug: string }> = async ({
 
   const puzzleData = await getPuzzleById(params?.slug ?? '');
   const characterTextureAtlasLookup = TEXTURE_RECORD;
+  const cellNumberTextureAtlasLookup = NUMBER_RECORD;
   return {
-    props: { puzzleData, characterTextureAtlasLookup },
+    props: {
+      puzzleData,
+      characterTextureAtlasLookup,
+      cellNumberTextureAtlasLookup,
+    },
   };
 };
 

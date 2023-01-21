@@ -75,7 +75,7 @@ export const TextureAtlas: React.FC = () => (
   </div>
 );
 
-const NUMBER_RECORD = generateTextureRecord(numberItems, 31);
+export const NUMBER_RECORD = generateTextureRecord(numberItems, 31);
 const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) => (
   <div
     key={item}
@@ -96,7 +96,6 @@ const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) => (
         fontFamily: 'Franklin Gothic',
         fontSize: '14px',
         color: 'white',
-        border: '2px solid white',
       }}
     >
       <div

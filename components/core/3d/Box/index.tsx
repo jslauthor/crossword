@@ -1,6 +1,13 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
-import { TextureLoader, RepeatWrapping, Vector3, Object3D, Color } from 'three';
+import {
+  TextureLoader,
+  RepeatWrapping,
+  Vector3,
+  Object3D,
+  Color,
+  Vector4,
+} from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { MeshPhysicalMaterial } from 'three';
 import { InstancedMesh } from 'three';
@@ -45,6 +52,8 @@ const fragmentShader = `
   uniform sampler2D numberTexture;
   uniform sampler2D characterTexture;
   uniform uint sideIndex;
+  uniform float borderWidth;
+  uniform vec4 borderColor;
   
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
@@ -55,19 +64,35 @@ const fragmentShader = `
   {
     vec3 c = diffuse.rgb;
     
-    // Show character when the side is flipped on
-    if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
-      vec2 position = vec2(vCharacterPosition.x/6.0, -(vCharacterPosition.y/6.0 + 1.0/6.0));
-      vec2 size = vec2(1.0 / 6.0, 1.0 / 6.0);
-      vec2 coord = position + size * fract(vUv);
-      vec4 Ca = texture2D(characterTexture, coord);
-      c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
+    // Here we paint all of our textures
 
-      position = vec2(vCellNumberPosition.x/31.0, -(vCellNumberPosition.y/31.0 + 1.0/31.0));
-      size = vec2(1.0 / 31.0, 1.0 / 31.0);
-      coord = position + size * fract(vUv);
-      vec4 Cb = texture2D(numberTexture, coord);
-      c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a);  // blending equation
+    // Show character when bitflag is on for the side
+    if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
+      // Draw the border
+      float maxSize = 1.0 - borderWidth;
+      float minSize = borderWidth;
+      if (!(vUv.x < maxSize && vUv.x > minSize &&
+        vUv.y < maxSize && vUv.y > minSize)) {
+          c = borderColor.rgb * borderColor.a + c.rgb * (1.0 - borderColor.a);  // blending equation
+      }
+
+      // A coord of -1, -1 means do not paint
+      if (vCharacterPosition.x >= 0.0 && vCharacterPosition.y >= 0.0) {
+        vec2 position = vec2(vCharacterPosition.x/6.0, -(vCharacterPosition.y/6.0 + 1.0/6.0));
+        vec2 size = vec2(1.0 / 6.0, 1.0 / 6.0);
+        vec2 coord = position + size * fract(vUv);
+        vec4 Ca = texture2D(characterTexture, coord);
+        c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
+      }
+
+      // A coord of -1, -1 means do not paint
+      if (vCellNumberPosition.x >= 0.0 && vCellNumberPosition.y >= 0.0) {
+        vec2 position = vec2(vCellNumberPosition.x/31.0, -(vCellNumberPosition.y/31.0 + 1.0/31.0));
+        vec2 size = vec2(1.0 / 31.0, 1.0 / 31.0);
+        vec2 coord = position + size * fract(vUv);
+        vec4 Cb = texture2D(numberTexture, coord);
+        c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a);  // blending equation
+      }
     } else {
       c = vec3(0.02, 0.02, 0.02) * c.rgb;  // blending equation
     }
@@ -79,6 +104,7 @@ const fragmentShader = `
 type LetterBoxesProps = {
   puzzleData: PuzzleData[];
   characterTextureAtlasLookup: Record<string, [number, number]>;
+  cellNumberTextureAtlasLookup: Record<string, [number, number]>;
   onHovered?: (e: number | undefined) => void;
   onSelected?: (e: number | undefined) => void;
 };
@@ -88,6 +114,7 @@ const tempColor = new Color();
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzleData,
   characterTextureAtlasLookup,
+  cellNumberTextureAtlasLookup,
   onHovered,
   onSelected,
 }) => {
@@ -98,25 +125,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     return [record, record.solution.length];
   }, [puzzleData]);
 
-  console.log(record, size);
-
   const characterPositionArray = useMemo(
-    () =>
-      Float32Array.from(
-        new Array(size * 2)
-          .fill(0)
-          .flatMap((_, i) => randomIntFromInterval(1, 6))
-      ),
+    () => Float32Array.from(new Array(size * 2).fill(-1)),
     [size]
   );
 
   const cellNumberPositionArray = useMemo(
-    () =>
-      Float32Array.from(
-        new Array(size * 2)
-          .fill(0)
-          .flatMap((_, i) => randomIntFromInterval(1, 31))
-      ),
+    () => Float32Array.from(new Array(size * 2).fill(-1)),
     [size]
   );
 
@@ -146,6 +161,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           characterTextureAtlasLookup[cell.value][0];
         characterPositionArray[j * 2 + 1] =
           characterTextureAtlasLookup[cell.value][1];
+
+        if (typeof cell.cell === 'number') {
+          cellNumberPositionArray[j * 2] =
+            cellNumberTextureAtlasLookup[cell.cell][0];
+          cellNumberPositionArray[j * 2 + 1] =
+            cellNumberTextureAtlasLookup[cell.cell][1];
+        }
 
         if (side === 0) {
           tempObject.position.set(
@@ -193,6 +215,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     ref.current.geometry.attributes.cubeSideDisplay.needsUpdate = true;
     ref.current.instanceMatrix.needsUpdate = true;
   }, [
+    cellNumberPositionArray,
+    cellNumberTextureAtlasLookup,
     characterPositionArray,
     characterTextureAtlasLookup,
     cubeSideDisplayArray,
@@ -226,6 +250,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.one },
+          borderColor: { value: new Vector4(0, 0, 0, 1) },
+          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -241,6 +267,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.two },
+          borderColor: { value: new Vector4(0, 0, 0, 1) },
+          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -256,6 +284,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.three },
+          borderColor: { value: new Vector4(0, 0, 0, 1) },
+          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -271,6 +301,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.four },
+          borderColor: { value: new Vector4(0, 0, 0, 1) },
+          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -286,6 +318,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.five },
+          borderColor: { value: new Vector4(0, 0, 0, 1) },
+          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
@@ -301,6 +335,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.six },
+          borderColor: { value: new Vector4(0, 0, 0, 1) },
+          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
