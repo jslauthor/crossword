@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
@@ -116,6 +116,9 @@ type LetterBoxesProps = {
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
+const DEFAULT_COLOR = 0x708d91;
+const DEFAULT_SELECTED_COLOR = 0xd31996;
+const DEFAULT_SELECTED_ROW_COLOR = 0x19dd89;
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzleData,
@@ -125,6 +128,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onSelected,
 }) => {
   const ref = useRef<InstancedMesh | null>(null);
+  const [selected, setSelected] = useState<InstancedMesh['id']>();
+  const [hovered, setHovered] = useState<InstancedMesh['id']>();
+  const [prevHover, setPrevHovered] = useState<InstancedMesh['id']>();
+  const [prevSelected, setPrevSelected] = useState<InstancedMesh['id']>();
 
   const [record, size] = useMemo(() => {
     const record = getCharacterRecord(puzzleData);
@@ -151,7 +158,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       Float32Array.from(
         new Array(size * 3)
           .fill(0)
-          .flatMap(() => tempColor.set(0xcc0a95).toArray())
+          .flatMap(() => tempColor.set(DEFAULT_COLOR).toArray())
       ),
     [size]
   );
@@ -240,10 +247,20 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     record.solution,
   ]);
 
-  // useFrame((state) => {
-  //   if (ref?.current == null) return;
-  //   ref.current.geometry.attributes.characterPosition.needsUpdate = true;
-  // });
+  useFrame((state) => {
+    if (ref.current == null) return;
+    for (let id = 0; id < record.solution.length; id++) {
+      if (prevHover !== hovered && prevSelected !== selected) {
+        (id === hovered || id === selected
+          ? tempColor.set(DEFAULT_SELECTED_COLOR)
+          : tempColor.set(DEFAULT_COLOR)
+        ).toArray(cellColorsArray, id * 3);
+        setPrevHovered(id === hovered ? id : undefined);
+        setPrevSelected(id === selected ? id : undefined);
+        ref.current.geometry.attributes.cellColor.needsUpdate = true;
+      }
+    }
+  });
 
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {
@@ -359,11 +376,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     <instancedMesh
       ref={ref}
       args={[undefined, undefined, size]}
-      onPointerMove={(e) => (
-        e.stopPropagation(), onHovered && onHovered(e.instanceId)
-      )}
-      onPointerOut={() => onHovered && onHovered(undefined)}
-      onPointerDown={(e) => onSelected && onSelected(e.instanceId)}
+      onPointerMove={(e) => (e.stopPropagation(), setHovered(e.instanceId))}
+      onPointerOut={() => setHovered(undefined)}
+      onPointerDown={(e) => (e.stopPropagation(), setSelected(e.instanceId))}
       material={[side0, side1, side2, side3, side4, side5]}
     >
       <boxGeometry args={[1, 1, 1]}>
