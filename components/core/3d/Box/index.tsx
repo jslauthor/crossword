@@ -29,11 +29,13 @@ const vertexShader = `
   attribute vec2 characterPosition;
   attribute vec2 cellNumberPosition;
   attribute vec2 cubeSideDisplay;
+  attribute vec3 cellColor;
 
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
   varying vec2 vCubeSideDisplay;
+  varying vec3 vCellColor;
 
   void main()
   {
@@ -41,6 +43,7 @@ const vertexShader = `
       vCharacterPosition = characterPosition;
       vCellNumberPosition = cellNumberPosition;
       vCubeSideDisplay = cubeSideDisplay;
+      vCellColor = cellColor;
   }
 `;
 
@@ -59,10 +62,11 @@ const fragmentShader = `
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
   varying vec2 vCubeSideDisplay;
+  varying vec3 vCellColor;
 
   void main(void)
   {
-    vec3 c = diffuse.rgb;
+    vec3 c = vCellColor.rgb;
     
     // Here we paint all of our textures
 
@@ -76,6 +80,7 @@ const fragmentShader = `
           c = borderColor.rgb * borderColor.a + c.rgb * (1.0 - borderColor.a);  // blending equation
       }
 
+      // Draw the letter
       // A coord of -1, -1 means do not paint
       if (vCharacterPosition.x >= 0.0 && vCharacterPosition.y >= 0.0) {
         vec2 position = vec2(vCharacterPosition.x/6.0, -(vCharacterPosition.y/6.0 + 1.0/6.0));
@@ -85,6 +90,7 @@ const fragmentShader = `
         c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
       }
 
+      // Draw the cell number
       // A coord of -1, -1 means do not paint
       if (vCellNumberPosition.x >= 0.0 && vCellNumberPosition.y >= 0.0) {
         vec2 position = vec2(vCellNumberPosition.x/31.0, -(vCellNumberPosition.y/31.0 + 1.0/31.0));
@@ -137,6 +143,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const cubeSideDisplayArray = useMemo(
     () => Float32Array.from(new Array(size * 2).fill(0)),
+    [size]
+  );
+
+  const cellColorsArray = useMemo(
+    () =>
+      Float32Array.from(
+        new Array(size * 3)
+          .fill(0)
+          .flatMap(() => tempColor.set(0xcc0a95).toArray())
+      ),
     [size]
   );
 
@@ -255,7 +271,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
-        color: '#cc0a95',
       }),
     [characterTextureAtlas, numberTextureAtlas]
   );
@@ -272,7 +287,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
-        color: '#cc0a95',
       }),
     [characterTextureAtlas, numberTextureAtlas]
   );
@@ -289,7 +303,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
-        color: '#cc0a95',
       }),
     [characterTextureAtlas, numberTextureAtlas]
   );
@@ -306,7 +319,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
-        color: '#cc0a95',
       }),
     [characterTextureAtlas, numberTextureAtlas]
   );
@@ -323,7 +335,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
-        color: '#cc0a95',
       }),
     [characterTextureAtlas, numberTextureAtlas]
   );
@@ -340,7 +351,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
         },
-        color: '#cc0a95',
       }),
     [characterTextureAtlas, numberTextureAtlas]
   );
@@ -374,6 +384,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           count={cubeSideDisplayArray.length}
           itemSize={2}
           array={cubeSideDisplayArray}
+        />
+        <instancedBufferAttribute
+          attach="attributes-cellColor"
+          count={cellColorsArray.length}
+          itemSize={3}
+          array={cellColorsArray}
         />
       </boxGeometry>
     </instancedMesh>

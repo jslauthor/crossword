@@ -34,16 +34,11 @@ export default function Puzzle({
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
   const router = useRouter();
-  // const { slug } = router.query;
 
-  // TODO: Switch rendering to use the character record
-  // TODO: Map correct cell numbers to cells (need to update data structure?)
   // TODO: Add cell selection with bg color change
   // TODO: When selecting a cell, change bg for all letters in word
-  // TODO: Create separate answer record and show in grid on letter
-  // TODO: Create buttons to orient to a new face
+  // TODO: Create buttons to orient to a new side
   // TODO: Change color when changing sides
-  // TODO: When selecting a cell, change the color of its word
   // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
   // TODO: Make this multiplayer where different people can work on different sides?
   // TODO: Add top and bottom sides?
