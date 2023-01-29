@@ -35,11 +35,12 @@ export default function Puzzle({
 }: PuzzleProps) {
   const router = useRouter();
 
-  // TODO: Add cell selection with bg color change
   // TODO: When selecting a cell, change bg for all letters in word
   // TODO: Create buttons to orient to a new side
-  // TODO: Change color when changing sides
+  // TODO: Add swipe gesture to change sides
+  // TODO: Lock camera when playing to front view only
   // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
+  // TODO: Change color when changing sides?
   // TODO: Make this multiplayer where different people can work on different sides?
   // TODO: Add top and bottom sides?
   // TODO: When you complete a side, animate it and change the color

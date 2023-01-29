@@ -1,5 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { ThreeEvent, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
   RepeatWrapping,
@@ -118,7 +124,7 @@ const tempObject = new Object3D();
 const tempColor = new Color();
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
-const DEFAULT_SELECTED_ROW_COLOR = 0x19dd89;
+const DEFAULT_SELECTED_ADJACENT_COLOR = 0x19dd89;
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzleData,
@@ -128,10 +134,18 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onSelected,
 }) => {
   const ref = useRef<InstancedMesh | null>(null);
+  const [orientation, setOrientation] = useState<boolean>(true);
+  const [prevOrientation, setPrevOrientation] = useState<boolean>(true);
   const [selected, setSelected] = useState<InstancedMesh['id']>();
   const [hovered, setHovered] = useState<InstancedMesh['id']>();
   const [prevHover, setPrevHovered] = useState<InstancedMesh['id']>();
   const [prevSelected, setPrevSelected] = useState<InstancedMesh['id']>();
+
+  const [width, height, totalPerSide] = useMemo(() => {
+    let { width, height } = puzzleData[0].dimensions;
+    const totalPerSide = width * height;
+    return [width, height, totalPerSide];
+  }, []);
 
   const [record, size] = useMemo(() => {
     const record = getCharacterRecord(puzzleData);
@@ -166,8 +180,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   // Initial setup (orient the instanced boxes)
   useEffect(() => {
     if (ref.current == null) return;
-    let { width, height } = puzzleData[0].dimensions;
-    const totalPerSide = width * height;
     for (let j = 0; j < record.solution.length; j++) {
       const cell = record.solution[j];
       if (cell !== '#') {
@@ -243,20 +255,68 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     characterPositionArray,
     characterTextureAtlasLookup,
     cubeSideDisplayArray,
+    height,
     puzzleData,
     record.solution,
+    totalPerSide,
+    width,
   ]);
 
   useFrame((state) => {
     if (ref.current == null) return;
     for (let id = 0; id < record.solution.length; id++) {
-      if (prevHover !== hovered && prevSelected !== selected) {
+      if (
+        prevHover !== hovered ||
+        prevSelected !== selected ||
+        prevOrientation !== orientation
+      ) {
         (id === hovered || id === selected
           ? tempColor.set(DEFAULT_SELECTED_COLOR)
           : tempColor.set(DEFAULT_COLOR)
         ).toArray(cellColorsArray, id * 3);
-        setPrevHovered(id === hovered ? id : undefined);
-        setPrevSelected(id === selected ? id : undefined);
+
+        // Store the prev so we can avoid this calculation next time
+        setPrevHovered(hovered);
+        setPrevSelected(selected);
+
+        // TODO: Fix selecting first cell for rows
+        // TODO: Fix double clicking (chance to single click)
+        // TODO: Do not select other sides (filter them out)
+
+        // Change the color of surrounding cells
+        if (selected != null) {
+          const interval = orientation ? width : 1;
+          for (
+            let adjacentId = selected - interval;
+            adjacentId > 0 && adjacentId <= size;
+            adjacentId -= interval
+          ) {
+            const cell = record.solution[adjacentId];
+            if (cell === '#') {
+              break;
+            } else {
+              tempColor
+                .set(DEFAULT_SELECTED_ADJACENT_COLOR)
+                .toArray(cellColorsArray, adjacentId * 3);
+            }
+          }
+          for (
+            let adjacentId = selected + interval;
+            adjacentId > 0 && adjacentId <= size;
+            adjacentId += interval
+          ) {
+            const cell = record.solution[adjacentId];
+            if (cell === '#') {
+              break;
+            } else {
+              tempColor
+                .set(DEFAULT_SELECTED_ADJACENT_COLOR)
+                .toArray(cellColorsArray, adjacentId * 3);
+            }
+          }
+          setPrevOrientation(orientation);
+        }
+
         ref.current.geometry.attributes.cellColor.needsUpdate = true;
       }
     }
@@ -372,13 +432,33 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [characterTextureAtlas, numberTextureAtlas]
   );
 
+  const onPointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    setHovered(e.instanceId);
+  }, []);
+
+  const onPointerOut = useCallback(() => setHovered(undefined), []);
+
+  const onPointerDown = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      if (e.instanceId === selected) {
+        console.log('yay!');
+        setOrientation(!orientation);
+      }
+
+      e.stopPropagation();
+      setSelected(e.instanceId);
+    },
+    [orientation, selected]
+  );
+
   return (
     <instancedMesh
       ref={ref}
       args={[undefined, undefined, size]}
-      onPointerMove={(e) => (e.stopPropagation(), setHovered(e.instanceId))}
-      onPointerOut={() => setHovered(undefined)}
-      onPointerDown={(e) => (e.stopPropagation(), setSelected(e.instanceId))}
+      onPointerMove={onPointerMove}
+      onPointerOut={onPointerOut}
+      onPointerDown={onPointerDown}
       material={[side0, side1, side2, side3, side4, side5]}
     >
       <boxGeometry args={[1, 1, 1]}>
