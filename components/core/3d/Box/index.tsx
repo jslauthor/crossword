@@ -280,17 +280,19 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setPrevSelected(selected);
 
         // TODO: Fix selecting first cell for rows
-        // TODO: Fix double clicking (chance to single click)
         // TODO: Do not select other sides (filter them out)
 
         // Change the color of surrounding cells
         if (selected != null) {
+          const selectedSide = Math.ceil(selected / totalPerSide) - 1;
           const interval = orientation ? width : 1;
           for (
             let adjacentId = selected - interval;
             adjacentId > 0 && adjacentId <= size;
             adjacentId -= interval
           ) {
+            const side = Math.ceil(adjacentId / totalPerSide) - 1;
+            if (side !== selectedSide) continue;
             const cell = record.solution[adjacentId];
             if (cell === '#') {
               break;
@@ -305,6 +307,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             adjacentId > 0 && adjacentId <= size;
             adjacentId += interval
           ) {
+            const side = Math.ceil(adjacentId / totalPerSide) - 1;
+            if (side !== selectedSide) continue;
             const cell = record.solution[adjacentId];
             if (cell === '#') {
               break;
@@ -314,9 +318,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 .toArray(cellColorsArray, adjacentId * 3);
             }
           }
-          setPrevOrientation(orientation);
         }
 
+        setPrevOrientation(orientation);
         ref.current.geometry.attributes.cellColor.needsUpdate = true;
       }
     }
@@ -442,7 +446,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const onPointerDown = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       if (e.instanceId === selected) {
-        console.log('yay!');
         setOrientation(!orientation);
       }
 

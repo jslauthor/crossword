@@ -39,6 +39,8 @@ export default function Puzzle({
   // TODO: Create buttons to orient to a new side
   // TODO: Add swipe gesture to change sides
   // TODO: Lock camera when playing to front view only
+  // TODO: Run on vercel to test on phone
+  // TODO: Add cool flippy animations
   // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
   // TODO: Change color when changing sides?
   // TODO: Make this multiplayer where different people can work on different sides?
