@@ -15,8 +15,7 @@ import {
   Vector4,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
-import { MeshPhysicalMaterial } from 'three';
-import { InstancedMesh } from 'three';
+import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/matrix';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
@@ -117,6 +116,8 @@ type LetterBoxesProps = {
   puzzleData: PuzzleData[];
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
+  setInstancedMesh: (instancedMesh: InstancedMesh | null) => void;
+  selectedSide: number;
   onHovered?: (e: number | undefined) => void;
   onSelected?: (e: number | undefined) => void;
 };
@@ -130,10 +131,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzleData,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
+  setInstancedMesh,
+  selectedSide,
   onHovered,
   onSelected,
 }) => {
-  const ref = useRef<InstancedMesh | null>(null);
+  const [ref, setRef] = useState<InstancedMesh | null>(null);
   const [orientation, setOrientation] = useState<boolean>(true);
   const [prevOrientation, setPrevOrientation] = useState<boolean>(true);
   const [selected, setSelected] = useState<InstancedMesh['id']>();
@@ -141,11 +144,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [prevHover, setPrevHovered] = useState<InstancedMesh['id']>();
   const [prevSelected, setPrevSelected] = useState<InstancedMesh['id']>();
 
+  useEffect(() => {
+    console.log(ref);
+    setInstancedMesh(ref);
+  }, [ref, setInstancedMesh]);
+
   const [width, height, totalPerSide] = useMemo(() => {
     let { width, height } = puzzleData[0].dimensions;
     const totalPerSide = width * height;
     return [width, height, totalPerSide];
-  }, []);
+  }, [puzzleData]);
 
   const [record, size] = useMemo(() => {
     const record = getCharacterRecord(puzzleData);
@@ -179,7 +187,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   // Initial setup (orient the instanced boxes)
   useEffect(() => {
-    if (ref.current == null) return;
+    if (ref == null) return;
     for (let j = 0; j < record.solution.length; j++) {
       const cell = record.solution[j];
       if (cell !== '#') {
@@ -243,13 +251,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         tempObject.scale.set(0, 0, 0);
       }
       tempObject.updateMatrix();
-      ref.current.setMatrixAt(j, tempObject.matrix);
+      ref.setMatrixAt(j, tempObject.matrix);
     }
-    ref.current.geometry.attributes.characterPosition.needsUpdate = true;
-    ref.current.geometry.attributes.cellNumberPosition.needsUpdate = true;
-    ref.current.geometry.attributes.cubeSideDisplay.needsUpdate = true;
-    ref.current.instanceMatrix.needsUpdate = true;
+    ref.geometry.attributes.characterPosition.needsUpdate = true;
+    ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
+    ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
+    ref.instanceMatrix.needsUpdate = true;
   }, [
+    ref,
     cellNumberPositionArray,
     cellNumberTextureAtlasLookup,
     characterPositionArray,
@@ -263,7 +272,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   ]);
 
   useFrame((state) => {
-    if (ref.current == null) return;
+    if (ref == null) return;
     for (let id = 0; id < record.solution.length; id++) {
       if (
         prevHover !== hovered ||
@@ -279,16 +288,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setPrevHovered(hovered);
         setPrevSelected(selected);
 
+        // TODO: Add selected side and ability to changes sides. Then use the selectede side to
+        // create a range for selection below
         // TODO: Fix selecting first cell for rows
-        // TODO: Do not select other sides (filter them out)
-
         // Change the color of surrounding cells
         if (selected != null) {
           const selectedSide = Math.ceil(selected / totalPerSide) - 1;
           const interval = orientation ? width : 1;
           for (
             let adjacentId = selected - interval;
-            adjacentId > 0 && adjacentId <= size;
+            adjacentId > 0;
             adjacentId -= interval
           ) {
             const side = Math.ceil(adjacentId / totalPerSide) - 1;
@@ -304,7 +313,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
           for (
             let adjacentId = selected + interval;
-            adjacentId > 0 && adjacentId <= size;
+            adjacentId <= size;
             adjacentId += interval
           ) {
             const side = Math.ceil(adjacentId / totalPerSide) - 1;
@@ -321,10 +330,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         }
 
         setPrevOrientation(orientation);
-        ref.current.geometry.attributes.cellColor.needsUpdate = true;
+        ref.geometry.attributes.cellColor.needsUpdate = true;
       }
     }
   });
+
+  // console.log('!!', selected, (selected ?? 1) % width);
 
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {
@@ -457,7 +468,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   return (
     <instancedMesh
-      ref={ref}
+      ref={setRef}
       args={[undefined, undefined, size]}
       onPointerMove={onPointerMove}
       onPointerOut={onPointerOut}
