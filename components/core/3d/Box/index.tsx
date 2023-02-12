@@ -17,7 +17,7 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { PuzzleData } from '../../../../types/types';
-import { rotateAroundPoint } from '../../../../lib/utils/matrix';
+import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 import { randomIntFromInterval } from '../../../../lib/utils/math';
 
@@ -474,6 +474,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       onPointerOut={onPointerOut}
       onPointerDown={onPointerDown}
       material={[side0, side1, side2, side3, side4, side5]}
+      sca
     >
       <boxGeometry args={[1, 1, 1]}>
         <instancedBufferAttribute

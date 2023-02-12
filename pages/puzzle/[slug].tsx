@@ -17,11 +17,11 @@ import {
   TEXTURE_RECORD,
 } from '../../lib/utils/textures';
 import { useMemo, useState } from 'react';
-import { Box3, Camera, Vector3, Mesh } from 'three';
 import type {
   OrthographicCamera as OrthographicCameraType,
   InstancedMesh as InstancedMeshType,
 } from 'three';
+import { getObjectSize } from '../../lib/utils/three';
 
 const Container = styled.div`
   position: relative;
@@ -30,117 +30,10 @@ const Container = styled.div`
   touch-action: none;
 `;
 
-const RedDot1 = styled.div`
-  background-color: red;
-  width: 5px;
-  height: 5px;
-  position: absolute;
-  left: 208px;
-  top: 187px;
-`;
-const RedDot2 = styled.div`
-  background-color: red;
-  width: 5px;
-  height: 5px;
-  position: absolute;
-  left: 559px;
-  top: 537px;
-`;
-
 type PuzzleProps = {
   puzzleData: PuzzleData[];
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
-};
-
-const computeBoxForObject = function (object: Mesh) {
-  const tempVector = new Vector3();
-  const tempBox = new Box3();
-  const box = new Box3();
-
-  // Computes the world-axis-aligned bounding box of an object (including its children),
-  // accounting for both the object's, and children's, world transforms
-
-  object.updateWorldMatrix(false, false);
-
-  var geometry = object.geometry;
-
-  if (geometry !== undefined) {
-    if (geometry.boundingBox === null) {
-      geometry.computeBoundingBox();
-    }
-
-    // @ts-ignore
-    if (object.isInstancedMesh) {
-      console.log('hi');
-      var matrixWorld = object.matrixWorld,
-        // @ts-ignore
-        matrix4Array = object.instanceMatrix.array,
-        arrayLength = matrix4Array.length;
-      for (var posOffset = 12; posOffset < arrayLength; posOffset += 16) {
-        tempVector.set(
-          matrix4Array[posOffset],
-          matrix4Array[1 + posOffset],
-          matrix4Array[2 + posOffset]
-        );
-        tempBox.expandByPoint(tempVector);
-      }
-    } else if (geometry.boundingBox != null) {
-      tempBox.copy(geometry.boundingBox);
-    }
-    tempBox.applyMatrix4(object.matrixWorld);
-
-    box.expandByPoint(tempBox.min);
-    box.expandByPoint(tempBox.max);
-  }
-
-  var children = object.children;
-
-  for (var i = 0, l = children.length; i < l; i++) {
-    box.expandByObject(children[i]);
-  }
-
-  return box;
-};
-
-// TODO: Use this to get actual size of puzzle
-// https://github.com/mrdoob/three.js/issues/18643
-
-const getObjectSizeInViewSpace = (
-  object: InstancedMeshType,
-  camera: Camera
-) => {
-  const box = computeBoxForObject(object);
-  const objectWidth = box.max.x - box.min.x;
-  const objectHeight = box.max.y - box.min.y;
-
-  console.log('expand', objectWidth, objectHeight);
-
-  // Get 3D positions of top left corner (assuming they're not rotated)
-  const topLeft = new Vector3(
-    object.position.x - objectWidth / 2,
-    object.position.y + objectHeight / 2,
-    object.position.z
-  );
-  const bottomRight = new Vector3(
-    object.position.x + objectWidth / 2,
-    object.position.y - objectHeight / 2,
-    object.position.z
-  );
-
-  // This converts x, y, z to the [-1, 1] range
-  topLeft.project(camera);
-  bottomRight.project(camera);
-
-  // This converts from [-1, 1] to [0, windowWidth]
-  const topLeftX = ((1 + topLeft.x) / 2) * window.innerWidth;
-  const topLeftY = ((1 - topLeft.y) / 2) * window.innerHeight;
-
-  const bottomRightX = ((1 + bottomRight.x) / 2) * window.innerWidth;
-  const bottomRightY = ((1 - bottomRight.y) / 2) * window.innerHeight;
-
-  console.log(topLeftX, topLeftY, bottomRightX, bottomRightY);
-  console.log((1 + topLeft.x) / 2, window.innerWidth);
 };
 
 export default function Puzzle({
@@ -158,9 +51,8 @@ export default function Puzzle({
     if (cameraRef == null || instancedRef == null) {
       return 1;
     }
-
-    // https://gist.github.com/ayamflow/462190f13eeef04f01cb
-    getObjectSizeInViewSpace(instancedRef, cameraRef);
+    const { width } = getObjectSize(instancedRef, cameraRef);
+    return Math.min(window.innerWidth - 100, 500) / width;
   }, [cameraRef, instancedRef]);
 
   // TODO: The Puzzle Grid should resize to the viewport
@@ -185,12 +77,15 @@ export default function Puzzle({
           zoom={50}
           near={1}
           far={2000}
-          position={[0, -3, 200]}
+          position={[0, 0, 200]}
         />
         <ambientLight />
-        <pointLight position={[5, 5, 5]} />
+        <pointLight position={[5, 5, 5]} intensity={1.5} />
         <PresentationControls global>
-          <group position={[-3.5, -3.5, 3.5]}>
+          <group
+            position={[-3.5 * scale, -5, 3.5 * scale]}
+            scale={[scale, scale, scale]}
+          >
             <LetterBoxes
               setInstancedMesh={setInstancedMesh}
               puzzleData={puzzleData}
@@ -202,8 +97,6 @@ export default function Puzzle({
         </PresentationControls>
       </Canvas>
       <Stats />
-      <RedDot1 />
-      <RedDot2 />
     </Container>
   );
 }
