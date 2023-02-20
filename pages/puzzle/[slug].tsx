@@ -23,6 +23,13 @@ import type {
 } from 'three';
 import { getObjectSize } from '../../lib/utils/three';
 
+const ButtonContainer = styled.div`
+  position: absolute;
+  display: flex;
+  top: 0px;
+  right: 0px;
+`;
+
 const Container = styled.div`
   position: relative;
   width: 100vw;
@@ -44,7 +51,7 @@ export default function Puzzle({
   const router = useRouter();
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
-  const [selectedSide, setSelectedSide] = useState(0);
+  const [selectedSide, setSelectedSide] = useState(2);
   const [containerRef, { width, height }] = useElementSize();
 
   const scale = useMemo(() => {
@@ -55,9 +62,7 @@ export default function Puzzle({
     return Math.min(window.innerWidth - 100, 500) / width;
   }, [cameraRef, instancedRef]);
 
-  // TODO: The Puzzle Grid should resize to the viewport
   // TODO: When selecting a cell, change bg for all letters in word
-  // TODO: Create buttons to orient to a new side
   // TODO: Add swipe gesture to change sides
   // TODO: Lock camera when playing to front view only
   // TODO: Run on vercel to test on phone
@@ -81,7 +86,11 @@ export default function Puzzle({
         />
         <ambientLight />
         <pointLight position={[5, 5, 5]} intensity={1.5} />
-        <PresentationControls global>
+        <PresentationControls
+          global
+          // enabled={false}
+          rotation={[0, Math.PI * (selectedSide / 2), 0]}
+        >
           <group
             position={[-3.5 * scale, -5, 3.5 * scale]}
             scale={[scale, scale, scale]}
@@ -91,12 +100,17 @@ export default function Puzzle({
               puzzleData={puzzleData}
               characterTextureAtlasLookup={characterTextureAtlasLookup}
               cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
-              selectedSide={selectedSide}
+              // Subtracting 2 to match the puzzle's selected cell side algorithm
+              selectedSide={Math.abs((selectedSide - 2) % 4)}
             />
           </group>
         </PresentationControls>
       </Canvas>
       <Stats />
+      <ButtonContainer>
+        <button onClick={() => setSelectedSide(selectedSide + 1)}>&lt;</button>
+        <button onClick={() => setSelectedSide(selectedSide - 1)}>&gt;</button>
+      </ButtonContainer>
     </Container>
   );
 }
