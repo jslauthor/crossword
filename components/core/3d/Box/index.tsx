@@ -137,7 +137,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onSelected,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
-  const [orientation, setOrientation] = useState<boolean>(true);
+  const [isVerticalOrientation, setVerticalOrientation] =
+    useState<boolean>(true);
   const [prevOrientation, setPrevOrientation] = useState<boolean>(true);
   const [selected, setSelected] = useState<InstancedMesh['id']>();
   const [hovered, setHovered] = useState<InstancedMesh['id']>();
@@ -276,7 +277,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       if (
         prevHover !== hovered ||
         prevSelected !== selected ||
-        prevOrientation !== orientation
+        prevOrientation !== isVerticalOrientation
       ) {
         (id === hovered || id === selected
           ? tempColor.set(DEFAULT_SELECTED_COLOR)
@@ -287,14 +288,34 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setPrevHovered(hovered);
         setPrevSelected(selected);
 
-        // TODO: Add selected side and ability to changes sides. Then use the selectede side to
-        // create a range for selection below
-        // TODO: Fix selecting first cell for rows
         // Change the color of surrounding cells
         if (selected != null) {
-          let interval = orientation ? width : 1;
+          // We need to check if the selected cell is on the same side as the hovered cell in the case of the
+          // first column (which is from the previous side)
+          const sSide = Math.ceil(selected / totalPerSide) - 1;
+          const isSameSide = sSide === selectedSide;
+          const selectedCellX = selected % width;
+          const selectedCellY = Math.max(
+            0,
+            Math.ceil((selected - sSide * totalPerSide) / width) - 1
+          );
+
+          if (
+            isSameSide === false &&
+            // we treat the last row of previous side as the first row of the current side
+            selectedCellX !== width - 1
+          ) {
+            continue;
+          }
+
+          let interval = isVerticalOrientation ? height : 1;
+          const startingId =
+            isVerticalOrientation || isSameSide
+              ? selected
+              : selectedSide * totalPerSide + selectedCellY * height;
+
           for (
-            let adjacentId = selected + interval;
+            let adjacentId = startingId + interval;
             adjacentId <= size;
             adjacentId += interval
           ) {
@@ -312,7 +333,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
           for (
             let adjacentId = selected - interval;
-            adjacentId > -interval;
+            adjacentId > 0;
             adjacentId -= interval
           ) {
             const side = Math.ceil(adjacentId / totalPerSide) - 1;
@@ -350,7 +371,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
 
-        setPrevOrientation(orientation);
+        setPrevOrientation(isVerticalOrientation);
         ref.geometry.attributes.cellColor.needsUpdate = true;
       }
     }
@@ -476,13 +497,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const onPointerDown = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       if (e.instanceId === selected) {
-        setOrientation(!orientation);
+        setVerticalOrientation(!isVerticalOrientation);
       }
 
       e.stopPropagation();
       setSelected(e.instanceId);
     },
-    [orientation, selected]
+    [isVerticalOrientation, selected]
   );
 
   return (
@@ -493,7 +514,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       onPointerOut={onPointerOut}
       onPointerDown={onPointerDown}
       material={[side0, side1, side2, side3, side4, side5]}
-      sca
     >
       <boxGeometry args={[1, 1, 1]}>
         <instancedBufferAttribute

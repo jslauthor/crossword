@@ -62,7 +62,6 @@ export default function Puzzle({
     return Math.min(window.innerWidth - 100, 500) / width;
   }, [cameraRef, instancedRef]);
 
-  // TODO: When selecting a cell, change bg for all letters in word
   // TODO: Add swipe gesture to change sides
   // TODO: Lock camera when playing to front view only
   // TODO: Run on vercel to test on phone
@@ -88,7 +87,7 @@ export default function Puzzle({
         <pointLight position={[5, 5, 5]} intensity={1.5} />
         <PresentationControls
           global
-          // enabled={false}
+          enabled={false}
           rotation={[0, Math.PI * (selectedSide / 2), 0]}
         >
           <group
