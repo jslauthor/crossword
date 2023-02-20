@@ -309,9 +309,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 .toArray(cellColorsArray, adjacentId * 3);
             }
           }
+
           for (
             let adjacentId = selected - interval;
-            adjacentId > 0;
+            adjacentId > -interval;
             adjacentId -= interval
           ) {
             const side = Math.ceil(adjacentId / totalPerSide) - 1;
@@ -319,7 +320,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
             // Since we are dumb, we need to check if we are on the first cell of a row
             // and if it is, we check the previous sides last row for a letter
-            // TODO: This doesn't work for selecting the second cell of the first side
+            // TODO: Remove selection on side change?
             if (x === 0) {
               const int =
                 selectedSide !== 0
