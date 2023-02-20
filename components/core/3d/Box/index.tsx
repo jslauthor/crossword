@@ -145,7 +145,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [prevSelected, setPrevSelected] = useState<InstancedMesh['id']>();
 
   useEffect(() => {
-    console.log(ref);
     setInstancedMesh(ref);
   }, [ref, setInstancedMesh]);
 
@@ -293,24 +292,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         // TODO: Fix selecting first cell for rows
         // Change the color of surrounding cells
         if (selected != null) {
-          const selectedSide = Math.ceil(selected / totalPerSide) - 1;
-          const interval = orientation ? width : 1;
-          for (
-            let adjacentId = selected - interval;
-            adjacentId > 0;
-            adjacentId -= interval
-          ) {
-            const side = Math.ceil(adjacentId / totalPerSide) - 1;
-            if (side !== selectedSide) continue;
-            const cell = record.solution[adjacentId];
-            if (cell === '#') {
-              break;
-            } else {
-              tempColor
-                .set(DEFAULT_SELECTED_ADJACENT_COLOR)
-                .toArray(cellColorsArray, adjacentId * 3);
-            }
-          }
+          let interval = orientation ? width : 1;
           for (
             let adjacentId = selected + interval;
             adjacentId <= size;
@@ -327,6 +309,44 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 .toArray(cellColorsArray, adjacentId * 3);
             }
           }
+          for (
+            let adjacentId = selected - interval;
+            adjacentId > 0;
+            adjacentId -= interval
+          ) {
+            const side = Math.ceil(adjacentId / totalPerSide) - 1;
+            const x = adjacentId % width;
+
+            // Since we are dumb, we need to check if we are on the first cell of a row
+            // and if it is, we check the previous sides last row for a letter
+            // TODO: This doesn't work for selecting the second cell of the first side
+            if (x === 0) {
+              const int =
+                selectedSide !== 0
+                  ? adjacentId - (width * width - (width - 1))
+                  : totalPerSide * puzzleData.length -
+                    1 -
+                    (width * width - width - 1) +
+                    adjacentId -
+                    1;
+              const cell = record.solution[int];
+              if (cell !== '#') {
+                tempColor
+                  .set(DEFAULT_SELECTED_ADJACENT_COLOR)
+                  .toArray(cellColorsArray, int * 3);
+              }
+            }
+            if (side !== selectedSide) continue;
+            const cell = record.solution[adjacentId];
+
+            if (cell === '#') {
+              break;
+            } else {
+              tempColor
+                .set(DEFAULT_SELECTED_ADJACENT_COLOR)
+                .toArray(cellColorsArray, adjacentId * 3);
+            }
+          }
         }
 
         setPrevOrientation(orientation);
@@ -334,9 +354,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     }
   });
-
-  // console.log('!!', selected, (selected ?? 1) % width);
-
+  console.log('!!', selected);
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {
     characterTextureAtlas.wrapS = RepeatWrapping;
