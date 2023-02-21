@@ -151,6 +151,57 @@ const GlobalStyles = () => {
           background-color: var(--primary-bg);
           color: var(--primary-text);
         }
+
+        // React Simple Keyboad Theme
+
+        input {
+          width: 100%;
+          height: 100px;
+          padding: 20px;
+          font-size: 20px;
+          border: none;
+          box-sizing: border-box;
+        }
+
+        .simple-keyboard {
+          max-width: 850px;
+        }
+
+        /*
+          Theme: keyboardTheme
+        */
+        .simple-keyboard.keyboardTheme {
+          background-color: transparent;
+          border-radius: 0;
+          border-bottom-right-radius: 5px;
+          border-bottom-left-radius: 5px;
+        }
+
+        .simple-keyboard.keyboardTheme .hg-button {
+          height: 50px;
+          padding: 20px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          background: #333333;
+          color: white;
+          border: none;
+          flex-grow: unset;
+        }
+
+        .simple-keyboard.keyboardTheme .hg-button:active {
+          background: #1c4995;
+          color: white;
+        }
+
+        .simple-keyboard.keyboardTheme .hg-row {
+          justify-content: center;
+          align-items: center;
+        }
+
+        #root .simple-keyboard.keyboardTheme + .simple-keyboard-preview {
+          background: #1c4995;
+        }
       `}
     />
   );

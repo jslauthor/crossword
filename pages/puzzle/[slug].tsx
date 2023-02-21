@@ -22,6 +22,8 @@ import type {
   InstancedMesh as InstancedMeshType,
 } from 'three';
 import { getObjectSize } from '../../lib/utils/three';
+import Keyboard from 'react-simple-keyboard';
+import 'react-simple-keyboard/build/css/index.css';
 
 const ButtonContainer = styled.div`
   position: absolute;
@@ -62,11 +64,12 @@ export default function Puzzle({
     return Math.min(window.innerWidth - 100, 500) / width;
   }, [cameraRef, instancedRef]);
 
+  // TODO: Update selection when changing sides (drawing works after hovering)
+  // TODO: Add clues
+  // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
   // TODO: Add swipe gesture to change sides
-  // TODO: Lock camera when playing to front view only
   // TODO: Run on vercel to test on phone
   // TODO: Add cool flippy animations
-  // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
   // TODO: Change color when changing sides?
   // TODO: Make this multiplayer where different people can work on different sides?
   // TODO: Add top and bottom sides?
@@ -105,6 +108,24 @@ export default function Puzzle({
           </group>
         </PresentationControls>
       </Canvas>
+      <Keyboard
+        layoutName="default"
+        theme="hg-theme-default keyboardTheme"
+        layout={{
+          default: [
+            'Q W E R T Y U I O P',
+            'A S D F G H J K L',
+            'More Z X C V B N M {bksp}',
+          ],
+          more: [
+            '~ ! @ # $ % ^ &amp; * ( ) _ + {bksp}',
+            '{tab} Q W E R T Y U I O P { } |',
+            '{lock} A S D F G H J K L : " {enter}',
+            '{shift} Z X C V B N M &lt; &gt; ? {shift}',
+            '.com @ {space}',
+          ],
+        }}
+      />
       <Stats />
       <ButtonContainer>
         <button onClick={() => setSelectedSide(selectedSide + 1)}>&lt;</button>

@@ -375,7 +375,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     }
   });
-  console.log('!!', selected);
+
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {
     characterTextureAtlas.wrapS = RepeatWrapping;

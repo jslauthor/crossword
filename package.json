@@ -24,6 +24,7 @@
     "next": "13.0.5",
     "react": "18.2.0",
     "react-dom": "18.2.0",
+    "react-simple-keyboard": "^3.5.27",
     "satori": "^0.2.1",
     "three-custom-shader-material": "^5.0.0",
     "typescript": "4.9.3",
