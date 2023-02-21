@@ -320,7 +320,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             adjacentId += interval
           ) {
             const side = Math.ceil(adjacentId / totalPerSide) - 1;
-            if (side !== selectedSide) continue;
+            if (isVerticalOrientation && side !== sSide) continue;
             const cell = record.solution[adjacentId];
             if (cell === '#') {
               break;
@@ -333,15 +333,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
           for (
             let adjacentId = selected - interval;
-            adjacentId > 0;
+            adjacentId > -interval;
             adjacentId -= interval
           ) {
-            const side = Math.ceil(adjacentId / totalPerSide) - 1;
             const x = adjacentId % width;
 
-            // Since we are dumb, we need to check if we are on the first cell of a row
+            // We need to check if we are on the first cell of a row
             // and if it is, we check the previous sides last row for a letter
-            // TODO: Remove selection on side change?
             if (x === 0) {
               const int =
                 selectedSide !== 0
@@ -358,7 +356,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                   .toArray(cellColorsArray, int * 3);
               }
             }
-            if (side !== selectedSide) continue;
+            const side = Math.ceil(adjacentId / totalPerSide) - 1;
+            if (isVerticalOrientation && side !== sSide) continue;
             const cell = record.solution[adjacentId];
 
             if (cell === '#') {
