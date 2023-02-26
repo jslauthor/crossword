@@ -116,10 +116,12 @@ type LetterBoxesProps = {
   puzzleData: PuzzleData[];
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
+  currentKey?: string | undefined;
   setInstancedMesh: (instancedMesh: InstancedMesh | null) => void;
   selectedSide: number;
   onHovered?: (e: number | undefined) => void;
   onSelected?: (e: number | undefined) => void;
+  onLetterInput?: () => void;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -133,8 +135,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   cellNumberTextureAtlasLookup,
   setInstancedMesh,
   selectedSide,
+  currentKey,
   onHovered,
   onSelected,
+  onLetterInput,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   const [isVerticalOrientation, setVerticalOrientation] =
@@ -199,11 +203,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
         cubeSideDisplayArray[j * 2] =
           CubeSidesEnum.six | (j % width === width - 1 ? CubeSidesEnum.two : 0);
-
-        characterPositionArray[j * 2] =
-          characterTextureAtlasLookup[cell.value][0];
-        characterPositionArray[j * 2 + 1] =
-          characterTextureAtlasLookup[cell.value][1];
 
         if (typeof cell.cell === 'number') {
           cellNumberPositionArray[j * 2] =
@@ -375,6 +374,32 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     }
   });
+
+  useEffect(() => {
+    if (selected != null && ref != null && currentKey != null) {
+      const x =
+        currentKey === '' ? -1 : characterTextureAtlasLookup[currentKey][0];
+      const y =
+        currentKey === '' ? -1 : characterTextureAtlasLookup[currentKey][1];
+
+      characterPositionArray[selected * 2] = x;
+      characterPositionArray[selected * 2 + 1] = y;
+
+      ref.geometry.attributes.characterPosition.needsUpdate = true;
+
+      if (onLetterInput) {
+        onLetterInput();
+      }
+    }
+  }, [
+    characterPositionArray,
+    characterTextureAtlasLookup,
+    currentKey,
+    onLetterInput,
+    record.solution,
+    ref,
+    selected,
+  ]);
 
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {

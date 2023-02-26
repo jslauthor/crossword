@@ -16,7 +16,7 @@ import {
   NUMBER_RECORD,
   TEXTURE_RECORD,
 } from '../../lib/utils/textures';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type {
   OrthographicCamera as OrthographicCameraType,
   InstancedMesh as InstancedMeshType,
@@ -63,16 +63,33 @@ export default function Puzzle({
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
   const [selectedSide, setSelectedSide] = useState(2);
   const [containerRef, { width, height }] = useElementSize();
+  const [selectedCharacter, setSelectedCharacter] = useState<
+    string | undefined
+  >();
 
   const scale = useMemo(() => {
     if (cameraRef == null || instancedRef == null) {
       return 1;
     }
     const { width } = getObjectSize(instancedRef, cameraRef);
-    return Math.min(window.innerWidth - 100, 500) / width;
+    return Math.min(window.innerWidth - 100, 550) / width;
   }, [cameraRef, instancedRef]);
 
-  // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
+  const onKeyPress = useCallback((button: string) => {
+    if (button != 'MORE') {
+      setSelectedCharacter(button === '{bksp}' ? '' : button);
+    }
+  }, []);
+
+  // When the letter changes inside of the LetterBoxes
+  // we want to reset the selected character so that
+  // it doesn't apply to other cells
+  const onLetterInput = useCallback(() => {
+    setSelectedCharacter(undefined);
+  }, []);
+
+  // TODO: Add actual keyboard to enter letters
+  // TODO: Successive letters should fill in the word
   // TODO: Update selection when changing sides (drawing works after hovering)
   // TODO: Add clues
   // TODO: Add swipe gesture to change sides
@@ -102,7 +119,7 @@ export default function Puzzle({
           rotation={[0, Math.PI * (selectedSide / 2), 0]}
         >
           <group
-            position={[-3.5 * scale, -5, 3.5 * scale]}
+            position={[-3.5 * scale, -4, 3.5 * scale]}
             scale={[scale, scale, scale]}
           >
             <LetterBoxes
@@ -112,6 +129,8 @@ export default function Puzzle({
               cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
               // Subtracting 2 to match the puzzle's selected cell side algorithm
               selectedSide={Math.abs((selectedSide - 2) % 4)}
+              currentKey={selectedCharacter}
+              onLetterInput={onLetterInput}
             />
           </group>
         </PresentationControls>
@@ -120,6 +139,7 @@ export default function Puzzle({
         <Keyboard
           layoutName="default"
           theme="hg-theme-default keyboardTheme"
+          onKeyPress={onKeyPress}
           mergeDisplay
           display={{
             '{bksp}': '⌫',
