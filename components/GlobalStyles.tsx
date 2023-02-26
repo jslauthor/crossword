@@ -164,7 +164,20 @@ const GlobalStyles = () => {
         }
 
         .simple-keyboard {
-          max-width: 850px;
+          max-width: 500px;
+          margin: 0 auto;
+        }
+
+        .more-button {
+          font-size: 0.75rem;
+          padding-left: 5px !important;
+          padding-right: 5px !important;
+        }
+
+        .spacer-button {
+          background-color: transparent !important;
+          width: 100% !important;
+          max-width: 20px !important;
         }
 
         /*
@@ -178,8 +191,9 @@ const GlobalStyles = () => {
         }
 
         .simple-keyboard.keyboardTheme .hg-button {
-          height: 50px;
-          padding: 20px;
+          height: 60px;
+          width: 100%;
+          max-width: 100%;
           display: flex;
           justify-content: center;
           align-items: center;
@@ -197,6 +211,8 @@ const GlobalStyles = () => {
         .simple-keyboard.keyboardTheme .hg-row {
           justify-content: center;
           align-items: center;
+          touch-action: manipulation;
+          margin: 0.25rem;
         }
 
         #root .simple-keyboard.keyboardTheme + .simple-keyboard-preview {

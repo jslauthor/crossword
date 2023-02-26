@@ -37,6 +37,14 @@ const Container = styled.div`
   width: 100vw;
   height: 100vh;
   touch-action: none;
+  display: flex;
+  flex-direction: column;
+`;
+
+const KeyboardContainer = styled.div`
+  width: 100%;
+  height: max-content;
+  position: relative;
 `;
 
 type PuzzleProps = {
@@ -64,9 +72,9 @@ export default function Puzzle({
     return Math.min(window.innerWidth - 100, 500) / width;
   }, [cameraRef, instancedRef]);
 
+  // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
   // TODO: Update selection when changing sides (drawing works after hovering)
   // TODO: Add clues
-  // TODO: Add a keyboard: https://www.npmjs.com/package/react-simple-keyboard
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone
   // TODO: Add cool flippy animations
@@ -108,24 +116,41 @@ export default function Puzzle({
           </group>
         </PresentationControls>
       </Canvas>
-      <Keyboard
-        layoutName="default"
-        theme="hg-theme-default keyboardTheme"
-        layout={{
-          default: [
-            'Q W E R T Y U I O P',
-            'A S D F G H J K L',
-            'More Z X C V B N M {bksp}',
-          ],
-          more: [
-            '~ ! @ # $ % ^ &amp; * ( ) _ + {bksp}',
-            '{tab} Q W E R T Y U I O P { } |',
-            '{lock} A S D F G H J K L : " {enter}',
-            '{shift} Z X C V B N M &lt; &gt; ? {shift}',
-            '.com @ {space}',
-          ],
-        }}
-      />
+      <KeyboardContainer>
+        <Keyboard
+          layoutName="default"
+          theme="hg-theme-default keyboardTheme"
+          mergeDisplay
+          display={{
+            '{bksp}': '⌫',
+            '{sp}': ' ',
+          }}
+          buttonTheme={[
+            {
+              class: 'more-button',
+              buttons: 'MORE',
+            },
+            {
+              class: 'spacer-button',
+              buttons: '{sp}',
+            },
+          ]}
+          layout={{
+            default: [
+              'Q W E R T Y U I O P',
+              '{sp} A S D F G H J K L {sp}',
+              'MORE Z X C V B N M {bksp}',
+            ],
+            more: [
+              '~ ! @ # $ % ^ &amp; * ( ) _ + {bksp}',
+              '{tab} Q W E R T Y U I O P { } |',
+              '{lock} A S D F G H J K L : " {enter}',
+              '{shift} Z X C V B N M &lt; &gt; ? {shift}',
+              '.com @ {space}',
+            ],
+          }}
+        />
+      </KeyboardContainer>
       <Stats />
       <ButtonContainer>
         <button onClick={() => setSelectedSide(selectedSide + 1)}>&lt;</button>
