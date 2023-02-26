@@ -20,6 +20,19 @@ import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 import { randomIntFromInterval } from '../../../../lib/utils/math';
+import { useKeyDown } from '../../../../lib/utils/hooks/useKeyDown';
+
+const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
+for (let x = 0; x < 10; x++) {
+  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
+}
+for (let x = 0; x <= 25; x++) {
+  SUPPORTED_KEYBOARD_CHARACTERS.push(String.fromCharCode(65 + x));
+}
+for (let x = 0; x <= 1000; x++) {
+  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
+}
+SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 
 enum CubeSidesEnum {
   one = 1 << 0,
@@ -375,31 +388,57 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   });
 
-  useEffect(() => {
-    if (selected != null && ref != null && currentKey != null) {
-      const x =
-        currentKey === '' ? -1 : characterTextureAtlasLookup[currentKey][0];
-      const y =
-        currentKey === '' ? -1 : characterTextureAtlasLookup[currentKey][1];
+  const onLetterChange = useCallback(
+    (key: string) => {
+      console.log(key);
+      if (selected != null && ref != null) {
+        const x =
+          key === '' || key === 'BACKSPACE'
+            ? -1
+            : characterTextureAtlasLookup[key.toUpperCase()][0];
+        const y =
+          key === '' || key === 'BACKSPACE'
+            ? -1
+            : characterTextureAtlasLookup[key.toUpperCase()][1];
 
-      characterPositionArray[selected * 2] = x;
-      characterPositionArray[selected * 2 + 1] = y;
+        characterPositionArray[selected * 2] = x;
+        characterPositionArray[selected * 2 + 1] = y;
 
-      ref.geometry.attributes.characterPosition.needsUpdate = true;
+        ref.geometry.attributes.characterPosition.needsUpdate = true;
 
-      if (onLetterInput) {
-        onLetterInput();
+        if (onLetterInput) {
+          onLetterInput();
+        }
       }
+    },
+    [
+      characterPositionArray,
+      characterTextureAtlasLookup,
+      onLetterInput,
+      ref,
+      selected,
+    ]
+  );
+
+  /**
+   * Handle incoming letter input
+   */
+  useEffect(() => {
+    if (currentKey != null) {
+      onLetterChange(currentKey);
     }
   }, [
     characterPositionArray,
     characterTextureAtlasLookup,
     currentKey,
+    onLetterChange,
     onLetterInput,
     record.solution,
     ref,
     selected,
   ]);
+
+  useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
 
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {
