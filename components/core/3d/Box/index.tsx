@@ -161,6 +161,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [hovered, setHovered] = useState<InstancedMesh['id']>();
   const [prevHover, setPrevHovered] = useState<InstancedMesh['id']>();
   const [prevSelected, setPrevSelected] = useState<InstancedMesh['id']>();
+  const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
 
   useEffect(() => {
     setInstancedMesh(ref);
@@ -200,6 +201,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           .flatMap(() => tempColor.set(DEFAULT_COLOR).toArray())
       ),
     [size]
+  );
+
+  const getInterval = useCallback(
+    () => (isVerticalOrientation ? height : 1),
+    [height, isVerticalOrientation]
   );
 
   // Initial setup (orient the instanced boxes)
@@ -320,7 +326,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             continue;
           }
 
-          let interval = isVerticalOrientation ? height : 1;
+          let interval = getInterval();
           const startingId =
             isVerticalOrientation || isSameSide
               ? selected
@@ -351,7 +357,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             const x = adjacentId % width;
 
             // We need to check if we are on the first cell of a row
-            // and if it is, we check the previous sides last row for a letter
+            // and if it is, we check the previous side's last row for a letter
             if (x === 0) {
               const int =
                 selectedSide !== 0
@@ -390,16 +396,58 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const onLetterChange = useCallback(
     (key: string) => {
-      console.log(key);
+      const coord = characterTextureAtlasLookup[key.toUpperCase()];
       if (selected != null && ref != null) {
-        const x =
-          key === '' || key === 'BACKSPACE'
-            ? -1
-            : characterTextureAtlasLookup[key.toUpperCase()][0];
-        const y =
-          key === '' || key === 'BACKSPACE'
-            ? -1
-            : characterTextureAtlasLookup[key.toUpperCase()][1];
+        const x = key === '' || key === 'BACKSPACE' ? -1 : coord[0];
+        const y = key === '' || key === 'BACKSPACE' ? -1 : coord[1];
+        setLastCurrentKey(key);
+
+        if (x !== -1) {
+          // select the next cell
+          const nextCell = selected + getInterval();
+          const sSide = Math.ceil(selected / totalPerSide) - 1;
+          const side = Math.ceil(nextCell / totalPerSide) - 1;
+          const cell = record.solution[nextCell];
+          if (!((isVerticalOrientation && side !== sSide) || cell === '#')) {
+            setSelected(nextCell);
+          }
+        } else if (
+          // select the prev cell
+          characterPositionArray[selected * 2] === -1 ||
+          lastCurrentKey === '' ||
+          lastCurrentKey === 'BACKSPACE'
+        ) {
+          // select the previous cell
+          const nextCell = selected - getInterval();
+          const selectedX = nextCell % width;
+          const sSide = Math.ceil(selected / totalPerSide) - 1;
+
+          // TODO: horizontal first column successive cell editing does not work
+
+          // We need to check if we are on the first cell of a row
+          // and if it is, we check the previous sides last row for a letter
+          if (selectedX === 0) {
+            const int =
+              selectedSide !== 0
+                ? nextCell - (width * width - (width - 1))
+                : totalPerSide * puzzleData.length -
+                  1 -
+                  (width * width - width - 1) +
+                  nextCell -
+                  1;
+            const cell = record.solution[int];
+            if (cell !== '#') {
+              setSelected(int);
+            }
+          } else {
+            const side = Math.ceil(nextCell / totalPerSide) - 1;
+            const cell = record.solution[nextCell];
+
+            if (!((isVerticalOrientation && side !== sSide) || cell === '#')) {
+              setSelected(nextCell);
+            }
+          }
+        }
 
         characterPositionArray[selected * 2] = x;
         characterPositionArray[selected * 2 + 1] = y;
@@ -414,9 +462,17 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [
       characterPositionArray,
       characterTextureAtlasLookup,
+      getInterval,
+      isVerticalOrientation,
+      lastCurrentKey,
       onLetterInput,
+      puzzleData.length,
+      record.solution,
       ref,
       selected,
+      selectedSide,
+      totalPerSide,
+      width,
     ]
   );
 
