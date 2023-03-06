@@ -407,9 +407,26 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           const nextCell = selected + getInterval();
           const sSide = Math.ceil(selected / totalPerSide) - 1;
           const side = Math.ceil(nextCell / totalPerSide) - 1;
-          const cell = record.solution[nextCell];
-          if (!((isVerticalOrientation && side !== sSide) || cell === '#')) {
-            setSelected(nextCell);
+          const selectedX = nextCell % width;
+          const selectedY = Math.max(
+            0,
+            Math.ceil((selected - sSide * totalPerSide) / width) - 1
+          );
+          if (selectedX === 0 && selectedSide !== sSide) {
+            const int =
+              selectedSide !== 0
+                ? nextCell + (width * width - (width - 1))
+                : selectedY * height + 1;
+            console.log(int, record.solution[int]);
+            const cell = record.solution[int];
+            if (cell !== '#') {
+              setSelected(int);
+            }
+          } else if (selectedX !== 0) {
+            const cell = record.solution[nextCell];
+            if (!((isVerticalOrientation && side !== sSide) || cell === '#')) {
+              setSelected(nextCell);
+            }
           }
         } else if (
           // select the prev cell
@@ -421,8 +438,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           const nextCell = selected - getInterval();
           const selectedX = nextCell % width;
           const sSide = Math.ceil(selected / totalPerSide) - 1;
-
-          // TODO: horizontal first column successive cell editing does not work
 
           // We need to check if we are on the first cell of a row
           // and if it is, we check the previous sides last row for a letter
@@ -463,6 +478,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       characterPositionArray,
       characterTextureAtlasLookup,
       getInterval,
+      height,
       isVerticalOrientation,
       lastCurrentKey,
       onLetterInput,
