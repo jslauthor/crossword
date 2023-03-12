@@ -88,9 +88,9 @@ export default function Puzzle({
     setSelectedCharacter(undefined);
   }, []);
 
-  // TODO: Add actual keyboard to enter letters
-  // TODO: Successive letters should fill in the word
-  // TODO: Update selection when changing sides (drawing works after hovering)
+  // TODO: Bug, Update selection when changing sides (drawing works after hovering)
+  // TODO: Pressing a key on the virtual keyboard repeats
+  // TODO: Don't allow selecting a cell that's not on the selected side
   // TODO: Add clues
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone

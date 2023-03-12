@@ -161,6 +161,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [hovered, setHovered] = useState<InstancedMesh['id']>();
   const [prevHover, setPrevHovered] = useState<InstancedMesh['id']>();
   const [prevSelected, setPrevSelected] = useState<InstancedMesh['id']>();
+  const [prevSelectedSide, setPrevSelectedSide] =
+    useState<LetterBoxesProps['selectedSide']>();
   const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
 
   useEffect(() => {
@@ -295,7 +297,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       if (
         prevHover !== hovered ||
         prevSelected !== selected ||
-        prevOrientation !== isVerticalOrientation
+        prevOrientation !== isVerticalOrientation ||
+        prevSelectedSide !== selectedSide
       ) {
         (id === hovered || id === selected
           ? tempColor.set(DEFAULT_SELECTED_COLOR)
@@ -305,6 +308,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         // Store the prev so we can avoid this calculation next time
         setPrevHovered(hovered);
         setPrevSelected(selected);
+        setPrevSelectedSide(selectedSide);
 
         // Change the color of surrounding cells
         if (selected != null) {
@@ -321,7 +325,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           if (
             isSameSide === false &&
             // we treat the last row of previous side as the first row of the current side
-            selectedCellX !== width - 1
+            selectedCellX !== width - 1 &&
+            Math.abs(selected - sSide) < 2
           ) {
             continue;
           }
@@ -417,7 +422,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               selectedSide !== 0
                 ? nextCell + (width * width - (width - 1))
                 : selectedY * height + 1;
-            console.log(int, record.solution[int]);
             const cell = record.solution[int];
             if (cell !== '#') {
               setSelected(int);
@@ -436,6 +440,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         ) {
           // select the previous cell
           const nextCell = selected - getInterval();
+          console.log(nextCell);
           const selectedX = nextCell % width;
           const sSide = Math.ceil(selected / totalPerSide) - 1;
 
@@ -458,7 +463,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             const side = Math.ceil(nextCell / totalPerSide) - 1;
             const cell = record.solution[nextCell];
 
-            if (!((isVerticalOrientation && side !== sSide) || cell === '#')) {
+            if (
+              !(
+                (isVerticalOrientation && side !== sSide) ||
+                cell === '#' ||
+                // the -2 would normally be -1, but we skip a column, so we need to
+                // subtract that one as well
+                (selectedX === width - 2 && selectedSide !== sSide)
+              )
+            ) {
               setSelected(nextCell);
             }
           }
