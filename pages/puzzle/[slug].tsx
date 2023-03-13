@@ -88,8 +88,6 @@ export default function Puzzle({
     setSelectedCharacter(undefined);
   }, []);
 
-  // TODO: Pressing a key on the virtual keyboard repeats
-  // - You need to remove selected from onLetterInput dependencies
   // TODO: Add clues
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone
