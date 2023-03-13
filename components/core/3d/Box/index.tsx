@@ -330,7 +330,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             sSide !== (selectedSide - 1 < 0 ? 3 : selectedSide - 1) && // prev side
             sSide !== selectedSide // current side
           ) {
-            console.log('skip');
             ref.geometry.attributes.cellColor.needsUpdate = true;
             continue;
           }
@@ -443,7 +442,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         ) {
           // select the previous cell
           const nextCell = selected - getInterval();
-          console.log(nextCell);
           const selectedX = nextCell % width;
           const sSide = Math.ceil(selected / totalPerSide) - 1;
 
@@ -515,16 +513,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     if (currentKey != null) {
       onLetterChange(currentKey);
     }
-  }, [
-    characterPositionArray,
-    characterTextureAtlasLookup,
-    currentKey,
-    onLetterChange,
-    onLetterInput,
-    record.solution,
-    ref,
-    selected,
-  ]);
+  }, [currentKey, onLetterChange]);
 
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
 
