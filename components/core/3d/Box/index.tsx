@@ -309,6 +309,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setPrevHovered(hovered);
         setPrevSelected(selected);
         setPrevSelectedSide(selectedSide);
+        setPrevOrientation(isVerticalOrientation);
 
         // Change the color of surrounding cells
         if (selected != null) {
@@ -328,6 +329,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             selectedCellX !== width - 1 &&
             Math.abs(selected - sSide) < 2
           ) {
+            ref.geometry.attributes.cellColor.needsUpdate = true;
             continue;
           }
 
@@ -393,7 +395,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
 
-        setPrevOrientation(isVerticalOrientation);
         ref.geometry.attributes.cellColor.needsUpdate = true;
       }
     }
