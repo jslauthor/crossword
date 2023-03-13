@@ -326,9 +326,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           if (
             isSameSide === false &&
             // we treat the last row of previous side as the first row of the current side
-            selectedCellX !== width - 1 &&
-            Math.abs(selected - sSide) < 2
+            selectedCellX === width - 1 &&
+            sSide !== (selectedSide - 1 < 0 ? 3 : selectedSide - 1) && // prev side
+            sSide !== selectedSide // current side
           ) {
+            console.log('skip');
             ref.geometry.attributes.cellColor.needsUpdate = true;
             continue;
           }
