@@ -513,7 +513,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     if (currentKey != null) {
       onLetterChange(currentKey);
     }
-  }, [currentKey, onLetterChange]);
+    // Adding onLetterChange here causes multiple letter renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentKey]);
 
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
 
