@@ -210,6 +210,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [height, isVerticalOrientation]
   );
 
+  // Deselect the selected cell when the selected side changes
+  useEffect(() => {
+    setSelected(undefined);
+  }, [selectedSide]);
+
   // Initial setup (orient the instanced boxes)
   useEffect(() => {
     if (ref == null) return;
@@ -323,17 +328,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             Math.ceil((selected - sSide * totalPerSide) / width) - 1
           );
 
-          if (
-            (isSameSide === false && selectedCellX !== width - 1) ||
-            // we treat the last row of previous side as the first row of the current side
-            (selectedCellX === width - 1 &&
-              sSide !== (selectedSide - 1 < 0 ? 3 : selectedSide - 1) &&
-              sSide !== selectedSide)
-          ) {
-            ref.geometry.attributes.cellColor.needsUpdate = true;
-            continue;
-          }
-
           let interval = getInterval();
           const startingId =
             isVerticalOrientation || isSameSide
@@ -355,6 +349,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 .set(DEFAULT_SELECTED_ADJACENT_COLOR)
                 .toArray(cellColorsArray, adjacentId * 3);
             }
+          }
+
+          if (isVerticalOrientation === false && isSameSide === false) {
+            ref.geometry.attributes.cellColor.needsUpdate = true;
+            continue;
           }
 
           for (

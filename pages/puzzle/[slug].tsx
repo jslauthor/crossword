@@ -88,6 +88,7 @@ export default function Puzzle({
     setSelectedCharacter(undefined);
   }, []);
 
+  // TODO: Disable selecting a cell if not on the same side
   // TODO: Add clues
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone
@@ -96,6 +97,12 @@ export default function Puzzle({
   // TODO: Make this multiplayer where different people can work on different sides?
   // TODO: Add top and bottom sides?
   // TODO: When you complete a side, animate it and change the color
+
+  const letterSelectedSide = useMemo(() => {
+    const side = selectedSide % 4;
+    // We need to flip the even sides to match the component's algorithm
+    return side % 2 === 0 ? Math.abs(side - 2) : side;
+  }, [selectedSide]);
 
   return (
     <Container ref={containerRef}>
@@ -112,7 +119,7 @@ export default function Puzzle({
         <pointLight position={[5, 5, 5]} intensity={1.5} />
         <PresentationControls
           global
-          enabled={false}
+          // enabled={false}
           rotation={[0, Math.PI * (selectedSide / 2), 0]}
         >
           <group
@@ -124,8 +131,7 @@ export default function Puzzle({
               puzzleData={puzzleData}
               characterTextureAtlasLookup={characterTextureAtlasLookup}
               cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
-              // Subtracting 2 to match the puzzle's selected cell side algorithm
-              selectedSide={Math.abs((selectedSide - 2) % 4)}
+              selectedSide={letterSelectedSide}
               currentKey={selectedCharacter}
               onLetterInput={onLetterInput}
             />
