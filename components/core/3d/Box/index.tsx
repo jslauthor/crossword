@@ -135,6 +135,7 @@ type LetterBoxesProps = {
   onHovered?: (e: number | undefined) => void;
   onSelected?: (e: number | undefined) => void;
   onLetterInput?: () => void;
+  onSelectClue?: (clue: string | undefined) => void;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -152,12 +153,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onHovered,
   onSelected,
   onLetterInput,
+  onSelectClue,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(true);
   const [prevOrientation, setPrevOrientation] = useState<boolean>(true);
   const [selected, setSelected] = useState<InstancedMesh['id']>();
+  const [selectedWordCell, setSelectedWordCell] = useState<
+    number | undefined
+  >();
   const [hovered, setHovered] = useState<InstancedMesh['id']>();
   const [prevHover, setPrevHovered] = useState<InstancedMesh['id']>();
   const [prevSelected, setPrevSelected] = useState<InstancedMesh['id']>();
@@ -179,6 +184,23 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     const record = getCharacterRecord(puzzleData);
     return [record, record.solution.length];
   }, [puzzleData]);
+
+  useEffect(() => {
+    if (onSelectClue != null) {
+      if (!selected) onSelectClue(undefined);
+      console.log(selectedWordCell);
+      const { clues } = record;
+      if (isVerticalOrientation === true) {
+        onSelectClue(
+          clues.down.find((c) => c.number === selectedWordCell)?.clue
+        );
+      } else {
+        onSelectClue(
+          clues.across.find((c) => c.number === selectedWordCell)?.clue
+        );
+      }
+    }
+  }, [isVerticalOrientation, onSelectClue, record, selected, selectedWordCell]);
 
   const characterPositionArray = useMemo(
     () => Float32Array.from(new Array(size * 2).fill(-1)),
@@ -315,9 +337,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setPrevSelected(selected);
         setPrevSelectedSide(selectedSide);
         setPrevOrientation(isVerticalOrientation);
+        setSelectedWordCell(undefined);
 
         // Change the color of surrounding cells
         if (selected != null) {
+          const cell = record.solution[selected];
+          if (cell !== '#' && typeof cell.cell === 'number') {
+            setSelectedWordCell(cell.cell);
+          }
+
           // We need to check if the selected cell is on the same side as the hovered cell in the case of the
           // first column (which is from the previous side)
           const sSide = Math.ceil(selected / totalPerSide) - 1;
@@ -376,6 +404,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                     1;
               const cell = record.solution[int];
               if (cell !== '#') {
+                if (typeof cell.cell === 'number') {
+                  setSelectedWordCell(cell.cell);
+                }
                 tempColor
                   .set(DEFAULT_SELECTED_ADJACENT_COLOR)
                   .toArray(cellColorsArray, int * 3);
@@ -388,6 +419,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             if (cell === '#') {
               break;
             } else {
+              if (typeof cell.cell === 'number') {
+                setSelectedWordCell(cell.cell);
+              }
               tempColor
                 .set(DEFAULT_SELECTED_ADJACENT_COLOR)
                 .toArray(cellColorsArray, adjacentId * 3);

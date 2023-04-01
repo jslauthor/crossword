@@ -39,12 +39,21 @@ const Container = styled.div`
   touch-action: none;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
 `;
 
 const KeyboardContainer = styled.div`
   width: 100%;
   height: max-content;
   position: relative;
+`;
+
+const ClueContainer = styled.div`
+  border-radius: 0.125rem;
+  padding: 0.5rem;
+  max-width: 500px;
+  width: 100%;
 `;
 
 type PuzzleProps = {
@@ -62,6 +71,7 @@ export default function Puzzle({
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
   const [selectedSide, setSelectedSide] = useState(2);
+  const [clue, setClue] = useState<string | undefined>();
   const [containerRef, { width, height }] = useElementSize();
   const [selectedCharacter, setSelectedCharacter] = useState<
     string | undefined
@@ -134,10 +144,12 @@ export default function Puzzle({
               selectedSide={letterSelectedSide}
               currentKey={selectedCharacter}
               onLetterInput={onLetterInput}
+              onSelectClue={setClue}
             />
           </group>
         </PresentationControls>
       </Canvas>
+      <ClueContainer>{clue}</ClueContainer>
       <KeyboardContainer>
         <Keyboard
           layoutName="default"
