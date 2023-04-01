@@ -25,6 +25,10 @@ import { getObjectSize } from '../../lib/utils/three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
 
+const DEFAULT_COLOR = 0x708d91;
+const DEFAULT_SELECTED_COLOR = 0xd31996;
+const DEFAULT_SELECTED_ADJACENT_COLOR = 0x19dd89;
+
 const ButtonContainer = styled.div`
   position: absolute;
   display: flex;
@@ -98,8 +102,7 @@ export default function Puzzle({
     setSelectedCharacter(undefined);
   }, []);
 
-  // TODO: Disable selecting a cell if not on the same side
-  // TODO: Add clues
+  // TODO: Add clues -- need to find the right clue
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone
   // TODO: Add cool flippy animations
@@ -145,6 +148,9 @@ export default function Puzzle({
               currentKey={selectedCharacter}
               onLetterInput={onLetterInput}
               onSelectClue={setClue}
+              defaultColor={DEFAULT_COLOR}
+              selectedColor={DEFAULT_SELECTED_COLOR}
+              adjacentColor={DEFAULT_SELECTED_ADJACENT_COLOR}
             />
           </group>
         </PresentationControls>

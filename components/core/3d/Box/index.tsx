@@ -136,12 +136,12 @@ type LetterBoxesProps = {
   onSelected?: (e: number | undefined) => void;
   onLetterInput?: () => void;
   onSelectClue?: (clue: string | undefined) => void;
+  defaultColor: number;
+  selectedColor: number;
+  adjacentColor: number;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
-const DEFAULT_COLOR = 0x708d91;
-const DEFAULT_SELECTED_COLOR = 0xd31996;
-const DEFAULT_SELECTED_ADJACENT_COLOR = 0x19dd89;
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzleData,
@@ -154,6 +154,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onSelected,
   onLetterInput,
   onSelectClue,
+  defaultColor,
+  selectedColor,
+  adjacentColor,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   const [isVerticalOrientation, setVerticalOrientation] =
@@ -188,7 +191,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   useEffect(() => {
     if (onSelectClue != null) {
       if (!selected) onSelectClue(undefined);
-      console.log(selectedWordCell);
       const { clues } = record;
       if (isVerticalOrientation === true) {
         onSelectClue(
@@ -222,9 +224,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       Float32Array.from(
         new Array(size * 3)
           .fill(0)
-          .flatMap(() => tempColor.set(DEFAULT_COLOR).toArray())
+          .flatMap(() => tempColor.set(defaultColor).toArray())
       ),
-    [size]
+    [defaultColor, size]
   );
 
   const getInterval = useCallback(
@@ -328,8 +330,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         prevSelectedSide !== selectedSide
       ) {
         (id === hovered || id === selected
-          ? tempColor.set(DEFAULT_SELECTED_COLOR)
-          : tempColor.set(DEFAULT_COLOR)
+          ? tempColor.set(selectedColor)
+          : tempColor.set(defaultColor)
         ).toArray(cellColorsArray, id * 3);
 
         // Store the prev so we can avoid this calculation next time
@@ -341,6 +343,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
         // Change the color of surrounding cells
         if (selected != null) {
+          // We default to the selected cell for the first place in the word
+          // and will override this if it is not the first place below
           const cell = record.solution[selected];
           if (cell !== '#' && typeof cell.cell === 'number') {
             setSelectedWordCell(cell.cell);
@@ -374,7 +378,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               break;
             } else {
               tempColor
-                .set(DEFAULT_SELECTED_ADJACENT_COLOR)
+                .set(adjacentColor)
                 .toArray(cellColorsArray, adjacentId * 3);
             }
           }
@@ -407,9 +411,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 if (typeof cell.cell === 'number') {
                   setSelectedWordCell(cell.cell);
                 }
-                tempColor
-                  .set(DEFAULT_SELECTED_ADJACENT_COLOR)
-                  .toArray(cellColorsArray, int * 3);
+                tempColor.set(adjacentColor).toArray(cellColorsArray, int * 3);
               }
             }
             const side = Math.ceil(adjacentId / totalPerSide) - 1;
@@ -423,7 +425,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 setSelectedWordCell(cell.cell);
               }
               tempColor
-                .set(DEFAULT_SELECTED_ADJACENT_COLOR)
+                .set(adjacentColor)
                 .toArray(cellColorsArray, adjacentId * 3);
             }
           }
