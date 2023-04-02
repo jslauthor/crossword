@@ -151,11 +151,11 @@ export default function Puzzle({
   }, [selectedSide]);
 
   const turnLeft = useCallback(
-    () => setSelectedSide(selectedSide - 1),
+    () => setSelectedSide(selectedSide + 1),
     [selectedSide]
   );
   const turnRight = useCallback(
-    () => setSelectedSide(selectedSide + 1),
+    () => setSelectedSide(selectedSide - 1),
     [selectedSide]
   );
 
@@ -203,11 +203,11 @@ export default function Puzzle({
       </Canvas>
       <RotationContainer>
         <RotationButton color={defaultColor.toString(16)} onClick={turnLeft}>
-          turn left
+          turn →
         </RotationButton>
         <div>ph</div>
         <RotationButton color={defaultColor.toString(16)} onClick={turnRight}>
-          turn right
+          turn ←
         </RotationButton>
       </RotationContainer>
       <ClueContainer backgroundColor={adjacentColor.toString(16)}>
