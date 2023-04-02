@@ -139,12 +139,15 @@ const GlobalStyles = () => {
         :root {
           --white: #ffffff;
           --black: #131414;
+
+          --max-app-width: 500px;
         }
 
         // Theme variables
         .dark {
           --primary-text: var(--white);
           --primary-bg: var(--black);
+          --primary-app-width: var(--max-app-width);
 
           background-color: var(--primary-bg);
           color: var(--primary-text);
@@ -162,7 +165,7 @@ const GlobalStyles = () => {
         }
 
         .simple-keyboard {
-          max-width: 500px;
+          max-width: var(--primary-app-width);
           margin: 0 auto;
           padding: 0;
         }

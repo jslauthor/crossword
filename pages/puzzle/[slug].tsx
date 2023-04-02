@@ -29,17 +29,11 @@ import {
   faChevronLeft,
   faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
+import tinycolor from 'tinycolor2';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
 const DEFAULT_SELECTED_ADJACENT_COLOR = 0x19dd89;
-
-const ButtonContainer = styled.div`
-  position: absolute;
-  display: flex;
-  top: 0px;
-  right: 0px;
-`;
 
 const Container = styled.div`
   position: relative;
@@ -50,6 +44,7 @@ const Container = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  user-select: none;
 `;
 
 const KeyboardContainer = styled.div`
@@ -64,17 +59,39 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   grid-column-gap: 1rem;
   align-items: center;
   height: min-content;
-  border-radius: 0.125rem;
+  border-radius: 0.25rem;
   padding: 1rem 1rem;
   box-sizing: border-box;
   margin-bottom: 0.5rem;
-  max-width: 500px;
+  max-width: var(--primary-app-width);
   width: 100%;
   ${({ backgroundColor }) => `background-color: #${backgroundColor}`}
 `;
 
 const ClueLabel = styled.span`
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+`;
+
+const RotationContainer = styled.div`
+  display: grid;
+  grid-template-columns: 1fr min-content 1fr;
+  grid-column-gap: 1rem;
+  margin: 0.75rem 0;
+  max-width: var(--primary-app-width);
+  width: 100%;
+`;
+
+const RotationButton = styled.div<{ color: string }>`
+  cursor: pointer;
+  background: transparent;
+  border-radius: 0.25rem;
+  border: 1px solid #${({ color }) => color};
+  color: ${({ color }) => tinycolor(`#${color}`).brighten(30).toHexString()};
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  min-width: 100px;
+  margin: 0 auto;
+  font-weight: 500;
 `;
 
 type PuzzleProps = {
@@ -119,7 +136,6 @@ export default function Puzzle({
     setSelectedCharacter(undefined);
   }, []);
 
-  // TODO: Add clues -- need to find the right clue
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone
   // TODO: Add cool flippy animations
@@ -133,6 +149,19 @@ export default function Puzzle({
     // We need to flip the even sides to match the component's algorithm
     return side % 2 === 0 ? Math.abs(side - 2) : side;
   }, [selectedSide]);
+
+  const turnLeft = useCallback(
+    () => setSelectedSide(selectedSide - 1),
+    [selectedSide]
+  );
+  const turnRight = useCallback(
+    () => setSelectedSide(selectedSide + 1),
+    [selectedSide]
+  );
+
+  const defaultColor = useMemo(() => DEFAULT_COLOR, []);
+  const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
+  const adjacentColor = useMemo(() => DEFAULT_SELECTED_ADJACENT_COLOR, []);
 
   return (
     <Container ref={containerRef}>
@@ -165,19 +194,26 @@ export default function Puzzle({
               currentKey={selectedCharacter}
               onLetterInput={onLetterInput}
               onSelectClue={setClue}
-              defaultColor={DEFAULT_COLOR}
-              selectedColor={DEFAULT_SELECTED_COLOR}
-              adjacentColor={DEFAULT_SELECTED_ADJACENT_COLOR}
+              defaultColor={defaultColor}
+              selectedColor={selectedColor}
+              adjacentColor={adjacentColor}
             />
           </group>
         </PresentationControls>
       </Canvas>
-      <ClueContainer
-        backgroundColor={DEFAULT_SELECTED_ADJACENT_COLOR.toString(16)}
-      >
-        <FontAwesomeIcon icon={faChevronLeft} width={16} />
+      <RotationContainer>
+        <RotationButton color={defaultColor.toString(16)} onClick={turnLeft}>
+          turn left
+        </RotationButton>
+        <div>ph</div>
+        <RotationButton color={defaultColor.toString(16)} onClick={turnRight}>
+          turn right
+        </RotationButton>
+      </RotationContainer>
+      <ClueContainer backgroundColor={adjacentColor.toString(16)}>
+        <FontAwesomeIcon icon={faChevronLeft} width={12} />
         <ClueLabel dangerouslySetInnerHTML={{ __html: clue ?? '&nbsp;' }} />
-        <FontAwesomeIcon icon={faChevronRight} width={16} />
+        <FontAwesomeIcon icon={faChevronRight} width={12} />
       </ClueContainer>
       <KeyboardContainer>
         <Keyboard
@@ -215,11 +251,7 @@ export default function Puzzle({
           }}
         />
       </KeyboardContainer>
-      <Stats />
-      <ButtonContainer>
-        <button onClick={() => setSelectedSide(selectedSide + 1)}>&lt;</button>
-        <button onClick={() => setSelectedSide(selectedSide - 1)}>&gt;</button>
-      </ButtonContainer>
+      {/* <Stats /> */}
     </Container>
   );
 }
