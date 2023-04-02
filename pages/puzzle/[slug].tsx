@@ -24,6 +24,11 @@ import type {
 import { getObjectSize } from '../../lib/utils/three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faChevronLeft,
+  faChevronRight,
+} from '@fortawesome/free-solid-svg-icons';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -53,11 +58,23 @@ const KeyboardContainer = styled.div`
   position: relative;
 `;
 
-const ClueContainer = styled.div`
+const ClueContainer = styled.div<{ backgroundColor: string }>`
+  display: grid;
+  grid-template-columns: min-content 1fr min-content;
+  grid-column-gap: 1rem;
+  align-items: center;
+  height: min-content;
   border-radius: 0.125rem;
-  padding: 0.5rem;
+  padding: 1rem 1rem;
+  box-sizing: border-box;
+  margin-bottom: 0.5rem;
   max-width: 500px;
   width: 100%;
+  ${({ backgroundColor }) => `background-color: #${backgroundColor}`}
+`;
+
+const ClueLabel = styled.span`
+  font-size: 1.5rem;
 `;
 
 type PuzzleProps = {
@@ -132,7 +149,7 @@ export default function Puzzle({
         <pointLight position={[5, 5, 5]} intensity={1.5} />
         <PresentationControls
           global
-          // enabled={false}
+          enabled={false}
           rotation={[0, Math.PI * (selectedSide / 2), 0]}
         >
           <group
@@ -155,7 +172,13 @@ export default function Puzzle({
           </group>
         </PresentationControls>
       </Canvas>
-      <ClueContainer>{clue}</ClueContainer>
+      <ClueContainer
+        backgroundColor={DEFAULT_SELECTED_ADJACENT_COLOR.toString(16)}
+      >
+        <FontAwesomeIcon icon={faChevronLeft} width={16} />
+        <ClueLabel dangerouslySetInnerHTML={{ __html: clue ?? '&nbsp;' }} />
+        <FontAwesomeIcon icon={faChevronRight} width={16} />
+      </ClueContainer>
       <KeyboardContainer>
         <Keyboard
           layoutName="default"

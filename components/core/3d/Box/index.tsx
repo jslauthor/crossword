@@ -160,9 +160,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   const [isVerticalOrientation, setVerticalOrientation] =
-    useState<boolean>(true);
-  const [prevOrientation, setPrevOrientation] = useState<boolean>(true);
-  const [selected, setSelected] = useState<InstancedMesh['id']>();
+    useState<boolean>(false);
+  const [prevOrientation, setPrevOrientation] = useState<boolean>(
+    isVerticalOrientation
+  );
+  const [selected, setSelected] = useState<InstancedMesh['id'] | undefined>(0);
   const [selectedWordCell, setSelectedWordCell] = useState<
     number | undefined
   >();
@@ -306,6 +308,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
     ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
     ref.instanceMatrix.needsUpdate = true;
+    // select first letter on last side
+    setSelected((record.solution.length / 4) * 3 + (width - 1));
   }, [
     ref,
     cellNumberPositionArray,

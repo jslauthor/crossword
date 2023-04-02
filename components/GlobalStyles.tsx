@@ -129,13 +129,11 @@ const GlobalStyles = () => {
           border-spacing: 0;
         }
 
-        @font-face {
-          font-family: 'Franklin Gothic';
-          src: url('/franklin_gothic_regular.ttf') format('truetype');
-        }
-
+        html,
         body {
-          font-family: 'Franklin Gothic', sans-serif;
+          font-family: 'franklin-gothic-atf', sans-serif;
+          font-weight: 400;
+          font-style: normal;
         }
 
         :root {
@@ -166,6 +164,7 @@ const GlobalStyles = () => {
         .simple-keyboard {
           max-width: 500px;
           margin: 0 auto;
+          padding: 0;
         }
 
         .more-button {
@@ -213,6 +212,8 @@ const GlobalStyles = () => {
           align-items: center;
           touch-action: manipulation;
           margin: 0.25rem;
+          margin-left: 0;
+          margin-right: 0;
         }
 
         #root .simple-keyboard.keyboardTheme + .simple-keyboard-preview {
