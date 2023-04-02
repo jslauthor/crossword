@@ -58,9 +58,9 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   grid-template-columns: min-content 1fr min-content;
   grid-column-gap: 1rem;
   align-items: center;
-  height: min-content;
+  height: 100px;
   border-radius: 0.25rem;
-  padding: 1rem 1rem;
+  padding: 0rem 1rem;
   box-sizing: border-box;
   margin-bottom: 0.5rem;
   max-width: var(--primary-app-width);
