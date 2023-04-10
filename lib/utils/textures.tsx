@@ -75,6 +75,46 @@ export const TextureAtlas: React.FC = () => (
   </div>
 );
 
+export const SingleCharacterTexture: React.FC<{ character: string }> = ({
+  character,
+}) => (
+  <div
+    style={{
+      display: 'flex',
+      aspectRatio: '1',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '256px',
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        width: '100%',
+        height: '100%',
+        flexWrap: 'wrap',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          width: '256px',
+          height: '256px',
+          aspectRatio: '1',
+          justifyContent: 'center',
+          alignItems: 'center',
+          fontFamily: 'Franklin Gothic',
+          fontSize: '150px',
+          color: 'white',
+        }}
+      >
+        {character}
+      </div>
+    </div>
+  </div>
+);
+
 export const NUMBER_RECORD = generateTextureRecord(numberItems, 31);
 const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) => (
   <div
@@ -140,15 +180,19 @@ export const NumberAtlas: React.FC = () => (
 const publicDir = path.join(process.cwd(), 'public');
 const nodeDir = path.join(process.cwd(), 'node_modules');
 
-const saveElementToDisk = async (element: JSX.Element, filename: string) => {
+const saveElementToDisk = async (
+  element: JSX.Element,
+  filename: string,
+  size: number = 2048
+) => {
   const font = fs.readFileSync(publicDir + '/franklin_gothic_regular.ttf');
   const wasm = fs.readFileSync(nodeDir + '/yoga-wasm-web/dist/yoga.wasm');
   // @ts-ignore
   const yoga = await Yoga(wasm);
   init(yoga);
   const svg = await satori(element, {
-    width: 2048,
-    height: 2048,
+    width: size,
+    height: size,
     fonts: [
       {
         name: 'Franklin Gothic',
@@ -163,7 +207,7 @@ const saveElementToDisk = async (element: JSX.Element, filename: string) => {
     background: 'rgba(0, 0, 0, 0)',
     fitTo: {
       mode: 'width',
-      value: 2048,
+      value: size,
     },
     font: {
       fontFiles: [nodeDir + '/public/franklin_gothic_regular.ttf'], // Load custom fonts.
@@ -181,4 +225,24 @@ const saveElementToDisk = async (element: JSX.Element, filename: string) => {
 export const generateTextures = async () => {
   await saveElementToDisk(<TextureAtlas />, '/texture_atlas.png');
   await saveElementToDisk(<NumberAtlas />, '/number_atlas.png');
+  await saveElementToDisk(
+    <SingleCharacterTexture character="1" />,
+    '/1.png',
+    256
+  );
+  await saveElementToDisk(
+    <SingleCharacterTexture character="2" />,
+    '/2.png',
+    256
+  );
+  await saveElementToDisk(
+    <SingleCharacterTexture character="3" />,
+    '/3.png',
+    256
+  );
+  await saveElementToDisk(
+    <SingleCharacterTexture character="4" />,
+    '/4.png',
+    256
+  );
 };

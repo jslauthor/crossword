@@ -9,7 +9,7 @@ import {
   OrthographicCamera,
   Stats,
 } from '@react-three/drei';
-import LetterBoxes from '../../components/core/3d/Box';
+import LetterBoxes from '../../components/core/3d/LetterBoxes';
 import { PuzzleData } from '../../types/types';
 import {
   generateTextures,
@@ -30,6 +30,7 @@ import {
   faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import tinycolor from 'tinycolor2';
+import RotatingBox from '../../components/core/3d/Box';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -205,7 +206,7 @@ export default function Puzzle({
         <RotationButton color={defaultColor.toString(16)} onClick={turnLeft}>
           turn →
         </RotationButton>
-        <div>ph</div>
+        <RotatingBox side={selectedSide} defaultColor={defaultColor} />
         <RotationButton color={defaultColor.toString(16)} onClick={turnRight}>
           turn ←
         </RotationButton>
