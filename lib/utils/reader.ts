@@ -14,7 +14,7 @@ const getPuzzleById = async (puzzleId: string) => {
   const dir = path.join(puzzleDir, puzzleId);
   const files = fs
     .readdirSync(dir, { withFileTypes: true })
-    .filter((file) => file.isFile());
+    .filter((file) => file.isFile() && !/(^|\/)\.[^\/\.]/g.test(file.name));
 
   return files.map((file) => {
     // Read markdown file as string

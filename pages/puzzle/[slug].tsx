@@ -32,6 +32,7 @@ import {
 import tinycolor from 'tinycolor2';
 import RotatingBox from '../../components/core/3d/Box';
 import TurnArrow from '../../components/svg/TurnArrow';
+import Logo from '../../components/svg/Logo';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -47,6 +48,14 @@ const Container = styled.div`
   justify-content: center;
   align-items: center;
   user-select: none;
+`;
+
+const HeaderContainer = styled.div`
+  display: flex;
+  width: 100%;
+  height: 40px;
+  align-items: center;
+  max-width: var(--primary-app-width);
 `;
 
 const KeyboardContainer = styled.div`
@@ -148,6 +157,8 @@ export default function Puzzle({
     setSelectedCharacter(undefined);
   }, []);
 
+  // TODO: Add header with menu
+  // TODO: Add success state where if all letters are correct, you win
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone
   // TODO: Add cool flippy animations
@@ -177,6 +188,9 @@ export default function Puzzle({
 
   return (
     <Container ref={containerRef}>
+      <HeaderContainer>
+        <Logo height={24} />
+      </HeaderContainer>
       <Canvas>
         <OrthographicCamera
           ref={setCameraRef}
