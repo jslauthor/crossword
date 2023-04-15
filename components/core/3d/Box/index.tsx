@@ -1,12 +1,18 @@
-import React, { useEffect } from 'react';
-import { PresentationControls, useTexture } from '@react-three/drei';
-import { RepeatWrapping } from 'three';
+import React, { useCallback, useEffect, useRef } from 'react';
+import {
+  PerspectiveCamera,
+  PresentationControls,
+  useTexture,
+} from '@react-three/drei';
+import { RepeatWrapping, Shader, ShaderChunk } from 'three';
 import { Canvas } from '@react-three/fiber';
 import styled from '@emotion/styled';
 
+const ROUGHNESS = 0.25;
+
 const CanvasContainer = styled.div`
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
 `;
 
 interface BoxProps {
@@ -32,30 +38,58 @@ const Box: React.FC<BoxProps> = ({ defaultColor }) => {
     texture4.wrapT = RepeatWrapping;
   }, [texture1, texture2, texture3, texture4]);
 
+  const onShader = useCallback((shader: Shader) => {
+    const custom_map_fragment = ShaderChunk.map_fragment.replace(
+      `diffuseColor *= sampledDiffuseColor;`,
+      `diffuseColor = vec4( mix( diffuse, sampledDiffuseColor.rgb, sampledDiffuseColor.a ), opacity );`
+    );
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      custom_map_fragment
+    );
+  }, []);
+
   return (
-    <mesh scale={[5, 5, 5]}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshBasicMaterial
+    <mesh>
+      <boxGeometry args={[5.5, 5.5, 5.5]} />
+      <meshPhysicalMaterial
         attach="material-0"
         color={defaultColor}
         map={texture4}
+        onBeforeCompile={onShader}
+        roughness={ROUGHNESS}
       />
-      <meshBasicMaterial
+      <meshPhysicalMaterial
         attach="material-1"
         color={defaultColor}
         map={texture2}
+        onBeforeCompile={onShader}
+        roughness={ROUGHNESS}
       />
-      <meshBasicMaterial attach="material-2" color={defaultColor} />
-      <meshBasicMaterial attach="material-3" color={defaultColor} />
-      <meshBasicMaterial
+      <meshPhysicalMaterial
+        attach="material-2"
+        color={defaultColor}
+        roughness={ROUGHNESS}
+      />
+      <meshPhysicalMaterial
+        attach="material-3"
+        color={defaultColor}
+        roughness={ROUGHNESS}
+      />
+      <meshPhysicalMaterial
         attach="material-4"
         color={defaultColor}
         map={texture3}
+        onBeforeCompile={onShader}
+        roughness={ROUGHNESS}
       />
-      <meshBasicMaterial
+      <meshPhysicalMaterial
         attach="material-5"
         color={defaultColor}
         map={texture1}
+        onBeforeCompile={onShader}
+        roughness={ROUGHNESS}
       />
     </mesh>
   );
@@ -70,10 +104,13 @@ const RotatingBox: React.FC<RotatingBoxProps> = ({ side, defaultColor }) => {
   return (
     <CanvasContainer>
       <Canvas>
+        {/* <ambientLight /> */}
+        <pointLight position={[0, 10, 10]} intensity={3} />
+        <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={30} />
         <PresentationControls
           global
           enabled={false}
-          rotation={[0, Math.PI * (side / 2), 0]}
+          rotation={[Math.PI * 0.09, Math.PI * (side / 2), 0]}
         >
           <Box defaultColor={defaultColor} />
         </PresentationControls>

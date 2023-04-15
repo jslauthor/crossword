@@ -206,7 +206,7 @@ export default function Puzzle({
         <RotationButton color={defaultColor.toString(16)} onClick={turnLeft}>
           turn →
         </RotationButton>
-        <RotatingBox side={selectedSide} defaultColor={defaultColor} />
+        <RotatingBox side={selectedSide} defaultColor={0x677275} />
         <RotationButton color={defaultColor.toString(16)} onClick={turnRight}>
           turn ←
         </RotationButton>
