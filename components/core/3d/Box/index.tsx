@@ -8,8 +8,6 @@ import { RepeatWrapping, Shader, ShaderChunk } from 'three';
 import { Canvas } from '@react-three/fiber';
 import styled from '@emotion/styled';
 
-const ROUGHNESS = 0.25;
-
 const CanvasContainer = styled.div`
   width: 40px;
   height: 40px;
@@ -58,38 +56,26 @@ const Box: React.FC<BoxProps> = ({ defaultColor }) => {
         color={defaultColor}
         map={texture4}
         onBeforeCompile={onShader}
-        roughness={ROUGHNESS}
       />
       <meshPhysicalMaterial
         attach="material-1"
         color={defaultColor}
         map={texture2}
         onBeforeCompile={onShader}
-        roughness={ROUGHNESS}
       />
-      <meshPhysicalMaterial
-        attach="material-2"
-        color={defaultColor}
-        roughness={ROUGHNESS}
-      />
-      <meshPhysicalMaterial
-        attach="material-3"
-        color={defaultColor}
-        roughness={ROUGHNESS}
-      />
+      <meshPhysicalMaterial attach="material-2" color={defaultColor} />
+      <meshPhysicalMaterial attach="material-3" color={defaultColor} />
       <meshPhysicalMaterial
         attach="material-4"
         color={defaultColor}
         map={texture3}
         onBeforeCompile={onShader}
-        roughness={ROUGHNESS}
       />
       <meshPhysicalMaterial
         attach="material-5"
         color={defaultColor}
         map={texture1}
         onBeforeCompile={onShader}
-        roughness={ROUGHNESS}
       />
     </mesh>
   );

@@ -31,6 +31,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import tinycolor from 'tinycolor2';
 import RotatingBox from '../../components/core/3d/Box';
+import TurnArrow from '../../components/svg/TurnArrow';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -73,6 +74,13 @@ const ClueLabel = styled.span`
   font-size: 1.25rem;
 `;
 
+const RotationBoxContainer = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+`;
+
 const RotationContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr min-content 1fr;
@@ -83,6 +91,9 @@ const RotationContainer = styled.div`
 `;
 
 const RotationButton = styled.div<{ color: string }>`
+  display: flex;
+  justify-content: center;
+  align-items: center;
   cursor: pointer;
   background: transparent;
   border-radius: 0.25rem;
@@ -203,12 +214,25 @@ export default function Puzzle({
         </PresentationControls>
       </Canvas>
       <RotationContainer>
-        <RotationButton color={defaultColor.toString(16)} onClick={turnLeft}>
-          turn →
-        </RotationButton>
-        <RotatingBox side={selectedSide} defaultColor={0x677275} />
         <RotationButton color={defaultColor.toString(16)} onClick={turnRight}>
-          turn ←
+          turn left
+        </RotationButton>
+        <RotationBoxContainer>
+          <TurnArrow
+            color={`#${defaultColor.toString(16)}`}
+            height={30}
+            width={30}
+          />
+          <RotatingBox side={selectedSide} defaultColor={0x677275} />
+          <TurnArrow
+            color={`#${defaultColor.toString(16)}`}
+            height={30}
+            width={30}
+            flipped
+          />
+        </RotationBoxContainer>
+        <RotationButton color={defaultColor.toString(16)} onClick={turnLeft}>
+          turn right
         </RotationButton>
       </RotationContainer>
       <ClueContainer backgroundColor={adjacentColor.toString(16)}>
