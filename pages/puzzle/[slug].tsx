@@ -115,6 +115,10 @@ const RotationButton = styled.div<{ color: string }>`
   font-weight: 500;
 `;
 
+const TurnArrowStyled = styled(TurnArrow)`
+  margin-top: 5px;
+`;
+
 type PuzzleProps = {
   puzzleData: PuzzleData[];
   characterTextureAtlasLookup: Record<string, [number, number]>;
@@ -228,24 +232,24 @@ export default function Puzzle({
         </PresentationControls>
       </Canvas>
       <RotationContainer>
-        <RotationButton color={defaultColor.toString(16)} onClick={turnRight}>
+        <RotationButton color={defaultColor.toString(16)} onClick={turnLeft}>
           turn left
         </RotationButton>
         <RotationBoxContainer>
-          <TurnArrow
+          <TurnArrowStyled
             color={`#${defaultColor.toString(16)}`}
             height={30}
             width={30}
           />
           <RotatingBox side={selectedSide} defaultColor={0x677275} />
-          <TurnArrow
+          <TurnArrowStyled
             color={`#${defaultColor.toString(16)}`}
             height={30}
             width={30}
             flipped
           />
         </RotationBoxContainer>
-        <RotationButton color={defaultColor.toString(16)} onClick={turnLeft}>
+        <RotationButton color={defaultColor.toString(16)} onClick={turnRight}>
           turn right
         </RotationButton>
       </RotationContainer>
