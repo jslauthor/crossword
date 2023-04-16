@@ -28,6 +28,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronLeft,
   faChevronRight,
+  faBars,
+  faCircleQuestion,
+  faGear,
 } from '@fortawesome/free-solid-svg-icons';
 import tinycolor from 'tinycolor2';
 import RotatingBox from '../../components/core/3d/Box';
@@ -51,11 +54,21 @@ const Container = styled.div`
 `;
 
 const HeaderContainer = styled.div`
+  position: relative;
   display: flex;
-  width: 100%;
-  height: 40px;
+  padding: 1rem;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
   max-width: var(--primary-app-width);
+`;
+
+const HeaderItem = styled.div`
+  display: grid;
+  grid-auto-flow: column;
+  gap: 1rem;
+  align-items: center;
 `;
 
 const KeyboardContainer = styled.div`
@@ -161,7 +174,8 @@ export default function Puzzle({
     setSelectedCharacter(undefined);
   }, []);
 
-  // TODO: Add header with menu
+  // TODO: Create fucking cool intro animation
+  // TODO: Design header content
   // TODO: Add success state where if all letters are correct, you win
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone
@@ -193,7 +207,14 @@ export default function Puzzle({
   return (
     <Container ref={containerRef}>
       <HeaderContainer>
-        <Logo height={24} />
+        <HeaderItem>
+          <FontAwesomeIcon icon={faBars} width={25} />
+          <Logo height={24} width={200} />
+        </HeaderItem>
+        <HeaderItem>
+          <FontAwesomeIcon icon={faCircleQuestion} width={25} />
+          <FontAwesomeIcon icon={faGear} width={25} />
+        </HeaderItem>
       </HeaderContainer>
       <Canvas>
         <OrthographicCamera
@@ -241,7 +262,7 @@ export default function Puzzle({
             height={30}
             width={30}
           />
-          <RotatingBox side={selectedSide} defaultColor={0x677275} />
+          <RotatingBox side={selectedSide} defaultColor={defaultColor} />
           <TurnArrowStyled
             color={`#${defaultColor.toString(16)}`}
             height={30}
