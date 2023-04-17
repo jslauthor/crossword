@@ -146,7 +146,7 @@ export default function Puzzle({
   const router = useRouter();
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
-  const [selectedSide, setSelectedSide] = useState(2);
+  const [selectedSide, setSelectedSide] = useState(0);
   const [clue, setClue] = useState<string | undefined>();
   const [containerRef, { width, height }] = useElementSize();
   const [selectedCharacter, setSelectedCharacter] = useState<
@@ -158,7 +158,7 @@ export default function Puzzle({
       return 1;
     }
     const { width } = getObjectSize(instancedRef, cameraRef);
-    return Math.min(window.innerWidth - 100, 550) / width;
+    return Math.min(window.innerWidth - 100, 650) / width;
   }, [cameraRef, instancedRef]);
 
   const onKeyPress = useCallback((button: string) => {
@@ -174,9 +174,9 @@ export default function Puzzle({
     setSelectedCharacter(undefined);
   }, []);
 
+  // TODO: Add success state where if all letters are correct, you win
   // TODO: Create fucking cool intro animation
   // TODO: Design header content
-  // TODO: Add success state where if all letters are correct, you win
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone
   // TODO: Add cool flippy animations
@@ -186,9 +186,7 @@ export default function Puzzle({
   // TODO: When you complete a side, animate it and change the color
 
   const letterSelectedSide = useMemo(() => {
-    const side = selectedSide % 4;
-    // We need to flip the even sides to match the component's algorithm
-    return side % 2 === 0 ? Math.abs(side - 2) : side;
+    return Math.abs(selectedSide % 4);
   }, [selectedSide]);
 
   const turnLeft = useCallback(
@@ -199,6 +197,8 @@ export default function Puzzle({
     () => setSelectedSide(selectedSide - 1),
     [selectedSide]
   );
+
+  console.log('letterSelectedSide', letterSelectedSide, selectedSide);
 
   const defaultColor = useMemo(() => DEFAULT_COLOR, []);
   const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
@@ -223,14 +223,14 @@ export default function Puzzle({
           zoom={50}
           near={1}
           far={2000}
-          position={[0, 0, 200]}
+          position={[0, -0.75, 100]}
         />
         <ambientLight />
         <pointLight position={[5, 5, 5]} intensity={1.5} />
         <PresentationControls
           global
           enabled={false}
-          rotation={[0, Math.PI * (selectedSide / 2), 0]}
+          rotation={[0, Math.PI + Math.PI * (selectedSide / 2), 0]}
         >
           <group
             position={[-3.5 * scale, -4, 3.5 * scale]}

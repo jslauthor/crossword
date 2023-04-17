@@ -96,7 +96,7 @@ const RotatingBox: React.FC<RotatingBoxProps> = ({ side, defaultColor }) => {
         <PresentationControls
           global
           enabled={false}
-          rotation={[Math.PI * 0.09, Math.PI * (side / 2), 0]}
+          rotation={[Math.PI * 0.09, Math.PI + Math.PI * (side / 2), 0]}
         >
           <Box defaultColor={defaultColor} />
         </PresentationControls>

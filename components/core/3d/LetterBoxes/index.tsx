@@ -351,7 +351,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           // first column (which is from the previous side)
           const sSide = Math.ceil(selected / totalPerSide) - 1;
           const isSameSide = sSide === selectedSide;
-          const selectedCellX = selected % width;
+          // const selectedCellX = selected % width;
           const selectedCellY = Math.max(
             0,
             Math.ceil((selected - sSide * totalPerSide) / width) - 1
