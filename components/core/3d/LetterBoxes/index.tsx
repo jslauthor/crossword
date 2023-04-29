@@ -168,6 +168,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     useState<LetterBoxesProps['selectedSide']>();
   const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
 
+  const [answerIndex, setAnswerIndex] = useState<number[]>([]);
+
   useEffect(() => {
     setInstancedMesh(ref);
   }, [ref, setInstancedMesh]);
@@ -180,8 +182,36 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const [record, size] = useMemo(() => {
     const record = getCharacterRecord(puzzleData);
+
+    // We initialize the array with the max safe integer
+    // Each integer will map to the index of the character in the record solution
+    // Since bitwise operations only work on 32 bit integers, we need to split the array into chunks of 32
+    const indices = Array.from(
+      { length: Math.ceil(record.solution.length / 32) },
+      () => Number.MAX_SAFE_INTEGER >>> 0
+    );
+
+    for (const [index, cell] of record.solution.entries()) {
+      if (cell !== '#') {
+        const chunk = Math.floor(index / 32);
+        const bit = index % 32;
+        indices[chunk] &= ~(1 << bit);
+      }
+    }
+
+    setAnswerIndex(indices);
+
     return [record, record.solution.length];
   }, [puzzleData]);
+
+  useEffect(() => {
+    const allAreCorrect = answerIndex.every(
+      (i) => i === Number.MAX_SAFE_INTEGER >>> 0
+    );
+    if (allAreCorrect === true) {
+      alert('You solved the puzzle!');
+    }
+  }, [answerIndex]);
 
   useEffect(() => {
     if (onSelectClue != null) {
@@ -510,6 +540,25 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
 
+        const cell = record.solution[selected];
+        if (cell !== '#') {
+          const chunk = Math.floor(selected / 32);
+          const bit = selected % 32;
+          const isCorrect =
+            !(key === '' || key === 'BACKSPACE') &&
+            cell.value.toUpperCase() === key.toUpperCase();
+          if (isCorrect) {
+            // console.log('correct');
+            answerIndex[chunk] |= 1 << bit;
+          } else {
+            // console.log('incorrect');
+            answerIndex[chunk] &= ~(1 << bit);
+          }
+          // console.log((answerIndex[chunk] >>> 0).toString(2));
+
+          setAnswerIndex(answerIndex);
+        }
+
         characterPositionArray[selected * 2] = x;
         characterPositionArray[selected * 2 + 1] = y;
 
@@ -535,6 +584,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       selectedSide,
       totalPerSide,
       width,
+      answerIndex,
     ]
   );
 

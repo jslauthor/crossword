@@ -198,8 +198,6 @@ export default function Puzzle({
     [selectedSide]
   );
 
-  console.log('letterSelectedSide', letterSelectedSide, selectedSide);
-
   const defaultColor = useMemo(() => DEFAULT_COLOR, []);
   const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
   const adjacentColor = useMemo(() => DEFAULT_SELECTED_ADJACENT_COLOR, []);
