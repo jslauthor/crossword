@@ -371,7 +371,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           // We default to the selected cell for the first place in the word
           // and will override this if it is not the first place below
           const cell = record.solution[selected];
-          if (cell !== '#' && typeof cell.cell === 'number') {
+          if (cell != null && cell !== '#' && typeof cell.cell === 'number') {
             setSelectedWordCell(cell.cell);
           }
 

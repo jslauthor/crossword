@@ -178,9 +178,14 @@ export default function Puzzle({
     setSelectedCharacter(undefined);
   }, []);
 
-  // TODO: Add success state where if all letters are correct, you win
+  // TODO: Design nicer success state
+  //      - Design scoreboard history
+  //      - Design share screen
+  // TODO: Add current progress to local storage
   // TODO: Create fucking cool intro animation
   // TODO: Design header content
+  //     - Add modes like autoheck, check square, check word, check puzzle?
+  // TODO: Add clerk.com integration for server saves?
   // TODO: Add swipe gesture to change sides
   // TODO: Run on vercel to test on phone
   // TODO: Add cool flippy animations
@@ -188,6 +193,7 @@ export default function Puzzle({
   // TODO: Make this multiplayer where different people can work on different sides?
   // TODO: Add top and bottom sides?
   // TODO: When you complete a side, animate it and change the color
+  // TODO: Add color themes
 
   const letterSelectedSide = useMemo(() => {
     return Math.abs(selectedSide % 4);
