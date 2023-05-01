@@ -36,6 +36,8 @@ import tinycolor from 'tinycolor2';
 import RotatingBox from '../../components/core/3d/Box';
 import TurnArrow from '../../components/svg/TurnArrow';
 import Logo from '../../components/svg/Logo';
+import { useKeyDown } from '../../lib/utils/hooks/useKeyDown';
+import { getCharacterRecord } from '../../lib/utils/puzzle';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -147,6 +149,8 @@ export default function Puzzle({
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
   const [selectedSide, setSelectedSide] = useState(0);
+  const [keyAndIndexOverride, setKeyAndIndexOverride] =
+    useState<[string, number]>();
   const [clue, setClue] = useState<string | undefined>();
   const [containerRef, { width, height }] = useElementSize();
   const [selectedCharacter, setSelectedCharacter] = useState<
@@ -202,6 +206,26 @@ export default function Puzzle({
   const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
   const adjacentColor = useMemo(() => DEFAULT_SELECTED_ADJACENT_COLOR, []);
 
+  // DEBUG FUNCTION
+  // This will autocomplete the puzzle to test the success state
+  const finishPuzzle = useCallback(() => {
+    if (
+      location.hostname === 'localhost' ||
+      location.hostname === '127.0.0.1'
+    ) {
+      const { solution } = getCharacterRecord(puzzleData);
+      for (let x = 0; x < solution.length; x++) {
+        const cell = solution[x];
+        if (cell !== '#') {
+          setTimeout(() => {
+            setKeyAndIndexOverride([cell.value, x]);
+          }, x * 15);
+        }
+      }
+    }
+  }, [puzzleData]);
+  useKeyDown(finishPuzzle, ['~']);
+
   return (
     <Container ref={containerRef}>
       <HeaderContainer>
@@ -240,6 +264,7 @@ export default function Puzzle({
               characterTextureAtlasLookup={characterTextureAtlasLookup}
               cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
               selectedSide={letterSelectedSide}
+              keyAndIndexOverride={keyAndIndexOverride}
               currentKey={selectedCharacter}
               onLetterInput={onLetterInput}
               onSelectClue={setClue}

@@ -18,10 +18,6 @@
     "@react-three/drei": "^9.46.1",
     "@react-three/fiber": "^8.9.1",
     "@resvg/resvg-js": "^2.2.0",
-    "@types/node": "18.11.9",
-    "@types/react": "18.0.25",
-    "@types/react-dom": "18.0.9",
-    "@types/three": "^0.146.0",
     "eslint": "8.28.0",
     "eslint-config-next": "13.0.5",
     "lamina": "^1.1.23",
@@ -37,6 +33,10 @@
     "yoga-wasm-web": "^0.2.0"
   },
   "devDependencies": {
+    "@types/node": "18.11.9",
+    "@types/react": "18.0.25",
+    "@types/react-dom": "18.0.9",
+    "@types/three": "^0.146.0",
     "@types/tinycolor2": "^1.4.3",
     "eslint-config-prettier": "^8.5.0",
     "prettier": "^2.8.0"

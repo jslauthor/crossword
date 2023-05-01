@@ -123,15 +123,14 @@ type LetterBoxesProps = {
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
   currentKey?: string | undefined;
-  setInstancedMesh: (instancedMesh: InstancedMesh | null) => void;
   selectedSide: number;
-  onHovered?: (e: number | undefined) => void;
-  onSelected?: (e: number | undefined) => void;
-  onLetterInput?: () => void;
-  onSelectClue?: (clue: string | undefined) => void;
   defaultColor: number;
   selectedColor: number;
   adjacentColor: number;
+  setInstancedMesh: (instancedMesh: InstancedMesh | null) => void;
+  onLetterInput?: () => void;
+  onSelectClue?: (clue: string | undefined) => void;
+  keyAndIndexOverride?: [string, number]; // For testing
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -142,9 +141,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   cellNumberTextureAtlasLookup,
   setInstancedMesh,
   selectedSide,
+  keyAndIndexOverride,
   currentKey,
-  onHovered,
-  onSelected,
   onLetterInput,
   onSelectClue,
   defaultColor,
@@ -206,7 +204,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   useEffect(() => {
     const allAreCorrect = answerIndex.every(
-      (i) => i === Number.MAX_SAFE_INTEGER >>> 0
+      (i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0
     );
     if (allAreCorrect === true) {
       alert('You solved the puzzle!');
@@ -464,22 +462,23 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   });
 
   const onLetterChange = useCallback(
-    (key: string) => {
+    (key: string, selectedOverride?: number) => {
+      const selectedIndex = selectedOverride ?? selected;
       const coord = characterTextureAtlasLookup[key.toUpperCase()];
-      if (selected != null && ref != null) {
+      if (selectedIndex != null && ref != null) {
         const x = key === '' || key === 'BACKSPACE' ? -1 : coord[0];
         const y = key === '' || key === 'BACKSPACE' ? -1 : coord[1];
         setLastCurrentKey(key);
 
         if (x !== -1) {
           // select the next cell
-          const nextCell = selected + getInterval();
-          const sSide = Math.ceil(selected / totalPerSide) - 1;
+          const nextCell = selectedIndex + getInterval();
+          const sSide = Math.ceil(selectedIndex / totalPerSide) - 1;
           const side = Math.ceil(nextCell / totalPerSide) - 1;
           const selectedX = nextCell % width;
           const selectedY = Math.max(
             0,
-            Math.ceil((selected - sSide * totalPerSide) / width) - 1
+            Math.ceil((selectedIndex - sSide * totalPerSide) / width) - 1
           );
           if (selectedX === 0 && selectedSide !== sSide) {
             const int =
@@ -498,14 +497,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         } else if (
           // select the prev cell
-          characterPositionArray[selected * 2] === -1 ||
+          characterPositionArray[selectedIndex * 2] === -1 ||
           lastCurrentKey === '' ||
           lastCurrentKey === 'BACKSPACE'
         ) {
           // select the previous cell
-          const nextCell = selected - getInterval();
+          const nextCell = selectedIndex - getInterval();
           const selectedX = nextCell % width;
-          const sSide = Math.ceil(selected / totalPerSide) - 1;
+          const sSide = Math.ceil(selectedIndex / totalPerSide) - 1;
 
           // We need to check if we are on the first cell of a row
           // and if it is, we check the previous sides last row for a letter
@@ -540,27 +539,26 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
 
-        const cell = record.solution[selected];
+        const cell = record.solution[selectedIndex];
         if (cell !== '#') {
-          const chunk = Math.floor(selected / 32);
-          const bit = selected % 32;
+          const chunk = Math.floor(selectedIndex / 32);
+          const bit = selectedIndex % 32;
           const isCorrect =
             !(key === '' || key === 'BACKSPACE') &&
             cell.value.toUpperCase() === key.toUpperCase();
+          const newAnswerIndex = [...answerIndex];
           if (isCorrect) {
-            // console.log('correct');
-            answerIndex[chunk] |= 1 << bit;
+            // This flips the index bit to 1 (true)
+            newAnswerIndex[chunk] |= 1 << bit;
           } else {
-            // console.log('incorrect');
-            answerIndex[chunk] &= ~(1 << bit);
+            // This flips the index bit to 0 (false)
+            newAnswerIndex[chunk] &= ~(1 << bit);
           }
-          // console.log((answerIndex[chunk] >>> 0).toString(2));
-
-          setAnswerIndex(answerIndex);
+          setAnswerIndex(newAnswerIndex);
         }
 
-        characterPositionArray[selected * 2] = x;
-        characterPositionArray[selected * 2 + 1] = y;
+        characterPositionArray[selectedIndex * 2] = x;
+        characterPositionArray[selectedIndex * 2 + 1] = y;
 
         ref.geometry.attributes.characterPosition.needsUpdate = true;
 
@@ -587,6 +585,17 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       answerIndex,
     ]
   );
+
+  /**
+   * For debug purposes
+   */
+  useEffect(() => {
+    if (keyAndIndexOverride != null) {
+      onLetterChange(keyAndIndexOverride[0], keyAndIndexOverride[1]);
+    }
+    // Adding onLetterChange here causes multiple letter renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyAndIndexOverride]);
 
   /**
    * Handle incoming letter input
