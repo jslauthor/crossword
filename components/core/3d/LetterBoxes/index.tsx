@@ -7,6 +7,9 @@ import {
   Object3D,
   Color,
   Vector4,
+  Matrix4,
+  Quaternion,
+  Euler,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
@@ -14,6 +17,9 @@ import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 import { useKeyDown } from '../../../../lib/utils/hooks/useKeyDown';
+import { useSpring, SpringValue } from '@react-spring/core';
+import { a } from '@react-spring/three';
+import { easeInOutBack } from 'js-easing-functions';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -117,6 +123,68 @@ const fragmentShader = `
     csm_DiffuseColor = vec4(c, 1.0);
   }
 `;
+
+// This only works for operations that are smaller than the total range
+const rangeOperation = (
+  start: number,
+  end: number,
+  val1: number,
+  val2: number,
+  operation: '-' | '+'
+) => {
+  switch (operation) {
+    case '+':
+      const addVal = val1 + val2;
+      if (addVal > end) {
+        return start + (addVal - end);
+      }
+      return addVal;
+    case '-':
+      const subVal = val1 - val2;
+      if (subVal < 0) {
+        return end + subVal;
+      }
+      return subVal;
+    default:
+      return 0;
+  }
+};
+
+function timeout(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const yAxis = new Vector3(0, 1, 0);
+const applyFlipAnimation = ({
+  mesh,
+  index,
+  elapsed,
+}: {
+  mesh: InstancedMesh;
+  index: number;
+  elapsed: number;
+}) => {
+  if (mesh == null) {
+    return;
+  }
+
+  const matrix: Matrix4 = new Matrix4();
+  mesh.getMatrixAt(index, matrix);
+  const position: Vector3 = new Vector3();
+  const rotation: Quaternion = new Quaternion();
+  const scale: Vector3 = new Vector3();
+  matrix.decompose(position, rotation, scale);
+
+  tempObject.position.copy(position);
+  tempObject.rotation.copy(
+    new Euler().setFromQuaternion(
+      rotation.setFromAxisAngle(yAxis, elapsed * Math.PI * 2)
+    )
+  );
+  tempObject.scale.copy(scale);
+  tempObject.updateMatrix();
+  mesh.setMatrixAt(index, tempObject.matrix);
+};
 
 type LetterBoxesProps = {
   puzzleData: PuzzleData[];
@@ -262,9 +330,53 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     setSelected(undefined);
   }, [selectedSide]);
 
+  const { flipAnimation } = useSpring({
+    flipAnimation: 1,
+    config: { mass: 5, tension: 100, friction: 50, precision: 0.0001 },
+  });
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [showFlipAnimation, setShowFlipAnimation] = useState(false);
+  console.log(selected);
   // Initial setup (orient the instanced boxes)
   useEffect(() => {
     if (ref == null) return;
+
+    flipAnimation.start({
+      from: { flipAnimation: showFlipAnimation ? 1 : 0 },
+      to: { flipAnimation: showFlipAnimation ? 0 : 1 },
+      // reset: true,
+      onChange: (props, spring) => {
+        if (isAnimating === false) {
+          const elapsed = spring.get();
+          const start = 199;
+          for (let index = 0; index <= totalPerSide + width; index++) {
+            const next =
+              index < width
+                ? rangeOperation(0, size, start, index * width, '+')
+                : rangeOperation(
+                    0,
+                    size,
+                    start,
+                    totalPerSide + index - width * 2,
+                    '+'
+                  );
+            applyFlipAnimation({
+              mesh: ref,
+              elapsed,
+              index: next,
+            });
+          }
+          ref.instanceMatrix.needsUpdate = true;
+        }
+      },
+      onStart: () => {
+        setIsAnimating(true);
+      },
+      onRest: () => {
+        setIsAnimating(false);
+      },
+    });
+
     for (let j = 0; j < record.solution.length; j++) {
       const cell = record.solution[j];
       if (cell !== '#') {
@@ -331,20 +443,25 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     ref.instanceMatrix.needsUpdate = true;
     // select first letter on last side
     setSelected((record.solution.length / 4) * 3 + (width - 1));
+    setShowFlipAnimation(true);
   }, [
     ref,
-    cellNumberPositionArray,
-    cellNumberTextureAtlasLookup,
-    characterPositionArray,
-    characterTextureAtlasLookup,
-    cubeSideDisplayArray,
-    height,
-    puzzleData,
-    record.solution,
-    totalPerSide,
-    width,
+    // selectedSide,
+    // cellNumberPositionArray,
+    // cellNumberTextureAtlasLookup,
+    // characterPositionArray,
+    // characterTextureAtlasLookup,
+    // cubeSideDisplayArray,
+    // height,
+    // puzzleData,
+    // record.solution,
+    // totalPerSide,
+    // width,
+    // flipAnimation,
+    // hovered,
   ]);
 
+  // This does all of the selection logic. Row/cell highlighting, etc.
   useFrame((state) => {
     if (ref == null) return;
     for (let id = 0; id < record.solution.length; id++) {
@@ -740,7 +857,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   );
 
   return (
-    <instancedMesh
+    <a.instancedMesh
       ref={setRef}
       args={[undefined, undefined, size]}
       onPointerMove={onPointerMove}
@@ -774,7 +891,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           array={cellColorsArray}
         />
       </boxGeometry>
-    </instancedMesh>
+    </a.instancedMesh>
   );
 };
 
