@@ -142,7 +142,7 @@ const rangeOperation = (
     case '-':
       const subVal = val1 - val2;
       if (subVal < 0) {
-        return end + subVal;
+        return end + (subVal + 1);
       }
       return subVal;
     default:
@@ -159,10 +159,12 @@ const applyFlipAnimation = ({
   mesh,
   index,
   elapsed,
+  rotations,
 }: {
   mesh: InstancedMesh;
   index: number;
   elapsed: number;
+  rotations: Euler[];
 }) => {
   if (mesh == null) {
     return;
@@ -176,14 +178,20 @@ const applyFlipAnimation = ({
   matrix.decompose(position, rotation, scale);
 
   tempObject.position.copy(position);
+  tempObject.rotation.copy(new Euler().setFromQuaternion(rotation));
   tempObject.rotation.copy(
     new Euler().setFromQuaternion(
-      rotation.setFromAxisAngle(yAxis, elapsed * Math.PI * 2)
+      rotation.setFromAxisAngle(
+        yAxis,
+        elapsed * (Math.PI * 2) + (rotations[index]?.y ?? 0)
+      )
     )
   );
+
   tempObject.scale.copy(scale);
   tempObject.updateMatrix();
   mesh.setMatrixAt(index, tempObject.matrix);
+  mesh.instanceMatrix.needsUpdate = true;
 };
 
 type LetterBoxesProps = {
@@ -233,8 +241,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [prevSelectedSide, setPrevSelectedSide] =
     useState<LetterBoxesProps['selectedSide']>();
   const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
-
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
+  const [initialRotations, setInitialRotations] = useState<Euler[]>([]);
 
   useEffect(() => {
     setInstancedMesh(ref);
@@ -332,51 +340,90 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const { flipAnimation } = useSpring({
     flipAnimation: 1,
-    config: { mass: 5, tension: 100, friction: 50, precision: 0.0001 },
+    config: {
+      mass: 8,
+      tension: 100,
+      friction: 50,
+      precision: 0.0001,
+    },
   });
   const [isAnimating, setIsAnimating] = useState(false);
   const [showFlipAnimation, setShowFlipAnimation] = useState(false);
-  console.log(selected);
-  // Initial setup (orient the instanced boxes)
+
+  // Animation effect
   useEffect(() => {
-    if (ref == null) return;
+    if (ref == null || isAnimating === true) return;
 
     flipAnimation.start({
       from: { flipAnimation: showFlipAnimation ? 1 : 0 },
       to: { flipAnimation: showFlipAnimation ? 0 : 1 },
-      // reset: true,
-      onChange: (props, spring) => {
-        if (isAnimating === false) {
-          const elapsed = spring.get();
-          const start = 199;
-          for (let index = 0; index <= totalPerSide + width; index++) {
-            const next =
-              index < width
-                ? rangeOperation(0, size, start, index * width, '+')
-                : rangeOperation(
-                    0,
-                    size,
-                    start,
-                    totalPerSide + index - width * 2,
-                    '+'
-                  );
+      onChange: async (props, spring) => {
+        const elapsed = spring.get();
+        const side = rangeOperation(0, 3, selectedSide, 1, '-');
+        const start = side * (width * height) + width - 1;
+        for (let index = 0; index <= totalPerSide + width; index++) {
+          const next =
+            index < width
+              ? rangeOperation(0, size, start, index * width, '+')
+              : rangeOperation(
+                  0,
+                  size,
+                  start,
+                  totalPerSide + index - width * 2,
+                  '+'
+                );
+          setTimeout(() => {
             applyFlipAnimation({
               mesh: ref,
               elapsed,
               index: next,
+              rotations: initialRotations,
             });
-          }
-          ref.instanceMatrix.needsUpdate = true;
+          }, index * 10);
+
+          // Show all sides while animating
+          cubeSideDisplayArray[next * 2] =
+            CubeSidesEnum.six |
+            CubeSidesEnum.two |
+            CubeSidesEnum.one |
+            CubeSidesEnum.five;
         }
+        ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
       },
       onStart: () => {
         setIsAnimating(true);
       },
       onRest: () => {
+        // Restore which sides we show
+        for (let j = 0; j < record.solution.length; j++) {
+          cubeSideDisplayArray[j * 2] =
+            CubeSidesEnum.six |
+            (j % width === width - 1 ? CubeSidesEnum.two : 0);
+        }
+        ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
+
         setIsAnimating(false);
+        setShowFlipAnimation(false);
       },
     });
+  }, [
+    // flipAnimation,
+    // height,
+    // isAnimating,
+    ref,
+    // selectedSide,
+    showFlipAnimation,
+    initialRotations,
+    // size,
+    // totalPerSide,
+    // width,
+  ]);
 
+  // Initial setup (orient the instanced boxes)
+  useEffect(() => {
+    if (ref == null) return;
+
+    const rotations: Euler[] = [];
     for (let j = 0; j < record.solution.length; j++) {
       const cell = record.solution[j];
       if (cell !== '#') {
@@ -385,6 +432,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         const side = Math.ceil(j / totalPerSide) - 1;
         const x = (j % width) - 1;
         const y = Math.max(0, Math.ceil((j - side * totalPerSide) / width) - 1);
+
+        // Sides three and four are the top and bottom (respectively)
+        // 1, 2, 5, 6 are the camera facing sides
 
         cubeSideDisplayArray[j * 2] =
           CubeSidesEnum.six | (j % width === width - 1 ? CubeSidesEnum.two : 0);
@@ -436,6 +486,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
       tempObject.updateMatrix();
       ref.setMatrixAt(j, tempObject.matrix);
+      rotations[j] = new Euler().copy(tempObject.rotation);
     }
     ref.geometry.attributes.characterPosition.needsUpdate = true;
     ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
@@ -444,6 +495,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     // select first letter on last side
     setSelected((record.solution.length / 4) * 3 + (width - 1));
     setShowFlipAnimation(true);
+    setInitialRotations(rotations);
   }, [
     ref,
     // selectedSide,

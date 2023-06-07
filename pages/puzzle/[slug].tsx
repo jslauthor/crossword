@@ -145,7 +145,6 @@ export default function Puzzle({
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
-  const router = useRouter();
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
   const [selectedSide, setSelectedSide] = useState(0);
@@ -240,7 +239,7 @@ export default function Puzzle({
         <pointLight position={[5, 5, 5]} intensity={1.5} />
         <PresentationControls
           global
-          enabled={false}
+          // enabled={false}
           rotation={[0, Math.PI + Math.PI * (selectedSide / 2), 0]}
         >
           <group
