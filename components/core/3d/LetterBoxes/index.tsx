@@ -7,8 +7,6 @@ import {
   Object3D,
   Color,
   Vector4,
-  Matrix4,
-  Quaternion,
   Euler,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
@@ -17,9 +15,8 @@ import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 import { useKeyDown } from '../../../../lib/utils/hooks/useKeyDown';
-import { useSpring, SpringValue } from '@react-spring/core';
-import { a } from '@react-spring/three';
-import { easeInOutBack } from 'js-easing-functions';
+import { useSpring } from '@react-spring/core';
+import { useIntroAnimation } from '../../../../lib/utils/hooks/animations/useIntroAnimation';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -33,7 +30,7 @@ for (let x = 0; x <= 1000; x++) {
 }
 SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 
-enum CubeSidesEnum {
+export enum CubeSidesEnum {
   one = 1 << 0,
   two = 1 << 1,
   three = 1 << 2,
@@ -123,76 +120,6 @@ const fragmentShader = `
     csm_DiffuseColor = vec4(c, 1.0);
   }
 `;
-
-// This only works for operations that are smaller than the total range
-const rangeOperation = (
-  start: number,
-  end: number,
-  val1: number,
-  val2: number,
-  operation: '-' | '+'
-) => {
-  switch (operation) {
-    case '+':
-      const addVal = val1 + val2;
-      if (addVal > end) {
-        return start + (addVal - end);
-      }
-      return addVal;
-    case '-':
-      const subVal = val1 - val2;
-      if (subVal < 0) {
-        return end + (subVal + 1);
-      }
-      return subVal;
-    default:
-      return 0;
-  }
-};
-
-function timeout(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-const yAxis = new Vector3(0, 1, 0);
-const applyFlipAnimation = ({
-  mesh,
-  index,
-  elapsed,
-  rotations,
-}: {
-  mesh: InstancedMesh;
-  index: number;
-  elapsed: number;
-  rotations: Euler[];
-}) => {
-  if (mesh == null) {
-    return;
-  }
-
-  const matrix: Matrix4 = new Matrix4();
-  mesh.getMatrixAt(index, matrix);
-  const position: Vector3 = new Vector3();
-  const rotation: Quaternion = new Quaternion();
-  const scale: Vector3 = new Vector3();
-  matrix.decompose(position, rotation, scale);
-
-  tempObject.position.copy(position);
-  tempObject.rotation.copy(new Euler().setFromQuaternion(rotation));
-  tempObject.rotation.copy(
-    new Euler().setFromQuaternion(
-      rotation.setFromAxisAngle(
-        yAxis,
-        elapsed * (Math.PI * 2) + (rotations[index]?.y ?? 0)
-      )
-    )
-  );
-
-  tempObject.scale.copy(scale);
-  tempObject.updateMatrix();
-  mesh.setMatrixAt(index, tempObject.matrix);
-  mesh.instanceMatrix.needsUpdate = true;
-};
 
 type LetterBoxesProps = {
   puzzleData: PuzzleData[];
@@ -338,180 +265,105 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     setSelected(undefined);
   }, [selectedSide]);
 
-  const { flipAnimation } = useSpring({
-    flipAnimation: 1,
-    config: {
-      mass: 8,
-      tension: 100,
-      friction: 50,
-      precision: 0.0001,
-    },
-  });
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [showFlipAnimation, setShowFlipAnimation] = useState(false);
+  const showIntroAnimation = useIntroAnimation(
+    selectedSide,
+    width,
+    height,
+    totalPerSide,
+    size,
+    initialRotations,
+    cubeSideDisplayArray,
+    record,
+    ref
+  );
 
-  // Animation effect
-  useEffect(() => {
-    if (ref == null || isAnimating === true) return;
+  // Initial setup (orient the instanced boxes)
+  useEffect(
+    () => {
+      if (ref == null) return;
 
-    flipAnimation.start({
-      from: { flipAnimation: showFlipAnimation ? 1 : 0 },
-      to: { flipAnimation: showFlipAnimation ? 0 : 1 },
-      onChange: async (props, spring) => {
-        const elapsed = spring.get();
-        const side = rangeOperation(0, 3, selectedSide, 1, '-');
-        const start = side * (width * height) + width - 1;
-        for (let index = 0; index <= totalPerSide + width; index++) {
-          const next =
-            index < width
-              ? rangeOperation(0, size, start, index * width, '+')
-              : rangeOperation(
-                  0,
-                  size,
-                  start,
-                  totalPerSide + index - width * 2,
-                  '+'
-                );
-          setTimeout(() => {
-            applyFlipAnimation({
-              mesh: ref,
-              elapsed,
-              index: next,
-              rotations: initialRotations,
-            });
-          }, index * 10);
+      const rotations: Euler[] = [];
+      for (let j = 0; j < record.solution.length; j++) {
+        const cell = record.solution[j];
+        if (cell !== '#') {
+          tempObject.rotation.set(0, 0, 0);
+          tempObject.scale.set(1, 1, 1);
+          const side = Math.ceil(j / totalPerSide) - 1;
+          const x = (j % width) - 1;
+          const y = Math.max(
+            0,
+            Math.ceil((j - side * totalPerSide) / width) - 1
+          );
 
-          // Show all sides while animating
-          cubeSideDisplayArray[next * 2] =
-            CubeSidesEnum.six |
-            CubeSidesEnum.two |
-            CubeSidesEnum.one |
-            CubeSidesEnum.five;
-        }
-        ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
-      },
-      onStart: () => {
-        setIsAnimating(true);
-      },
-      onRest: () => {
-        // Restore which sides we show
-        for (let j = 0; j < record.solution.length; j++) {
+          // Sides three and four are the top and bottom (respectively)
+          // 1, 2, 5, 6 are the camera facing sides
+
           cubeSideDisplayArray[j * 2] =
             CubeSidesEnum.six |
             (j % width === width - 1 ? CubeSidesEnum.two : 0);
+
+          if (typeof cell.cell === 'number') {
+            cellNumberPositionArray[j * 2] =
+              cellNumberTextureAtlasLookup[cell.cell][0];
+            cellNumberPositionArray[j * 2 + 1] =
+              cellNumberTextureAtlasLookup[cell.cell][1];
+          }
+
+          if (side === 0) {
+            tempObject.position.set(
+              -x + height - 2,
+              -y + height - 1,
+              -height + 1
+            );
+          } else if (side === 1) {
+            tempObject.position.set(-x + height - 2, -y + height - 1, 0);
+            rotateAroundPoint(
+              tempObject,
+              new Vector3(0, 0, 0),
+              new Vector3(0, 1, 0),
+              Math.PI / 2,
+              true
+            );
+          } else if (side === 2) {
+            tempObject.position.set(-x - 1, -y + height - 1, 0);
+            rotateAroundPoint(
+              tempObject,
+              new Vector3(0, 0, 0),
+              new Vector3(0, 1, 0),
+              Math.PI,
+              true
+            );
+          } else if (side === 3) {
+            tempObject.position.set(-x - 1, -y + height - 1, -height + 1);
+            rotateAroundPoint(
+              tempObject,
+              new Vector3(0, 0, 0),
+              new Vector3(0, 1, 0),
+              -Math.PI / 2,
+              true
+            );
+          }
+        } else {
+          // Hide the empty square
+          tempObject.scale.set(0, 0, 0);
         }
-        ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
-
-        setIsAnimating(false);
-        setShowFlipAnimation(false);
-      },
-    });
-  }, [
-    // flipAnimation,
-    // height,
-    // isAnimating,
-    ref,
-    // selectedSide,
-    showFlipAnimation,
-    initialRotations,
-    // size,
-    // totalPerSide,
-    // width,
-  ]);
-
-  // Initial setup (orient the instanced boxes)
-  useEffect(() => {
-    if (ref == null) return;
-
-    const rotations: Euler[] = [];
-    for (let j = 0; j < record.solution.length; j++) {
-      const cell = record.solution[j];
-      if (cell !== '#') {
-        tempObject.rotation.set(0, 0, 0);
-        tempObject.scale.set(1, 1, 1);
-        const side = Math.ceil(j / totalPerSide) - 1;
-        const x = (j % width) - 1;
-        const y = Math.max(0, Math.ceil((j - side * totalPerSide) / width) - 1);
-
-        // Sides three and four are the top and bottom (respectively)
-        // 1, 2, 5, 6 are the camera facing sides
-
-        cubeSideDisplayArray[j * 2] =
-          CubeSidesEnum.six | (j % width === width - 1 ? CubeSidesEnum.two : 0);
-
-        if (typeof cell.cell === 'number') {
-          cellNumberPositionArray[j * 2] =
-            cellNumberTextureAtlasLookup[cell.cell][0];
-          cellNumberPositionArray[j * 2 + 1] =
-            cellNumberTextureAtlasLookup[cell.cell][1];
-        }
-
-        if (side === 0) {
-          tempObject.position.set(
-            -x + height - 2,
-            -y + height - 1,
-            -height + 1
-          );
-        } else if (side === 1) {
-          tempObject.position.set(-x + height - 2, -y + height - 1, 0);
-          rotateAroundPoint(
-            tempObject,
-            new Vector3(0, 0, 0),
-            new Vector3(0, 1, 0),
-            Math.PI / 2,
-            true
-          );
-        } else if (side === 2) {
-          tempObject.position.set(-x - 1, -y + height - 1, 0);
-          rotateAroundPoint(
-            tempObject,
-            new Vector3(0, 0, 0),
-            new Vector3(0, 1, 0),
-            Math.PI,
-            true
-          );
-        } else if (side === 3) {
-          tempObject.position.set(-x - 1, -y + height - 1, -height + 1);
-          rotateAroundPoint(
-            tempObject,
-            new Vector3(0, 0, 0),
-            new Vector3(0, 1, 0),
-            -Math.PI / 2,
-            true
-          );
-        }
-      } else {
-        // Hide the empty square
-        tempObject.scale.set(0, 0, 0);
+        tempObject.updateMatrix();
+        ref.setMatrixAt(j, tempObject.matrix);
+        rotations[j] = new Euler().copy(tempObject.rotation);
       }
-      tempObject.updateMatrix();
-      ref.setMatrixAt(j, tempObject.matrix);
-      rotations[j] = new Euler().copy(tempObject.rotation);
-    }
-    ref.geometry.attributes.characterPosition.needsUpdate = true;
-    ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
-    ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
-    ref.instanceMatrix.needsUpdate = true;
-    // select first letter on last side
-    setSelected((record.solution.length / 4) * 3 + (width - 1));
-    setShowFlipAnimation(true);
-    setInitialRotations(rotations);
-  }, [
-    ref,
-    // selectedSide,
-    // cellNumberPositionArray,
-    // cellNumberTextureAtlasLookup,
-    // characterPositionArray,
-    // characterTextureAtlasLookup,
-    // cubeSideDisplayArray,
-    // height,
-    // puzzleData,
-    // record.solution,
-    // totalPerSide,
-    // width,
-    // flipAnimation,
-    // hovered,
-  ]);
+      ref.geometry.attributes.characterPosition.needsUpdate = true;
+      ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
+      ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
+      ref.instanceMatrix.needsUpdate = true;
+      // select first letter on last side
+      setSelected((record.solution.length / 4) * 3 + (width - 1));
+      setInitialRotations(rotations);
+      showIntroAnimation(true);
+    },
+    // Only run once on load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [ref]
+  );
 
   // This does all of the selection logic. Row/cell highlighting, etc.
   useFrame((state) => {
@@ -909,7 +761,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   );
 
   return (
-    <a.instancedMesh
+    <instancedMesh
       ref={setRef}
       args={[undefined, undefined, size]}
       onPointerMove={onPointerMove}
@@ -943,7 +795,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           array={cellColorsArray}
         />
       </boxGeometry>
-    </a.instancedMesh>
+    </instancedMesh>
   );
 };
 
