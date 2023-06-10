@@ -124,14 +124,13 @@ export const getObjectSizeInViewSpace = (
 
 export const getObjectSize = (object: InstancedMeshType, camera: Camera) => {
   const points = getObjectSizeInViewSpace(object, camera);
-  const { width, height } = getSizeOfSingleInstance(object, camera);
 
   // Unfortunately, getObjectSizeInViewSpace returns the point in the center of the object
   // so we add in the remaining half width and height
-  const tlx = points.topLeftX - width / 2;
-  const tly = points.topLeftY - height / 2;
-  const brx = points.bottomRightX + width / 2;
-  const bry = points.bottomRightY + height / 2;
+  const tlx = points.topLeftX;
+  const tly = points.topLeftY;
+  const brx = points.bottomRightX;
+  const bry = points.bottomRightY;
 
   return {
     width: Math.abs(bry - tly),

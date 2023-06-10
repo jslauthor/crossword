@@ -1,9 +1,7 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
-import { useRouter } from 'next/router';
 import { getPuzzleById, getPuzzles } from '../../lib/utils/reader';
 import styled from '@emotion/styled';
 import { Canvas } from '@react-three/fiber';
-import { useElementSize } from 'usehooks-ts';
 import {
   PresentationControls,
   OrthographicCamera,
@@ -86,9 +84,9 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   grid-template-columns: min-content 1fr min-content;
   grid-column-gap: 1rem;
   align-items: center;
-  height: 100px;
   border-radius: 0.25rem;
-  padding: 0rem 1rem;
+  padding: 0.25rem 1rem;
+  height: 60px;
   box-sizing: border-box;
   margin-bottom: 0.5rem;
   max-width: var(--primary-app-width);
@@ -153,18 +151,25 @@ export default function Puzzle({
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
     useState<[string, number]>();
   const [clue, setClue] = useState<string | undefined>();
-  const [containerRef, { width, height }] = useElementSize();
   const [selectedCharacter, setSelectedCharacter] = useState<
     string | undefined
   >();
 
+  const [isInitialized, setIsInitialized] = useState(false);
+  const onInitialize = useCallback(() => {
+    setIsInitialized(true);
+  }, []);
+
   const scale = useMemo(() => {
-    if (cameraRef == null || instancedRef == null) {
+    if (cameraRef == null || instancedRef == null || isInitialized === false) {
       return 1;
     }
     const { width } = getObjectSize(instancedRef, cameraRef);
-    return Math.min(window.innerWidth - 100, 650) / width;
-  }, [cameraRef, instancedRef]);
+    return (
+      Math.min(window.innerWidth - 110, 650) /
+      (width / Math.min(window.devicePixelRatio, 2)) // this is a weird bug where threejs was doubling the height on hidpi devices
+    );
+  }, [cameraRef, instancedRef, isInitialized]);
 
   const onKeyPress = useCallback((button: string) => {
     if (button != 'MORE') {
@@ -236,7 +241,7 @@ export default function Puzzle({
   }, [rotationAnimation]);
 
   return (
-    <Container ref={containerRef}>
+    <Container>
       <HeaderContainer>
         <HeaderItem>
           <FontAwesomeIcon icon={faBars} width={25} />
@@ -247,7 +252,7 @@ export default function Puzzle({
           <FontAwesomeIcon icon={faGear} width={25} />
         </HeaderItem>
       </HeaderContainer>
-      <Canvas>
+      <Canvas gl={{ antialias: false }}>
         <OrthographicCamera
           ref={setCameraRef}
           makeDefault
@@ -260,7 +265,7 @@ export default function Puzzle({
         <pointLight position={[5, 5, 5]} intensity={1.5} />
         <PresentationControls
           global
-          // enabled={false}
+          enabled={false}
           rotation={[0, rotation * (Math.PI + Math.PI * (selectedSide / 2)), 0]}
         >
           <group
@@ -280,6 +285,7 @@ export default function Puzzle({
               defaultColor={defaultColor}
               selectedColor={selectedColor}
               adjacentColor={adjacentColor}
+              onInitialize={onInitialize}
             />
           </group>
         </PresentationControls>

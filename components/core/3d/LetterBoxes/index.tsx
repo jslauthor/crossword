@@ -131,10 +131,11 @@ type LetterBoxesProps = {
   defaultColor: number;
   selectedColor: number;
   adjacentColor: number;
+  keyAndIndexOverride?: [string, number]; // For testing
   setInstancedMesh: (instancedMesh: InstancedMesh | null) => void;
   onLetterInput?: () => void;
   onSelectClue?: (clue: string | undefined) => void;
-  keyAndIndexOverride?: [string, number]; // For testing
+  onInitialize?: () => void;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -152,6 +153,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   defaultColor,
   selectedColor,
   adjacentColor,
+  onInitialize,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   const [isVerticalOrientation, setVerticalOrientation] =
@@ -369,6 +371,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       setInitialRotations(rotations);
       // showIntroAnimation(true);
       showRippleAnimation();
+      if (onInitialize) {
+        onInitialize();
+      }
     },
     // Only run once on load
     // eslint-disable-next-line react-hooks/exhaustive-deps
