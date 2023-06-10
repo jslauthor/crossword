@@ -86,7 +86,7 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   align-items: center;
   border-radius: 0.25rem;
   padding: 0.25rem 1rem;
-  height: 60px;
+  min-height: 55px;
   box-sizing: border-box;
   margin-bottom: 0.5rem;
   max-width: var(--primary-app-width);

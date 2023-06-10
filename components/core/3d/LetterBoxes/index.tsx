@@ -15,8 +15,6 @@ import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 import { useKeyDown } from '../../../../lib/utils/hooks/useKeyDown';
-import { useSpring } from '@react-spring/core';
-import { useIntroAnimation } from '../../../../lib/utils/hooks/animations/useIntroAnimation';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
@@ -501,7 +499,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     (key: string, selectedOverride?: number) => {
       const selectedIndex = selectedOverride ?? selected;
       const coord = characterTextureAtlasLookup[key.toUpperCase()];
-      if (selectedIndex != null && ref != null) {
+      if (selectedIndex != null && ref != null && coord != null) {
         const x = key === '' || key === 'BACKSPACE' ? -1 : coord[0];
         const y = key === '' || key === 'BACKSPACE' ? -1 : coord[1];
         setLastCurrentKey(key);
