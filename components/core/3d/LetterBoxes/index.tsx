@@ -17,6 +17,7 @@ import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 import { useKeyDown } from '../../../../lib/utils/hooks/useKeyDown';
 import { useSpring } from '@react-spring/core';
 import { useIntroAnimation } from '../../../../lib/utils/hooks/animations/useIntroAnimation';
+import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -265,15 +266,23 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     setSelected(undefined);
   }, [selectedSide]);
 
-  const showIntroAnimation = useIntroAnimation(
-    selectedSide,
+  // const showIntroAnimation = useIntroAnimation(
+  //   selectedSide,
+  //   width,
+  //   height,
+  //   totalPerSide,
+  //   size,
+  //   initialRotations,
+  //   cubeSideDisplayArray,
+  //   record,
+  //   ref
+  // );
+
+  const showRippleAnimation = useScaleRippleAnimation(
     width,
     height,
     totalPerSide,
     size,
-    initialRotations,
-    cubeSideDisplayArray,
-    record,
     ref
   );
 
@@ -358,7 +367,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       // select first letter on last side
       setSelected((record.solution.length / 4) * 3 + (width - 1));
       setInitialRotations(rotations);
-      showIntroAnimation(true);
+      // showIntroAnimation(true);
+      showRippleAnimation();
     },
     // Only run once on load
     // eslint-disable-next-line react-hooks/exhaustive-deps

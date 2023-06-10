@@ -16,7 +16,7 @@ import {
   NUMBER_RECORD,
   TEXTURE_RECORD,
 } from '../../lib/utils/textures';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   OrthographicCamera as OrthographicCameraType,
   InstancedMesh as InstancedMeshType,
@@ -38,6 +38,8 @@ import TurnArrow from '../../components/svg/TurnArrow';
 import Logo from '../../components/svg/Logo';
 import { useKeyDown } from '../../lib/utils/hooks/useKeyDown';
 import { getCharacterRecord } from '../../lib/utils/puzzle';
+import { useSpring } from '@react-spring/core';
+import { easings } from '@react-spring/web';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -214,6 +216,25 @@ export default function Puzzle({
   }, [puzzleData]);
   useKeyDown(finishPuzzle, ['~']);
 
+  // Intro spinny animation
+  const [rotation, setRotation] = useState(0);
+  const { rotation: rotationAnimation } = useSpring({
+    rotation: 1,
+    config: {
+      duration: 500,
+      easing: easings.easeInBack,
+    },
+  });
+  useEffect(() => {
+    rotationAnimation.start({
+      from: 0,
+      to: 1,
+      onChange: (props, spring) => {
+        setRotation(spring.get());
+      },
+    });
+  }, [rotationAnimation]);
+
   return (
     <Container ref={containerRef}>
       <HeaderContainer>
@@ -240,7 +261,7 @@ export default function Puzzle({
         <PresentationControls
           global
           // enabled={false}
-          rotation={[0, Math.PI + Math.PI * (selectedSide / 2), 0]}
+          rotation={[0, rotation * (Math.PI + Math.PI * (selectedSide / 2)), 0]}
         >
           <group
             position={[-3.5 * scale, -4, 3.5 * scale]}
