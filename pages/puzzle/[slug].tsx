@@ -50,7 +50,7 @@ const Container = styled.div`
   touch-action: none;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   user-select: none;
 `;
@@ -58,7 +58,7 @@ const Container = styled.div`
 const HeaderContainer = styled.div`
   position: relative;
   display: flex;
-  padding: 1rem;
+  padding: 0.5rem;
   align-items: center;
   justify-content: space-between;
   width: 100%;
@@ -86,7 +86,7 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   align-items: center;
   border-radius: 0.25rem;
   padding: 0.25rem 1rem;
-  min-height: 55px;
+  min-height: 40px;
   box-sizing: border-box;
   margin-bottom: 0.5rem;
   max-width: var(--primary-app-width);
@@ -95,43 +95,7 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
 `;
 
 const ClueLabel = styled.span`
-  font-size: 1.25rem;
-`;
-
-const RotationBoxContainer = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-`;
-
-const RotationContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr min-content 1fr;
-  grid-column-gap: 1rem;
-  margin: 0.75rem 0;
-  max-width: var(--primary-app-width);
-  width: 100%;
-`;
-
-const RotationButton = styled.div<{ color: string }>`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  background: transparent;
-  border-radius: 0.25rem;
-  border: 1px solid #${({ color }) => color};
-  color: ${({ color }) => tinycolor(`#${color}`).brighten(30).toHexString()};
-  padding: 0.5rem 0.25rem;
-  text-align: center;
-  min-width: 100px;
-  margin: 0 auto;
-  font-weight: 500;
-`;
-
-const TurnArrowStyled = styled(TurnArrow)`
-  margin-top: 5px;
+  font-size: 1rem;
 `;
 
 type PuzzleProps = {
@@ -171,11 +135,33 @@ export default function Puzzle({
     );
   }, [cameraRef, instancedRef, isInitialized]);
 
-  const onKeyPress = useCallback((button: string) => {
-    if (button != 'MORE') {
-      setSelectedCharacter(button === '{bksp}' ? '' : button);
-    }
-  }, []);
+  const turnLeft = useCallback(
+    () => setSelectedSide(selectedSide + 1),
+    [selectedSide]
+  );
+  const turnRight = useCallback(
+    () => setSelectedSide(selectedSide - 1),
+    [selectedSide]
+  );
+
+  const onKeyPress = useCallback(
+    (button: string) => {
+      switch (button) {
+        case '{tl}':
+          turnLeft();
+          break;
+        case '{tr}':
+          turnRight();
+          break;
+        default:
+          setSelectedCharacter(button === '{bksp}' ? '' : button);
+      }
+      if (button != 'MORE') {
+        setSelectedCharacter(button === '{bksp}' ? '' : button);
+      }
+    },
+    [turnLeft, turnRight]
+  );
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -187,15 +173,6 @@ export default function Puzzle({
   const letterSelectedSide = useMemo(() => {
     return Math.abs(selectedSide % 4);
   }, [selectedSide]);
-
-  const turnLeft = useCallback(
-    () => setSelectedSide(selectedSide + 1),
-    [selectedSide]
-  );
-  const turnRight = useCallback(
-    () => setSelectedSide(selectedSide - 1),
-    [selectedSide]
-  );
 
   const defaultColor = useMemo(() => DEFAULT_COLOR, []);
   const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
@@ -244,15 +221,22 @@ export default function Puzzle({
     <Container>
       <HeaderContainer>
         <HeaderItem>
-          <FontAwesomeIcon icon={faBars} width={25} />
-          <Logo height={24} width={200} />
+          <FontAwesomeIcon icon={faBars} width={20} />
+          <Logo height={18} width={150} />
         </HeaderItem>
         <HeaderItem>
-          <FontAwesomeIcon icon={faCircleQuestion} width={25} />
-          <FontAwesomeIcon icon={faGear} width={25} />
+          <RotatingBox side={selectedSide} defaultColor={defaultColor} />
+          <FontAwesomeIcon icon={faCircleQuestion} width={20} />
+          <FontAwesomeIcon icon={faGear} width={20} />
         </HeaderItem>
       </HeaderContainer>
-      <Canvas gl={{ antialias: false }}>
+      <Canvas
+        gl={{ antialias: false }}
+        style={{
+          height: 'auto',
+          aspectRatio: 1,
+        }}
+      >
         <OrthographicCamera
           ref={setCameraRef}
           makeDefault
@@ -290,28 +274,6 @@ export default function Puzzle({
           </group>
         </PresentationControls>
       </Canvas>
-      <RotationContainer>
-        <RotationButton color={defaultColor.toString(16)} onClick={turnLeft}>
-          turn left
-        </RotationButton>
-        <RotationBoxContainer>
-          <TurnArrowStyled
-            color={`#${defaultColor.toString(16)}`}
-            height={30}
-            width={30}
-          />
-          <RotatingBox side={selectedSide} defaultColor={defaultColor} />
-          <TurnArrowStyled
-            color={`#${defaultColor.toString(16)}`}
-            height={30}
-            width={30}
-            flipped
-          />
-        </RotationBoxContainer>
-        <RotationButton color={defaultColor.toString(16)} onClick={turnRight}>
-          turn right
-        </RotationButton>
-      </RotationContainer>
       <ClueContainer backgroundColor={adjacentColor.toString(16)}>
         <FontAwesomeIcon icon={faChevronLeft} width={12} />
         <ClueLabel dangerouslySetInnerHTML={{ __html: clue ?? '&nbsp;' }} />
@@ -326,6 +288,8 @@ export default function Puzzle({
           display={{
             '{bksp}': '⌫',
             '{sp}': ' ',
+            '{tl}': '<<<',
+            '{tr}': '>>>',
           }}
           buttonTheme={[
             {
@@ -336,11 +300,19 @@ export default function Puzzle({
               class: 'spacer-button',
               buttons: '{sp}',
             },
+            {
+              class: 'turn-left-button',
+              buttons: '{tl}',
+            },
+            {
+              class: 'turn-right-button',
+              buttons: '{tr}',
+            },
           ]}
           layout={{
             default: [
               'Q W E R T Y U I O P',
-              '{sp} A S D F G H J K L {sp}',
+              '{tl} A S D F G H J K L {tr}',
               'MORE Z X C V B N M {bksp}',
             ],
             more: [

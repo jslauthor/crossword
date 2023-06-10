@@ -9,8 +9,8 @@ import { Canvas } from '@react-three/fiber';
 import styled from '@emotion/styled';
 
 const CanvasContainer = styled.div`
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
 `;
 
 interface BoxProps {
