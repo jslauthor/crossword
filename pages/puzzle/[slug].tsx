@@ -4,7 +4,6 @@ import styled from '@emotion/styled';
 import { Canvas } from '@react-three/fiber';
 import {
   PresentationControls,
-  OrthographicCamera,
   Stats,
   PerspectiveCamera,
 } from '@react-three/drei';
@@ -31,6 +30,7 @@ import {
   faBars,
   faCircleQuestion,
   faGear,
+  faClose,
 } from '@fortawesome/free-solid-svg-icons';
 import useDimensions from 'react-cool-dimensions';
 import RotatingBox from '../../components/core/3d/Box';
@@ -40,6 +40,8 @@ import { getCharacterRecord } from '../../lib/utils/puzzle';
 import { useSpring } from '@react-spring/core';
 import { easings } from '@react-spring/web';
 import tinycolor from 'tinycolor2';
+import ExampleCube from '../../components/svg/ExampleCube';
+import TurnArrow from '../../components/svg/TurnArrow';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -60,7 +62,7 @@ const Container = styled.div`
 const HeaderContainer = styled.div`
   position: relative;
   display: flex;
-  padding: 0.5rem;
+  padding: 0.25rem 0.5rem;
   align-items: center;
   justify-content: space-between;
   width: 100%;
@@ -90,7 +92,7 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   padding: 0.25rem 1rem;
   min-height: 40px;
   box-sizing: border-box;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.125rem;
   max-width: var(--primary-app-width);
   width: 100%;
   ${({ backgroundColor }) =>
@@ -99,6 +101,73 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
 
 const ClueLabel = styled.span`
   font-size: 1rem;
+`;
+
+const ModalContainer = styled.div`
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inset: 0;
+  background: rgb(0, 0, 0, 0.3);
+`;
+
+const Center = styled.div`
+  padding-top: 1rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ModalContent = styled.div`
+  position: relative;
+  display: grid;
+  grid-auto-flow: row;
+  gap: 0.75rem;
+  margin: 1rem;
+  padding: 1rem;
+  padding-top: 3rem;
+  background: var(--secondary-bg);
+  border-radius: 0.5rem;
+  max-width: var(--primary-app-width);
+  width: 100%;
+`;
+
+const CornerLabel = styled.span`
+  color: #7dc69c;
+  font-weight: 500;
+`;
+
+const SwipeLabel = styled.p`
+  font-style: italic;
+`;
+
+const TurnArrowContainer = styled.span`
+  display: inline-block;
+  margin-right: 0.25rem;
+`;
+
+const TurnArrowStyled = styled(TurnArrow)`
+  margin-bottom: -10px;
+`;
+
+const UlStyled = styled.ul`
+  list-style: disc;
+  padding-left: 0.75rem;
+`;
+
+const HRule = styled.div`
+  height: 1px;
+  background: var(--primary-text);
+  opacity: 0.25;
+  width: 100%;
+`;
+
+const CloseModalContainer = styled.div`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 `;
 
 type PuzzleProps = {
@@ -127,6 +196,11 @@ export default function Puzzle({
   const onInitialize = useCallback(() => {
     setIsInitialized(true);
   }, []);
+
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const toggleModal = useCallback(() => {
+    setShowHelpModal(!showHelpModal);
+  }, [showHelpModal]);
 
   const [puzzleWidth] = useMemo(() => {
     if (puzzleData == null || puzzleData.length < 1) {
@@ -246,14 +320,18 @@ export default function Puzzle({
         </HeaderItem>
         <HeaderItem>
           <RotatingBox side={selectedSide} defaultColor={defaultColor} />
-          <FontAwesomeIcon icon={faCircleQuestion} width={20} />
+          <FontAwesomeIcon
+            icon={faCircleQuestion}
+            width={20}
+            onClick={toggleModal}
+          />
           <FontAwesomeIcon icon={faGear} width={20} />
         </HeaderItem>
       </HeaderContainer>
       <Canvas
         gl={{ antialias: false }}
         style={{
-          height: 'auto',
+          height: '50vh',
           aspectRatio: 1,
         }}
         ref={containerRef}
@@ -345,6 +423,44 @@ export default function Puzzle({
         />
       </KeyboardContainer>
       {/* <Stats /> */}
+
+      {/** Modal content below */}
+      {showHelpModal && (
+        <ModalContainer>
+          <ModalContent>
+            <CloseModalContainer onClick={toggleModal}>
+              <FontAwesomeIcon icon={faClose} size="xl" />
+            </CloseModalContainer>
+            <h1>How to play Crosscube</h1>
+            <h2>An 8x8 crossword in 3 dimensions</h2>
+            <Center>
+              <ExampleCube height={125} width={225} />
+            </Center>
+            <UlStyled>
+              <li>There are four sides.</li>
+              <li>
+                <CornerLabel>Corners</CornerLabel> share the same letter.
+              </li>
+              <li>
+                Change sides with the{' '}
+                <TurnArrowContainer>
+                  <TurnArrowStyled
+                    color="#999999"
+                    flipped
+                    height={25}
+                    width={25}
+                  />{' '}
+                </TurnArrowContainer>
+                keys.
+                <SwipeLabel>(or swipe on mobile)</SwipeLabel>
+              </li>
+              <li>Solve all of the clues to win!</li>
+            </UlStyled>
+            <HRule />
+            <h2>Sign up or Log in to save your progress. (coming soon)</h2>
+          </ModalContent>
+        </ModalContainer>
+      )}
     </Container>
   );
 }
