@@ -136,6 +136,13 @@ const GlobalStyles = () => {
           font-style: normal;
         }
 
+        h1 {
+          font-family: 'franklin-gothic-atf', sans-serif;
+          font-weight: 600;
+          font-style: normal;
+          font-size: 1.5rem;
+        }
+
         :root {
           --white: #ffffff;
           --black: #131414;
