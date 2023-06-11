@@ -125,6 +125,12 @@ export default function Puzzle({
     setIsInitialized(true);
   }, []);
 
+  const [puzzleWidth] = useMemo(() => {
+    let { width, height } = puzzleData[0].dimensions;
+    const totalPerSide = width * height;
+    return [width, height, totalPerSide];
+  }, [puzzleData]);
+
   const scale = useMemo(() => {
     if (cameraRef == null || instancedRef == null || isInitialized === false) {
       return 1;
@@ -133,17 +139,16 @@ export default function Puzzle({
     const size = new Vector3();
     new Box3().setFromObject(instancedRef).getSize(size);
     size.project(cameraRef);
-    size.multiplyScalar(window.innerWidth).multiplyScalar(8);
+    size.multiplyScalar(window.innerWidth).multiplyScalar(puzzleWidth);
 
-    // TODO: You need to consider height here as well. Try using a short window with a wide screen
-    const { x: width, y: height } = size;
+    const { x: width } = size;
     const newScale =
       Math.min(Math.min(window.innerWidth * 0.95, 500), canvasHeight * 0.95) /
       width;
     cameraRef.lookAt(instancedRef.position);
     cameraRef.position.z = 500;
     return newScale * 2;
-  }, [cameraRef, canvasHeight, instancedRef, isInitialized]);
+  }, [cameraRef, canvasHeight, instancedRef, isInitialized, puzzleWidth]);
 
   const turnLeft = useCallback(
     () => setSelectedSide(selectedSide + 1),
