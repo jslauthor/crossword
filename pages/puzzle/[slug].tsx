@@ -127,6 +127,9 @@ export default function Puzzle({
   }, []);
 
   const [puzzleWidth] = useMemo(() => {
+    if (puzzleData == null || puzzleData.length < 1) {
+      return [8]; // default to 8
+    }
     let { width, height } = puzzleData[0].dimensions;
     const totalPerSide = width * height;
     return [width, height, totalPerSide];
@@ -147,7 +150,6 @@ export default function Puzzle({
       Math.min(Math.min(window.innerWidth * 0.95, 500), canvasHeight * 0.95) /
       width;
     cameraRef.lookAt(instancedRef.position);
-    // cameraRef.position.z = 7;
     return newScale * 1.75;
   }, [cameraRef, canvasHeight, instancedRef, isInitialized, puzzleWidth]);
 
