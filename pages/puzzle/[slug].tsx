@@ -6,6 +6,7 @@ import {
   PresentationControls,
   OrthographicCamera,
   Stats,
+  PerspectiveCamera,
 } from '@react-three/drei';
 import LetterBoxes from '../../components/core/3d/LetterBoxes';
 import { PuzzleData } from '../../types/types';
@@ -146,8 +147,8 @@ export default function Puzzle({
       Math.min(Math.min(window.innerWidth * 0.95, 500), canvasHeight * 0.95) /
       width;
     cameraRef.lookAt(instancedRef.position);
-    cameraRef.position.z = 500;
-    return newScale * 2;
+    // cameraRef.position.z = 7;
+    return newScale * 1.75;
   }, [cameraRef, canvasHeight, instancedRef, isInitialized, puzzleWidth]);
 
   const turnLeft = useCallback(
@@ -253,11 +254,11 @@ export default function Puzzle({
         }}
         ref={containerRef}
       >
-        <OrthographicCamera
+        <PerspectiveCamera
           ref={setCameraRef}
           makeDefault
-          near={1}
-          far={2000}
+          fov={45}
+          position={[0, 0, 6]}
         />
         <ambientLight />
         <pointLight position={[5, 5, 5]} intensity={1.5} />
