@@ -15,11 +15,12 @@ import {
   TEXTURE_RECORD,
 } from '../../lib/utils/textures';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type {
+import {
   OrthographicCamera as OrthographicCameraType,
   InstancedMesh as InstancedMeshType,
+  Box3,
+  Vector3,
 } from 'three';
-import { getObjectSize } from '../../lib/utils/three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -30,9 +31,8 @@ import {
   faCircleQuestion,
   faGear,
 } from '@fortawesome/free-solid-svg-icons';
-import tinycolor from 'tinycolor2';
+import useDimensions from 'react-cool-dimensions';
 import RotatingBox from '../../components/core/3d/Box';
-import TurnArrow from '../../components/svg/TurnArrow';
 import Logo from '../../components/svg/Logo';
 import { useKeyDown } from '../../lib/utils/hooks/useKeyDown';
 import { getCharacterRecord } from '../../lib/utils/puzzle';
@@ -88,7 +88,7 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   padding: 0.25rem 1rem;
   min-height: 40px;
   box-sizing: border-box;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   max-width: var(--primary-app-width);
   width: 100%;
   ${({ backgroundColor }) => `background-color: #${backgroundColor}`}
@@ -118,7 +118,8 @@ export default function Puzzle({
   const [selectedCharacter, setSelectedCharacter] = useState<
     string | undefined
   >();
-
+  const { observe: containerRef, height: canvasHeight } =
+    useDimensions<HTMLCanvasElement>();
   const [isInitialized, setIsInitialized] = useState(false);
   const onInitialize = useCallback(() => {
     setIsInitialized(true);
@@ -128,12 +129,21 @@ export default function Puzzle({
     if (cameraRef == null || instancedRef == null || isInitialized === false) {
       return 1;
     }
-    const { width } = getObjectSize(instancedRef, cameraRef);
-    return (
-      Math.min(window.innerWidth - 110, 650) /
-      (width / Math.min(window.devicePixelRatio, 2)) // this is a weird bug where threejs was doubling the height on hidpi devices
-    );
-  }, [cameraRef, instancedRef, isInitialized]);
+
+    const size = new Vector3();
+    new Box3().setFromObject(instancedRef).getSize(size);
+    size.project(cameraRef);
+    size.multiplyScalar(window.innerWidth).multiplyScalar(8);
+
+    // TODO: You need to consider height here as well. Try using a short window with a wide screen
+    const { x: width, y: height } = size;
+    const newScale =
+      Math.min(Math.min(window.innerWidth * 0.95, 500), canvasHeight * 0.95) /
+      width;
+    cameraRef.lookAt(instancedRef.position);
+    cameraRef.position.z = 500;
+    return newScale * 2;
+  }, [cameraRef, canvasHeight, instancedRef, isInitialized]);
 
   const turnLeft = useCallback(
     () => setSelectedSide(selectedSide + 1),
@@ -236,14 +246,13 @@ export default function Puzzle({
           height: 'auto',
           aspectRatio: 1,
         }}
+        ref={containerRef}
       >
         <OrthographicCamera
           ref={setCameraRef}
           makeDefault
-          zoom={50}
           near={1}
           far={2000}
-          position={[0, -0.75, 100]}
         />
         <ambientLight />
         <pointLight position={[5, 5, 5]} intensity={1.5} />
@@ -253,7 +262,7 @@ export default function Puzzle({
           rotation={[0, rotation * (Math.PI + Math.PI * (selectedSide / 2)), 0]}
         >
           <group
-            position={[-3.5 * scale, -4, 3.5 * scale]}
+            position={[-3.5 * scale, -3.5 * scale, 3.5 * scale]}
             scale={[scale, scale, scale]}
           >
             <LetterBoxes
