@@ -39,10 +39,11 @@ import { useKeyDown } from '../../lib/utils/hooks/useKeyDown';
 import { getCharacterRecord } from '../../lib/utils/puzzle';
 import { useSpring } from '@react-spring/core';
 import { easings } from '@react-spring/web';
+import tinycolor from 'tinycolor2';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
-const DEFAULT_SELECTED_ADJACENT_COLOR = 0x19dd89;
+const DEFAULT_SELECTED_ADJACENT_COLOR = 0x1fbe68;
 
 const Container = styled.div`
   position: relative;
@@ -92,7 +93,8 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   margin-bottom: 0.25rem;
   max-width: var(--primary-app-width);
   width: 100%;
-  ${({ backgroundColor }) => `background-color: #${backgroundColor}`}
+  ${({ backgroundColor }) =>
+    `background-color: #${tinycolor(backgroundColor).darken(5).toHex()}`}
 `;
 
 const ClueLabel = styled.span`
