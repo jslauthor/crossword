@@ -42,6 +42,7 @@ import { easings } from '@react-spring/web';
 import tinycolor from 'tinycolor2';
 import ExampleCube from '../../components/svg/ExampleCube';
 import TurnArrow from '../../components/svg/TurnArrow';
+import { SwipeControls } from '../../components/core/3d/SwipeControls';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -85,7 +86,7 @@ const KeyboardContainer = styled.div`
 
 const ClueContainer = styled.div<{ backgroundColor: string }>`
   display: grid;
-  grid-template-columns: min-content 1fr min-content;
+  grid-template-columns: 1fr;
   grid-column-gap: 1rem;
   align-items: center;
   border-radius: 0.25rem;
@@ -344,9 +345,11 @@ export default function Puzzle({
         />
         <ambientLight />
         <pointLight position={[5, 5, 5]} intensity={1.5} />
-        <PresentationControls
+        <SwipeControls
           global
-          enabled={false}
+          dragEnabled={false}
+          onSwipeLeft={turnLeft}
+          onSwipeRight={turnRight}
           rotation={[0, rotation * (Math.PI + Math.PI * (selectedSide / 2)), 0]}
         >
           <group
@@ -369,12 +372,12 @@ export default function Puzzle({
               onInitialize={onInitialize}
             />
           </group>
-        </PresentationControls>
+        </SwipeControls>
       </Canvas>
       <ClueContainer backgroundColor={adjacentColor.toString(16)}>
-        <FontAwesomeIcon icon={faChevronLeft} width={12} />
+        {/* <FontAwesomeIcon icon={faChevronLeft} width={12} /> */}
         <ClueLabel dangerouslySetInnerHTML={{ __html: clue ?? '&nbsp;' }} />
-        <FontAwesomeIcon icon={faChevronRight} width={12} />
+        {/* <FontAwesomeIcon icon={faChevronRight} width={12} /> */}
       </ClueContainer>
       <KeyboardContainer>
         <Keyboard
