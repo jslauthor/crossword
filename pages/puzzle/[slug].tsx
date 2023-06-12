@@ -249,10 +249,10 @@ export default function Puzzle({
           turnRight();
           break;
         default:
-          setSelectedCharacter(button === '{bksp}' ? '' : button);
-      }
-      if (button != 'MORE') {
-        setSelectedCharacter(button === '{bksp}' ? '' : button);
+          console.log(button);
+          if (button !== 'MORE') {
+            setSelectedCharacter(button === '{bksp}' ? '' : button);
+          }
       }
     },
     [turnLeft, turnRight]
@@ -455,7 +455,7 @@ export default function Puzzle({
                   />{' '}
                 </TurnArrowContainer>
                 keys.
-                <SwipeLabel>(or swipe on mobile)</SwipeLabel>
+                <SwipeLabel>(or swipe)</SwipeLabel>
               </li>
               <li>Solve all of the clues to win!</li>
             </UlStyled>

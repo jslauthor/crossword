@@ -499,9 +499,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     (key: string, selectedOverride?: number) => {
       const selectedIndex = selectedOverride ?? selected;
       const coord = characterTextureAtlasLookup[key.toUpperCase()];
-      if (selectedIndex != null && ref != null && coord != null) {
-        const x = key === '' || key === 'BACKSPACE' ? -1 : coord[0];
-        const y = key === '' || key === 'BACKSPACE' ? -1 : coord[1];
+      if (selectedIndex != null && ref != null) {
+        const x =
+          coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[0];
+        const y =
+          coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[1];
         setLastCurrentKey(key);
 
         if (x !== -1) {
