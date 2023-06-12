@@ -90,8 +90,9 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   grid-column-gap: 1rem;
   align-items: center;
   border-radius: 0.25rem;
-  padding: 0.25rem 1rem;
-  min-height: 40px;
+  padding: 0 0.5rem;
+  max-height: 44px;
+  height: 100%;
   box-sizing: border-box;
   margin-bottom: 0.125rem;
   max-width: var(--primary-app-width);
@@ -102,6 +103,7 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
 
 const ClueLabel = styled.span`
   font-size: 1rem;
+  line-height: 1rem !important;
 `;
 
 const ModalContainer = styled.div`
