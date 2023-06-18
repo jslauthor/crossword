@@ -279,11 +279,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [selectedSide, totalPerSide, width]
   );
 
-  // Deselect the selected cell when the selected side changes
-  // useEffect(() => {
-  //   setSelected(undefined);
-  // }, [selectedSide]);
-
   // const showIntroAnimation = useIntroAnimation(
   //   selectedSide,
   //   width,
@@ -516,6 +511,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const onLetterChange = useCallback(
     (key: string, selectedOverride?: number) => {
       const selectedIndex = selectedOverride ?? selected;
+
+      if (isVisibleSide(selectedIndex) === false) {
+        return;
+      }
+
       const coord = characterTextureAtlasLookup[key.toUpperCase()];
       if (selectedIndex != null && ref != null) {
         const x =
@@ -622,20 +622,21 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     },
     [
-      characterPositionArray,
-      characterTextureAtlasLookup,
-      getInterval,
-      height,
-      isVerticalOrientation,
-      lastCurrentKey,
-      onLetterInput,
-      puzzleData.length,
-      record.solution,
-      ref,
       selected,
-      selectedSide,
+      isVisibleSide,
+      characterTextureAtlasLookup,
+      ref,
+      characterPositionArray,
+      lastCurrentKey,
+      record.solution,
+      onLetterInput,
+      getInterval,
       totalPerSide,
       width,
+      selectedSide,
+      height,
+      isVerticalOrientation,
+      puzzleData.length,
       answerIndex,
     ]
   );

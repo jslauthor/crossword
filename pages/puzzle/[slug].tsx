@@ -58,6 +58,7 @@ const Container = styled.div`
   justify-content: flex-start;
   align-items: center;
   user-select: none;
+  touch-action: none;
 `;
 
 const HeaderContainer = styled.div`
