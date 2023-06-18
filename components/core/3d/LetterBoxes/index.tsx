@@ -280,9 +280,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   );
 
   // Deselect the selected cell when the selected side changes
-  useEffect(() => {
-    setSelected(undefined);
-  }, [selectedSide]);
+  // useEffect(() => {
+  //   setSelected(undefined);
+  // }, [selectedSide]);
 
   // const showIntroAnimation = useIntroAnimation(
   //   selectedSide,
@@ -419,7 +419,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setSelectedWordCell(undefined);
 
         // Change the color of surrounding cells
-        if (selected != null) {
+        if (selected != null && isVisibleSide(selected) === true) {
           // We default to the selected cell for the first place in the word
           // and will override this if it is not the first place below
           const cell = record.solution[selected];
