@@ -261,6 +261,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [height, isVerticalOrientation]
   );
 
+  const isVisibleSide = useCallback(
+    (selected?: number) => {
+      if (selected == null) {
+        return false;
+      }
+      return Math.ceil(selected / totalPerSide) - 1 === selectedSide;
+    },
+    [selectedSide, totalPerSide]
+  );
+
   // Deselect the selected cell when the selected side changes
   useEffect(() => {
     setSelected(undefined);
@@ -757,6 +767,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   );
 
   const onPointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
+    // Check if the user is hovering over a cell as the visible side
+    if (isVisibleSide(e.instanceId) === false) {
+      return;
+    }
+
     e.stopPropagation();
     setHovered(e.instanceId);
   }, []);
@@ -767,12 +782,18 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     (e: ThreeEvent<PointerEvent>) => {
       if (e.instanceId === selected) {
         setVerticalOrientation(!isVerticalOrientation);
+        return;
+      }
+
+      // Check if the user is selecting the cell as the visible side
+      if (isVisibleSide(e.instanceId) === false) {
+        return;
       }
 
       e.stopPropagation();
       setSelected(e.instanceId);
     },
-    [isVerticalOrientation, selected]
+    [isVerticalOrientation, isVisibleSide, selected]
   );
 
   return (
