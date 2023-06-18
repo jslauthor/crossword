@@ -16,6 +16,7 @@ import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 import { useKeyDown } from '../../../../lib/utils/hooks/useKeyDown';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
+import { rangeOperation } from '../../../../lib/utils/math';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -266,9 +267,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       if (selected == null) {
         return false;
       }
-      return Math.ceil(selected / totalPerSide) - 1 === selectedSide;
+      const xPos = selected % width;
+      const previousSide = rangeOperation(0, 3, selectedSide, 1, '-');
+      const cellSide = Math.ceil(selected / totalPerSide) - 1;
+
+      return (
+        cellSide === selectedSide ||
+        (xPos === width - 1 && cellSide === previousSide)
+      );
     },
-    [selectedSide, totalPerSide]
+    [selectedSide, totalPerSide, width]
   );
 
   // Deselect the selected cell when the selected side changes
@@ -766,34 +774,39 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [characterTextureAtlas, numberTextureAtlas]
   );
 
-  const onPointerMove = useCallback((e: ThreeEvent<PointerEvent>) => {
-    // Check if the user is hovering over a cell as the visible side
-    if (isVisibleSide(e.instanceId) === false) {
-      return;
-    }
+  const onPointerMove = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      // Check if the user is hovering over a cell as the visible side
+      if (isVisibleSide(e.instanceId) === false) {
+        return;
+      }
 
-    e.stopPropagation();
-    setHovered(e.instanceId);
-  }, []);
+      e.stopPropagation();
+      setHovered(e.instanceId);
+    },
+    [isVisibleSide]
+  );
 
   const onPointerOut = useCallback(() => setHovered(undefined), []);
 
   const onPointerDown = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
-      if (e.instanceId === selected) {
-        setVerticalOrientation(!isVerticalOrientation);
+      console.log('selecting');
+      console.log((e.instanceId ?? 0) % width);
+      // Check if the user is selecting the cell as the visible side
+      if (isVisibleSide(e.instanceId) === false) {
         return;
       }
 
-      // Check if the user is selecting the cell as the visible side
-      if (isVisibleSide(e.instanceId) === false) {
+      if (e.instanceId === selected) {
+        setVerticalOrientation(!isVerticalOrientation);
         return;
       }
 
       e.stopPropagation();
       setSelected(e.instanceId);
     },
-    [isVerticalOrientation, isVisibleSide, selected]
+    [isVerticalOrientation, isVisibleSide, selected, width]
   );
 
   return (
