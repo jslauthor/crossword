@@ -43,6 +43,7 @@ import tinycolor from 'tinycolor2';
 import ExampleCube from '../../components/svg/ExampleCube';
 import TurnArrow from '../../components/svg/TurnArrow';
 import { SwipeControls } from '../../components/core/3d/SwipeControls';
+import { rangeOperation } from '../../lib/utils/math';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -185,7 +186,7 @@ export default function Puzzle({
 }: PuzzleProps) {
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
-  const [selectedSide, setSelectedSide] = useState(0);
+  const [sideOffset, setSideOffset] = useState(0);
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
     useState<[string, number]>();
   const [clue, setClue] = useState<string | undefined>();
@@ -232,13 +233,17 @@ export default function Puzzle({
   }, [cameraRef, canvasHeight, instancedRef, isInitialized, puzzleWidth]);
 
   const turnLeft = useCallback(
-    () => setSelectedSide(selectedSide + 1),
-    [selectedSide]
+    () => setSideOffset(sideOffset + 1),
+    [sideOffset]
   );
   const turnRight = useCallback(
-    () => setSelectedSide(selectedSide - 1),
-    [selectedSide]
+    () => setSideOffset(sideOffset - 1),
+    [sideOffset]
   );
+
+  const selectedSide = useMemo(() => {
+    return rangeOperation(0, 3, 0, -sideOffset);
+  }, [sideOffset]);
 
   const onKeyPress = useCallback(
     (button: string) => {
@@ -265,10 +270,6 @@ export default function Puzzle({
   const onLetterInput = useCallback(() => {
     setSelectedCharacter(undefined);
   }, []);
-
-  const letterSelectedSide = useMemo(() => {
-    return Math.abs(selectedSide % 4);
-  }, [selectedSide]);
 
   const defaultColor = useMemo(() => DEFAULT_COLOR, []);
   const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
@@ -321,7 +322,7 @@ export default function Puzzle({
           <Logo height={18} width={150} />
         </HeaderItem>
         <HeaderItem>
-          <RotatingBox side={selectedSide} defaultColor={defaultColor} />
+          <RotatingBox side={sideOffset} defaultColor={defaultColor} />
           <FontAwesomeIcon
             icon={faCircleQuestion}
             width={20}
@@ -352,7 +353,7 @@ export default function Puzzle({
           dragEnabled={false}
           onSwipeLeft={turnLeft}
           onSwipeRight={turnRight}
-          rotation={[0, rotation * (Math.PI + Math.PI * (selectedSide / 2)), 0]}
+          rotation={[0, rotation * (Math.PI + Math.PI * (sideOffset / 2)), 0]}
         >
           <group
             position={[-3.5 * scale, -3.5 * scale, 3.5 * scale]}
@@ -363,7 +364,7 @@ export default function Puzzle({
               puzzleData={puzzleData}
               characterTextureAtlasLookup={characterTextureAtlasLookup}
               cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
-              selectedSide={letterSelectedSide}
+              selectedSide={selectedSide}
               keyAndIndexOverride={keyAndIndexOverride}
               currentKey={selectedCharacter}
               onLetterInput={onLetterInput}

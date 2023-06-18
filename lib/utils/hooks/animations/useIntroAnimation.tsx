@@ -92,19 +92,18 @@ export const useIntroAnimation = (
         to: { flipAnimation: show ? 1 : 0 },
         onChange: async (props, spring) => {
           const elapsed = spring.get();
-          const previousSide = rangeOperation(0, 3, selectedSide, 1, '-');
+          const previousSide = rangeOperation(0, 3, selectedSide, -1);
           const start = previousSide * (width * height) + width - 1;
           let indices = [];
           for (let index = 0; index <= totalPerSide + width; index++) {
             indices[index] =
               index < width
-                ? rangeOperation(0, size, start, index * width, '+')
+                ? rangeOperation(0, size, start, index * width)
                 : rangeOperation(
                     0,
                     size,
                     totalPerSide * selectedSide,
-                    index - width + 1,
-                    '+'
+                    index - width + 1
                   );
           }
           // We must normalize the position of the first row

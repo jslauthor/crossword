@@ -268,7 +268,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         return false;
       }
       const xPos = selected % width;
-      const previousSide = rangeOperation(0, 3, selectedSide, 1, '-');
+      const previousSide = rangeOperation(0, 3, selectedSide, -1);
       const cellSide = Math.ceil(selected / totalPerSide) - 1;
 
       return (
