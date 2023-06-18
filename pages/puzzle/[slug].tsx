@@ -52,7 +52,6 @@ const Container = styled.div`
   position: relative;
   width: 100vw;
   height: 100vh;
-  touch-action: none;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -336,6 +335,7 @@ export default function Puzzle({
         style={{
           height: '50vh',
           aspectRatio: 1,
+          touchAction: 'none',
         }}
         ref={containerRef}
       >

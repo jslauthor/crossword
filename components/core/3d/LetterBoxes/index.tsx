@@ -791,8 +791,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const onPointerDown = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
-      console.log('selecting');
-      console.log((e.instanceId ?? 0) % width);
       // Check if the user is selecting the cell as the visible side
       if (isVisibleSide(e.instanceId) === false) {
         return;
@@ -806,7 +804,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       e.stopPropagation();
       setSelected(e.instanceId);
     },
-    [isVerticalOrientation, isVisibleSide, selected, width]
+    [isVerticalOrientation, isVisibleSide, selected]
   );
 
   return (
