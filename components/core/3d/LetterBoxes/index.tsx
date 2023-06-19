@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import localForage from 'localforage';
 import { ThreeEvent, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
@@ -122,6 +123,7 @@ const fragmentShader = `
 `;
 
 type LetterBoxesProps = {
+  id: string;
   puzzleData: PuzzleData[];
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
@@ -140,6 +142,7 @@ const tempObject = new Object3D();
 const tempColor = new Color();
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
+  id,
   puzzleData,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
@@ -171,7 +174,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     useState<LetterBoxesProps['selectedSide']>();
   const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
-  const [initialRotations, setInitialRotations] = useState<Euler[]>([]);
+  // const [initialRotations, setInitialRotations] = useState<Euler[]>([]);
+
+  const storageKey = useMemo(() => `puzzle-${id}`, [id]);
 
   useEffect(() => {
     setInstancedMesh(ref);
@@ -207,6 +212,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     return [record, record.solution.length];
   }, [puzzleData]);
 
+  const [characterPositionArray, setCharacterPositionArray] =
+    useState<Float32Array>(Float32Array.from(new Array(size * 2).fill(-1)));
+
   useEffect(() => {
     const allAreCorrect = answerIndex.every(
       (i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0
@@ -232,10 +240,20 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   }, [isVerticalOrientation, onSelectClue, record, selected, selectedWordCell]);
 
-  const characterPositionArray = useMemo(
-    () => Float32Array.from(new Array(size * 2).fill(-1)),
-    [size]
-  );
+  // LOAD PREVIOUS GAME DATA
+  useEffect(() => {
+    if (ref == null) {
+      return;
+    }
+    const retrieveGameState = async () => {
+      const state = (await localForage.getItem(storageKey)) as Float32Array;
+      if (state != null) {
+        setCharacterPositionArray(state);
+        ref.geometry.attributes.characterPosition.needsUpdate = true;
+      }
+    };
+    retrieveGameState();
+  }, [ref, storageKey]);
 
   const cellNumberPositionArray = useMemo(
     () => Float32Array.from(new Array(size * 2).fill(-1)),
@@ -379,7 +397,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       ref.instanceMatrix.needsUpdate = true;
       // select first letter on last side
       setSelected((record.solution.length / 4) * 3 + (width - 1));
-      setInitialRotations(rotations);
+      // setInitialRotations(rotations);
       // showIntroAnimation(true);
       showRippleAnimation();
       if (onInitialize) {
@@ -614,6 +632,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         characterPositionArray[selectedIndex * 2] = x;
         characterPositionArray[selectedIndex * 2 + 1] = y;
 
+        const saveGameState = async () => {
+          await localForage.setItem(storageKey, characterPositionArray);
+        };
+        saveGameState();
+
         ref.geometry.attributes.characterPosition.needsUpdate = true;
 
         if (onLetterInput) {
@@ -638,6 +661,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       isVerticalOrientation,
       puzzleData.length,
       answerIndex,
+      storageKey,
     ]
   );
 

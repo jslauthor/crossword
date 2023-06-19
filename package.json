@@ -26,6 +26,7 @@
     "i": "^0.3.7",
     "js-easing-functions": "^1.0.3",
     "lamina": "^1.1.23",
+    "localforage": "^1.10.0",
     "next": "13.0.5",
     "npm": "^9.6.6",
     "react": "18.2.0",

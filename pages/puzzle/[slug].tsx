@@ -2,11 +2,7 @@ import { GetStaticPaths, GetStaticProps } from 'next';
 import { getPuzzleById, getPuzzles } from '../../lib/utils/reader';
 import styled from '@emotion/styled';
 import { Canvas } from '@react-three/fiber';
-import {
-  PresentationControls,
-  Stats,
-  PerspectiveCamera,
-} from '@react-three/drei';
+import { Stats, PerspectiveCamera } from '@react-three/drei';
 import LetterBoxes from '../../components/core/3d/LetterBoxes';
 import { PuzzleData } from '../../types/types';
 import {
@@ -25,8 +21,6 @@ import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faChevronLeft,
-  faChevronRight,
   faBars,
   faCircleQuestion,
   faGear,
@@ -178,12 +172,14 @@ type PuzzleProps = {
   puzzleData: PuzzleData[];
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
+  slug: string;
 };
 
 export default function Puzzle({
   puzzleData,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
+  slug,
 }: PuzzleProps) {
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
@@ -256,7 +252,6 @@ export default function Puzzle({
           turnRight();
           break;
         default:
-          console.log(button);
           if (button !== 'MORE') {
             setSelectedCharacter(button === '{bksp}' ? '' : button);
           }
@@ -361,6 +356,7 @@ export default function Puzzle({
             scale={[scale, scale, scale]}
           >
             <LetterBoxes
+              id={slug}
               setInstancedMesh={setInstancedMesh}
               puzzleData={puzzleData}
               characterTextureAtlasLookup={characterTextureAtlasLookup}
@@ -494,6 +490,7 @@ const getStaticProps: GetStaticProps<PuzzleProps, { slug: string }> = async ({
   const cellNumberTextureAtlasLookup = NUMBER_RECORD;
   return {
     props: {
+      slug: params?.slug ?? '',
       puzzleData,
       characterTextureAtlasLookup,
       cellNumberTextureAtlasLookup,
