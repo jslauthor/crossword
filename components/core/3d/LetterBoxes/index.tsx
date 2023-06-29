@@ -43,14 +43,14 @@ export enum CubeSidesEnum {
 const vertexShader = `
   attribute vec2 characterPosition;
   attribute vec2 cellNumberPosition;
-  attribute vec2 cubeSideDisplay;
   attribute vec3 cellColor;
-
+  in ivec2 cubeSideDisplay;
+  
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
-  varying vec2 vCubeSideDisplay;
   varying vec3 vCellColor;
+  flat out ivec2 vCubeSideDisplay;
 
   void main()
   {
@@ -76,8 +76,8 @@ const fragmentShader = `
   varying vec2 vUv;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
-  varying vec2 vCubeSideDisplay;
   varying vec3 vCellColor;
+  flat varying ivec2 vCubeSideDisplay;
 
   void main(void)
   {
@@ -261,7 +261,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   );
 
   const cubeSideDisplayArray = useMemo(
-    () => Float32Array.from(new Array(size * 2).fill(0)),
+    () => Int32Array.from(new Array(size * 2).fill(0)),
     [size]
   );
 
@@ -492,10 +492,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 selectedSide !== 0
                   ? adjacentId - (width * width - (width - 1))
                   : totalPerSide * puzzleData.length -
-                    1 -
-                    (width * width - width - 1) +
-                    adjacentId -
-                    1;
+                  1 -
+                  (width * width - width - 1) +
+                  adjacentId -
+                  1;
               const cell = record.solution[int];
               if (cell !== '#') {
                 if (typeof cell.cell === 'number') {
@@ -585,10 +585,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               selectedSide !== 0
                 ? nextCell - (width * width - (width - 1))
                 : totalPerSide * puzzleData.length -
-                  1 -
-                  (width * width - width - 1) +
-                  nextCell -
-                  1;
+                1 -
+                (width * width - width - 1) +
+                nextCell -
+                1;
             const cell = record.solution[int];
             if (cell !== '#') {
               setSelected(int);
