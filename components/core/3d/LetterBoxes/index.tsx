@@ -115,7 +115,7 @@ const fragmentShader = `
         c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a);  // blending equation
       }
     } else {
-      c = vec3(0.02, 0.02, 0.02) * c.rgb;  // blending equation
+      c = vec3(0.07, 0.07, 0.07) * c.rgb;  // blending equation
     }
     
     csm_DiffuseColor = vec4(c, 1.0);
