@@ -38,6 +38,7 @@ import ExampleCube from '../../components/svg/ExampleCube';
 import TurnArrow from '../../components/svg/TurnArrow';
 import { SwipeControls } from '../../components/core/3d/SwipeControls';
 import { rangeOperation } from '../../lib/utils/math';
+import { useAnimatedText } from '../../lib/utils/hooks/useAnimatedText';
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -181,6 +182,7 @@ export default function Puzzle({
   cellNumberTextureAtlasLookup,
   slug,
 }: PuzzleProps) {
+
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
   const [sideOffset, setSideOffset] = useState(0);
@@ -201,6 +203,8 @@ export default function Puzzle({
   const toggleModal = useCallback(() => {
     setShowHelpModal(!showHelpModal);
   }, [showHelpModal]);
+
+  const animatedClueText = useAnimatedText(clue, 120);
 
   const [puzzleWidth] = useMemo(() => {
     if (puzzleData == null || puzzleData.length < 1) {
@@ -376,7 +380,7 @@ export default function Puzzle({
       </Canvas>
       <ClueContainer backgroundColor={adjacentColor.toString(16)}>
         {/* <FontAwesomeIcon icon={faChevronLeft} width={12} /> */}
-        <ClueLabel dangerouslySetInnerHTML={{ __html: clue ?? '&nbsp;' }} />
+        <ClueLabel dangerouslySetInnerHTML={{ __html: animatedClueText }} />
         {/* <FontAwesomeIcon icon={faChevronRight} width={12} /> */}
       </ClueContainer>
       <KeyboardContainer>
