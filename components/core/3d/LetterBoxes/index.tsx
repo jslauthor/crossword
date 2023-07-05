@@ -15,21 +15,8 @@ import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
-import { useKeyDown } from '../../../../lib/utils/hooks/useKeyDown';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
-
-const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
-for (let x = 0; x < 10; x++) {
-  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
-}
-for (let x = 0; x <= 25; x++) {
-  SUPPORTED_KEYBOARD_CHARACTERS.push(String.fromCharCode(65 + x));
-}
-for (let x = 0; x <= 1000; x++) {
-  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
-}
-SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -137,6 +124,7 @@ type LetterBoxesProps = {
   onLetterInput?: () => void;
   onSelectClue?: (clue: string | undefined) => void;
   onInitialize?: () => void;
+  onSolved?: () => void;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -156,6 +144,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   selectedColor,
   adjacentColor,
   onInitialize,
+  onSolved,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   const [isVerticalOrientation, setVerticalOrientation] =
@@ -219,10 +208,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     const allAreCorrect = answerIndex.every(
       (i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0
     );
-    if (allAreCorrect === true) {
-      alert('You solved the puzzle!');
+    if (allAreCorrect === true && onSolved != null) {
+      onSolved();
     }
-  }, [answerIndex]);
+  }, [answerIndex, onSolved]);
 
   useEffect(() => {
     if (onSelectClue != null) {
@@ -250,6 +239,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       if (state != null) {
         setCharacterPositionArray(state);
         ref.geometry.attributes.characterPosition.needsUpdate = true;
+
+        // TODO: Update answerIndex
       }
     };
     retrieveGameState();
@@ -492,10 +483,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 selectedSide !== 0
                   ? adjacentId - (width * width - (width - 1))
                   : totalPerSide * puzzleData.length -
-                  1 -
-                  (width * width - width - 1) +
-                  adjacentId -
-                  1;
+                    1 -
+                    (width * width - width - 1) +
+                    adjacentId -
+                    1;
               const cell = record.solution[int];
               if (cell !== '#') {
                 if (typeof cell.cell === 'number') {
@@ -530,7 +521,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     (key: string, selectedOverride?: number) => {
       const selectedIndex = selectedOverride ?? selected;
 
-      if (isVisibleSide(selectedIndex) === false) {
+      if (isVisibleSide(selectedIndex) === false && selectedOverride == null) {
         return;
       }
 
@@ -585,10 +576,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               selectedSide !== 0
                 ? nextCell - (width * width - (width - 1))
                 : totalPerSide * puzzleData.length -
-                1 -
-                (width * width - width - 1) +
-                nextCell -
-                1;
+                  1 -
+                  (width * width - width - 1) +
+                  nextCell -
+                  1;
             const cell = record.solution[int];
             if (cell !== '#') {
               setSelected(int);
@@ -686,8 +677,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     // Adding onLetterChange here causes multiple letter renders
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey]);
-
-  useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
 
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {

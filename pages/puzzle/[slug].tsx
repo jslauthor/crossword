@@ -2,6 +2,12 @@ import { GetStaticPaths, GetStaticProps } from 'next';
 import { getPuzzleById, getPuzzles } from '../../lib/utils/reader';
 import styled from '@emotion/styled';
 import { Canvas } from '@react-three/fiber';
+import {
+  Bloom,
+  EffectComposer,
+  ChromaticAberration,
+} from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
 import { Stats, PerspectiveCamera } from '@react-three/drei';
 import LetterBoxes from '../../components/core/3d/LetterBoxes';
 import { PuzzleData } from '../../types/types';
@@ -10,12 +16,13 @@ import {
   NUMBER_RECORD,
   TEXTURE_RECORD,
 } from '../../lib/utils/textures';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   OrthographicCamera as OrthographicCameraType,
   InstancedMesh as InstancedMeshType,
   Box3,
   Vector3,
+  Vector2,
 } from 'three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
@@ -39,6 +46,20 @@ import TurnArrow from '../../components/svg/TurnArrow';
 import { SwipeControls } from '../../components/core/3d/SwipeControls';
 import { rangeOperation } from '../../lib/utils/math';
 import { useAnimatedText } from '../../lib/utils/hooks/useAnimatedText';
+import Particles from '../../components/core/3d/Particles';
+import Sparks from '../../components/core/3d/Sparks';
+
+const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
+for (let x = 0; x < 10; x++) {
+  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
+}
+for (let x = 0; x <= 25; x++) {
+  SUPPORTED_KEYBOARD_CHARACTERS.push(String.fromCharCode(65 + x));
+}
+for (let x = 0; x <= 1000; x++) {
+  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
+}
+SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
@@ -97,9 +118,11 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
     `background-color: #${tinycolor(backgroundColor).darken(5).toHex()}`}
 `;
 
-const ClueLabel = styled.span`
+const ClueLabel = styled.span<{ celebrate?: boolean }>`
   font-size: 1rem;
   line-height: 1rem !important;
+  ${({ celebrate }) =>
+    celebrate && 'text-align: center; font-size: 1.5rem; font-weight: 600;'}
 `;
 
 const ModalContainer = styled.div`
@@ -182,7 +205,6 @@ export default function Puzzle({
   cellNumberTextureAtlasLookup,
   slug,
 }: PuzzleProps) {
-
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
   const [sideOffset, setSideOffset] = useState(0);
@@ -204,6 +226,7 @@ export default function Puzzle({
     setShowHelpModal(!showHelpModal);
   }, [showHelpModal]);
 
+  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const animatedClueText = useAnimatedText(clue, 120);
 
   const [puzzleWidth] = useMemo(() => {
@@ -256,13 +279,17 @@ export default function Puzzle({
           turnRight();
           break;
         default:
-          if (button !== 'MORE') {
+          if (button !== 'MORE' && isPuzzleSolved === false) {
             setSelectedCharacter(button === '{bksp}' ? '' : button);
           }
       }
     },
-    [turnLeft, turnRight]
+    [isPuzzleSolved, turnLeft, turnRight]
   );
+
+  const onSolved = useCallback(() => {
+    setIsPuzzleSolved(true);
+  }, []);
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -270,6 +297,16 @@ export default function Puzzle({
   const onLetterInput = useCallback(() => {
     setSelectedCharacter(undefined);
   }, []);
+
+  const onLetterChange = useCallback(
+    (key: string) => {
+      if (isPuzzleSolved === false) {
+        setSelectedCharacter(key);
+      }
+    },
+    [isPuzzleSolved]
+  );
+  useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
 
   const defaultColor = useMemo(() => DEFAULT_COLOR, []);
   const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
@@ -288,7 +325,7 @@ export default function Puzzle({
         if (cell !== '#') {
           setTimeout(() => {
             setKeyAndIndexOverride([cell.value, x]);
-          }, x * 15);
+          }, x * 10);
         }
       }
     }
@@ -313,6 +350,21 @@ export default function Puzzle({
       },
     });
   }, [rotationAnimation]);
+
+  const mouse = useRef([0, 0]);
+  const toHex = useCallback(
+    (color: number) => `#${color.toString(16).padStart(6, '0')}`,
+    []
+  );
+  const sparkColors = useMemo(
+    () => [
+      tinycolor(toHex(defaultColor)).brighten(10).toHexString(),
+      tinycolor(toHex(selectedColor)).brighten(10).toHexString(),
+      tinycolor(toHex(adjacentColor)).brighten(10).toHexString(),
+    ],
+    [adjacentColor, defaultColor, selectedColor, toHex]
+  );
+  const abberationOffset = useMemo(() => new Vector2(0.0005, 0.0005), []);
 
   return (
     <Container>
@@ -374,13 +426,44 @@ export default function Puzzle({
               selectedColor={selectedColor}
               adjacentColor={adjacentColor}
               onInitialize={onInitialize}
+              onSolved={onSolved}
             />
           </group>
         </SwipeControls>
+        {isPuzzleSolved === true && (
+          <>
+            <Sparks
+              count={12}
+              mouse={mouse}
+              radius={1.5}
+              colors={sparkColors}
+            />
+            <Particles count={2500} mouse={mouse} />
+          </>
+        )}
+        <EffectComposer>
+          <Bloom
+            luminanceThreshold={0.65}
+            luminanceSmoothing={0.65}
+            height={canvasHeight}
+          />
+          <ChromaticAberration
+            radialModulation={false}
+            modulationOffset={0}
+            blendFunction={BlendFunction.NORMAL} // blend mode
+            offset={abberationOffset} // color offset
+          />
+        </EffectComposer>
       </Canvas>
       <ClueContainer backgroundColor={adjacentColor.toString(16)}>
         {/* <FontAwesomeIcon icon={faChevronLeft} width={12} /> */}
-        <ClueLabel dangerouslySetInnerHTML={{ __html: animatedClueText }} />
+        <ClueLabel
+          dangerouslySetInnerHTML={{
+            __html:
+              isPuzzleSolved === false ? animatedClueText : '🏆 YOU DID IT! 🏆',
+          }}
+          celebrate={isPuzzleSolved}
+        />
         {/* <FontAwesomeIcon icon={faChevronRight} width={12} /> */}
       </ClueContainer>
       <KeyboardContainer>
