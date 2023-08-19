@@ -403,7 +403,7 @@ export default function Puzzle({
     [adjacentColor, defaultColor, selectedColor, toHex]
   );
   const abberationOffset = useMemo(() => new Vector2(0.0005, 0.0005), []);
-  console.log(isPuzzleSolved);
+
   return (
     <Container>
       <HeaderContainer>
