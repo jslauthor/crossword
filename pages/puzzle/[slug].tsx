@@ -32,6 +32,8 @@ import {
   faCircleQuestion,
   faGear,
   faClose,
+  faChevronLeft,
+  faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import useDimensions from 'react-cool-dimensions';
 import RotatingBox from '../../components/core/3d/Box';
@@ -115,19 +117,41 @@ const SolvedContainer = styled.div`
   margin: 0 auto;
 `;
 
+const TurnButton = styled.div<{ borderColor: string }>`
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  border-style: solid;
+  border-width: 1px;
+  ${({ borderColor }) =>
+    `border-color: #${tinycolor(borderColor).darken(5).toHex()};`}
+`;
+
+const InfoBar = styled.div`
+  position: relative;
+  display: grid;
+  grid-template-columns: min-content 1fr min-content;
+  grid-column-gap: 0.5rem;
+  max-width: var(--primary-app-width);
+  width: 100%;
+  height: min-content;
+  margin-bottom: 0.125rem;
+`;
+
 const ClueContainer = styled.div<{ backgroundColor: string }>`
   display: grid;
+  // grid-template-columns: min-content 1fr min-content;
   grid-template-columns: 1fr;
   grid-column-gap: 1rem;
   align-items: center;
   border-radius: 0.25rem;
   padding: 0 0.5rem;
-  max-height: 44px;
-  height: 100%;
   box-sizing: border-box;
-  margin-bottom: 0.125rem;
-  max-width: var(--primary-app-width);
+  height: 100%;
   width: 100%;
+  min-height: 54px;
   ${({ backgroundColor }) =>
     `background-color: #${tinycolor(backgroundColor).darken(5).toHex()}`}
 `;
@@ -469,11 +493,24 @@ export default function Puzzle({
           />
         </EffectComposer>
       </Canvas>
-      <ClueContainer backgroundColor={adjacentColor.toString(16)}>
-        {/* <FontAwesomeIcon icon={faChevronLeft} width={12} /> */}
-        <ClueLabel dangerouslySetInnerHTML={{ __html: animatedClueText }} />
-        {/* <FontAwesomeIcon icon={faChevronRight} width={12} /> */}
-      </ClueContainer>
+      <InfoBar>
+        <TurnButton onClick={turnLeft} borderColor={toHex(defaultColor)}>
+          <TurnArrow width={20} height={20} color={toHex(defaultColor)} />
+        </TurnButton>
+        <ClueContainer backgroundColor={toHex(adjacentColor)}>
+          {/* <FontAwesomeIcon icon={faChevronLeft} width={12} /> */}
+          <ClueLabel dangerouslySetInnerHTML={{ __html: animatedClueText }} />
+          {/* <FontAwesomeIcon icon={faChevronRight} width={12} /> */}
+        </ClueContainer>
+        <TurnButton onClick={turnRight} borderColor={toHex(defaultColor)}>
+          <TurnArrow
+            width={20}
+            height={20}
+            flipped
+            color={toHex(defaultColor)}
+          />
+        </TurnButton>
+      </InfoBar>
       <KeyboardContainer>
         {isPuzzleSolved && <SolvedContainer>🏆 YOU DID IT! 🏆</SolvedContainer>}
         <Keyboard
@@ -508,15 +545,8 @@ export default function Puzzle({
           layout={{
             default: [
               'Q W E R T Y U I O P',
-              '{tl} A S D F G H J K L {tr}',
+              '{sp} A S D F G H J K L {sp}',
               'MORE Z X C V B N M {bksp}',
-            ],
-            more: [
-              '~ ! @ # $ % ^ &amp; * ( ) _ + {bksp}',
-              '{tab} Q W E R T Y U I O P { } |',
-              '{lock} A S D F G H J K L : " {enter}',
-              '{shift} Z X C V B N M &lt; &gt; ? {shift}',
-              '.com @ {space}',
             ],
           }}
         />

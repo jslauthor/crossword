@@ -244,7 +244,7 @@ const GlobalStyles = () => {
         }
 
         .simple-keyboard.keyboardTheme .hg-button {
-          height: 50px;
+          height: 55px;
           width: 100%;
           max-width: 100%;
           display: flex;
