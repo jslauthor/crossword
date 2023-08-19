@@ -32,8 +32,6 @@ import {
   faCircleQuestion,
   faGear,
   faClose,
-  faChevronLeft,
-  faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import useDimensions from 'react-cool-dimensions';
 import RotatingBox from '../../components/core/3d/Box';
@@ -307,6 +305,25 @@ export default function Puzzle({
     return rangeOperation(0, 3, 0, -sideOffset);
   }, [sideOffset]);
 
+  // DEBUG FUNCTION
+  // This will autocomplete the puzzle to test the success state
+  const finishPuzzle = useCallback(() => {
+    if (
+      location.hostname === 'localhost' ||
+      location.hostname === '127.0.0.1'
+    ) {
+      const { solution } = getCharacterRecord(puzzleData);
+      for (let x = 0; x < solution.length; x++) {
+        const cell = solution[x];
+        if (cell !== '#') {
+          setTimeout(() => {
+            setKeyAndIndexOverride([cell.value, x]);
+          }, x * 20);
+        }
+      }
+    }
+  }, [puzzleData]);
+
   const onKeyPress = useCallback(
     (button: string) => {
       switch (button) {
@@ -316,13 +333,16 @@ export default function Puzzle({
         case '{tr}':
           turnRight();
           break;
+        case 'MORE':
+          finishPuzzle();
+          break;
         default:
           if (button !== 'MORE' && isPuzzleSolved === false) {
             setSelectedCharacter(button === '{bksp}' ? '' : button);
           }
       }
     },
-    [isPuzzleSolved, turnLeft, turnRight]
+    [finishPuzzle, isPuzzleSolved, turnLeft, turnRight]
   );
 
   const onSolved = useCallback(() => {
@@ -349,26 +369,6 @@ export default function Puzzle({
   const defaultColor = useMemo(() => DEFAULT_COLOR, []);
   const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
   const adjacentColor = useMemo(() => DEFAULT_SELECTED_ADJACENT_COLOR, []);
-
-  // DEBUG FUNCTION
-  // This will autocomplete the puzzle to test the success state
-  const finishPuzzle = useCallback(() => {
-    if (
-      location.hostname === 'localhost' ||
-      location.hostname === '127.0.0.1'
-    ) {
-      const { solution } = getCharacterRecord(puzzleData);
-      for (let x = 0; x < solution.length; x++) {
-        const cell = solution[x];
-        if (cell !== '#') {
-          setTimeout(() => {
-            setKeyAndIndexOverride([cell.value, x]);
-          }, x * 10);
-        }
-      }
-    }
-  }, [puzzleData]);
-  useKeyDown(finishPuzzle, ['~']);
 
   // Intro spinny animation
   const [rotation, setRotation] = useState(0);
@@ -403,7 +403,7 @@ export default function Puzzle({
     [adjacentColor, defaultColor, selectedColor, toHex]
   );
   const abberationOffset = useMemo(() => new Vector2(0.0005, 0.0005), []);
-
+  console.log(isPuzzleSolved);
   return (
     <Container>
       <HeaderContainer>
