@@ -101,6 +101,20 @@ const KeyboardContainer = styled.div`
   position: relative;
 `;
 
+const SolvedContainer = styled.div`
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inset: 0;
+  background: radial-gradient(rgb(0, 0, 0, 0.7), rgb(0, 0, 0, 0));
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: var(--primary-text);
+  max-width: var(--primary-app-width);
+  margin: 0 auto;
+`;
+
 const ClueContainer = styled.div<{ backgroundColor: string }>`
   display: grid;
   grid-template-columns: 1fr;
@@ -457,16 +471,11 @@ export default function Puzzle({
       </Canvas>
       <ClueContainer backgroundColor={adjacentColor.toString(16)}>
         {/* <FontAwesomeIcon icon={faChevronLeft} width={12} /> */}
-        <ClueLabel
-          dangerouslySetInnerHTML={{
-            __html:
-              isPuzzleSolved === false ? animatedClueText : '🏆 YOU DID IT! 🏆',
-          }}
-          celebrate={isPuzzleSolved}
-        />
+        <ClueLabel dangerouslySetInnerHTML={{ __html: animatedClueText }} />
         {/* <FontAwesomeIcon icon={faChevronRight} width={12} /> */}
       </ClueContainer>
       <KeyboardContainer>
+        {isPuzzleSolved && <SolvedContainer>🏆 YOU DID IT! 🏆</SolvedContainer>}
         <Keyboard
           layoutName="default"
           theme="hg-theme-default keyboardTheme"
