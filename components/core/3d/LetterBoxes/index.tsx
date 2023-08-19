@@ -17,6 +17,7 @@ import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { getCharacterRecord } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
+import useAsyncQueue from '../../../../lib/utils/hooks/useAsyncQueue';
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -165,7 +166,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   // const [initialRotations, setInitialRotations] = useState<Euler[]>([]);
 
-  const storageKey = useMemo(() => `puzzle-${id}`, [id]);
+  const characterPositionStorageKey = useMemo(() => `puzzle-${id}`, [id]);
+  const answerIndexStorageKey = useMemo(
+    () => `puzzle-${id}-answer-index`,
+    [id]
+  );
+
+  const { add } = useAsyncQueue({ concurrency: 1 });
 
   useEffect(() => {
     setInstancedMesh(ref);
@@ -228,23 +235,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     }
   }, [isVerticalOrientation, onSelectClue, record, selected, selectedWordCell]);
-
-  // LOAD PREVIOUS GAME DATA
-  useEffect(() => {
-    if (ref == null) {
-      return;
-    }
-    const retrieveGameState = async () => {
-      const state = (await localForage.getItem(storageKey)) as Float32Array;
-      if (state != null) {
-        setCharacterPositionArray(state);
-        ref.geometry.attributes.characterPosition.needsUpdate = true;
-
-        // TODO: Update answerIndex
-      }
-    };
-    retrieveGameState();
-  }, [ref, storageKey]);
 
   const cellNumberPositionArray = useMemo(
     () => Float32Array.from(new Array(size * 2).fill(-1)),
@@ -392,6 +382,22 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       // showIntroAnimation(true);
       showRippleAnimation();
       if (onInitialize) {
+        // LOAD PREVIOUS GAME DATA FROM LOCAL STORAGE
+        const retrieveGameState = async () => {
+          const state = (await localForage.getItem(
+            characterPositionStorageKey
+          )) as Float32Array;
+          const index = (await localForage.getItem(
+            answerIndexStorageKey
+          )) as number[];
+          if (state != null && index != null) {
+            setCharacterPositionArray(state);
+            setAnswerIndex(index);
+            ref.geometry.attributes.characterPosition.needsUpdate = true;
+          }
+        };
+        retrieveGameState();
+
         onInitialize();
       }
     },
@@ -618,13 +624,29 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             newAnswerIndex[chunk] &= ~(1 << bit);
           }
           setAnswerIndex(newAnswerIndex);
+
+          const saveAnswerIndex = async () => {
+            add({
+              id: answerIndexStorageKey,
+              task: () =>
+                localForage.setItem(answerIndexStorageKey, newAnswerIndex),
+            });
+          };
+          saveAnswerIndex();
         }
 
         characterPositionArray[selectedIndex * 2] = x;
         characterPositionArray[selectedIndex * 2 + 1] = y;
 
         const saveGameState = async () => {
-          await localForage.setItem(storageKey, characterPositionArray);
+          add({
+            id: characterPositionStorageKey,
+            task: () =>
+              localForage.setItem(
+                characterPositionStorageKey,
+                characterPositionArray
+              ),
+          });
         };
         saveGameState();
 
@@ -652,7 +674,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       isVerticalOrientation,
       puzzleData.length,
       answerIndex,
-      storageKey,
+      add,
+      answerIndexStorageKey,
+      characterPositionStorageKey,
     ]
   );
 

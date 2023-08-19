@@ -318,7 +318,7 @@ export default function Puzzle({
         if (cell !== '#') {
           setTimeout(() => {
             setKeyAndIndexOverride([cell.value, x]);
-          }, x * 20);
+          }, x * 30);
         }
       }
     }

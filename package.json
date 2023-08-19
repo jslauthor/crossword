@@ -30,6 +30,7 @@
     "localforage": "^1.10.0",
     "meshline": "^3.1.6",
     "next": "13.0.5",
+    "next-tick": "^1.1.0",
     "npm": "^9.6.6",
     "react": "18.2.0",
     "react-cool-dimensions": "^3.0.1",
@@ -43,6 +44,7 @@
     "yoga-wasm-web": "^0.2.0"
   },
   "devDependencies": {
+    "@types/next-tick": "^1.0.0",
     "@types/node": "18.11.9",
     "@types/react": "18.0.25",
     "@types/react-dom": "18.0.9",
