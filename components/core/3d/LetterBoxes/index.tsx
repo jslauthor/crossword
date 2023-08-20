@@ -165,7 +165,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   // const [initialRotations, setInitialRotations] = useState<Euler[]>([]);
-
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [hasRetrievedGameState, setHasRetrievedGameState] =
+    useState<boolean>(false);
   const characterPositionStorageKey = useMemo(() => `puzzle-${id}`, [id]);
   const answerIndexStorageKey = useMemo(
     () => `puzzle-${id}-answer-index`,
@@ -381,23 +383,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       // setInitialRotations(rotations);
       // showIntroAnimation(true);
       showRippleAnimation();
+      setIsInitialized(true);
       if (onInitialize) {
-        // LOAD PREVIOUS GAME DATA FROM LOCAL STORAGE
-        const retrieveGameState = async () => {
-          const state = (await localForage.getItem(
-            characterPositionStorageKey
-          )) as Float32Array;
-          const index = (await localForage.getItem(
-            answerIndexStorageKey
-          )) as number[];
-          if (state != null && index != null) {
-            setCharacterPositionArray(state);
-            setAnswerIndex(index);
-            ref.geometry.attributes.characterPosition.needsUpdate = true;
-          }
-        };
-        retrieveGameState();
-
         onInitialize();
       }
     },
@@ -405,6 +392,43 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [ref]
   );
+
+  // LOAD PREVIOUS GAME DATA FROM LOCAL STORAGE
+  useEffect(() => {
+    if (
+      ref == null ||
+      isInitialized === false ||
+      hasRetrievedGameState === true
+    )
+      return;
+
+    const retrieveGameState = async () => {
+      const state = (await localForage.getItem(
+        characterPositionStorageKey
+      )) as Float32Array;
+      const index = (await localForage.getItem(
+        answerIndexStorageKey
+      )) as number[];
+      if (state != null && index != null) {
+        setCharacterPositionArray(state);
+        setAnswerIndex(index);
+      }
+      setHasRetrievedGameState(true);
+    };
+    retrieveGameState();
+  }, [
+    ref,
+    isInitialized,
+    characterPositionStorageKey,
+    answerIndexStorageKey,
+    hasRetrievedGameState,
+  ]);
+
+  // Need to rerender the letters if the character position changes 👆🏻
+  useEffect(() => {
+    if (ref == null || hasRetrievedGameState == false) return;
+    ref.geometry.attributes.characterPosition.needsUpdate = true;
+  }, [characterPositionArray, hasRetrievedGameState, ref]);
 
   // This does all of the selection logic. Row/cell highlighting, etc.
   useFrame((state) => {

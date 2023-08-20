@@ -276,7 +276,6 @@ export default function Puzzle({
 
   useEffect(() => {
     if (cameraRef == null || instancedRef == null || isInitialized === false) {
-      setScale(1);
       return;
     }
 
