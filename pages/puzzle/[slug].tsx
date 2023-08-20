@@ -256,7 +256,7 @@ export default function Puzzle({
   const onInitialize = useCallback(() => {
     setIsInitialized(true);
   }, []);
-
+  const [scale, setScale] = useState(1);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const toggleModal = useCallback(() => {
     setShowHelpModal(!showHelpModal);
@@ -274,9 +274,10 @@ export default function Puzzle({
     return [width, height, totalPerSide];
   }, [puzzleData]);
 
-  const scale = useMemo(() => {
+  useEffect(() => {
     if (cameraRef == null || instancedRef == null || isInitialized === false) {
-      return 1;
+      setScale(1);
+      return;
     }
 
     const size = new Vector3();
@@ -289,7 +290,7 @@ export default function Puzzle({
       Math.min(Math.min(window.innerWidth * 0.95, 500), canvasHeight * 0.95) /
       width;
     cameraRef.lookAt(instancedRef.position);
-    return newScale * 1.75;
+    setScale(newScale * 1.75);
   }, [cameraRef, canvasHeight, instancedRef, isInitialized, puzzleWidth]);
 
   const turnLeft = useCallback(
