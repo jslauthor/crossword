@@ -262,6 +262,9 @@ export default function Puzzle({
     setShowHelpModal(!showHelpModal);
   }, [showHelpModal]);
 
+  const [isVerticalOrientation, setVerticalOrientation] =
+    useState<boolean>(false);
+
   const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const animatedClueText = useAnimatedText(clue, 120);
 
@@ -404,6 +407,10 @@ export default function Puzzle({
   );
   const abberationOffset = useMemo(() => new Vector2(0.0005, 0.0005), []);
 
+  const onClueClick = useCallback(() => {
+    setVerticalOrientation(!isVerticalOrientation);
+  }, [isVerticalOrientation]);
+
   return (
     <Container>
       <HeaderContainer>
@@ -465,6 +472,8 @@ export default function Puzzle({
               adjacentColor={adjacentColor}
               onInitialize={onInitialize}
               onSolved={onSolved}
+              isVerticalOrientation={isVerticalOrientation}
+              onVerticalOrientationChange={setVerticalOrientation}
             />
           </group>
         </SwipeControls>
@@ -497,7 +506,10 @@ export default function Puzzle({
         <TurnButton onClick={turnLeft} borderColor={toHex(defaultColor)}>
           <TurnArrow width={20} height={20} color={toHex(defaultColor)} />
         </TurnButton>
-        <ClueContainer backgroundColor={toHex(adjacentColor)}>
+        <ClueContainer
+          backgroundColor={toHex(adjacentColor)}
+          onClick={onClueClick}
+        >
           {/* <FontAwesomeIcon icon={faChevronLeft} width={12} /> */}
           <ClueLabel dangerouslySetInnerHTML={{ __html: animatedClueText }} />
           {/* <FontAwesomeIcon icon={faChevronRight} width={12} /> */}

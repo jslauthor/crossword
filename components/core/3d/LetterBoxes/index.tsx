@@ -121,6 +121,8 @@ type LetterBoxesProps = {
   selectedColor: number;
   adjacentColor: number;
   keyAndIndexOverride?: [string, number]; // For testing
+  isVerticalOrientation: boolean;
+  onVerticalOrientationChange: (isVerticalOrientation: boolean) => void;
   setInstancedMesh: (instancedMesh: InstancedMesh | null) => void;
   onLetterInput?: () => void;
   onSelectClue?: (clue: string | undefined) => void;
@@ -135,6 +137,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzleData,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
+  isVerticalOrientation = false,
+  onVerticalOrientationChange,
   setInstancedMesh,
   selectedSide,
   keyAndIndexOverride,
@@ -148,8 +152,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onSolved,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
-  const [isVerticalOrientation, setVerticalOrientation] =
-    useState<boolean>(false);
+  // const [isVerticalOrientation, setVerticalOrientation] =
+  //   useState<boolean>(false);
   const [prevOrientation, setPrevOrientation] = useState<boolean>(
     isVerticalOrientation
   );
@@ -859,14 +863,20 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
 
       if (e.instanceId === selected) {
-        setVerticalOrientation(!isVerticalOrientation);
+        onVerticalOrientationChange(!isVerticalOrientation);
+        // setVerticalOrientation(!isVerticalOrientation);
         return;
       }
 
       e.stopPropagation();
       setSelected(e.instanceId);
     },
-    [isVerticalOrientation, isVisibleSide, selected]
+    [
+      isVerticalOrientation,
+      isVisibleSide,
+      onVerticalOrientationChange,
+      selected,
+    ]
   );
 
   return (
