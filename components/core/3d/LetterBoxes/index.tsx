@@ -653,30 +653,24 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
           setAnswerIndex(newAnswerIndex);
 
-          const saveAnswerIndex = async () => {
-            add({
-              id: answerIndexStorageKey,
-              task: () =>
-                localForage.setItem(answerIndexStorageKey, newAnswerIndex),
-            });
-          };
-          saveAnswerIndex();
+          add({
+            id: answerIndexStorageKey,
+            task: () =>
+              localForage.setItem(answerIndexStorageKey, newAnswerIndex),
+          });
         }
 
         characterPositionArray[selectedIndex * 2] = x;
         characterPositionArray[selectedIndex * 2 + 1] = y;
 
-        const saveGameState = async () => {
-          add({
-            id: characterPositionStorageKey,
-            task: () =>
-              localForage.setItem(
-                characterPositionStorageKey,
-                characterPositionArray
-              ),
-          });
-        };
-        saveGameState();
+        add({
+          id: characterPositionStorageKey,
+          task: () =>
+            localForage.setItem(
+              characterPositionStorageKey,
+              characterPositionArray
+            ),
+        });
 
         ref.geometry.attributes.characterPosition.needsUpdate = true;
 

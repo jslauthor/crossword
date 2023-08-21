@@ -48,6 +48,9 @@ import { rangeOperation } from '../../lib/utils/math';
 import { useAnimatedText } from '../../lib/utils/hooks/useAnimatedText';
 import Particles from '../../components/core/3d/Particles';
 import Sparks from '../../components/core/3d/Sparks';
+import { useElapsedTime } from 'use-elapsed-time';
+import localforage from 'localforage';
+import useAsyncQueue from '../../lib/utils/hooks/useAsyncQueue';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -104,6 +107,7 @@ const KeyboardContainer = styled.div`
 const SolvedContainer = styled.div`
   position: absolute;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   inset: 0;
@@ -113,6 +117,18 @@ const SolvedContainer = styled.div`
   color: var(--primary-text);
   max-width: var(--primary-app-width);
   margin: 0 auto;
+`;
+
+const SolvedText = styled.div`
+  font-weight: 400;
+  font-size: 0.75rem;
+  font-style: italic;
+  margin-top: 0.5rem;
+`;
+
+const SolvedTime = styled.h3`
+  font-weight: 400;
+  font-size: 2rem;
 `;
 
 const TurnButton = styled.div<{ borderColor: string }>`
@@ -227,6 +243,51 @@ const CloseModalContainer = styled.div`
   top: 1rem;
   right: 1rem;
 `;
+
+type ElapsedTimeProps = {
+  slug: string;
+  isPaused: boolean;
+};
+
+const ElapsedTime: React.FC<ElapsedTimeProps> = ({ slug, isPaused }) => {
+  const { add } = useAsyncQueue({ concurrency: 1 });
+
+  const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
+  const elapsedTimeStorageKey = useMemo(() => `puzzle-${slug}-time`, [slug]);
+
+  const { elapsedTime, reset } = useElapsedTime({
+    isPlaying:
+      shouldStartTimer === true &&
+      (typeof window === 'undefined' ? false : !document.hidden) &&
+      isPaused === false,
+    updateInterval: 1,
+    onUpdate: (elapsedTime) => {
+      add({
+        id: elapsedTimeStorageKey,
+        task: () => localforage.setItem(elapsedTimeStorageKey, elapsedTime),
+      });
+    },
+  });
+
+  useEffect(() => {
+    const getTime = async () => {
+      const storedTime = await localforage.getItem(elapsedTimeStorageKey);
+      setShouldStartTimer(true);
+      reset(Number(storedTime ?? 0));
+    };
+    getTime();
+  }, [elapsedTimeStorageKey, reset]);
+
+  const formattedElapsedTime = useMemo(
+    () =>
+      elapsedTime < 3600
+        ? new Date(elapsedTime * 1000).toISOString().slice(14, 19)
+        : new Date(elapsedTime * 1000).toISOString().slice(11, 19),
+    [elapsedTime]
+  );
+
+  return <HeaderItem>{formattedElapsedTime}</HeaderItem>;
+};
 
 type PuzzleProps = {
   puzzleData: PuzzleData[];
@@ -418,6 +479,7 @@ export default function Puzzle({
           <FontAwesomeIcon icon={faBars} width={20} />
           <Logo height={18} width={150} />
         </HeaderItem>
+        <ElapsedTime slug={slug} isPaused={isPuzzleSolved || !isInitialized} />
         <HeaderItem>
           <RotatingBox side={sideOffset} defaultColor={defaultColor} />
           <FontAwesomeIcon
@@ -524,7 +586,18 @@ export default function Puzzle({
         </TurnButton>
       </InfoBar>
       <KeyboardContainer>
-        {isPuzzleSolved && <SolvedContainer>🏆 YOU DID IT! 🏆</SolvedContainer>}
+        {isPuzzleSolved && (
+          <SolvedContainer>
+            <div>🏆 YOU DID IT! 🏆</div>
+            <SolvedText>You finished the puzzle in</SolvedText>
+            <SolvedTime>
+              <ElapsedTime
+                slug={slug}
+                isPaused={isPuzzleSolved || !isInitialized}
+              />
+            </SolvedTime>
+          </SolvedContainer>
+        )}
         <Keyboard
           layoutName="default"
           theme="hg-theme-default keyboardTheme"
