@@ -1,5 +1,5 @@
-import { GetStaticPaths, GetStaticProps } from 'next';
-import { getPuzzleById, getPuzzles } from '../../lib/utils/reader';
+'use client';
+
 import styled from '@emotion/styled';
 import { Canvas } from '@react-three/fiber';
 import {
@@ -9,16 +9,11 @@ import {
 } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
 import { Stats, PerspectiveCamera } from '@react-three/drei';
-import LetterBoxes from '../../components/core/3d/LetterBoxes';
-import { PuzzleData } from '../../types/types';
-import {
-  generateTextures,
-  NUMBER_RECORD,
-  TEXTURE_RECORD,
-} from '../../lib/utils/textures';
+import LetterBoxes from 'components/core/3d/LetterBoxes';
+import { PuzzleData } from 'types/types';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  OrthographicCamera as OrthographicCameraType,
+  PerspectiveCamera as PerspectiveCameraType,
   InstancedMesh as InstancedMeshType,
   Box3,
   Vector3,
@@ -34,23 +29,23 @@ import {
   faClose,
 } from '@fortawesome/free-solid-svg-icons';
 import useDimensions from 'react-cool-dimensions';
-import RotatingBox from '../../components/core/3d/Box';
-import Logo from '../../components/svg/Logo';
-import { useKeyDown } from '../../lib/utils/hooks/useKeyDown';
-import { getCharacterRecord } from '../../lib/utils/puzzle';
+import RotatingBox from 'components/core/3d/Box';
+import Logo from 'components/svg/Logo';
+import { useKeyDown } from 'lib/utils/hooks/useKeyDown';
+import { getCharacterRecord } from 'lib/utils/puzzle';
 import { useSpring } from '@react-spring/core';
 import { easings } from '@react-spring/web';
 import tinycolor from 'tinycolor2';
-import ExampleCube from '../../components/svg/ExampleCube';
-import TurnArrow from '../../components/svg/TurnArrow';
-import { SwipeControls } from '../../components/core/3d/SwipeControls';
-import { rangeOperation } from '../../lib/utils/math';
-import { useAnimatedText } from '../../lib/utils/hooks/useAnimatedText';
-import Particles from '../../components/core/3d/Particles';
-import Sparks from '../../components/core/3d/Sparks';
+import ExampleCube from 'components/svg/ExampleCube';
+import TurnArrow from 'components/svg/TurnArrow';
+import { SwipeControls } from 'components/core/3d/SwipeControls';
+import { rangeOperation } from 'lib/utils/math';
+import { useAnimatedText } from 'lib/utils/hooks/useAnimatedText';
+import Particles from 'components/core/3d/Particles';
+import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
 import localforage from 'localforage';
-import useAsyncQueue from '../../lib/utils/hooks/useAsyncQueue';
+import useAsyncQueue from 'lib/utils/hooks/useAsyncQueue';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -303,7 +298,7 @@ export default function Puzzle({
   slug,
 }: PuzzleProps) {
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
-  const [cameraRef, setCameraRef] = useState<OrthographicCameraType>();
+  const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
   const [sideOffset, setSideOffset] = useState(0);
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
     useState<[string, number]>();
@@ -342,18 +337,17 @@ export default function Puzzle({
     if (cameraRef == null || instancedRef == null || isInitialized === false) {
       return;
     }
-
     const size = new Vector3();
     new Box3().setFromObject(instancedRef).getSize(size);
     size.project(cameraRef);
-    size.multiplyScalar(window.innerWidth).multiplyScalar(puzzleWidth);
+    size.multiplyScalar(window.innerWidth);
 
     const { x: width } = size;
     const newScale =
       Math.min(Math.min(window.innerWidth * 0.95, 500), canvasHeight * 0.95) /
-      width;
+      Math.abs(width);
     cameraRef.lookAt(instancedRef.position);
-    setScale(newScale * 1.75);
+    setScale(newScale);
   }, [cameraRef, canvasHeight, instancedRef, isInitialized, puzzleWidth]);
 
   const turnLeft = useCallback(
@@ -502,11 +496,10 @@ export default function Puzzle({
         <PerspectiveCamera
           ref={setCameraRef}
           makeDefault
-          fov={45}
-          position={[0, 0, 6]}
+          position={[0, 0, 3.35]}
         />
-        <ambientLight />
-        <pointLight position={[5, 5, 5]} intensity={1.5} />
+        <ambientLight intensity={5} />
+        <pointLight position={[0, 0, -2]} intensity={2} />
         <SwipeControls
           global
           dragEnabled={false}
@@ -552,8 +545,8 @@ export default function Puzzle({
         )}
         <EffectComposer>
           <Bloom
-            luminanceThreshold={0.65}
-            luminanceSmoothing={0.65}
+            luminanceThreshold={1}
+            luminanceSmoothing={2}
             height={canvasHeight}
           />
           <ChromaticAberration
@@ -678,35 +671,3 @@ export default function Puzzle({
     </Container>
   );
 }
-
-const getStaticPaths: GetStaticPaths = async () => {
-  const paths = (await getPuzzles()).map((fileName) => ({
-    params: {
-      slug: fileName,
-    },
-  }));
-  return {
-    paths,
-    fallback: true,
-  };
-};
-
-const getStaticProps: GetStaticProps<PuzzleProps, { slug: string }> = async ({
-  params,
-}) => {
-  await generateTextures();
-
-  const puzzleData = await getPuzzleById(params?.slug ?? '');
-  const characterTextureAtlasLookup = TEXTURE_RECORD;
-  const cellNumberTextureAtlasLookup = NUMBER_RECORD;
-  return {
-    props: {
-      slug: params?.slug ?? '',
-      puzzleData,
-      characterTextureAtlasLookup,
-      cellNumberTextureAtlasLookup,
-    },
-  };
-};
-
-export { getStaticProps, getStaticPaths };

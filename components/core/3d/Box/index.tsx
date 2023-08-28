@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useCallback, useEffect, useRef } from 'react';
 import {
   PerspectiveCamera,
@@ -38,10 +40,10 @@ const Box: React.FC<BoxProps> = ({ defaultColor }) => {
 
   const onShader = useCallback((shader: Shader) => {
     const custom_map_fragment = ShaderChunk.map_fragment.replace(
-      `diffuseColor *= sampledDiffuseColor;`,
-      `diffuseColor = vec4( mix( diffuse, sampledDiffuseColor.rgb, sampledDiffuseColor.a ), opacity );`
+      `diffuseColor *= texture2D( map, vMapUv );`,
+      `vec4 textSample = texture2D(map, vMapUv);
+       diffuseColor = vec4( mix( diffuse, textSample.rgb, textSample.a ), opacity );`
     );
-
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
       custom_map_fragment
@@ -90,8 +92,8 @@ const RotatingBox: React.FC<RotatingBoxProps> = ({ side, defaultColor }) => {
   return (
     <CanvasContainer>
       <Canvas>
-        {/* <ambientLight /> */}
-        <pointLight position={[0, 10, 10]} intensity={3} />
+        <ambientLight intensity={3.5} />
+        <pointLight position={[0, 8, 0]} intensity={100} />
         <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={30} />
         <PresentationControls
           global

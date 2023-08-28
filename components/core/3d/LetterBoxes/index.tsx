@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import localForage from 'localforage';
 import { ThreeEvent, useFrame, useLoader } from '@react-three/fiber';

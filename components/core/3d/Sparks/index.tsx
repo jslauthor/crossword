@@ -1,3 +1,5 @@
+'use client';
+
 import * as THREE from 'three';
 import React, { useRef, useMemo, RefObject } from 'react';
 import { extend, useFrame, useThree } from '@react-three/fiber';

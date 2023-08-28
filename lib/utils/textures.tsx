@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import satori, { init } from 'satori';
 import Yoga from 'yoga-wasm-web';
-import { Resvg, ResvgRenderOptions } from '@resvg/resvg-js';
+import sharp from 'sharp';
+// import { Resvg, ResvgRenderOptions } from '@resvg/resvg-js';
 
 const characterItems: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -203,22 +204,7 @@ const saveElementToDisk = async (
     ],
   });
 
-  const opts: ResvgRenderOptions = {
-    background: 'rgba(0, 0, 0, 0)',
-    fitTo: {
-      mode: 'width',
-      value: size,
-    },
-    font: {
-      fontFiles: [nodeDir + '/public/franklin_gothic_regular.ttf'], // Load custom fonts.
-      loadSystemFonts: false, // It will be faster to disable loading system fonts.
-      defaultFontFamily: 'Franklin Gothic',
-    },
-  };
-  const resvg = new Resvg(svg, opts);
-  const pngData = resvg.render();
-  const pngBuffer = pngData.asPng();
-
+  const pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
   fs.writeFileSync(publicDir + filename, pngBuffer);
 };
 
