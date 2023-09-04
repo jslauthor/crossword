@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from 'react';
 import { MathUtils } from 'three';
 import { useThree } from '@react-three/fiber';
@@ -45,10 +47,12 @@ export function SwipeControls({
   const { size } = useThree();
   const rPolar = React.useMemo(
     () => [rotation[0] + polar[0], rotation[0] + polar[1]],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rotation[0], polar[0], polar[1]]
   ) as [number, number];
   const rAzimuth = React.useMemo(
     () => [rotation[1] + azimuth[0], rotation[1] + azimuth[1]],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rotation[1], azimuth[0], azimuth[1]]
   ) as [number, number];
   const rInitial = React.useMemo(
@@ -57,6 +61,7 @@ export function SwipeControls({
       MathUtils.clamp(rotation[1], ...rAzimuth),
       rotation[2],
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rotation[0], rotation[1], rotation[2], rPolar, rAzimuth]
   );
   const [spring, api] = useSpring(() => ({
@@ -66,6 +71,7 @@ export function SwipeControls({
   }));
   React.useEffect(
     () => void api.start({ scale: 1, rotation: rInitial, config }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [rInitial]
   );
   React.useEffect(() => {
@@ -77,6 +83,7 @@ export function SwipeControls({
         gl.domElement.style.cursor = 'default';
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [global, cursor, explDomElement, dragEnabled]);
   const bind = useGesture(
     {
