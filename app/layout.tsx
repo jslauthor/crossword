@@ -19,8 +19,10 @@ export default function RootLayout({
   );
 }
 
+const prefix = process.env.NODE_ENV === 'development' ? 'http://' : 'https://';
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.VERCEL_URL ?? ''),
+  metadataBase: new URL(`${prefix}${process.env.VERCEL_URL}`),
   title: 'Crosscube',
   description: 'An 8x8 crossword in three dimensions',
   openGraph: {
