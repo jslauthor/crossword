@@ -188,15 +188,7 @@ const saveElementToDisk = async (
   const font = fs.readFileSync(
     path.join(process.cwd(), 'public', 'franklin_gothic_regular.ttf')
   );
-  const wasm = fs.readFileSync(
-    path.join(
-      process.cwd(),
-      'node_modules',
-      'yoga-wasm-web',
-      'dist',
-      'yoga.wasm'
-    )
-  );
+  const wasm = fs.readFileSync(path.join(process.cwd(), 'public', 'yoga.wasm'));
   // @ts-ignore
   const yoga = await Yoga(wasm);
   init(yoga);
