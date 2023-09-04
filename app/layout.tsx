@@ -20,6 +20,7 @@ export default function RootLayout({
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.VERCEL_URL ?? ''),
   title: 'Crosscube',
   description: 'An 8x8 crossword in three dimensions',
   openGraph: {

@@ -24,7 +24,6 @@ export async function generateStaticParams() {
 }
 
 async function getProps(slug: string | undefined = ''): Promise<PuzzleProps> {
-  console.log('!!!!', process.env.NODE_ENV);
   // Only generate textures in development
   if (process.env.NODE_ENV === 'development') {
     await generateTextures();
