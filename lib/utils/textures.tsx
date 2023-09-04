@@ -179,15 +179,24 @@ export const NumberAtlas: React.FC = () => (
 );
 
 const publicDir = path.join(process.cwd(), 'public');
-const nodeDir = path.join(process.cwd(), 'node_modules');
 
 const saveElementToDisk = async (
   element: JSX.Element,
   filename: string,
   size: number = 2048
 ) => {
-  const font = fs.readFileSync(publicDir + '/franklin_gothic_regular.ttf');
-  const wasm = fs.readFileSync(nodeDir + '/yoga-wasm-web/dist/yoga.wasm');
+  const font = fs.readFileSync(
+    path.join(process.cwd(), 'public', 'franklin_gothic_regular.ttf')
+  );
+  const wasm = fs.readFileSync(
+    path.join(
+      process.cwd(),
+      'node_modules',
+      'yoga-wasm-web',
+      'dist',
+      'yoga.wasm'
+    )
+  );
   // @ts-ignore
   const yoga = await Yoga(wasm);
   init(yoga);
