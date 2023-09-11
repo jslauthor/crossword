@@ -48,3 +48,5 @@ export default async function Page({
   const props = await getProps(slug);
   return <PuzzlePage {...props} />;
 }
+
+export const dynamic = 'force-dynamic';
