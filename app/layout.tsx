@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { dark } from '@clerk/themes';
+import { ClerkProvider } from '@clerk/nextjs';
 import GlobalStyles from '../components/GlobalStyles';
 
 export default function RootLayout({
@@ -7,15 +9,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="stylesheet" href="https://use.typekit.net/nhh2njv.css" />
-      </head>
-      <body className="dark">
-        <GlobalStyles />
-        {children}
-      </body>
-    </html>
+    <ClerkProvider
+      appearance={{
+        baseTheme: dark,
+      }}
+    >
+      <html lang="en">
+        <head>
+          <link rel="stylesheet" href="https://use.typekit.net/nhh2njv.css" />
+        </head>
+        <body className="dark">
+          <GlobalStyles />
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
 
