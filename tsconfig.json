@@ -18,6 +18,8 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "plugins": [
       {
         "name": "next"
