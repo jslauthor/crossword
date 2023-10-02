@@ -20,7 +20,7 @@ export class UiHeader extends LitElement {
         display: grid;
         width: 100%;
         grid-gap: 0.75rem;
-        grid-template-columns: auto 1fr auto;
+        grid-template-columns: auto min-content 1fr auto;
         align-items: center;
       }
 
@@ -33,8 +33,13 @@ export class UiHeader extends LitElement {
         grid-column: 2 / 3;
       }
 
-      .question {
+      .center-label {
         grid-column: 3 / 4;
+        justify-self: center;
+      }
+
+      .question {
+        grid-column: 4 / 5;
         justify-self: end;
       }
     `,
@@ -42,6 +47,9 @@ export class UiHeader extends LitElement {
 
   @property({ type: Boolean })
   public showCloseButton = false;
+
+  @property({ type: String })
+  public centerLabel = '';
 
   public handleMenuPressed(): void {
     const menuPressedEvent = new CustomEvent('menuPressed', {
@@ -61,11 +69,21 @@ export class UiHeader extends LitElement {
       <div class="container" @click=${this.handleMenuPressed}>
         <div class="close-button">
           ${this.showCloseButton
-            ? html`<icon-x></icon-x>`
-            : html`<icon-hamburger></icon-hamburger>`}
+            ? html`<icon-x .width=${20} .height=${20}></icon-x>`
+            : html`<icon-hamburger
+                .width=${20}
+                .height=${25}
+              ></icon-hamburger>`}
         </div>
-        <main-logo class="logo"></main-logo>
-        <icon-question class="question"></icon-question>
+        <main-logo .width=${140} .height=${25} class="logo"></main-logo>
+        ${this.centerLabel != null && this.centerLabel.length > 0
+          ? html`<div class="center-label">${this.centerLabel}</div>`
+          : null}
+        <icon-question
+          .width=${25}
+          .height=${25}
+          class="question"
+        ></icon-question>
       </div>
     `;
   }

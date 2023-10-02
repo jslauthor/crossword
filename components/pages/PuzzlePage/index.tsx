@@ -46,6 +46,7 @@ import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
 import localforage from 'localforage';
 import useAsyncQueue from 'lib/utils/hooks/useAsyncQueue';
+import MenuWrapper from 'components/core/MenuWrapper';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -62,29 +63,6 @@ SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 const DEFAULT_COLOR = 0x708d91;
 const DEFAULT_SELECTED_COLOR = 0xd31996;
 const DEFAULT_SELECTED_ADJACENT_COLOR = 0x1fbe68;
-
-const Container = styled.div`
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  user-select: none;
-  touch-action: none;
-`;
-
-const HeaderContainer = styled.div`
-  position: relative;
-  display: flex;
-  padding: 0.25rem 0.5rem;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  box-sizing: border-box;
-  max-width: var(--primary-app-width);
-`;
 
 const HeaderItem = styled.div`
   display: grid;
@@ -242,46 +220,6 @@ const CloseModalContainer = styled.div`
 type ElapsedTimeProps = {
   slug: string;
   isPaused: boolean;
-};
-
-const ElapsedTime: React.FC<ElapsedTimeProps> = ({ slug, isPaused }) => {
-  const { add } = useAsyncQueue({ concurrency: 1 });
-
-  const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
-  const elapsedTimeStorageKey = useMemo(() => `puzzle-${slug}-time`, [slug]);
-
-  const { elapsedTime, reset } = useElapsedTime({
-    isPlaying:
-      shouldStartTimer === true &&
-      (typeof window === 'undefined' ? false : !document.hidden) &&
-      isPaused === false,
-    updateInterval: 1,
-    onUpdate: (elapsedTime) => {
-      add({
-        id: elapsedTimeStorageKey,
-        task: () => localforage.setItem(elapsedTimeStorageKey, elapsedTime),
-      });
-    },
-  });
-
-  useEffect(() => {
-    const getTime = async () => {
-      const storedTime = await localforage.getItem(elapsedTimeStorageKey);
-      setShouldStartTimer(true);
-      reset(Number(storedTime ?? 0));
-    };
-    getTime();
-  }, [elapsedTimeStorageKey, reset]);
-
-  const formattedElapsedTime = useMemo(
-    () =>
-      elapsedTime < 3600
-        ? new Date(elapsedTime * 1000).toISOString().slice(14, 19)
-        : new Date(elapsedTime * 1000).toISOString().slice(11, 19),
-    [elapsedTime]
-  );
-
-  return <HeaderItem>{formattedElapsedTime}</HeaderItem>;
 };
 
 type PuzzleProps = {
@@ -466,9 +404,45 @@ export default function Puzzle({
     setVerticalOrientation(!isVerticalOrientation);
   }, [isVerticalOrientation]);
 
+  const { add } = useAsyncQueue({ concurrency: 1 });
+
+  const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
+  const elapsedTimeStorageKey = useMemo(() => `puzzle-${slug}-time`, [slug]);
+
+  const { elapsedTime, reset } = useElapsedTime({
+    isPlaying:
+      shouldStartTimer === true &&
+      (typeof window === 'undefined' ? false : !document.hidden) &&
+      (isPuzzleSolved || !isInitialized) === false,
+    updateInterval: 1,
+    onUpdate: (elapsedTime) => {
+      add({
+        id: elapsedTimeStorageKey,
+        task: () => localforage.setItem(elapsedTimeStorageKey, elapsedTime),
+      });
+    },
+  });
+
+  useEffect(() => {
+    const getTime = async () => {
+      const storedTime = await localforage.getItem(elapsedTimeStorageKey);
+      setShouldStartTimer(true);
+      reset(Number(storedTime ?? 0));
+    };
+    getTime();
+  }, [elapsedTimeStorageKey, reset]);
+
+  const formattedElapsedTime = useMemo(
+    () =>
+      elapsedTime < 3600
+        ? new Date(elapsedTime * 1000).toISOString().slice(14, 19)
+        : new Date(elapsedTime * 1000).toISOString().slice(11, 19),
+    [elapsedTime]
+  );
+
   return (
-    <Container>
-      <HeaderContainer>
+    <MenuWrapper centerLabel={formattedElapsedTime}>
+      {/* <HeaderContainer>
         <HeaderItem>
           <FontAwesomeIcon icon={faBars} width={20} />
           <Logo height={18} width={150} />
@@ -483,7 +457,7 @@ export default function Puzzle({
           />
           <FontAwesomeIcon icon={faGear} width={20} />
         </HeaderItem>
-      </HeaderContainer>
+      </HeaderContainer> */}
       <Canvas
         gl={{ antialias: false }}
         style={{
@@ -584,10 +558,7 @@ export default function Puzzle({
             <div>🏆 YOU DID IT! 🏆</div>
             <SolvedText>You finished the puzzle in</SolvedText>
             <SolvedTime>
-              <ElapsedTime
-                slug={slug}
-                isPaused={isPuzzleSolved || !isInitialized}
-              />
+              <HeaderItem>{formattedElapsedTime}</HeaderItem>
             </SolvedTime>
           </SolvedContainer>
         )}
@@ -668,6 +639,6 @@ export default function Puzzle({
           </ModalContent>
         </ModalContainer>
       )}
-    </Container>
+    </MenuWrapper>
   );
 }
