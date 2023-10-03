@@ -60,9 +60,9 @@ for (let x = 0; x <= 1000; x++) {
 }
 SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 
-const DEFAULT_COLOR = 0x708d91;
-const DEFAULT_SELECTED_COLOR = 0xd31996;
-const DEFAULT_SELECTED_ADJACENT_COLOR = 0x1fbe68;
+export const DEFAULT_COLOR = 0x708d91;
+export const DEFAULT_SELECTED_COLOR = 0xd31996;
+export const DEFAULT_SELECTED_ADJACENT_COLOR = 0x1fbe68;
 
 const HeaderItem = styled.div`
   display: grid;
@@ -442,22 +442,6 @@ export default function Puzzle({
 
   return (
     <MenuWrapper centerLabel={formattedElapsedTime}>
-      {/* <HeaderContainer>
-        <HeaderItem>
-          <FontAwesomeIcon icon={faBars} width={20} />
-          <Logo height={18} width={150} />
-        </HeaderItem>
-        <ElapsedTime slug={slug} isPaused={isPuzzleSolved || !isInitialized} />
-        <HeaderItem>
-          <RotatingBox side={sideOffset} defaultColor={defaultColor} />
-          <FontAwesomeIcon
-            icon={faCircleQuestion}
-            width={20}
-            onClick={toggleModal}
-          />
-          <FontAwesomeIcon icon={faGear} width={20} />
-        </HeaderItem>
-      </HeaderContainer> */}
       <Canvas
         gl={{ antialias: false }}
         style={{
