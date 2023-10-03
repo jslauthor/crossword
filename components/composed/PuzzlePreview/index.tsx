@@ -9,19 +9,21 @@ import {
   DEFAULT_SELECTED_COLOR,
 } from 'components/pages/PuzzlePage';
 
-enum DifficultyEnum {
+export enum DifficultyEnum {
   Easy,
   Medium,
   Hard,
 }
 
-enum PreviewState {
+export enum PreviewState {
   NotStarted,
   InProgress,
   Solved,
 }
 
-@customElement('ui-puzzle-preview')
+const NAME = 'ui-puzzle-preview';
+
+@customElement(NAME)
 export class UiPuzzlePreview extends LitElement {
   static styles = [
     globalCss,
@@ -72,9 +74,19 @@ export class UiPuzzlePreview extends LitElement {
         <div>
           <span>${this.date}</span>
           <span>${this.author}</span>
-          <div><span class="bold">ai</span>&nbsp;assisted</div>
+          ${this.isAiAssisted &&
+          html`<div><span class="bold text-2xl">ai</span>&nbsp;assisted</div>`}
         </div>
       </div>
     `;
   }
 }
+
+export default createComponent({
+  tagName: NAME,
+  elementClass: UiPuzzlePreview,
+  react: React,
+  events: {
+    onClick: 'click',
+  },
+});
