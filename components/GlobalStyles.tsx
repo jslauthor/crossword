@@ -161,6 +161,7 @@ export const globalCss = litCSS`
     --white: #F4F8F0;
     --black: #131414;
     --grey: #333333;
+    --grey900: #20231F;
 
     --max-app-width: 500px;
   }
@@ -171,6 +172,7 @@ export const globalCss = litCSS`
     --primary-bg: var(--black);
     --primary-app-width: var(--max-app-width);
     --secondary-bg: var(--grey);
+    --terciary-bg: var(--grey900);
 
     background-color: var(--primary-bg);
     color: var(--primary-text);

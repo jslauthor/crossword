@@ -2,7 +2,7 @@
 
 import PuzzlePreview, {
   DifficultyEnum,
-  PreviewState,
+  ProgressEnum,
 } from 'components/composed/PuzzlePreview';
 import MenuWrapper from 'components/core/MenuWrapper';
 
@@ -13,9 +13,33 @@ export default function Home() {
         title="The Tempest"
         author="Leonard Souza"
         date="September 4, 2023"
-        isAiAssisted={true}
+        isAiAssisted
         difficulty={DifficultyEnum.Easy}
-        previewState={PreviewState.InProgress}
+        previewState={ProgressEnum.ZeroPercent}
+      />
+      <PuzzlePreview
+        title="The Tempest"
+        author="Leonard Souza"
+        date="September 4, 2023"
+        isAiAssisted
+        difficulty={DifficultyEnum.Medium}
+        previewState={ProgressEnum.TwentyFivePercent}
+      />
+      <PuzzlePreview
+        title="The Tempest"
+        author="Leonard Souza"
+        date="September 4, 2023"
+        isAiAssisted
+        difficulty={DifficultyEnum.Hard}
+        previewState={ProgressEnum.SeventyFivePercent}
+      />
+      <PuzzlePreview
+        title="The Tempest"
+        author="Leonard Souza"
+        date="September 4, 2023"
+        isAiAssisted
+        difficulty={DifficultyEnum.Medium}
+        previewState={ProgressEnum.Solved}
       />
     </MenuWrapper>
   );
