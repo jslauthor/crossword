@@ -13,7 +13,7 @@ export default function Home() {
         title="The Tempest"
         author="Leonard Souza"
         date="September 4, 2023"
-        isAiAssisted
+        isAiAssisted={true}
         difficulty={DifficultyEnum.Easy}
         previewState={ProgressEnum.ZeroPercent}
       />
@@ -21,7 +21,7 @@ export default function Home() {
         title="The Tempest"
         author="Leonard Souza"
         date="September 4, 2023"
-        isAiAssisted
+        isAiAssisted={false}
         difficulty={DifficultyEnum.Medium}
         previewState={ProgressEnum.TwentyFivePercent}
       />
@@ -29,7 +29,7 @@ export default function Home() {
         title="The Tempest"
         author="Leonard Souza"
         date="September 4, 2023"
-        isAiAssisted
+        isAiAssisted={true}
         difficulty={DifficultyEnum.Hard}
         previewState={ProgressEnum.SeventyFivePercent}
       />
@@ -37,7 +37,7 @@ export default function Home() {
         title="The Tempest"
         author="Leonard Souza"
         date="September 4, 2023"
-        isAiAssisted
+        isAiAssisted={false}
         difficulty={DifficultyEnum.Medium}
         previewState={ProgressEnum.Solved}
       />

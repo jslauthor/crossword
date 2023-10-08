@@ -157,10 +157,29 @@ export const globalCss = litCSS`
     line-height: 1.25rem;
   }
 
+  .semi { 
+    font-weight: 500;
+  }
+
+  .italic {
+    font-style: italic;
+  }
+
+  .capital {
+    text-transform: uppercase;
+  }
+
+  .text-sm {
+    font-size: .625rem;
+    line-height: 1.3;
+  }
+
   :root {
     --white: #F4F8F0;
     --black: #131414;
     --grey: #333333;
+    --grey500: #b9b9b9;
+    --grey600: #41483E;
     --grey900: #20231F;
 
     --max-app-width: 500px;
@@ -174,8 +193,14 @@ export const globalCss = litCSS`
     --secondary-bg: var(--grey);
     --terciary-bg: var(--grey900);
 
+    --ai-bg: var(--grey600);
+
     background-color: var(--primary-bg);
     color: var(--primary-text);
+  }
+
+  .dim {
+    color: var(--grey500);
   }
 
   // React Simple Keyboad Theme

@@ -4,6 +4,7 @@ import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import { createComponent } from '@lit-labs/react';
 import 'components/svg/PreviewCube';
+import 'components/svg/IconStar';
 import {
   DEFAULT_COLOR,
   DEFAULT_SELECTED_ADJACENT_COLOR,
@@ -43,6 +44,10 @@ export class UiPuzzlePreview extends LitElement {
         aspect-ratio: 1;
       }
 
+      .cube-container {
+        margin: 0.25rem 0;
+      }
+
       .title-container {
         display: flex;
         justify-content: space-between;
@@ -57,6 +62,13 @@ export class UiPuzzlePreview extends LitElement {
         justify-content: center;
         align-items: center;
         width: 100%;
+      }
+
+      .ai-container {
+        background-color: var(--ai-bg);
+        border-radius: 0.25rem;
+        padding: 0.05rem 0.25rem;
+        margin-top: 0.25rem;
       }
     `,
   ];
@@ -89,20 +101,31 @@ export class UiPuzzlePreview extends LitElement {
   protected override render() {
     return html`
       <div class="container">
-        <div class="title-container">
-          star
-          <span>${this.title}</span>
-        </div>
-        <ui-preview-cube
-          .progress=${this.previewState}
-          .difficulty=${this.difficulty}
-        ></ui-preview-cube>
-        <div class="info-container">
-          <span>${this.date}</span>
-          <span>${this.author}</span>
-          ${this.isAiAssisted &&
-          html`<div><span class="bold text-2xl">ai</span>&nbsp;assisted</div>`}
-        </div>
+        <header class="title-container">
+          <icon-star
+            .difficulty=${this.difficulty}
+            .color=${this.previewState === ProgressEnum.Solved
+              ? 0xd1a227
+              : DEFAULT_SELECTED_ADJACENT_COLOR}
+          ></icon-star>
+          <span class="text-sm"
+            >${this.previewState === ProgressEnum.Solved
+              ? '🎉'
+              : ''}&nbsp;${this.title}</span
+          >
+        </header>
+        <section class="cube-container">
+          <ui-preview-cube .progress=${this.previewState}></ui-preview-cube>
+        </section>
+        <footer class="info-container">
+          <span class="text-sm semi">${this.date}</span>
+          <span class="text-sm capital">${this.author}</span>
+          ${this.isAiAssisted === true
+            ? html`<div class="ai-container dim text-sm italic">
+                <span class="semi text-sm italic">ai</span>&nbsp;assisted
+              </div>`
+            : null}
+        </footer>
       </div>
     `;
   }

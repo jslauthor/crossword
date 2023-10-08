@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { createComponent } from '@lit-labs/react';
-import { LitElement, html, css, PropertyValues } from 'lit';
+import { LitElement, html, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 
 import memoizeOne from 'memoize-one';
@@ -48,7 +48,7 @@ export class PreviewCube extends LitElement {
   public progress: ProgressEnum = ProgressEnum.ZeroPercent;
 
   @state()
-  private colorsHexValues: string[] = this.colors.map(getColorHex);
+  protected colorsHexValues: string[] = this.colors.map(getColorHex);
 
   // Update the colorHexValues when the color numbers change
   protected override willUpdate(changedProperties: PropertyValues<this>) {
