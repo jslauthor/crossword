@@ -13,7 +13,7 @@ const PreviewContainer = styled.div`
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
+  gap: 1rem;
   align-items: center;
   padding: 0.75rem;
   max-width: var(--primary-app-width);
