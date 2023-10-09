@@ -66,7 +66,7 @@ export class UiHeader extends LitElement {
 
   protected override render() {
     return html`
-      <div class="container" @click=${this.handleMenuPressed}>
+      <nav class="container" @click=${this.handleMenuPressed}>
         <div class="close-button">
           ${this.showCloseButton
             ? html`<icon-x .width=${20} .height=${20}></icon-x>`
@@ -84,7 +84,7 @@ export class UiHeader extends LitElement {
           .height=${25}
           class="question"
         ></icon-question>
-      </div>
+      </nav>
     `;
   }
 }

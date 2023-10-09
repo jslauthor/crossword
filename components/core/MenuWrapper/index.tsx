@@ -8,7 +8,8 @@ import { useCallback, useState } from 'react';
 const Container = styled.div`
   position: relative;
   width: 100vw;
-  height: 100vh;
+  height: 100%;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -16,7 +17,10 @@ const Container = styled.div`
 `;
 
 const HeaderContainer = styled.div`
-  position: relative;
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   flex-direction: column;
   padding: 0.75rem;
@@ -25,6 +29,7 @@ const HeaderContainer = styled.div`
   width: 100%;
   box-sizing: border-box;
   max-width: var(--primary-app-width);
+  background: linear-gradient(var(--primary-bg), #00000000);
 `;
 
 const HeaderStyled = styled(Header)`
