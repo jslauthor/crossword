@@ -44,6 +44,17 @@ export class UiPuzzlePreview extends LitElement {
         aspect-ratio: 1;
       }
 
+      @media (max-width: 400px) {
+        .container {
+          min-width: 9.8rem;
+        }
+
+        .title-container .text-sm,
+        .info-container .text-sm {
+          font-size: 0.75rem;
+        }
+      }
+
       .cube-container {
         margin: 0.25rem 0;
       }
