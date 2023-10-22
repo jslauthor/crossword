@@ -3,6 +3,8 @@ import { dark } from '@clerk/themes';
 import { ClerkProvider } from '@clerk/nextjs';
 import GlobalStyles from '../components/GlobalStyles';
 
+import { Analytics } from '@vercel/analytics/react';
+
 export default function RootLayout({
   children,
 }: {
@@ -21,6 +23,7 @@ export default function RootLayout({
         <body className="dark">
           <GlobalStyles />
           {children}
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>

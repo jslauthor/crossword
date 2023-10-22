@@ -29,6 +29,7 @@
     "@react-three/fiber": "^8.13.7",
     "@react-three/postprocessing": "^2.15.1",
     "@use-gesture/react": "^10.2.27",
+    "@vercel/analytics": "^1.1.1",
     "@vercel/postgres": "^0.4.1",
     "eslint": "8.28.0",
     "i": "^0.3.7",
