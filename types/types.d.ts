@@ -1,4 +1,9 @@
+import { PrismaClient } from '@prisma/client';
 import { Object3DNode, MaterialNode } from '@react-three/fiber';
+
+declare global {
+  var prisma: PrismaClient;
+}
 
 export type BlankCell = '#';
 
