@@ -7,6 +7,7 @@ import {
 } from 'lib/utils/textures';
 import { PuzzleData } from 'types/types';
 import prisma from 'lib/prisma';
+import { getPuzzleStateForUser } from 'lib/db';
 
 type PuzzleProps = {
   puzzleData: PuzzleData[];
