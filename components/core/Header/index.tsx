@@ -1,101 +1,64 @@
-'use client';
-
+import IconHamburger from 'components/svg/IconHamburger';
+import IconQuestion from 'components/svg/IconQuestion';
+import IconX from 'components/svg/IconX';
+import IconMainLogo from 'components/svg/MainLogo';
 import * as React from 'react';
+import { styled } from 'styled-components';
 
-import { LitElement, html, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
-import { createComponent } from '@lit-labs/react';
+const Containter = styled.nav`
+  display: grid;
+  width: 100%;
+  grid-gap: 0.75rem;
+  grid-template-columns: min-content 1fr min-content;
+  align-items: center;
+`;
 
-import 'components/svg/MainLogo';
-import 'components/svg/IconHamburger';
-import 'components/svg/IconQuestion';
-import 'components/svg/IconX';
+const CloseButtonContainer = styled.div`
+  width: 18px;
+  grid-column: 1 / 2;
+`;
 
-import { globalCss } from 'components/GlobalStyles';
+const LogoStyled = styled(IconMainLogo)`
+  grid-column: 2 / 3;
+`;
 
-@customElement('ui-header')
-export class UiHeader extends LitElement {
-  static styles = [
-    globalCss,
-    css`
-      .container {
-        display: grid;
-        width: 100%;
-        grid-gap: 0.75rem;
-        grid-template-columns: auto min-content 1fr auto;
-        align-items: center;
-      }
+const CenterLabelContainer = styled.div`
+  grid-column: 3 / 4;
+  justify-self: center;
+`;
 
-      .close-button {
-        width: 18px;
-        grid-column: 1 / 2;
-      }
+const QuestionStyled = styled(IconQuestion)`
+  grid-column: 4 / 5;
+  justify-self: end;
+`;
 
-      .logo {
-        grid-column: 2 / 3;
-      }
-
-      .center-label {
-        grid-column: 3 / 4;
-        justify-self: center;
-      }
-
-      .question {
-        grid-column: 4 / 5;
-        justify-self: end;
-      }
-    `,
-  ];
-
-  @property({ type: Boolean })
-  public showCloseButton = false;
-
-  @property({ type: String })
-  public centerLabel = '';
-
-  public handleMenuPressed(): void {
-    const menuPressedEvent = new CustomEvent('menuPressed', {
-      // detail: { value: 'Menu Pressed!' },
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-    });
-    const applyDefault = this.dispatchEvent(menuPressedEvent);
-    if (!applyDefault) {
-      console.log('Default behavior was prevented.');
-    }
-  }
-
-  protected override render() {
-    return html`
-      <nav class="container" @click=${this.handleMenuPressed}>
-        <div class="close-button">
-          ${this.showCloseButton
-            ? html`<icon-x .width=${20} .height=${20}></icon-x>`
-            : html`<icon-hamburger
-                .width=${20}
-                .height=${25}
-              ></icon-hamburger>`}
-        </div>
-        <main-logo .width=${140} .height=${25} class="logo"></main-logo>
-        ${this.centerLabel != null && this.centerLabel.length > 0
-          ? html`<div class="center-label">${this.centerLabel}</div>`
-          : null}
-        <icon-question
-          .width=${25}
-          .height=${25}
-          class="question"
-        ></icon-question>
-      </nav>
-    `;
-  }
+interface HeaderProps {
+  showCloseButton: boolean;
+  centerLabel?: string;
+  onMenuPressed: () => void;
 }
 
-export default createComponent({
-  tagName: 'ui-header',
-  elementClass: UiHeader,
-  react: React,
-  events: {
-    onMenuPressed: 'menuPressed',
-  },
-});
+const Header: React.FC<HeaderProps> = ({
+  showCloseButton,
+  centerLabel,
+  onMenuPressed,
+}) => {
+  return (
+    <Containter onClick={onMenuPressed}>
+      <CloseButtonContainer>
+        {showCloseButton ? (
+          <IconX width={20} height={25} />
+        ) : (
+          <IconHamburger width={20} height={25} />
+        )}
+      </CloseButtonContainer>
+      <LogoStyled width={140} height={25} />
+      {centerLabel != null && centerLabel.length > 0 && (
+        <CenterLabelContainer>{centerLabel}</CenterLabelContainer>
+      )}
+      <QuestionStyled width={25} height={25} />
+    </Containter>
+  );
+};
+
+export default Header;

@@ -44,6 +44,13 @@ export interface PuzzleData {
   };
 }
 
+export interface SvgProps {
+  width?: number;
+  height?: number;
+  color?: string;
+  className?: string;
+}
+
 declare module '@react-three/fiber' {
   interface ThreeElements {
     meshLineGeometry: Object3DNode<MeshLineGeometry, typeof MeshLineGeometry>;

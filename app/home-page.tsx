@@ -1,11 +1,10 @@
 'use client';
 
-import styled from '@emotion/styled';
-import PuzzlePreview, {
-  DifficultyEnum,
-  ProgressEnum,
-} from 'components/composed/PuzzlePreview';
+import styled from 'styled-components';
 import MenuWrapper from 'components/core/MenuWrapper';
+import PuzzlePreview from 'components/composed/PuzzlePreview';
+import { DifficultyEnum } from 'components/svg/IconStar';
+import { ProgressEnum } from 'components/svg/PreviewCube';
 
 const PreviewContainer = styled.div`
   position: relative;
@@ -14,7 +13,7 @@ const PreviewContainer = styled.div`
   flex-wrap: wrap;
   justify-content: center;
   gap: 1rem;
-  align-items: center;
+  align-items: stretch;
   padding: 0.75rem;
   max-width: var(--primary-app-width);
 `;

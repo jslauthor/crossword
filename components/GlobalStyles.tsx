@@ -1,9 +1,8 @@
 'use client';
 
-import { Global, css } from '@emotion/react';
-import { css as litCSS } from 'lit';
+import { createGlobalStyle } from 'styled-components';
 
-export const globalCss = litCSS`
+export default createGlobalStyle`
   html,
   body,
   div,
@@ -301,15 +300,3 @@ export const globalCss = litCSS`
     background: #1c4995;
   }
 `;
-
-const GlobalStyles = () => {
-  return (
-    <Global
-      styles={css`
-        ${globalCss.cssText}
-      `}
-    />
-  );
-};
-
-export default GlobalStyles;

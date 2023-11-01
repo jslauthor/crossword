@@ -8,7 +8,7 @@ import {
 } from '@react-three/drei';
 import { RepeatWrapping, Shader, ShaderChunk } from 'three';
 import { Canvas } from '@react-three/fiber';
-import styled from '@emotion/styled';
+import styled from 'styled-components';
 
 const CanvasContainer = styled.div`
   width: 30px;

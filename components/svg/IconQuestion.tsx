@@ -1,34 +1,23 @@
-'use client';
-
 import React from 'react';
-
-import { createComponent } from '@lit-labs/react';
-import { LitElement, html, css } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { SvgProps } from 'types/types';
 
 const NAME = 'icon-question';
 
-@customElement(NAME)
-export class Logo extends LitElement {
-  @property({ type: Number })
-  public width = 18;
-
-  @property({ type: Number })
-  public height = 16;
-
-  @property({ type: String })
-  public color = 'var(--primary-text)';
-
-  protected override render() {
-    return html`
-      <svg
-        width="${this.width}"
-        height="${this.height}"
-        viewBox="0 0 18 16"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="M18 8C18 12.4193 14.1621 16 9.42861 16C4.69507 16 0.857178
+const IconQuestion: React.FC<SvgProps> = ({
+  width = 18,
+  height = 16,
+  color = 'var(--primary-text)',
+}) => {
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 0 18 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M18 8C18 12.4193 14.1621 16 9.42861 16C4.69507 16 0.857178
         12.4193 0.857178 8C0.857178 3.58332 4.69507 0 9.42861 0C14.1621 0 18
         3.58332 18 8ZM9.65862 2.64516C7.77508 2.64516 6.57377 3.38571 5.63043
         4.70187C5.50821 4.87239 5.5491 5.10236 5.72426 5.22632L6.92354
@@ -41,7 +30,7 @@ export class Logo extends LitElement {
         4.06445 11.6068 2.64516 9.65862 2.64516ZM9.42861 10.6452C8.55194 10.6452
         7.83874 11.3108 7.83874 12.129C7.83874 12.9472 8.55194 13.6129 9.42861
         13.6129C10.3053 13.6129 11.0185 12.9472 11.0185 12.129C11.0185 11.3108
-        10.3053 10.6452 9.42861 10.6452Z" 6C16.0787 2.41566 16.0674 1.96622
+        10.3053 10.6452 9.42861 10.6452Z 6C16.0787 2.41566 16.0674 1.96622
         15.7978 1.68532L14.5169 0.404424C14.236 0.123525 13.7865 0.123525
         13.5056 0.404424L0.471909 13.4269C0.19101 13.7078 0.202246 14.1572
         0.471909 14.4381L1.75281 15.719C2.03371 15.9999 2.48314 15.9999 2.76404
@@ -49,14 +38,11 @@ export class Logo extends LitElement {
         14.236 15.5954L15.5169 14.3145C15.7978 14.0336 15.7978 13.5842 15.5169
         13.3033L2.50562 0.269593C2.22472 -0.0113064 1.77528 -7.0408e-05 1.49438
         0.269593L0.213482 1.56173C-0.0674171 1.84263 -0.0674171 2.29206 0.213482
-        2.57296H0.202246Z" style="fill: ${this.color}"/>
-      </svg>
-    `;
-  }
-}
+        2.57296H0.202246Z"
+        fill={color}
+      />
+    </svg>
+  );
+};
 
-export default createComponent({
-  tagName: NAME,
-  elementClass: Logo,
-  react: React,
-});
+export default IconQuestion;

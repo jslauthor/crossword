@@ -2,7 +2,7 @@
 
 import React, { ReactNode } from 'react';
 import Header from 'components/core/Header';
-import styled from '@emotion/styled';
+import styled from 'styled-components';
 import { useCallback, useState } from 'react';
 
 const Container = styled.div`
