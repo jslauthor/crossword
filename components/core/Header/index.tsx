@@ -2,14 +2,18 @@ import IconHamburger from 'components/svg/IconHamburger';
 import IconQuestion from 'components/svg/IconQuestion';
 import IconX from 'components/svg/IconX';
 import IconMainLogo from 'components/svg/MainLogo';
-import * as React from 'react';
+import { useMemo } from 'react';
 import { styled } from 'styled-components';
 
-const Containter = styled.nav`
+const Containter = styled.nav<{ $hasCenterLabel: boolean }>`
   display: grid;
   width: 100%;
   grid-gap: 0.75rem;
-  grid-template-columns: min-content 1fr min-content;
+  ${({ $hasCenterLabel }) =>
+    $hasCenterLabel
+      ? `grid-template-columns: min-content min-content 1fr min-content;`
+      : `grid-template-columns: min-content 1fr min-content;`}
+
   align-items: center;
 `;
 
@@ -43,8 +47,13 @@ const Header: React.FC<HeaderProps> = ({
   centerLabel,
   onMenuPressed,
 }) => {
+  const hasCenterLabel = useMemo(
+    () => centerLabel != null && centerLabel.length > 0,
+    [centerLabel]
+  );
+
   return (
-    <Containter onClick={onMenuPressed}>
+    <Containter onClick={onMenuPressed} $hasCenterLabel={hasCenterLabel}>
       <CloseButtonContainer>
         {showCloseButton ? (
           <IconX width={20} height={25} />
@@ -53,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({
         )}
       </CloseButtonContainer>
       <LogoStyled width={140} height={25} />
-      {centerLabel != null && centerLabel.length > 0 && (
+      {hasCenterLabel === true && (
         <CenterLabelContainer>{centerLabel}</CenterLabelContainer>
       )}
       <QuestionStyled width={25} height={25} />

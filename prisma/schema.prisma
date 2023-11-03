@@ -26,7 +26,7 @@ model Progress {
 
 model User {
   id        String     @id @default(cuid())
-  clerkId   String     @unique
+  clerkId   String?    @unique
   createdAt DateTime   @default(now()) @map(name: "created_at")
   updatedAt DateTime   @updatedAt @map(name: "updated_at")
   progress  Progress[]

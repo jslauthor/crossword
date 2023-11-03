@@ -104,7 +104,7 @@ const SolvedTime = styled.h3`
   font-size: 2rem;
 `;
 
-const TurnButton = styled.div<{ borderColor: string }>`
+const TurnButton = styled.div<{ $borderColor: string }>`
   padding: 0.5rem;
   display: flex;
   align-items: center;
@@ -112,8 +112,8 @@ const TurnButton = styled.div<{ borderColor: string }>`
   border-radius: 0.25rem;
   border-style: solid;
   border-width: 1px;
-  ${({ borderColor }) =>
-    `border-color: #${tinycolor(borderColor).darken(5).toHex()};`}
+  ${({ $borderColor }) =>
+    `border-color: #${tinycolor($borderColor).darken(5).toHex()};`}
 `;
 
 const InfoBar = styled.div`
@@ -127,7 +127,7 @@ const InfoBar = styled.div`
   margin-bottom: 0.125rem;
 `;
 
-const ClueContainer = styled.div<{ backgroundColor: string }>`
+const ClueContainer = styled.div<{ $backgroundColor: string }>`
   display: grid;
   // grid-template-columns: min-content 1fr min-content;
   grid-template-columns: 1fr;
@@ -139,8 +139,8 @@ const ClueContainer = styled.div<{ backgroundColor: string }>`
   height: 100%;
   width: 100%;
   min-height: 54px;
-  ${({ backgroundColor }) =>
-    `background-color: #${tinycolor(backgroundColor).darken(5).toHex()}`}
+  ${({ $backgroundColor }) =>
+    `background-color: #${tinycolor($backgroundColor).darken(5).toHex()}`}
 `;
 
 const ClueLabel = styled.span<{ celebrate?: boolean }>`
@@ -516,18 +516,18 @@ export default function Puzzle({
         </EffectComposer>
       </Canvas>
       <InfoBar>
-        <TurnButton onClick={turnLeft} borderColor={toHex(defaultColor)}>
+        <TurnButton onClick={turnLeft} $borderColor={toHex(defaultColor)}>
           <TurnArrow width={20} height={20} color={toHex(defaultColor)} />
         </TurnButton>
         <ClueContainer
-          backgroundColor={toHex(adjacentColor)}
+          $backgroundColor={toHex(adjacentColor)}
           onClick={onClueClick}
         >
           {/* <FontAwesomeIcon icon={faChevronLeft} width={12} /> */}
           <ClueLabel dangerouslySetInnerHTML={{ __html: animatedClueText }} />
           {/* <FontAwesomeIcon icon={faChevronRight} width={12} /> */}
         </ClueContainer>
-        <TurnButton onClick={turnRight} borderColor={toHex(defaultColor)}>
+        <TurnButton onClick={turnRight} $borderColor={toHex(defaultColor)}>
           <TurnArrow
             width={20}
             height={20}

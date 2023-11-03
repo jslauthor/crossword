@@ -1,4 +1,4 @@
-import { authMiddleware, useAuth } from '@clerk/nextjs';
+import { authMiddleware, redirectToSignIn, useAuth } from '@clerk/nextjs';
 import {
   NextFetchEvent,
   NextMiddleware,
@@ -6,19 +6,37 @@ import {
   NextResponse,
 } from 'next/server';
 
-// export function middleware(request: NextRequest) {
-//   console.log('lol!!!');
-// }
-
-// export const config = {
-//   matcher: '/(.*)/',
-// };
-
 export default authMiddleware({
   publicRoutes: ['/(.*)/'],
-  beforeAuth: () => {
-    console.log('beforeAuth');
-    return false;
+  beforeAuth: (req, evt) => {
+    console.log('beforeAuth', req);
+  },
+  afterAuth: async (auth, req, evt) => {
+    // Redirect to login is user is not logged in
+    // if (!auth.userId && !auth.isPublicRoute) {
+    //   return redirectToSignIn({ returnBackUrl: req.url });
+    // }
+
+    console.log('afterAuth', auth);
+    // Sync user to local DB
+    if (auth.userId) {
+      // TODO: Cache this call
+      const localUser = await prisma.user.findFirst({
+        where: {
+          clerkId: auth.userId,
+        },
+      });
+
+      if (localUser == null) {
+        await prisma.user.create({
+          data: {
+            clerkId: auth.userId,
+          },
+        });
+      }
+    }
+
+    // TODO: Return local user to every request
   },
 });
 
