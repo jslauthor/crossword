@@ -62,9 +62,6 @@ dependencies:
   '@vercel/postgres':
     specifier: ^0.4.1
     version: 0.4.1
-  edge:
-    specifier: link:@prisma/client/edge
-    version: link:@prisma/client/edge
   eslint:
     specifier: 8.28.0
     version: 8.28.0

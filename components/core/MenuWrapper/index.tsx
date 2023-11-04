@@ -47,11 +47,33 @@ const MenuContainer = styled.nav<{ $headerHeight: number }>`
   background-color: var(--primary-bg);
   max-width: 300px;
   width: 100%;
-  padding: 0.75rem;
+  padding: 0 0.75rem;
   bottom: 0;
   border: 1px solid var(--menu-border);
   box-shadow: 10px 0px 10px 10px rgba(10, 10, 10, 0.25);
   ${({ $headerHeight }) => `top: ${$headerHeight}px;`}
+`;
+
+const MenuItem = styled.div`
+  font-size: 1rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.75rem 0;
+`;
+
+const MenuItemHeader = styled.div`
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 0.75rem 0;
+  text-transform: uppercase;
+`;
+
+const Divider = styled.div`
+  height: 1px;
+  width: 100%;
+  background-color: var(--secondary-bg);
 `;
 
 type MenuWrapperProps = {
@@ -60,8 +82,7 @@ type MenuWrapperProps = {
 };
 
 const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
-  const user = useUser();
-  console.log(user);
+  const { isSignedIn, user } = useUser();
 
   const [headerRef, { height }] = useElementSize();
 
@@ -81,7 +102,16 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
         </HeaderContainer>
         {children}
         {isMenuOpen && (
-          <MenuContainer $headerHeight={height}>Autocheck</MenuContainer>
+          <MenuContainer $headerHeight={height}>
+            <MenuItem>Autocheck</MenuItem>
+            <Divider />
+            {isSignedIn === true && (
+              <div>
+                <MenuItemHeader>profile</MenuItemHeader>
+                <MenuItem>Log Out</MenuItem>
+              </div>
+            )}
+          </MenuContainer>
         )}
       </ChildrenContainer>
     </Container>
