@@ -4,6 +4,8 @@ import React, { ReactNode } from 'react';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
 import { useCallback, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useElementSize } from 'usehooks-ts';
 
 const Container = styled.div`
   position: relative;
@@ -16,24 +18,40 @@ const Container = styled.div`
   align-items: center;
 `;
 
+const ChildrenContainer = styled.div`
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: var(--primary-app-width);
+`;
+
 const HeaderContainer = styled.div`
   position: sticky;
   top: 0;
   left: 0;
   right: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 0.75rem;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  box-sizing: border-box;
-  max-width: var(--primary-app-width);
+  bottom: 0;
+  z-index: 9999;
   background: linear-gradient(var(--primary-bg), #00000000);
+  padding: 0.75rem;
 `;
 
 const HeaderStyled = styled(Header)`
   width: 100%;
+`;
+
+const MenuContainer = styled.nav<{ $headerHeight: number }>`
+  position: fixed;
+  background-color: var(--primary-bg);
+  max-width: 300px;
+  width: 100%;
+  padding: 0.75rem;
+  bottom: 0;
+  border: 1px solid var(--menu-border);
+  box-shadow: 10px 0px 10px 10px rgba(10, 10, 10, 0.25);
+  ${({ $headerHeight }) => `top: ${$headerHeight}px;`}
 `;
 
 type MenuWrapperProps = {
@@ -42,20 +60,30 @@ type MenuWrapperProps = {
 };
 
 const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
+  const user = useUser();
+  console.log(user);
+
+  const [headerRef, { height }] = useElementSize();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const handleMenuPressed = useCallback(() => {
     setIsMenuOpen(!isMenuOpen);
   }, [isMenuOpen]);
   return (
     <Container>
-      <HeaderContainer>
-        <HeaderStyled
-          onMenuPressed={handleMenuPressed}
-          showCloseButton={isMenuOpen}
-          centerLabel={centerLabel}
-        />
-      </HeaderContainer>
-      {children}
+      <ChildrenContainer>
+        <HeaderContainer ref={headerRef}>
+          <HeaderStyled
+            onMenuPressed={handleMenuPressed}
+            showCloseButton={isMenuOpen}
+            centerLabel={centerLabel}
+          />
+        </HeaderContainer>
+        {children}
+        {isMenuOpen && (
+          <MenuContainer $headerHeight={height}>Autocheck</MenuContainer>
+        )}
+      </ChildrenContainer>
     </Container>
   );
 };

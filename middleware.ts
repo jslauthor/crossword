@@ -25,8 +25,6 @@ export default authMiddleware({
         });
       }
     }
-
-    // TODO: Return local user to every request
   },
 });
 

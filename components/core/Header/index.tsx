@@ -5,9 +5,8 @@ import IconMainLogo from 'components/svg/MainLogo';
 import { useMemo } from 'react';
 import { styled } from 'styled-components';
 
-const Containter = styled.nav<{ $hasCenterLabel: boolean }>`
+const Container = styled.nav<{ $hasCenterLabel: boolean }>`
   display: grid;
-  width: 100%;
   grid-gap: 0.75rem;
   ${({ $hasCenterLabel }) =>
     $hasCenterLabel
@@ -53,7 +52,7 @@ const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <Containter onClick={onMenuPressed} $hasCenterLabel={hasCenterLabel}>
+    <Container onClick={onMenuPressed} $hasCenterLabel={hasCenterLabel}>
       <CloseButtonContainer>
         {showCloseButton ? (
           <IconX width={20} height={25} />
@@ -66,7 +65,7 @@ const Header: React.FC<HeaderProps> = ({
         <CenterLabelContainer>{centerLabel}</CenterLabelContainer>
       )}
       <QuestionStyled width={25} height={25} />
-    </Containter>
+    </Container>
   );
 };
 

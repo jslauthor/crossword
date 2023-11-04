@@ -82,11 +82,7 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
   isAiAssisted = true,
   difficulty = DifficultyEnum.Easy,
   previewState = ProgressEnum.ZeroPercent,
-  colors = [
-    DEFAULT_COLOR,
-    DEFAULT_SELECTED_COLOR,
-    DEFAULT_SELECTED_ADJACENT_COLOR,
-  ],
+  colors = [0x829b9e, 0x1fbe68, 0xd1a227],
 }) => {
   return (
     <Container>
@@ -110,7 +106,7 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
         </span>
       </TitleContainer>
       <CubeContainer>
-        <PreviewCube progress={previewState} />
+        <PreviewCube progress={previewState} colors={colors} />
       </CubeContainer>
       <InfoContainer>
         <span className="semi">{date}</span>
