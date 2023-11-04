@@ -187,7 +187,7 @@ const PreviewCube: React.FC<PreviewCubeProps> = ({
       <path
         d="M64.1039 46.9232L32.0989 53.8439V0L64.1039 6.92067V46.9232Z"
         fill="#100F0F"
-        fill-opacity="0.5"
+        fillOpacity="0.5"
       />
     </svg>
   );

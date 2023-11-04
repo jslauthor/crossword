@@ -9,7 +9,6 @@ export default authMiddleware({
     //   return redirectToSignIn({ returnBackUrl: req.url });
     // }
 
-    console.log('afterAuth', auth);
     // Sync user to local DB
     if (auth.userId) {
       const localUser = await prisma.user.findFirst({
