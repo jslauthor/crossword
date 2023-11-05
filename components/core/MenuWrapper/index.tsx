@@ -3,6 +3,7 @@
 import React, { ReactNode } from 'react';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
+import { Switch } from '@nextui-org/react';
 import { useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useElementSize } from 'usehooks-ts';
@@ -103,7 +104,9 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
         {children}
         {isMenuOpen && (
           <MenuContainer $headerHeight={height}>
-            <MenuItem>Autocheck</MenuItem>
+            <MenuItem>
+              Autocheck <Switch />
+            </MenuItem>
             <Divider />
             {isSignedIn === true && (
               <div>

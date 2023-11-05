@@ -4,6 +4,8 @@ import { ClerkProvider } from '@clerk/nextjs';
 
 import { Analytics } from '@vercel/analytics/react';
 import StyledComponentsRegistry from 'lib/registry';
+import './tailwind.css';
+import { Providers } from './providers';
 
 export default function RootLayout({
   children,
@@ -21,7 +23,7 @@ export default function RootLayout({
           <link rel="stylesheet" href="https://use.typekit.net/nhh2njv.css" />
         </head>
         <body className="dark">
-          <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
+          <Providers>{children}</Providers>
           <Analytics />
         </body>
       </html>
