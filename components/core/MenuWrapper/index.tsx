@@ -9,6 +9,7 @@ import { useUser } from '@clerk/nextjs';
 import { useElementSize, useOnClickOutside } from 'usehooks-ts';
 import UserInfo from 'components/composed/UserInfo';
 import { Link } from '@nextui-org/react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const Container = styled.div`
   position: relative;
@@ -45,19 +46,30 @@ const HeaderStyled = styled(Header)`
   width: 100%;
 `;
 
-const MenuContainer = styled.nav<{ $headerHeight: number }>`
+const ClipContainer = styled.div<{ $headerHeight: number }>`
   position: fixed;
+  width: var(--primary-app-width);
+  overflow: hidden;
+  display: flex;
+  justify-content: stretch;
+  ${({ $headerHeight }) => `
+    top: ${$headerHeight}px; 
+    height: calc(100svh - ${$headerHeight}px);
+  `}
+`;
+
+const MenuContainer = styled(motion.nav)`
+  position: absolute;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   background-color: var(--primary-bg);
   max-width: 300px;
   width: 100%;
+  height: 100%;
   padding: 0.5rem 0.75rem;
-  bottom: 0;
   border: 1px solid var(--menu-border);
   box-shadow: 10px 0px 10px 10px rgba(10, 10, 10, 0.25);
-  ${({ $headerHeight }) => `top: ${$headerHeight}px;`}
 `;
 
 const MenuItem = styled.div`
@@ -89,6 +101,8 @@ const MenuItemsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
 `;
 
 type MenuWrapperProps = {
@@ -119,36 +133,45 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
           />
         </HeaderContainer>
         {children}
-        {isMenuOpen && (
-          <MenuContainer $headerHeight={height} ref={menuRef}>
-            {isSignedIn === false && <MenuItem>Log In or Sign Up</MenuItem>}
-            <MenuItemsContainer>
-              <MenuItem>
-                <Link color="foreground">Give Feedback</Link>
-              </MenuItem>
-              <MenuItem>
-                <Link color="foreground">Terms of Service</Link>
-              </MenuItem>
-              <MenuItem>
-                <Link color="foreground">Privacy Policy</Link>
-              </MenuItem>
-            </MenuItemsContainer>
-            <div>
-              <Divider />
-              {isSignedIn === true && (
-                <SignInContainer>
-                  <UserInfoStyled
-                    name={user.fullName ?? ''}
-                    email={user.primaryEmailAddress?.emailAddress ?? ''}
-                  />
-                  <Button size="sm" variant="bordered">
-                    Log Out
-                  </Button>
-                </SignInContainer>
-              )}
-            </div>
-          </MenuContainer>
-        )}
+        <AnimatePresence>
+          {isMenuOpen && (
+            <ClipContainer $headerHeight={height}>
+              <MenuContainer
+                ref={menuRef}
+                initial={{ x: '-100%' }}
+                animate={{ x: '0%' }}
+                exit={{ x: '-100%' }}
+              >
+                {isSignedIn === false && <MenuItem>Log In or Sign Up</MenuItem>}
+                <MenuItemsContainer>
+                  <MenuItem>
+                    <Link color="foreground">Give Feedback</Link>
+                  </MenuItem>
+                  <MenuItem>
+                    <Link color="foreground">Terms of Service</Link>
+                  </MenuItem>
+                  <MenuItem>
+                    <Link color="foreground">Privacy Policy</Link>
+                  </MenuItem>
+                </MenuItemsContainer>
+                <div>
+                  <Divider />
+                  {isSignedIn === true && (
+                    <SignInContainer>
+                      <UserInfoStyled
+                        name={user.fullName ?? ''}
+                        email={user.primaryEmailAddress?.emailAddress ?? ''}
+                      />
+                      <Button size="sm" variant="bordered">
+                        Log Out
+                      </Button>
+                    </SignInContainer>
+                  )}
+                </div>
+              </MenuContainer>
+            </ClipContainer>
+          )}
+        </AnimatePresence>
       </ChildrenContainer>
     </Container>
   );

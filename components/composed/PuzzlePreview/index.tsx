@@ -95,7 +95,6 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
               : getColorHex(DEFAULT_SELECTED_ADJACENT_COLOR)
           }
         />
-
         <span>
           {previewState === ProgressEnum.Solved ? (
             <span>🎉&nbsp;&nbsp;</span>
