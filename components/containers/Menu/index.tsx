@@ -1,7 +1,7 @@
 import React, { ReactNode, useCallback } from 'react';
 import MenuWrapper, { MenuWrapperProps } from 'components/core/Menu';
 import { useClerk } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 interface MenuProps extends MenuWrapperProps {}
 
@@ -13,11 +13,11 @@ const Menu: React.FC<MenuProps> = ({ centerLabel, children }) => {
   }, [signOut]);
 
   const onSignIn = useCallback(() => {
-    router.push('/signin');
+    router.push(`/signin?redirect_url=${window.location.href}`);
   }, [router]);
 
   const onSignUp = useCallback(() => {
-    router.push('/signup');
+    router.push('/signup?redirect_url=${window.location.href}');
   }, [router]);
 
   return (

@@ -15,6 +15,10 @@ export default function RootLayout({
     <ClerkProvider
       appearance={{
         baseTheme: dark,
+        elements: {
+          formButtonPrimary: 'bg-rose-700 hover:bg-rose-600',
+          footerActionLink: 'text-rose-500 hover:text-rose-400',
+        },
       }}
     >
       <html lang="en">
