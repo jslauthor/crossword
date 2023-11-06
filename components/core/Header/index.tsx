@@ -52,8 +52,8 @@ const Header: React.FC<HeaderProps> = ({
   );
 
   return (
-    <Container onClick={onMenuPressed} $hasCenterLabel={hasCenterLabel}>
-      <CloseButtonContainer>
+    <Container $hasCenterLabel={hasCenterLabel}>
+      <CloseButtonContainer onClick={onMenuPressed}>
         {showCloseButton ? (
           <IconX width={20} height={25} />
         ) : (
