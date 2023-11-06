@@ -140,9 +140,14 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
                 ref={menuRef}
                 initial={{ x: '-100%' }}
                 animate={{ x: '0%' }}
-                exit={{ x: '-100%' }}
+                exit={{ x: '-110%' }}
               >
-                {isSignedIn === false && <MenuItem>Log In or Sign Up</MenuItem>}
+                {isSignedIn === false && (
+                  <MenuItem>
+                    <Link color="foreground">Log In</Link> or{' '}
+                    <Link color="foreground">Sign Up</Link>
+                  </MenuItem>
+                )}
                 <MenuItemsContainer>
                   <MenuItem>
                     <Link color="foreground">Give Feedback</Link>
