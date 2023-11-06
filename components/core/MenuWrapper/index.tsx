@@ -1,12 +1,14 @@
 'use client';
 
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useRef } from 'react';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
-import { Switch } from '@nextui-org/react';
+import { Button } from '@nextui-org/react';
 import { useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { useElementSize } from 'usehooks-ts';
+import { useElementSize, useOnClickOutside } from 'usehooks-ts';
+import UserInfo from 'components/composed/UserInfo';
+import { Link } from '@nextui-org/react';
 
 const Container = styled.div`
   position: relative;
@@ -45,10 +47,13 @@ const HeaderStyled = styled(Header)`
 
 const MenuContainer = styled.nav<{ $headerHeight: number }>`
   position: fixed;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   background-color: var(--primary-bg);
   max-width: 300px;
   width: 100%;
-  padding: 0 0.75rem;
+  padding: 0.5rem 0.75rem;
   bottom: 0;
   border: 1px solid var(--menu-border);
   box-shadow: 10px 0px 10px 10px rgba(10, 10, 10, 0.25);
@@ -61,20 +66,29 @@ const MenuItem = styled.div`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  margin: 0.75rem 0;
-`;
-
-const MenuItemHeader = styled.div`
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin: 0.75rem 0;
-  text-transform: uppercase;
 `;
 
 const Divider = styled.div`
   height: 1px;
   width: 100%;
   background-color: var(--secondary-bg);
+`;
+
+const UserInfoStyled = styled(UserInfo)`
+  margin: 0.5rem;
+`;
+
+const SignInContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+`;
+
+const MenuItemsContainer = styled.div`
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 `;
 
 type MenuWrapperProps = {
@@ -84,13 +98,16 @@ type MenuWrapperProps = {
 
 const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
   const { isSignedIn, user } = useUser();
-
   const [headerRef, { height }] = useElementSize();
-
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
   const handleMenuPressed = useCallback(() => {
     setIsMenuOpen(!isMenuOpen);
   }, [isMenuOpen]);
+  const handleClickOutside = useCallback(() => {
+    setIsMenuOpen(false);
+  }, []);
+  useOnClickOutside(menuRef, handleClickOutside);
   return (
     <Container>
       <ChildrenContainer>
@@ -103,17 +120,33 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
         </HeaderContainer>
         {children}
         {isMenuOpen && (
-          <MenuContainer $headerHeight={height}>
-            <MenuItem>
-              Autocheck <Switch />
-            </MenuItem>
-            <Divider />
-            {isSignedIn === true && (
-              <div>
-                <MenuItemHeader>profile</MenuItemHeader>
-                <MenuItem>Log Out</MenuItem>
-              </div>
-            )}
+          <MenuContainer $headerHeight={height} ref={menuRef}>
+            {isSignedIn === false && <MenuItem>Log In or Sign Up</MenuItem>}
+            <MenuItemsContainer>
+              <MenuItem>
+                <Link color="foreground">Give Feedback</Link>
+              </MenuItem>
+              <MenuItem>
+                <Link color="foreground">Terms of Service</Link>
+              </MenuItem>
+              <MenuItem>
+                <Link color="foreground">Privacy Policy</Link>
+              </MenuItem>
+            </MenuItemsContainer>
+            <div>
+              <Divider />
+              {isSignedIn === true && (
+                <SignInContainer>
+                  <UserInfoStyled
+                    name={user.fullName ?? ''}
+                    email={user.primaryEmailAddress?.emailAddress ?? ''}
+                  />
+                  <Button size="sm" variant="bordered">
+                    Log Out
+                  </Button>
+                </SignInContainer>
+              )}
+            </div>
           </MenuContainer>
         )}
       </ChildrenContainer>

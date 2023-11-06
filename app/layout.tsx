@@ -3,7 +3,6 @@ import { dark } from '@clerk/themes';
 import { ClerkProvider } from '@clerk/nextjs';
 
 import { Analytics } from '@vercel/analytics/react';
-import StyledComponentsRegistry from 'lib/registry';
 import './tailwind.css';
 import { Providers } from './providers';
 
