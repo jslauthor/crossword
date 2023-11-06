@@ -74,10 +74,6 @@ const MenuContainer = styled(motion.nav)`
 
 const MenuItem = styled.div`
   font-size: 1rem;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
 `;
 
 const Divider = styled.div`
@@ -105,12 +101,27 @@ const MenuItemsContainer = styled.div`
   overflow-x: hidden;
 `;
 
-type MenuWrapperProps = {
+export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
+  onSignUpPressed?: () => void;
+  onSignInPressed?: () => void;
+  onSignOutPressed?: () => void;
+  onGiveFeedback?: () => void;
+  onTermsOfService?: () => void;
+  onPrivacyPolicy?: () => void;
 };
 
-const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
+const MenuWrapper: React.FC<MenuWrapperProps> = ({
+  children,
+  centerLabel,
+  onSignUpPressed,
+  onSignOutPressed: onLogOutPressed,
+  onSignInPressed: onLogInPressed,
+  onGiveFeedback,
+  onPrivacyPolicy,
+  onTermsOfService,
+}) => {
   const { isSignedIn, user } = useUser();
   const [headerRef, { height }] = useElementSize();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -142,35 +153,52 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({ children, centerLabel }) => {
                 animate={{ x: '0%' }}
                 exit={{ x: '-110%' }}
               >
-                {isSignedIn === false && (
-                  <MenuItem>
-                    <Link color="foreground">Log In</Link> or{' '}
-                    <Link color="foreground">Sign Up</Link>
-                  </MenuItem>
-                )}
                 <MenuItemsContainer>
+                  {isSignedIn === false && (
+                    <MenuItem>
+                      <Link color="foreground" onClick={onLogInPressed}>
+                        Sign In
+                      </Link>
+                      <span className="opacity-50 px-1 text-lg"> / </span>
+                      <Link color="foreground" onClick={onSignUpPressed}>
+                        Sign Up
+                      </Link>
+                    </MenuItem>
+                  )}
                   <MenuItem>
-                    <Link color="foreground">Give Feedback</Link>
+                    <Link color="foreground" onClick={onGiveFeedback}>
+                      Give Feedback
+                    </Link>
                   </MenuItem>
                   <MenuItem>
-                    <Link color="foreground">Terms of Service</Link>
+                    <Link color="foreground" onClick={onTermsOfService}>
+                      Terms of Service
+                    </Link>
                   </MenuItem>
                   <MenuItem>
-                    <Link color="foreground">Privacy Policy</Link>
+                    <Link color="foreground" onClick={onPrivacyPolicy}>
+                      Privacy Policy
+                    </Link>
                   </MenuItem>
                 </MenuItemsContainer>
                 <div>
-                  <Divider />
                   {isSignedIn === true && (
-                    <SignInContainer>
-                      <UserInfoStyled
-                        name={user.fullName ?? ''}
-                        email={user.primaryEmailAddress?.emailAddress ?? ''}
-                      />
-                      <Button size="sm" variant="bordered">
-                        Log Out
-                      </Button>
-                    </SignInContainer>
+                    <>
+                      <Divider />
+                      <SignInContainer>
+                        <UserInfoStyled
+                          name={user.fullName ?? ''}
+                          email={user.primaryEmailAddress?.emailAddress ?? ''}
+                        />
+                        <Button
+                          size="sm"
+                          variant="bordered"
+                          onClick={onLogOutPressed}
+                        >
+                          Log Out
+                        </Button>
+                      </SignInContainer>
+                    </>
                   )}
                 </div>
               </MenuContainer>

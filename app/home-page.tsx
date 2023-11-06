@@ -1,7 +1,7 @@
 'use client';
 
 import styled from 'styled-components';
-import MenuWrapper from 'components/core/MenuWrapper';
+import Menu from 'components/containers/Menu';
 import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { DifficultyEnum } from 'components/svg/IconStar';
 import { ProgressEnum } from 'components/svg/PreviewCube';
@@ -20,7 +20,7 @@ const PreviewContainer = styled.div`
 
 export default function Home() {
   return (
-    <MenuWrapper>
+    <Menu>
       <PreviewContainer>
         <PuzzlePreview
           title="The Tempest"
@@ -55,6 +55,6 @@ export default function Home() {
           previewState={ProgressEnum.Solved}
         />
       </PreviewContainer>
-    </MenuWrapper>
+    </Menu>
   );
 }

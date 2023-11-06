@@ -46,7 +46,7 @@ import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
 import localforage from 'localforage';
 import useAsyncQueue from 'lib/utils/hooks/useAsyncQueue';
-import MenuWrapper from 'components/core/MenuWrapper';
+import Menu from 'components/containers/Menu';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -441,7 +441,7 @@ export default function Puzzle({
   );
 
   return (
-    <MenuWrapper centerLabel={formattedElapsedTime}>
+    <Menu centerLabel={formattedElapsedTime}>
       <Canvas
         gl={{ antialias: false }}
         style={{
@@ -623,6 +623,6 @@ export default function Puzzle({
           </ModalContent>
         </ModalContainer>
       )}
-    </MenuWrapper>
+    </Menu>
   );
 }
