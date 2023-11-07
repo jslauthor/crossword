@@ -36,6 +36,7 @@
     "i": "^0.3.7",
     "js-easing-functions": "^1.0.3",
     "localforage": "^1.10.0",
+    "md5": "^2.3.0",
     "memoize-one": "^6.0.0",
     "meshline": "^3.1.6",
     "next": "^13.4.19",
@@ -58,6 +59,7 @@
     "yoga-wasm-web": "^0.3.3"
   },
   "devDependencies": {
+    "@types/md5": "^2.3.5",
     "@types/next-tick": "^1.0.0",
     "@types/node": "18.11.9",
     "@types/react": "18.0.25",

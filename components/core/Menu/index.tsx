@@ -1,6 +1,7 @@
 'use client';
 
-import React, { ReactNode, useRef } from 'react';
+import React, { ReactNode, useEffect, useRef } from 'react';
+import md5 from 'md5';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
 import { Button } from '@nextui-org/react';
@@ -133,6 +134,25 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
     setIsMenuOpen(false);
   }, []);
   useOnClickOutside(menuRef, handleClickOutside);
+
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const getGravatar = async () => {
+      if (user?.primaryEmailAddress?.emailAddress == null) return '';
+      const emailHash = md5(user.primaryEmailAddress.emailAddress);
+      const response = await fetch(
+        `https://www.gravatar.com/avatar/${emailHash}?d=404`
+      );
+      if (response.ok) {
+        const data = await response.blob();
+        setAvatarUrl(URL.createObjectURL(data));
+      }
+    };
+
+    getGravatar();
+  }, [user?.primaryEmailAddress?.emailAddress]);
+
   return (
     <Container>
       <ChildrenContainer>
@@ -189,6 +209,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         <UserInfoStyled
                           name={user.fullName ?? ''}
                           email={user.primaryEmailAddress?.emailAddress ?? ''}
+                          src={avatarUrl}
                         />
                         <Button
                           size="sm"
