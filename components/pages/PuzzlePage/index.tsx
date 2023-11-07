@@ -244,8 +244,11 @@ export default function Puzzle({
   const [selectedCharacter, setSelectedCharacter] = useState<
     string | undefined
   >();
-  const { observe: containerRef, height: canvasHeight } =
-    useDimensions<HTMLCanvasElement>();
+  const {
+    observe: containerRef,
+    height: canvasHeight,
+    width: canvasWidth,
+  } = useDimensions<HTMLCanvasElement>();
   const [isInitialized, setIsInitialized] = useState(false);
   const onInitialize = useCallback(() => {
     setIsInitialized(true);
@@ -275,18 +278,26 @@ export default function Puzzle({
     if (cameraRef == null || instancedRef == null || isInitialized === false) {
       return;
     }
+
+    const containerSize = Math.min(canvasWidth, canvasHeight);
     const size = new Vector3();
     new Box3().setFromObject(instancedRef).getSize(size);
     size.project(cameraRef);
-    size.multiplyScalar(window.innerWidth);
+    size.multiplyScalar(containerSize);
 
     const { x: width } = size;
-    const newScale =
-      Math.min(Math.min(window.innerWidth * 0.95, 500), canvasHeight * 0.95) /
-      Math.abs(width);
+    // 32 is the padding on the sides of the cube
+    const newScale = (containerSize - 32) / Math.abs(width);
     cameraRef.lookAt(instancedRef.position);
     setScale(newScale);
-  }, [cameraRef, canvasHeight, instancedRef, isInitialized, puzzleWidth]);
+  }, [
+    cameraRef,
+    canvasHeight,
+    canvasWidth,
+    instancedRef,
+    isInitialized,
+    puzzleWidth,
+  ]);
 
   const turnLeft = useCallback(
     () => setSideOffset(sideOffset + 1),
