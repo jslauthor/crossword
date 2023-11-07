@@ -8,10 +8,17 @@ import {
   ChromaticAberration,
 } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
-import { Stats, PerspectiveCamera } from '@react-three/drei';
+import { Stats, PerspectiveCamera, Html } from '@react-three/drei';
 import LetterBoxes from 'components/core/3d/LetterBoxes';
 import { PuzzleData } from 'types/types';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   PerspectiveCamera as PerspectiveCameraType,
   InstancedMesh as InstancedMeshType,
@@ -22,15 +29,8 @@ import {
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faBars,
-  faCircleQuestion,
-  faGear,
-  faClose,
-} from '@fortawesome/free-solid-svg-icons';
+import { faClose } from '@fortawesome/free-solid-svg-icons';
 import useDimensions from 'react-cool-dimensions';
-import RotatingBox from 'components/core/3d/Box';
-import Logo from 'components/svg/Logo';
 import { useKeyDown } from 'lib/utils/hooks/useKeyDown';
 import { getCharacterRecord } from 'lib/utils/puzzle';
 import { useSpring } from '@react-spring/core';
@@ -47,6 +47,7 @@ import { useElapsedTime } from 'use-elapsed-time';
 import localforage from 'localforage';
 import useAsyncQueue from 'lib/utils/hooks/useAsyncQueue';
 import Menu from 'components/containers/Menu';
+import { Spinner } from '@nextui-org/react';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -217,10 +218,13 @@ const CloseModalContainer = styled.div`
   right: 1rem;
 `;
 
-type ElapsedTimeProps = {
-  slug: string;
-  isPaused: boolean;
-};
+function Loader() {
+  return (
+    <Html center>
+      <Spinner color="default" />
+    </Html>
+  );
+}
 
 type PuzzleProps = {
   puzzleData: PuzzleData[];
@@ -286,8 +290,7 @@ export default function Puzzle({
     size.multiplyScalar(containerSize);
 
     const { x: width } = size;
-    // 32 is the padding on the sides of the cube
-    const newScale = (containerSize - 32) / Math.abs(width);
+    const newScale = (containerSize * 0.85) / Math.abs(width);
     cameraRef.lookAt(instancedRef.position);
     setScale(newScale);
   }, [
@@ -462,69 +465,71 @@ export default function Puzzle({
         }}
         ref={containerRef}
       >
-        <PerspectiveCamera
-          ref={setCameraRef}
-          makeDefault
-          position={[0, 0, 3.35]}
-        />
-        <ambientLight intensity={5} />
-        <pointLight position={[0, 0, -2]} intensity={2} />
-        <SwipeControls
-          global
-          dragEnabled={false}
-          onSwipeLeft={turnLeft}
-          onSwipeRight={turnRight}
-          rotation={[0, rotation * (Math.PI + Math.PI * (sideOffset / 2)), 0]}
-        >
-          <group
-            position={[-3.5 * scale, -3.5 * scale, 3.5 * scale]}
-            scale={[scale, scale, scale]}
+        <Suspense fallback={<Loader />}>
+          <PerspectiveCamera
+            ref={setCameraRef}
+            makeDefault
+            position={[0, 0, 3.35]}
+          />
+          <ambientLight intensity={5} />
+          <pointLight position={[0, 0, -2]} intensity={2} />
+          <SwipeControls
+            global
+            dragEnabled={false}
+            onSwipeLeft={turnLeft}
+            onSwipeRight={turnRight}
+            rotation={[0, rotation * (Math.PI + Math.PI * (sideOffset / 2)), 0]}
           >
-            <LetterBoxes
-              id={slug}
-              setInstancedMesh={setInstancedMesh}
-              puzzleData={puzzleData}
-              characterTextureAtlasLookup={characterTextureAtlasLookup}
-              cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
-              selectedSide={selectedSide}
-              keyAndIndexOverride={keyAndIndexOverride}
-              currentKey={selectedCharacter}
-              onLetterInput={onLetterInput}
-              onSelectClue={setClue}
-              defaultColor={defaultColor}
-              selectedColor={selectedColor}
-              adjacentColor={adjacentColor}
-              onInitialize={onInitialize}
-              onSolved={onSolved}
-              isVerticalOrientation={isVerticalOrientation}
-              onVerticalOrientationChange={setVerticalOrientation}
+            <group
+              position={[-3.5 * scale, -3.5 * scale, 3.5 * scale]}
+              scale={[scale, scale, scale]}
+            >
+              <LetterBoxes
+                id={slug}
+                setInstancedMesh={setInstancedMesh}
+                puzzleData={puzzleData}
+                characterTextureAtlasLookup={characterTextureAtlasLookup}
+                cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
+                selectedSide={selectedSide}
+                keyAndIndexOverride={keyAndIndexOverride}
+                currentKey={selectedCharacter}
+                onLetterInput={onLetterInput}
+                onSelectClue={setClue}
+                defaultColor={defaultColor}
+                selectedColor={selectedColor}
+                adjacentColor={adjacentColor}
+                onInitialize={onInitialize}
+                onSolved={onSolved}
+                isVerticalOrientation={isVerticalOrientation}
+                onVerticalOrientationChange={setVerticalOrientation}
+              />
+            </group>
+          </SwipeControls>
+          {isPuzzleSolved === true && (
+            <>
+              <Sparks
+                count={12}
+                mouse={mouse}
+                radius={1.5}
+                colors={sparkColors}
+              />
+              <Particles count={2500} mouse={mouse} />
+            </>
+          )}
+          <EffectComposer>
+            <Bloom
+              luminanceThreshold={1}
+              luminanceSmoothing={2}
+              height={canvasHeight}
             />
-          </group>
-        </SwipeControls>
-        {isPuzzleSolved === true && (
-          <>
-            <Sparks
-              count={12}
-              mouse={mouse}
-              radius={1.5}
-              colors={sparkColors}
+            <ChromaticAberration
+              radialModulation={false}
+              modulationOffset={0}
+              blendFunction={BlendFunction.NORMAL} // blend mode
+              offset={abberationOffset} // color offset
             />
-            <Particles count={2500} mouse={mouse} />
-          </>
-        )}
-        <EffectComposer>
-          <Bloom
-            luminanceThreshold={1}
-            luminanceSmoothing={2}
-            height={canvasHeight}
-          />
-          <ChromaticAberration
-            radialModulation={false}
-            modulationOffset={0}
-            blendFunction={BlendFunction.NORMAL} // blend mode
-            offset={abberationOffset} // color offset
-          />
-        </EffectComposer>
+          </EffectComposer>
+        </Suspense>
       </Canvas>
       <InfoBar>
         <TurnButton onClick={turnLeft} $borderColor={toHex(defaultColor)}>
