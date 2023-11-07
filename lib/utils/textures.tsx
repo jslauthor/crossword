@@ -39,7 +39,7 @@ const TEXTURE_RECORD_ITEMS = Object.keys(TEXTURE_RECORD).map((item: string) => (
       display: 'flex',
       width: '341.33px',
       height: '341.33px',
-      aspectRatio: '1',
+      aspectRatio: '1 / 1',
       justifyContent: 'center',
       alignItems: 'center',
       fontFamily: 'Franklin Gothic',
@@ -56,7 +56,7 @@ export const TextureAtlas: React.FC = () => (
   <div
     style={{
       display: 'flex',
-      aspectRatio: '1',
+      aspectRatio: '1 / 1',
       position: 'absolute',
       top: 0,
       left: 0,
@@ -82,7 +82,7 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
   <div
     style={{
       display: 'flex',
-      aspectRatio: '1',
+      aspectRatio: '1 / 1',
       position: 'absolute',
       top: 0,
       left: 0,
@@ -102,7 +102,7 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
           display: 'flex',
           width: '256px',
           height: '256px',
-          aspectRatio: '1',
+          aspectRatio: '1 / 1',
           justifyContent: 'center',
           alignItems: 'center',
           fontFamily: 'Franklin Gothic',
@@ -133,7 +133,7 @@ const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) => (
         display: 'flex',
         width: '100%',
         height: '100%',
-        aspectRatio: '1',
+        aspectRatio: '1 / 1',
         fontFamily: 'Franklin Gothic',
         fontSize: '14px',
         color: 'white',
@@ -156,7 +156,7 @@ export const NumberAtlas: React.FC = () => (
   <div
     style={{
       display: 'flex',
-      aspectRatio: '1',
+      aspectRatio: '1 / 1',
       position: 'absolute',
       top: 0,
       left: 0,
@@ -183,10 +183,10 @@ const publicDir = path.join(process.cwd(), 'public');
 const saveElementToDisk = async (
   element: JSX.Element,
   filename: string,
-  size: number = 2048
+  size: number = 2048,
 ) => {
   const font = fs.readFileSync(
-    path.join(process.cwd(), 'public', 'franklin_gothic_regular.ttf')
+    path.join(process.cwd(), 'public', 'franklin_gothic_regular.ttf'),
   );
   const wasm = fs.readFileSync(
     path.join(
@@ -194,8 +194,8 @@ const saveElementToDisk = async (
       'node_modules',
       'yoga-wasm-web',
       'dist',
-      'yoga.wasm'
-    )
+      'yoga.wasm',
+    ),
   );
   // @ts-ignore
   const yoga = await Yoga(wasm);
@@ -223,21 +223,21 @@ export const generateTextures = async () => {
   await saveElementToDisk(
     <SingleCharacterTexture character="1" />,
     '/1.png',
-    256
+    256,
   );
   await saveElementToDisk(
     <SingleCharacterTexture character="2" />,
     '/2.png',
-    256
+    256,
   );
   await saveElementToDisk(
     <SingleCharacterTexture character="3" />,
     '/3.png',
-    256
+    256,
   );
   await saveElementToDisk(
     <SingleCharacterTexture character="4" />,
     '/4.png',
-    256
+    256,
   );
 };
