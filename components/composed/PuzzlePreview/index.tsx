@@ -22,7 +22,7 @@ const Container = styled.div`
   padding: 0.5rem;
   background-color: var(--terciary-bg);
   border-radius: 0.25rem;
-  aspect-ratio: 1;
+  aspect-ratio: 1 / 1;
 
   @media (max-width: 400px) {
     min-width: 9.8rem;
