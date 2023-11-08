@@ -304,11 +304,11 @@ export default function Puzzle({
 
   const turnLeft = useCallback(
     () => setSideOffset(sideOffset + 1),
-    [sideOffset]
+    [sideOffset],
   );
   const turnRight = useCallback(
     () => setSideOffset(sideOffset - 1),
-    [sideOffset]
+    [sideOffset],
   );
 
   const selectedSide = useMemo(() => {
@@ -352,7 +352,7 @@ export default function Puzzle({
           }
       }
     },
-    [finishPuzzle, isPuzzleSolved, turnLeft, turnRight]
+    [finishPuzzle, isPuzzleSolved, turnLeft, turnRight],
   );
 
   const onSolved = useCallback(() => {
@@ -372,7 +372,7 @@ export default function Puzzle({
         setSelectedCharacter(key);
       }
     },
-    [isPuzzleSolved]
+    [isPuzzleSolved],
   );
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
 
@@ -402,7 +402,7 @@ export default function Puzzle({
   const mouse = useRef([0, 0]);
   const toHex = useCallback(
     (color: number) => `#${color.toString(16).padStart(6, '0')}`,
-    []
+    [],
   );
   const sparkColors = useMemo(
     () => [
@@ -410,7 +410,7 @@ export default function Puzzle({
       tinycolor(toHex(selectedColor)).brighten(10).toHexString(),
       tinycolor(toHex(adjacentColor)).brighten(10).toHexString(),
     ],
-    [adjacentColor, defaultColor, selectedColor, toHex]
+    [adjacentColor, defaultColor, selectedColor, toHex],
   );
   const abberationOffset = useMemo(() => new Vector2(0.0005, 0.0005), []);
 
@@ -451,7 +451,7 @@ export default function Puzzle({
       elapsedTime < 3600
         ? new Date(elapsedTime * 1000).toISOString().slice(14, 19)
         : new Date(elapsedTime * 1000).toISOString().slice(11, 19),
-    [elapsedTime]
+    [elapsedTime],
   );
 
   return (
