@@ -6,8 +6,6 @@ import {
   generateTextures,
 } from 'lib/utils/textures';
 import { PuzzleData } from 'types/types';
-import prisma from 'lib/prisma';
-import { getPuzzleStateForUser } from 'lib/db';
 
 type PuzzleProps = {
   puzzleData: PuzzleData[];
@@ -15,8 +13,6 @@ type PuzzleProps = {
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
   slug: string;
 };
-
-export const dynamicParams = true;
 
 export async function generateStaticParams() {
   return (await getPuzzles()).map((fileName) => ({
@@ -50,5 +46,3 @@ export default async function Page({
   const props = await getProps(slug);
   return <PuzzlePage {...props} />;
 }
-
-export const dynamic = 'force-dynamic';

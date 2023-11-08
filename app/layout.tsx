@@ -62,3 +62,5 @@ export const metadata: Metadata = {
     type: 'website',
   },
 };
+
+export const dynamic = 'force-dynamic';

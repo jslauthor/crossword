@@ -4,6 +4,8 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { SignIn } from '@clerk/nextjs';
 import { styled } from 'styled-components';
 
+export const dynamic = 'force-dynamic';
+
 const Container = styled.div`
   position: relative;
   padding-top: 1rem;
