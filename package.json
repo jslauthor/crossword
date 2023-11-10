@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "vercel-build": "prisma generate --no-engine && prisma migrate deploy && next build --build-mode=experimental-compile",
+    "vercel-build": "prisma generate --no-engine && prisma migrate deploy && next build",
     "postinstall": "prisma generate --no-engine"
   },
   "dependencies": {
