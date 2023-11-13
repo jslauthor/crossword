@@ -288,10 +288,9 @@ export default function Puzzle({
     const size = new Vector3();
     new Box3().setFromObject(instancedRef).getSize(size);
     size.project(cameraRef);
-    size.multiplyScalar(containerSize);
+    const width = Math.abs(size.x - size.z) * canvasWidth;
+    const newScale = containerSize / (width * 0.885);
 
-    const { x: width } = size;
-    const newScale = (containerSize * 0.85) / Math.abs(width);
     cameraRef.lookAt(instancedRef.position);
     setScale(newScale);
   }, [

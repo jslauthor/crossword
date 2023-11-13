@@ -93,7 +93,6 @@ const RotatingBox: React.FC<RotatingBoxProps> = ({ side, defaultColor }) => {
     <CanvasContainer>
       <Canvas>
         <ambientLight intensity={3.5} />
-        {/* <pointLight position={[0, 8, 0]} intensity={20} /> */}
         <pointLight
           position={[0, 0, 9]}
           intensity={5000}
