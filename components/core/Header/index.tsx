@@ -4,6 +4,7 @@ import IconX from 'components/svg/IconX';
 import IconMainLogo from 'components/svg/MainLogo';
 import { useMemo } from 'react';
 import { styled } from 'styled-components';
+import RotatingBox, { RotatingBoxProps } from '../3d/Box';
 
 const Container = styled.nav<{ $hasCenterLabel: boolean }>`
   display: grid;
@@ -30,25 +31,31 @@ const CenterLabelContainer = styled.div`
   justify-self: center;
 `;
 
-const QuestionStyled = styled(IconQuestion)`
+const RightContentContainer = styled.div`
   grid-column: 4 / 5;
   justify-self: end;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
 `;
 
 interface HeaderProps {
   showCloseButton: boolean;
   centerLabel?: string;
   onMenuPressed: () => void;
+  rotatingBoxProps?: RotatingBoxProps;
 }
 
 const Header: React.FC<HeaderProps> = ({
   showCloseButton,
   centerLabel,
   onMenuPressed,
+  rotatingBoxProps,
 }) => {
   const hasCenterLabel = useMemo(
     () => centerLabel != null && centerLabel.length > 0,
-    [centerLabel]
+    [centerLabel],
   );
 
   return (
@@ -64,7 +71,15 @@ const Header: React.FC<HeaderProps> = ({
       {hasCenterLabel === true && (
         <CenterLabelContainer>{centerLabel}</CenterLabelContainer>
       )}
-      <QuestionStyled width={25} height={25} />
+      <RightContentContainer>
+        {rotatingBoxProps && (
+          <RotatingBox
+            side={rotatingBoxProps.side}
+            defaultColor={rotatingBoxProps.defaultColor}
+          />
+        )}
+        <IconQuestion width={25} height={25} />
+      </RightContentContainer>
     </Container>
   );
 };

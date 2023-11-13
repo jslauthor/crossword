@@ -3,11 +3,7 @@
 import * as React from 'react';
 import 'components/svg/PreviewCube';
 import 'components/svg/IconStar';
-import {
-  DEFAULT_COLOR,
-  DEFAULT_SELECTED_ADJACENT_COLOR,
-  DEFAULT_SELECTED_COLOR,
-} from 'components/pages/PuzzlePage';
+import { DEFAULT_SELECTED_ADJACENT_COLOR } from 'components/pages/PuzzlePage';
 import IconStar, { DifficultyEnum } from 'components/svg/IconStar';
 import PreviewCube, { ProgressEnum } from 'components/svg/PreviewCube';
 import { styled } from 'styled-components';
@@ -65,7 +61,7 @@ const AiContainer = styled.div`
   margin-top: 0.25rem;
 `;
 
-interface PuzzlePreviewProps {
+export interface PuzzlePreviewProps {
   title: string;
   author: string;
   date: string;

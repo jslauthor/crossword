@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { SvgProps } from 'types/types';
 import { getColorHex } from 'lib/utils/color';
@@ -37,14 +39,14 @@ const PreviewCube: React.FC<PreviewCubeProps> = ({
   progress = ProgressEnum.ZeroPercent,
 }) => {
   const [colorsHexValues, setColorHexValues] = useState(
-    colors.map(getColorHex)
+    colors.map(getColorHex),
   );
 
   useEffect(() => {
     switch (progress) {
       case ProgressEnum.ZeroPercent:
         setColorHexValues(
-          Array.from({ length: 24 }, (_, i) => getColorHex(colors[0]))
+          Array.from({ length: 24 }, (_, i) => getColorHex(colors[0])),
         );
         break;
       case ProgressEnum.TwentyFivePercent:
@@ -52,7 +54,7 @@ const PreviewCube: React.FC<PreviewCubeProps> = ({
           Array.from({ length: 24 }, (_, i) => {
             const index = twentyFivePercentIndices.includes(i) ? 1 : 0;
             return getColorHex(colors[index]);
-          })
+          }),
         );
         break;
       case ProgressEnum.SeventyFivePercent:
@@ -60,17 +62,17 @@ const PreviewCube: React.FC<PreviewCubeProps> = ({
           Array.from({ length: 24 }, (_, i) => {
             const index = seventyFivePercentIndices.includes(i) ? 1 : 0;
             return getColorHex(colors[index]);
-          })
+          }),
         );
         break;
       case ProgressEnum.Solved:
         setColorHexValues(
-          Array.from({ length: 24 }, () => getColorHex(colors[2]))
+          Array.from({ length: 24 }, () => getColorHex(colors[2])),
         );
         break;
       default:
         setColorHexValues(
-          Array.from({ length: 24 }, () => getColorHex(colors[0]))
+          Array.from({ length: 24 }, () => getColorHex(colors[0])),
         );
     }
   }, [colors, progress]);

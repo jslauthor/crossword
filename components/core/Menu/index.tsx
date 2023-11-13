@@ -11,6 +11,7 @@ import { useElementSize, useOnClickOutside } from 'usehooks-ts';
 import UserInfo from 'components/composed/UserInfo';
 import { Link } from '@nextui-org/react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { RotatingBoxProps } from '../3d/Box';
 
 const Container = styled.div`
   position: relative;
@@ -105,6 +106,7 @@ const MenuItemsContainer = styled.div`
 export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
+  rotatingBoxProps?: RotatingBoxProps;
   onSignUpPressed?: () => void;
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
@@ -116,6 +118,7 @@ export type MenuWrapperProps = {
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
   children,
   centerLabel,
+  rotatingBoxProps,
   onSignUpPressed,
   onSignOutPressed: onLogOutPressed,
   onSignInPressed: onLogInPressed,
@@ -142,7 +145,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
       if (user?.primaryEmailAddress?.emailAddress == null) return '';
       const emailHash = md5(user.primaryEmailAddress.emailAddress);
       const response = await fetch(
-        `https://www.gravatar.com/avatar/${emailHash}?d=404`
+        `https://www.gravatar.com/avatar/${emailHash}?d=404`,
       );
       if (response.ok) {
         const data = await response.blob();
@@ -161,6 +164,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
             onMenuPressed={handleMenuPressed}
             showCloseButton={isMenuOpen}
             centerLabel={centerLabel}
+            rotatingBoxProps={rotatingBoxProps}
           />
         </HeaderContainer>
         {children}

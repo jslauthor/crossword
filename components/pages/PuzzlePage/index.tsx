@@ -48,6 +48,7 @@ import localforage from 'localforage';
 import useAsyncQueue from 'lib/utils/hooks/useAsyncQueue';
 import Menu from 'components/containers/Menu';
 import { Spinner } from '@nextui-org/react';
+import { RotatingBoxProps } from 'components/core/3d/Box';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -454,8 +455,18 @@ export default function Puzzle({
     [elapsedTime],
   );
 
+  const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
+    return {
+      defaultColor,
+      side: sideOffset,
+    };
+  }, [defaultColor, sideOffset]);
+
   return (
-    <Menu centerLabel={formattedElapsedTime}>
+    <Menu
+      centerLabel={formattedElapsedTime}
+      rotatingBoxProps={rotatingBoxProps}
+    >
       <Canvas
         gl={{ antialias: false }}
         style={{

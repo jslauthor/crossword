@@ -5,7 +5,11 @@ import { usePathname, useRouter } from 'next/navigation';
 
 interface MenuProps extends MenuWrapperProps {}
 
-const Menu: React.FC<MenuProps> = ({ centerLabel, children }) => {
+const Menu: React.FC<MenuProps> = ({
+  centerLabel,
+  rotatingBoxProps,
+  children,
+}) => {
   const router = useRouter();
   const { signOut } = useClerk();
   const onSignOut = useCallback(() => {
@@ -26,6 +30,7 @@ const Menu: React.FC<MenuProps> = ({ centerLabel, children }) => {
       onSignOutPressed={onSignOut}
       onSignUpPressed={onSignUp}
       onSignInPressed={onSignIn}
+      rotatingBoxProps={rotatingBoxProps}
     >
       {children}
     </MenuWrapper>

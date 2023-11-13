@@ -42,11 +42,11 @@ const Box: React.FC<BoxProps> = ({ defaultColor }) => {
     const custom_map_fragment = ShaderChunk.map_fragment.replace(
       `diffuseColor *= texture2D( map, vMapUv );`,
       `vec4 textSample = texture2D(map, vMapUv);
-       diffuseColor = vec4( mix( diffuse, textSample.rgb, textSample.a ), opacity );`
+       diffuseColor = vec4( mix( diffuse, textSample.rgb, textSample.a ), opacity );`,
     );
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <map_fragment>',
-      custom_map_fragment
+      custom_map_fragment,
     );
   }, []);
 
@@ -83,7 +83,7 @@ const Box: React.FC<BoxProps> = ({ defaultColor }) => {
   );
 };
 
-interface RotatingBoxProps {
+export interface RotatingBoxProps {
   side: number;
   defaultColor: number;
 }
@@ -93,7 +93,12 @@ const RotatingBox: React.FC<RotatingBoxProps> = ({ side, defaultColor }) => {
     <CanvasContainer>
       <Canvas>
         <ambientLight intensity={3.5} />
-        <pointLight position={[0, 8, 0]} intensity={100} />
+        {/* <pointLight position={[0, 8, 0]} intensity={20} /> */}
+        <pointLight
+          position={[0, 0, 9]}
+          intensity={5000}
+          color={defaultColor}
+        />
         <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={30} />
         <PresentationControls
           global
