@@ -123,7 +123,7 @@ type LetterBoxesProps = {
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
   onVerticalOrientationChange: (isVerticalOrientation: boolean) => void;
-  setInstancedMesh: (instancedMesh: InstancedMesh | null) => void;
+  setInstancedMesh?: (instancedMesh: InstancedMesh | null) => void;
   onLetterInput?: () => void;
   onSelectClue?: (clue: string | undefined) => void;
   onInitialize?: () => void;
@@ -155,7 +155,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   // const [isVerticalOrientation, setVerticalOrientation] =
   //   useState<boolean>(false);
   const [prevOrientation, setPrevOrientation] = useState<boolean>(
-    isVerticalOrientation
+    isVerticalOrientation,
   );
   const [selected, setSelected] = useState<InstancedMesh['id'] | undefined>(0);
   const [selectedWordCell, setSelectedWordCell] = useState<
@@ -175,13 +175,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const characterPositionStorageKey = useMemo(() => `puzzle-${id}`, [id]);
   const answerIndexStorageKey = useMemo(
     () => `puzzle-${id}-answer-index`,
-    [id]
+    [id],
   );
 
   const { add } = useAsyncQueue({ concurrency: 1 });
 
   useEffect(() => {
-    setInstancedMesh(ref);
+    if (setInstancedMesh) {
+      setInstancedMesh(ref);
+    }
   }, [ref, setInstancedMesh]);
 
   const [width, height, totalPerSide] = useMemo(() => {
@@ -198,7 +200,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     // Since bitwise operations only work on 32 bit integers, we need to split the array into chunks of 32
     const indices = Array.from(
       { length: Math.ceil(record.solution.length / 32) },
-      () => Number.MAX_SAFE_INTEGER >>> 0
+      () => Number.MAX_SAFE_INTEGER >>> 0,
     );
 
     for (const [index, cell] of record.solution.entries()) {
@@ -219,7 +221,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   useEffect(() => {
     const allAreCorrect = answerIndex.every(
-      (i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0
+      (i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0,
     );
     if (allAreCorrect === true && onSolved != null) {
       onSolved();
@@ -232,11 +234,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       const { clues } = record;
       if (isVerticalOrientation === true) {
         onSelectClue(
-          clues.down.find((c) => c.number === selectedWordCell)?.clue
+          clues.down.find((c) => c.number === selectedWordCell)?.clue,
         );
       } else {
         onSelectClue(
-          clues.across.find((c) => c.number === selectedWordCell)?.clue
+          clues.across.find((c) => c.number === selectedWordCell)?.clue,
         );
       }
     }
@@ -244,12 +246,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const cellNumberPositionArray = useMemo(
     () => Float32Array.from(new Array(size * 2).fill(-1)),
-    [size]
+    [size],
   );
 
   const cubeSideDisplayArray = useMemo(
     () => Int32Array.from(new Array(size * 2).fill(0)),
-    [size]
+    [size],
   );
 
   const cellColorsArray = useMemo(
@@ -257,14 +259,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       Float32Array.from(
         new Array(size * 3)
           .fill(0)
-          .flatMap(() => tempColor.set(defaultColor).toArray())
+          .flatMap(() => tempColor.set(defaultColor).toArray()),
       ),
-    [defaultColor, size]
+    [defaultColor, size],
   );
 
   const getInterval = useCallback(
     () => (isVerticalOrientation ? height : 1),
-    [height, isVerticalOrientation]
+    [height, isVerticalOrientation],
   );
 
   const isVisibleSide = useCallback(
@@ -281,7 +283,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         (xPos === width - 1 && cellSide === previousSide)
       );
     },
-    [selectedSide, totalPerSide, width]
+    [selectedSide, totalPerSide, width],
   );
 
   // const showIntroAnimation = useIntroAnimation(
@@ -301,7 +303,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     height,
     totalPerSide,
     size,
-    ref
+    ref,
   );
 
   // Initial setup (orient the instanced boxes)
@@ -319,7 +321,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           const x = (j % width) - 1;
           const y = Math.max(
             0,
-            Math.ceil((j - side * totalPerSide) / width) - 1
+            Math.ceil((j - side * totalPerSide) / width) - 1,
           );
 
           // Sides three and four are the top and bottom (respectively)
@@ -340,7 +342,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             tempObject.position.set(
               -x + height - 2,
               -y + height - 1,
-              -height + 1
+              -height + 1,
             );
           } else if (side === 1) {
             tempObject.position.set(-x + height - 2, -y + height - 1, 0);
@@ -349,7 +351,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               new Vector3(0, 0, 0),
               new Vector3(0, 1, 0),
               Math.PI / 2,
-              true
+              true,
             );
           } else if (side === 2) {
             tempObject.position.set(-x - 1, -y + height - 1, 0);
@@ -358,7 +360,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               new Vector3(0, 0, 0),
               new Vector3(0, 1, 0),
               Math.PI,
-              true
+              true,
             );
           } else if (side === 3) {
             tempObject.position.set(-x - 1, -y + height - 1, -height + 1);
@@ -367,7 +369,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               new Vector3(0, 0, 0),
               new Vector3(0, 1, 0),
               -Math.PI / 2,
-              true
+              true,
             );
           }
         } else {
@@ -394,7 +396,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     },
     // Only run once on load
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ref]
+    [ref],
   );
 
   // LOAD PREVIOUS GAME DATA FROM LOCAL STORAGE
@@ -408,10 +410,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
     const retrieveGameState = async () => {
       const state = (await localForage.getItem(
-        characterPositionStorageKey
+        characterPositionStorageKey,
       )) as Float32Array;
       const index = (await localForage.getItem(
-        answerIndexStorageKey
+        answerIndexStorageKey,
       )) as number[];
       if (state != null && index != null) {
         setCharacterPositionArray(state);
@@ -472,7 +474,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           // const selectedCellX = selected % width;
           const selectedCellY = Math.max(
             0,
-            Math.ceil((selected - sSide * totalPerSide) / width) - 1
+            Math.ceil((selected - sSide * totalPerSide) / width) - 1,
           );
 
           let interval = getInterval();
@@ -575,7 +577,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           const selectedX = nextCell % width;
           const selectedY = Math.max(
             0,
-            Math.ceil((selectedIndex - sSide * totalPerSide) / width) - 1
+            Math.ceil((selectedIndex - sSide * totalPerSide) / width) - 1,
           );
           if (selectedX === 0 && selectedSide !== sSide) {
             const int =
@@ -668,7 +670,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           task: () =>
             localForage.setItem(
               characterPositionStorageKey,
-              characterPositionArray
+              characterPositionArray,
             ),
         });
 
@@ -699,7 +701,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       add,
       answerIndexStorageKey,
       characterPositionStorageKey,
-    ]
+    ],
   );
 
   /**
@@ -751,7 +753,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           characterTexture: { value: characterTextureAtlas },
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas],
   );
   const side1 = useMemo(
     () =>
@@ -767,7 +769,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           characterTexture: { value: characterTextureAtlas },
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas],
   );
   const side2 = useMemo(
     () =>
@@ -783,7 +785,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           characterTexture: { value: characterTextureAtlas },
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas],
   );
   const side3 = useMemo(
     () =>
@@ -799,7 +801,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           characterTexture: { value: characterTextureAtlas },
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas],
   );
   const side4 = useMemo(
     () =>
@@ -815,7 +817,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           characterTexture: { value: characterTextureAtlas },
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas],
   );
   const side5 = useMemo(
     () =>
@@ -831,7 +833,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           characterTexture: { value: characterTextureAtlas },
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas]
+    [characterTextureAtlas, numberTextureAtlas],
   );
 
   const onPointerMove = useCallback(
@@ -844,7 +846,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       e.stopPropagation();
       setHovered(e.instanceId);
     },
-    [isVisibleSide]
+    [isVisibleSide],
   );
 
   const onPointerOut = useCallback(() => setHovered(undefined), []);
@@ -870,7 +872,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       isVisibleSide,
       onVerticalOrientationChange,
       selected,
-    ]
+    ],
   );
 
   return (

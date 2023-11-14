@@ -25,6 +25,7 @@ import {
   Box3,
   Vector3,
   Vector2,
+  Object3D,
 } from 'three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
@@ -240,6 +241,7 @@ export default function Puzzle({
   cellNumberTextureAtlasLookup,
   slug,
 }: PuzzleProps) {
+  const [groupRef, setGroup] = useState<Object3D | null>();
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
   const [sideOffset, setSideOffset] = useState(0);
@@ -258,7 +260,6 @@ export default function Puzzle({
   const onInitialize = useCallback(() => {
     setIsInitialized(true);
   }, []);
-  const [scale, setScale] = useState(1);
   const [showHelpModal, setShowHelpModal] = useState(false);
   const toggleModal = useCallback(() => {
     setShowHelpModal(!showHelpModal);
@@ -280,20 +281,34 @@ export default function Puzzle({
   }, [puzzleData]);
 
   useEffect(() => {
-    if (cameraRef == null || instancedRef == null || isInitialized === false) {
+    if (
+      cameraRef == null ||
+      instancedRef == null ||
+      isInitialized === false ||
+      groupRef == null
+    ) {
       return;
     }
 
+    // VERY IMPORTANT TO RESET THE SCALE TO GET THE CORRECT WIDTH!
+    groupRef.scale.set(1, 1, 1);
+
     const containerSize = Math.min(canvasWidth, canvasHeight);
     const size = new Vector3();
-    new Box3().setFromObject(instancedRef).getSize(size);
+    groupRef.updateMatrixWorld();
+    new Box3().setFromObject(groupRef).getSize(size);
+    size.multiply(groupRef.scale);
+    console.log(instancedRef.scale);
     size.project(cameraRef);
+
     const width = Math.abs(size.x - size.z) * canvasWidth;
-    const newScale = containerSize / (width * 0.885);
+    const newScale = (containerSize * 1.125) / width;
 
     cameraRef.lookAt(instancedRef.position);
-    setScale(newScale);
+    groupRef.scale.set(newScale, newScale, newScale);
+    groupRef.position.set(-3.5 * newScale, -3.5 * newScale, 3.5 * newScale);
   }, [
+    groupRef,
     cameraRef,
     canvasHeight,
     canvasWidth,
@@ -469,8 +484,6 @@ export default function Puzzle({
       <Canvas
         gl={{ antialias: false }}
         style={{
-          height: '50vh',
-          aspectRatio: 1,
           touchAction: 'none',
         }}
         ref={containerRef}
@@ -490,10 +503,7 @@ export default function Puzzle({
             onSwipeRight={turnRight}
             rotation={[0, rotation * (Math.PI + Math.PI * (sideOffset / 2)), 0]}
           >
-            <group
-              position={[-3.5 * scale, -3.5 * scale, 3.5 * scale]}
-              scale={[scale, scale, scale]}
-            >
+            <group ref={setGroup}>
               <LetterBoxes
                 id={slug}
                 setInstancedMesh={setInstancedMesh}

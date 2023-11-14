@@ -27,9 +27,10 @@ const Container = styled.div`
 const ChildrenContainer = styled.div`
   position: relative;
   width: 100%;
-  height: 100%;
-  // display: flex;
+  height: 100svh;
+  display: flex;
   flex-direction: column;
+  justify-items: stretch;
   max-width: var(--primary-app-width);
 `;
 
