@@ -298,7 +298,6 @@ export default function Puzzle({
     groupRef.updateMatrixWorld();
     new Box3().setFromObject(groupRef).getSize(size);
     size.multiply(groupRef.scale);
-    console.log(instancedRef.scale);
     size.project(cameraRef);
 
     const width = Math.abs(size.x - size.z) * canvasWidth;
