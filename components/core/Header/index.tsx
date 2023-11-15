@@ -45,6 +45,7 @@ interface HeaderProps {
   centerLabel?: string;
   onMenuPressed: () => void;
   rotatingBoxProps?: RotatingBoxProps;
+  onQuestionPressed?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -52,6 +53,7 @@ const Header: React.FC<HeaderProps> = ({
   centerLabel,
   onMenuPressed,
   rotatingBoxProps,
+  onQuestionPressed,
 }) => {
   const hasCenterLabel = useMemo(
     () => centerLabel != null && centerLabel.length > 0,
@@ -78,7 +80,9 @@ const Header: React.FC<HeaderProps> = ({
             defaultColor={rotatingBoxProps.defaultColor}
           />
         )}
-        <IconQuestion width={25} height={25} />
+        <div onClick={onQuestionPressed}>
+          <IconQuestion width={25} height={25} />
+        </div>
       </RightContentContainer>
     </Container>
   );

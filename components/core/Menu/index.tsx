@@ -12,6 +12,10 @@ import UserInfo from 'components/composed/UserInfo';
 import { Link } from '@nextui-org/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { RotatingBoxProps } from '../3d/Box';
+import TurnArrow from 'components/svg/TurnArrow';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faClose } from '@fortawesome/free-solid-svg-icons';
+import ExampleCube from 'components/svg/ExampleCube';
 
 const Container = styled.div`
   position: relative;
@@ -104,6 +108,73 @@ const MenuItemsContainer = styled.div`
   overflow-x: hidden;
 `;
 
+const ModalContainer = styled.div`
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inset: 0;
+  background: rgb(0, 0, 0, 0.3);
+`;
+
+const Center = styled.div`
+  padding-top: 1rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ModalContent = styled.div`
+  position: relative;
+  display: grid;
+  grid-auto-flow: row;
+  gap: 0.75rem;
+  margin: 1rem;
+  padding: 1rem;
+  padding-top: 3rem;
+  background: var(--secondary-bg);
+  border-radius: 0.5rem;
+  max-width: var(--primary-app-width);
+  width: 100%;
+`;
+
+const CornerLabel = styled.span`
+  color: #7dc69c;
+  font-weight: 500;
+`;
+
+const SwipeLabel = styled.p`
+  font-style: italic;
+`;
+
+const TurnArrowContainer = styled.span`
+  display: inline-block;
+  margin-right: 0.25rem;
+`;
+
+const TurnArrowStyled = styled(TurnArrow)`
+  margin-bottom: -10px;
+`;
+
+const UlStyled = styled.ul`
+  list-style: disc;
+  padding-left: 0.75rem;
+`;
+
+const HRule = styled.div`
+  height: 1px;
+  background: var(--primary-text);
+  opacity: 0.25;
+  width: 100%;
+`;
+
+const CloseModalContainer = styled.div`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+`;
+
 export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
@@ -157,6 +228,11 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
     getGravatar();
   }, [user?.primaryEmailAddress?.emailAddress]);
 
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const toggleModal = useCallback(() => {
+    setShowHelpModal(!showHelpModal);
+  }, [showHelpModal]);
+
   return (
     <Container>
       <ChildrenContainer>
@@ -166,6 +242,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
             showCloseButton={isMenuOpen}
             centerLabel={centerLabel}
             rotatingBoxProps={rotatingBoxProps}
+            onQuestionPressed={toggleModal}
           />
         </HeaderContainer>
         {children}
@@ -232,6 +309,41 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
           )}
         </AnimatePresence>
       </ChildrenContainer>
+      {/** Modal content below */}
+      {showHelpModal && (
+        <ModalContainer onClick={toggleModal}>
+          <ModalContent>
+            <CloseModalContainer>
+              <FontAwesomeIcon icon={faClose} size="xl" />
+            </CloseModalContainer>
+            <h1>How to play Crosscube</h1>
+            <h2>An 8x8 crossword in 3 dimensions</h2>
+            <Center>
+              <ExampleCube height={125} width={225} />
+            </Center>
+            <UlStyled>
+              <li>There are four sides.</li>
+              <li>
+                <CornerLabel>Corners</CornerLabel> share the same letter.
+              </li>
+              <li>
+                Change sides with the{' '}
+                <TurnArrowContainer>
+                  <TurnArrowStyled
+                    color="#999999"
+                    flipped
+                    height={25}
+                    width={25}
+                  />{' '}
+                </TurnArrowContainer>
+                keys.
+                <SwipeLabel>(or swipe)</SwipeLabel>
+              </li>
+              <li>Solve all of the clues to win!</li>
+            </UlStyled>
+          </ModalContent>
+        </ModalContainer>
+      )}
     </Container>
   );
 };
