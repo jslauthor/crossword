@@ -3,9 +3,9 @@ import { SvgProps } from 'types/types';
 import { getColorHex } from 'lib/utils/color';
 
 export enum DifficultyEnum {
-  Easy,
-  Medium,
-  Hard,
+  Easy = 'easy',
+  Medium = 'medium',
+  Hard = 'hard',
 }
 
 const NAME = 'icon-star';

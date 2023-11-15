@@ -1,5 +1,6 @@
 import { PuzzlePreviewProps } from 'components/composed/PuzzlePreview';
 import HomePage from 'components/pages/HomePage';
+import { formatDate } from 'lib/utils/date';
 import { getPuzzles } from 'lib/utils/reader';
 
 export default async function Page() {
@@ -8,10 +9,10 @@ export default async function Page() {
   ).map((puzzle) => ({
     title: puzzle.title,
     author: puzzle.author.fullName,
-    date: puzzle._firstPublishedAt,
+    date: formatDate(puzzle._firstPublishedAt),
     isAiAssisted: puzzle.isAiAssisted,
     difficulty: puzzle.difficulty,
-    previewState: 0,
+    previewState: 1,
     slug: puzzle.slug,
   }));
 

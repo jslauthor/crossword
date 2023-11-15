@@ -180,6 +180,7 @@ export default createGlobalStyle`
     --grey100: #1d1d1d;
     --grey500: #b9b9b9;
     --grey600: #41483E;
+    --grey800: #2C2F2A;
     --grey900: #20231F;
 
     --max-app-width: 500px;
@@ -195,6 +196,7 @@ export default createGlobalStyle`
 
     --ai-bg: var(--grey600);
     --menu-border: var(--grey100);
+    --preview-hover-bg: var(--grey800);
 
     background-color: var(--primary-bg);
     color: var(--primary-text);

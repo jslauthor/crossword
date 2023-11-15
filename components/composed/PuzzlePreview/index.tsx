@@ -10,7 +10,7 @@ import { styled } from 'styled-components';
 import { getColorHex } from 'lib/utils/color';
 
 const Container = styled.div`
-  min-width: 8.125rem;
+  min-width: 11rem;
   display: flex;
   justify-content: space-between;
   flex-direction: column;
@@ -19,9 +19,18 @@ const Container = styled.div`
   background-color: var(--terciary-bg);
   border-radius: 0.25rem;
   aspect-ratio: 1 / 1;
+  user-select: none;
+
+  &:hover {
+    transition: background-color 0.15s ease-in-out;
+    background-color: var(--preview-hover-bg);
+  }
 
   @media (max-width: 400px) {
-    min-width: 9.8rem;
+    span,
+    p {
+      font-size: 0.85rem;
+    }
   }
 `;
 
@@ -36,10 +45,6 @@ const TitleContainer = styled.header`
   width: 100%;
   text-align: right;
   font-style: italic;
-
-  @media (max-width: 400px) {
-    font-size: 0.75rem;
-  }
 `;
 
 const InfoContainer = styled.footer`
@@ -48,10 +53,6 @@ const InfoContainer = styled.footer`
   justify-content: center;
   align-items: center;
   width: 100%;
-
-  @media (max-width: 400px) {
-    font-size: 0.75rem;
-  }
 `;
 
 const AiContainer = styled.div`
@@ -108,7 +109,8 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
         <span className="capital">{author}</span>
         {isAiAssisted === true ? (
           <AiContainer className="dim text-sm italic">
-            <span className="semi text-sm italic">ai</span>&nbsp;assisted
+            <span className="semi text-sm italic">ai</span>&nbsp;
+            <span className="text-sm">assisted</span>
           </AiContainer>
         ) : null}
       </InfoContainer>

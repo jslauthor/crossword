@@ -36,15 +36,16 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
             previewState,
             slug,
           }) => (
-            <PuzzlePreview
-              key={slug}
-              title={title}
-              author={author}
-              date={date}
-              isAiAssisted={isAiAssisted}
-              difficulty={difficulty}
-              previewState={previewState}
-            />
+            <a key={slug} href={`/puzzle/${slug}`}>
+              <PuzzlePreview
+                title={title}
+                author={author}
+                date={date}
+                isAiAssisted={isAiAssisted}
+                difficulty={difficulty}
+                previewState={previewState}
+              />
+            </a>
           ),
         )}
       </PreviewContainer>

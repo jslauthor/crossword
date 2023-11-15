@@ -1,3 +1,4 @@
+import { DifficultyEnum } from 'components/svg/IconStar';
 import { queryDato } from 'lib/dato';
 
 export const getPuzzles = async (
@@ -6,7 +7,7 @@ export const getPuzzles = async (
 ): Promise<
   {
     id: string;
-    difficulty: number;
+    difficulty: DifficultyEnum;
     puzzleType: string;
     data: string;
     author: { fullName: string };
@@ -22,6 +23,7 @@ export const getPuzzles = async (
         allPuzzles(
           first: ${first},
           skip: ${skip},
+          orderBy: _firstPublishedAt_ASC
         ) {
           id
           difficulty
