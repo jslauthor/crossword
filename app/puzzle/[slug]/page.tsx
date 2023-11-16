@@ -56,3 +56,4 @@ export default async function Page({
 }
 
 export const dynamic = 'force-static';
+export const dynamicParams = false; // force 404
