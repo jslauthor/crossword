@@ -24,9 +24,6 @@ export interface HomePageProps {
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles }) => {
-  console.log(puzzles);
-  // TODO: Write a hook to look up the puzzle storage and return the progress
-
   return (
     <Menu>
       <PreviewContainer>
