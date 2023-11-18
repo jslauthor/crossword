@@ -1,3 +1,4 @@
+import { ProgressEnum } from 'components/svg/PreviewCube';
 import {
   Clue,
   PuzzleData,
@@ -9,7 +10,23 @@ function isSolutionCellValue(cell: SolutionCell): cell is SolutionCellValue {
   return (cell as SolutionCellValue).value !== undefined;
 }
 
-export const getCharacterRecord = (puzzleData: PuzzleData[]) => {
+export interface CharacterRecord {
+  solution: SolutionCell[];
+  clues: {
+    across: Clue[];
+    down: Clue[];
+  };
+}
+
+/**
+ * This takes an array of puzzle data and returns a single puzzle
+ * data object with the solution and clues merged together.
+ *
+ * @param puzzleData
+ */
+export const getCharacterRecord = (
+  puzzleData: PuzzleData[],
+): CharacterRecord => {
   let runningTotal = 0;
   // We need to store the columns we hide so we can grab
   // their cell numbers and add them back in
@@ -33,14 +50,14 @@ export const getCharacterRecord = (puzzleData: PuzzleData[]) => {
         clues.Across.map((clue) => ({
           ...clue,
           number: clue.number + runningTotal,
-        }))
+        })),
       );
 
       value.clues.down = value.clues.down.concat(
         clues.Down.map((clue) => ({
           ...clue,
           number: clue.number + runningTotal,
-        }))
+        })),
       );
 
       for (let x = 0; x < flattened.length; x++) {
@@ -60,7 +77,7 @@ export const getCharacterRecord = (puzzleData: PuzzleData[]) => {
                   cell: currentCell.cell + runningTotal,
                   value: currentCell.value,
                 }
-              : '#'
+              : '#',
           );
           continue;
         }
@@ -85,7 +102,7 @@ export const getCharacterRecord = (puzzleData: PuzzleData[]) => {
         across: [],
         down: [],
       },
-    }
+    },
   );
 
   let index = 0;
@@ -105,4 +122,29 @@ export const getCharacterRecord = (puzzleData: PuzzleData[]) => {
   }
 
   return data;
+};
+
+/**
+ * This looks at how much the user has filled in and returns a ProgressEnum.
+ * This will NEVER return solved, which is a separate flag on the progress model.
+ *
+ * @param puzzleData
+ * @param characterPositions
+ */
+export const getProgressFromSolution = (
+  characterRecord: CharacterRecord,
+  characterPositions: Record<string, number>,
+): ProgressEnum => {
+  const puzzleSize = characterRecord.solution.filter((v) => v !== '#').length;
+  const completedSize =
+    Object.values(characterPositions.state).filter((v) => v > -1).length / 2;
+  const percentage = completedSize / puzzleSize;
+
+  if (percentage <= 0.33) {
+    return 0;
+  } else if (percentage <= 0.66) {
+    return 1;
+  }
+
+  return 2;
 };

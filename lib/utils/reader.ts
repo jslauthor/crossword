@@ -1,5 +1,6 @@
 import { DifficultyEnum } from 'components/svg/IconStar';
 import { queryDato } from 'lib/dato';
+import { PuzzleData } from 'types/types';
 
 export const getPuzzles = async (
   first: number = 100,
@@ -9,7 +10,7 @@ export const getPuzzles = async (
     id: string;
     difficulty: DifficultyEnum;
     puzzleType: string;
-    data: string;
+    data: PuzzleData[];
     author: { fullName: string };
     isAiAssisted: boolean;
     title: string;
