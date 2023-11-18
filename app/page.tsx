@@ -37,13 +37,11 @@ export default async function Page() {
       for (const progress of progresses) {
         const puzzle = puzzles.find((p) => p.id === progress.puzzleId);
         if (puzzle != null) {
-          puzzle.previewState =
-            progress.solved === true
-              ? 3 // Solved
-              : getProgressFromSolution(
-                  getCharacterRecord(puzzle.data),
-                  progress.data as Record<string, number>,
-                );
+          puzzle.previewState = getProgressFromSolution(
+            getCharacterRecord(puzzle.data),
+            progress.data.state,
+            progress.data.index,
+          );
         }
       }
     }

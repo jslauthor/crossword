@@ -125,19 +125,39 @@ export const getCharacterRecord = (
 };
 
 /**
+ *
+ * So, this only works for 8x8 puzzles since you can divice 256 by 32 and
+ * get a whole number. This is a bit of a hack, but it works for now.
+ *
+ * TODO: For puzzles with different sizes, you'll need to consider the last float
+ * in the array and what number would represent "complete."
+ *
+ * @param answerIndex
+ * @returns boolean
+ */
+export const isPuzzleSolved = (answerIndex: number[] = []): boolean =>
+  answerIndex.every((i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0);
+
+/**
  * This looks at how much the user has filled in and returns a ProgressEnum.
  * This will NEVER return solved, which is a separate flag on the progress model.
  *
  * @param puzzleData
  * @param characterPositions
+ * @returns ProgressEnum
  */
 export const getProgressFromSolution = (
   characterRecord: CharacterRecord,
-  characterPositions: Record<string, number>,
+  characterPositions: PrismaJson.ProgressType['state'],
+  answerIndex: PrismaJson.ProgressType['index'],
 ): ProgressEnum => {
+  if (isPuzzleSolved(answerIndex)) {
+    return 3; // Solved
+  }
+
   const puzzleSize = characterRecord.solution.filter((v) => v !== '#').length;
   const completedSize =
-    Object.values(characterPositions.state).filter((v) => v > -1).length / 2;
+    Object.values(characterPositions).filter((v) => v > -1).length / 2;
   const percentage = completedSize / puzzleSize;
 
   if (percentage <= 0.33) {

@@ -4,6 +4,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
 datasource db {
   provider  = "postgresql"
   url       = env("PRISMA_ACCELERATE_URL") // uses connection pooling
@@ -14,8 +18,8 @@ model Progress {
   id        String   @id @default(cuid())
   puzzleId  String
   type      String // enum. Will start with CROSSCUBE
+  /// [ProgressType]
   data      Json
-  solved    Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now()) @map(name: "created_at")

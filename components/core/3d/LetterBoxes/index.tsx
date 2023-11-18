@@ -14,7 +14,10 @@ import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { getCharacterRecord } from '../../../../lib/utils/puzzle';
+import {
+  getCharacterRecord,
+  isPuzzleSolved,
+} from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
 import useAsyncQueue from '../../../../lib/utils/hooks/useAsyncQueue';
@@ -220,9 +223,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     useState<Float32Array>(Float32Array.from(new Array(size * 2).fill(-1)));
 
   useEffect(() => {
-    const allAreCorrect = answerIndex.every(
-      (i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0,
-    );
+    const allAreCorrect = isPuzzleSolved(answerIndex);
     if (allAreCorrect === true && onSolved != null) {
       onSolved();
     }
