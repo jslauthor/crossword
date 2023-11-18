@@ -5,6 +5,7 @@ import Menu from 'components/containers/Menu';
 import PuzzlePreview, {
   PuzzlePreviewProps,
 } from 'components/composed/PuzzlePreview';
+import { PuzzleType } from 'app/page';
 
 const PreviewContainer = styled.div`
   position: relative;
@@ -19,10 +20,13 @@ const PreviewContainer = styled.div`
 `;
 
 export interface HomePageProps {
-  puzzles: (PuzzlePreviewProps & { slug: string })[];
+  puzzles: PuzzleType[];
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles }) => {
+  console.log(puzzles);
+  // TODO: Write a hook to look up the puzzle storage and return the progress
+
   return (
     <Menu>
       <PreviewContainer>

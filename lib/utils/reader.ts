@@ -50,7 +50,7 @@ export const getPuzzles = async (
   return result?.allPuzzles;
 };
 
-export const getPuzzleDataBySlug = async (slug: string) => {
+export const getPuzzleBySlug = async (slug: string) => {
   const result = await queryDato({
     query: `
       {
@@ -59,11 +59,22 @@ export const getPuzzleDataBySlug = async (slug: string) => {
             slug: { eq: "${slug}" }
           }
         ) {
+          id
+          difficulty
+          puzzleType
           data
+          author {
+            fullName
+          }
+          isAiAssisted
+          slug
+          title
+          _status
+          _firstPublishedAt
         }
       }
     `,
   });
 
-  return result?.allPuzzles[0]?.data;
+  return result?.allPuzzles[0];
 };

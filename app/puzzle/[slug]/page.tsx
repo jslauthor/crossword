@@ -1,15 +1,15 @@
+import { PuzzleType } from 'app/page';
 import PuzzlePage from 'components/pages/PuzzlePage';
 import { queryDato } from 'lib/dato';
-import { getPuzzleDataBySlug } from 'lib/utils/reader';
+import { getPuzzleBySlug } from 'lib/utils/reader';
 import {
   NUMBER_RECORD,
   TEXTURE_RECORD,
   generateTextures,
 } from 'lib/utils/textures';
-import { PuzzleData } from 'types/types';
 
 type PuzzleProps = {
-  puzzleData: PuzzleData[];
+  puzzle: PuzzleType;
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
   slug: string;
@@ -35,12 +35,12 @@ async function getProps(slug: string): Promise<PuzzleProps> {
     await generateTextures();
   }
 
-  const puzzleData = await getPuzzleDataBySlug(slug);
+  const puzzle = await getPuzzleBySlug(slug);
   const characterTextureAtlasLookup = TEXTURE_RECORD;
   const cellNumberTextureAtlasLookup = NUMBER_RECORD;
   return {
-    slug: slug,
-    puzzleData,
+    slug,
+    puzzle,
     characterTextureAtlasLookup,
     cellNumberTextureAtlasLookup,
   };

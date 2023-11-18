@@ -127,15 +127,15 @@ export const getCharacterRecord = (
 /**
  *
  * So, this only works for 8x8 puzzles since you can divice 256 by 32 and
- * get a whole number. This is a bit of a hack, but it works for now.
+ * get a whole number.
  *
- * TODO: For puzzles with different sizes, you'll need to consider the last float
- * in the array and what number would represent "complete."
+ * Just be sure you set blank cells to MAX_SAFE_INTEGER
  *
  * @param answerIndex
  * @returns boolean
  */
 export const isPuzzleSolved = (answerIndex: number[] = []): boolean =>
+  answerIndex.length > 0 &&
   answerIndex.every((i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0);
 
 /**

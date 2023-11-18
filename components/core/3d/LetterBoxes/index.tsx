@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import localForage from 'localforage';
 import { ThreeEvent, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
@@ -12,7 +11,6 @@ import {
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
-import { PuzzleData } from '../../../../types/types';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import {
   getCharacterRecord,
@@ -20,7 +18,8 @@ import {
 } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
-import useAsyncQueue from '../../../../lib/utils/hooks/useAsyncQueue';
+import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
+import { PuzzleType } from 'app/page';
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -114,8 +113,7 @@ const fragmentShader = `
 `;
 
 type LetterBoxesProps = {
-  id: string;
-  puzzleData: PuzzleData[];
+  puzzle: PuzzleType;
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
   currentKey?: string | undefined;
@@ -136,8 +134,7 @@ const tempObject = new Object3D();
 const tempColor = new Color();
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
-  id,
-  puzzleData,
+  puzzle,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
   isVerticalOrientation = false,
@@ -170,18 +167,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [prevSelectedSide, setPrevSelectedSide] =
     useState<LetterBoxesProps['selectedSide']>();
   const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
-  const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   // const [initialRotations, setInitialRotations] = useState<Euler[]>([]);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
-  const [hasRetrievedGameState, setHasRetrievedGameState] =
-    useState<boolean>(false);
-  const characterPositionStorageKey = useMemo(() => `puzzle-${id}`, [id]);
-  const answerIndexStorageKey = useMemo(
-    () => `puzzle-${id}-answer-index`,
-    [id],
-  );
-
-  const { add } = useAsyncQueue({ concurrency: 1 });
 
   useEffect(() => {
     if (setInstancedMesh) {
@@ -190,41 +177,26 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   }, [ref, setInstancedMesh]);
 
   const [width, height, totalPerSide] = useMemo(() => {
-    let { width, height } = puzzleData[0].dimensions;
+    let { width, height } = puzzle.data[0].dimensions;
     const totalPerSide = width * height;
     return [width, height, totalPerSide];
-  }, [puzzleData]);
+  }, [puzzle.data]);
 
   const [record, size] = useMemo(() => {
-    const record = getCharacterRecord(puzzleData);
-
-    // We initialize the array with the max safe integer
-    // Each integer will map to the index of the character in the record solution
-    // Since bitwise operations only work on 32 bit integers, we need to split the array into chunks of 32
-    const indices = Array.from(
-      { length: Math.ceil(record.solution.length / 32) },
-      () => Number.MAX_SAFE_INTEGER >>> 0,
-    );
-
-    for (const [index, cell] of record.solution.entries()) {
-      if (cell !== '#') {
-        const chunk = Math.floor(index / 32);
-        const bit = index % 32;
-        indices[chunk] &= ~(1 << bit);
-      }
-    }
-
-    setAnswerIndex(indices);
-
+    const record = getCharacterRecord(puzzle.data);
     return [record, record.solution.length];
-  }, [puzzleData]);
+  }, [puzzle.data]);
 
-  const [characterPositionArray, setCharacterPositionArray] =
-    useState<Float32Array>(Float32Array.from(new Array(size * 2).fill(-1)));
+  const {
+    addAnswerIndex,
+    addCharacterPosition,
+    answerIndex,
+    characterPositionArray,
+    hasRetrievedGameState,
+  } = usePuzzleProgress(puzzle, record, isInitialized === true && ref != null);
 
   useEffect(() => {
-    const allAreCorrect = isPuzzleSolved(answerIndex);
-    if (allAreCorrect === true && onSolved != null) {
+    if (isPuzzleSolved(answerIndex) && onSolved != null) {
       onSolved();
     }
   }, [answerIndex, onSolved]);
@@ -400,37 +372,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [ref],
   );
 
-  // LOAD PREVIOUS GAME DATA FROM LOCAL STORAGE
-  useEffect(() => {
-    if (
-      ref == null ||
-      isInitialized === false ||
-      hasRetrievedGameState === true
-    )
-      return;
-
-    const retrieveGameState = async () => {
-      const state = (await localForage.getItem(
-        characterPositionStorageKey,
-      )) as Float32Array;
-      const index = (await localForage.getItem(
-        answerIndexStorageKey,
-      )) as number[];
-      if (state != null && index != null) {
-        setCharacterPositionArray(state);
-        setAnswerIndex(index);
-      }
-      setHasRetrievedGameState(true);
-    };
-    retrieveGameState();
-  }, [
-    ref,
-    isInitialized,
-    characterPositionStorageKey,
-    answerIndexStorageKey,
-    hasRetrievedGameState,
-  ]);
-
   // Need to rerender the letters if the character position changes 👆🏻
   useEffect(() => {
     if (ref == null || hasRetrievedGameState == false) return;
@@ -519,7 +460,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               const int =
                 selectedSide !== 0
                   ? adjacentId - (width * width - (width - 1))
-                  : totalPerSide * puzzleData.length -
+                  : totalPerSide * puzzle.data.length -
                     1 -
                     (width * width - width - 1) +
                     adjacentId -
@@ -612,7 +553,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             const int =
               selectedSide !== 0
                 ? nextCell - (width * width - (width - 1))
-                : totalPerSide * puzzleData.length -
+                : totalPerSide * puzzle.data.length -
                   1 -
                   (width * width - width - 1) +
                   nextCell -
@@ -654,26 +595,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             // This flips the index bit to 0 (false)
             newAnswerIndex[chunk] &= ~(1 << bit);
           }
-          setAnswerIndex(newAnswerIndex);
-
-          add({
-            id: answerIndexStorageKey,
-            task: () =>
-              localForage.setItem(answerIndexStorageKey, newAnswerIndex),
-          });
+          addAnswerIndex(newAnswerIndex);
         }
 
         characterPositionArray[selectedIndex * 2] = x;
         characterPositionArray[selectedIndex * 2 + 1] = y;
 
-        add({
-          id: characterPositionStorageKey,
-          task: () =>
-            localForage.setItem(
-              characterPositionStorageKey,
-              characterPositionArray,
-            ),
-        });
+        addCharacterPosition(characterPositionArray);
 
         ref.geometry.attributes.characterPosition.needsUpdate = true;
 
@@ -690,6 +618,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       characterPositionArray,
       lastCurrentKey,
       record.solution,
+      addCharacterPosition,
       onLetterInput,
       getInterval,
       totalPerSide,
@@ -697,11 +626,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       selectedSide,
       height,
       isVerticalOrientation,
-      puzzleData.length,
+      puzzle.data.length,
       answerIndex,
-      add,
-      answerIndexStorageKey,
-      characterPositionStorageKey,
+      addAnswerIndex,
     ],
   );
 

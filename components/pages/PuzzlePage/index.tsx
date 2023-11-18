@@ -10,7 +10,6 @@ import {
 import { BlendFunction } from 'postprocessing';
 import { Stats, PerspectiveCamera, Html } from '@react-three/drei';
 import LetterBoxes from 'components/core/3d/LetterBoxes';
-import { PuzzleData } from 'types/types';
 import {
   Suspense,
   useCallback,
@@ -29,7 +28,6 @@ import {
 } from 'three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
-
 import useDimensions from 'react-cool-dimensions';
 import { useKeyDown } from 'lib/utils/hooks/useKeyDown';
 import { getCharacterRecord } from 'lib/utils/puzzle';
@@ -48,6 +46,7 @@ import useAsyncQueue from 'lib/utils/hooks/useAsyncQueue';
 import Menu from 'components/containers/Menu';
 import { Spinner } from '@nextui-org/react';
 import { RotatingBoxProps } from 'components/core/3d/Box';
+import { PuzzleType } from 'app/page';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -160,14 +159,14 @@ function Loader() {
 }
 
 type PuzzleProps = {
-  puzzleData: PuzzleData[];
+  puzzle: PuzzleType;
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
   slug: string;
 };
 
 export default function Puzzle({
-  puzzleData,
+  puzzle,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
   slug,
@@ -199,13 +198,13 @@ export default function Puzzle({
   const animatedClueText = useAnimatedText(clue, 120);
 
   const [puzzleWidth] = useMemo(() => {
-    if (puzzleData == null || puzzleData.length < 1) {
+    if (puzzle == null || puzzle.data.length < 1) {
       return [8]; // default to 8
     }
-    let { width, height } = puzzleData[0].dimensions;
+    let { width, height } = puzzle.data[0].dimensions;
     const totalPerSide = width * height;
     return [width, height, totalPerSide];
-  }, [puzzleData]);
+  }, [puzzle]);
 
   useEffect(() => {
     if (
@@ -263,7 +262,7 @@ export default function Puzzle({
       location.hostname === 'localhost' ||
       location.hostname === '127.0.0.1'
     ) {
-      const { solution } = getCharacterRecord(puzzleData);
+      const { solution } = getCharacterRecord(puzzle.data);
       for (let x = 0; x < solution.length; x++) {
         const cell = solution[x];
         if (cell !== '#') {
@@ -273,7 +272,7 @@ export default function Puzzle({
         }
       }
     }
-  }, [puzzleData]);
+  }, [puzzle]);
 
   const onKeyPress = useCallback(
     (button: string) => {
@@ -362,7 +361,10 @@ export default function Puzzle({
   const { add } = useAsyncQueue({ concurrency: 1 });
 
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
-  const elapsedTimeStorageKey = useMemo(() => `puzzle-${slug}-time`, [slug]);
+  const elapsedTimeStorageKey = useMemo(
+    () => `puzzle-${puzzle.id}-time`,
+    [puzzle],
+  );
 
   const { elapsedTime, reset } = useElapsedTime({
     isPlaying:
@@ -431,9 +433,8 @@ export default function Puzzle({
           >
             <group ref={setGroup}>
               <LetterBoxes
-                id={slug}
                 setInstancedMesh={setInstancedMesh}
-                puzzleData={puzzleData}
+                puzzle={puzzle}
                 characterTextureAtlasLookup={characterTextureAtlasLookup}
                 cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
                 selectedSide={selectedSide}
