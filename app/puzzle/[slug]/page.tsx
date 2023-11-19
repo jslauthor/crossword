@@ -1,7 +1,7 @@
 import { PuzzleType } from 'app/page';
 import PuzzlePage from 'components/pages/PuzzlePage';
 import { queryDato } from 'lib/dato';
-import { getPuzzleBySlug } from 'lib/utils/reader';
+import { enrichPuzzlesWithProgress, getPuzzleBySlug } from 'lib/utils/reader';
 import {
   NUMBER_RECORD,
   TEXTURE_RECORD,
@@ -36,6 +36,7 @@ async function getProps(slug: string): Promise<PuzzleProps> {
   }
 
   const puzzle = await getPuzzleBySlug(slug);
+  await enrichPuzzlesWithProgress([puzzle]);
   const characterTextureAtlasLookup = TEXTURE_RECORD;
   const cellNumberTextureAtlasLookup = NUMBER_RECORD;
   return {
@@ -55,5 +56,5 @@ export default async function Page({
   return <PuzzlePage {...props} />;
 }
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 export const dynamicParams = false; // force 404

@@ -1,6 +1,10 @@
+import { currentUser } from '@clerk/nextjs';
+import { PuzzleType } from 'app/page';
 import { DifficultyEnum } from 'components/svg/IconStar';
 import { queryDato } from 'lib/dato';
+import { getPuzzlesProgressForUser, getUserForClerkId } from 'lib/db';
 import { PuzzleData } from 'types/types';
+import { getCharacterRecord, getProgressFromSolution } from './puzzle';
 
 export const getPuzzles = async (
   first: number = 100,
@@ -77,4 +81,33 @@ export const getPuzzleBySlug = async (slug: string) => {
   });
 
   return result?.allPuzzles[0];
+};
+
+// WARNING: This mutates the puzzles that are passed in
+export const enrichPuzzlesWithProgress = async (puzzles: PuzzleType[]) => {
+  const clerkUser = await currentUser();
+  if (clerkUser != null) {
+    const user = await getUserForClerkId(clerkUser.id);
+    if (user != null) {
+      // Grab all of the progresses for each of the puzzles for the user
+      const progresses = await getPuzzlesProgressForUser(
+        user.id,
+        puzzles.map((p) => p.id),
+      );
+      // Update the previewState for each puzzle
+      for (const progress of progresses) {
+        const puzzle = puzzles.find((p) => p.id === progress.puzzleId);
+        if (puzzle != null) {
+          puzzle.previewState = getProgressFromSolution(
+            getCharacterRecord(puzzle.data),
+            progress.data.state,
+            progress.data.index,
+          );
+          puzzle.progress = progress;
+        }
+      }
+    }
+  }
+
+  return puzzles;
 };
