@@ -30,7 +30,6 @@ import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
 import useDimensions from 'react-cool-dimensions';
 import { useKeyDown } from 'lib/utils/hooks/useKeyDown';
-import { getCharacterRecord } from 'lib/utils/puzzle';
 import { useSpring } from '@react-spring/core';
 import { easings } from '@react-spring/web';
 import tinycolor from 'tinycolor2';
@@ -47,6 +46,7 @@ import Menu from 'components/containers/Menu';
 import { Spinner } from '@nextui-org/react';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { PuzzleType } from 'app/page';
+import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -162,14 +162,12 @@ type PuzzleProps = {
   puzzle: PuzzleType;
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
-  slug: string;
 };
 
 export default function Puzzle({
   puzzle,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
-  slug,
 }: PuzzleProps) {
   const [groupRef, setGroup] = useState<Object3D | null>();
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
@@ -262,7 +260,7 @@ export default function Puzzle({
       location.hostname === 'localhost' ||
       location.hostname === '127.0.0.1'
     ) {
-      const { solution } = getCharacterRecord(puzzle.data);
+      const { solution } = puzzle.record;
       for (let x = 0; x < solution.length; x++) {
         const cell = solution[x];
         if (cell !== '#') {
@@ -358,37 +356,31 @@ export default function Puzzle({
     setVerticalOrientation(!isVerticalOrientation);
   }, [isVerticalOrientation]);
 
-  const { add } = useAsyncQueue({ concurrency: 1 });
-
+  const { addTime, elapsedTime, hasRetrievedGameState } =
+    usePuzzleProgress(puzzle);
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
-  const elapsedTimeStorageKey = useMemo(
-    () => `puzzle-${puzzle.id}-time`,
-    [puzzle],
-  );
 
-  const { elapsedTime, reset } = useElapsedTime({
+  const { reset } = useElapsedTime({
     isPlaying:
       shouldStartTimer === true &&
       (typeof window === 'undefined' ? false : !document.hidden) &&
       (isPuzzleSolved || !isInitialized) === false,
     updateInterval: 1,
     onUpdate: (elapsedTime) => {
-      add({
-        id: elapsedTimeStorageKey,
-        task: () => localforage.setItem(elapsedTimeStorageKey, elapsedTime),
-      });
+      if (hasRetrievedGameState === true) {
+        addTime(elapsedTime);
+      }
     },
   });
 
   useEffect(() => {
-    const getTime = async () => {
-      const storedTime = await localforage.getItem(elapsedTimeStorageKey);
+    if (hasRetrievedGameState === true && shouldStartTimer === false) {
+      reset(Number(elapsedTime ?? 0));
       setShouldStartTimer(true);
-      reset(Number(storedTime ?? 0));
-    };
-    getTime();
-  }, [elapsedTimeStorageKey, reset]);
+    }
+  }, [elapsedTime, hasRetrievedGameState, reset, shouldStartTimer]);
 
+  // TODO: Convert into separate component
   const formattedElapsedTime = useMemo(
     () =>
       elapsedTime < 3600

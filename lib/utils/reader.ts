@@ -1,27 +1,14 @@
 import { currentUser } from '@clerk/nextjs';
 import { PuzzleType } from 'app/page';
-import { DifficultyEnum } from 'components/svg/IconStar';
 import { queryDato } from 'lib/dato';
 import { getPuzzlesProgressForUser, getUserForClerkId } from 'lib/db';
-import { PuzzleData } from 'types/types';
 import { getCharacterRecord, getProgressFromSolution } from './puzzle';
+import { formatDate } from 'lib/utils/date';
 
 export const getPuzzles = async (
   first: number = 100,
   skip: number = 0,
-): Promise<
-  {
-    id: string;
-    difficulty: DifficultyEnum;
-    puzzleType: string;
-    data: PuzzleData[];
-    author: { fullName: string };
-    isAiAssisted: boolean;
-    title: string;
-    slug: string;
-    _firstPublishedAt: string;
-  }[]
-> => {
+): Promise<PuzzleType[]> => {
   const result = await queryDato({
     query: `
       {
@@ -51,10 +38,25 @@ export const getPuzzles = async (
     `,
   });
 
-  return result?.allPuzzles;
+  const puzzles: PuzzleType[] = result?.allPuzzles.map((puzzle: any) => ({
+    id: puzzle.id,
+    title: puzzle.title,
+    author: puzzle.author.fullName,
+    date: formatDate(puzzle._firstPublishedAt),
+    isAiAssisted: puzzle.isAiAssisted,
+    difficulty: puzzle.difficulty,
+    previewState: 0,
+    slug: puzzle.slug,
+    data: puzzle.data,
+    record: getCharacterRecord(puzzle.data),
+  }));
+
+  return await enrichPuzzlesWithProgress(puzzles);
 };
 
-export const getPuzzleBySlug = async (slug: string) => {
+export const getPuzzleBySlug = async (
+  slug: string,
+): Promise<PuzzleType | null> => {
   const result = await queryDato({
     query: `
       {
@@ -80,7 +82,16 @@ export const getPuzzleBySlug = async (slug: string) => {
     `,
   });
 
-  return result?.allPuzzles[0];
+  const puzzle = result?.allPuzzles[0];
+
+  if (puzzle == null) {
+    return puzzle;
+  }
+
+  puzzle.record = getCharacterRecord(puzzle.data);
+  await enrichPuzzlesWithProgress([puzzle]);
+
+  return puzzle;
 };
 
 // WARNING: This mutates the puzzles that are passed in

@@ -12,10 +12,7 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import {
-  getCharacterRecord,
-  isPuzzleSolved,
-} from '../../../../lib/utils/puzzle';
+import { isPuzzleSolved } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
@@ -183,9 +180,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   }, [puzzle.data]);
 
   const [record, size] = useMemo(() => {
-    const record = getCharacterRecord(puzzle.data);
-    return [record, record.solution.length];
-  }, [puzzle.data]);
+    return [puzzle.record, puzzle.record.solution.length];
+  }, [puzzle.record]);
 
   const {
     addAnswerIndex,
@@ -193,7 +189,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     answerIndex,
     characterPositionArray,
     hasRetrievedGameState,
-  } = usePuzzleProgress(puzzle, record, isInitialized === true && ref != null);
+  } = usePuzzleProgress(puzzle, isInitialized === true && ref != null);
 
   useEffect(() => {
     if (isPuzzleSolved(answerIndex) && onSolved != null) {

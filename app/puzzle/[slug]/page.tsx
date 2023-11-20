@@ -1,7 +1,7 @@
 import { PuzzleType } from 'app/page';
 import PuzzlePage from 'components/pages/PuzzlePage';
 import { queryDato } from 'lib/dato';
-import { enrichPuzzlesWithProgress, getPuzzleBySlug } from 'lib/utils/reader';
+import { getPuzzleBySlug } from 'lib/utils/reader';
 import {
   NUMBER_RECORD,
   TEXTURE_RECORD,
@@ -36,7 +36,7 @@ async function getProps(slug: string): Promise<PuzzleProps> {
   }
 
   const puzzle = await getPuzzleBySlug(slug);
-  await enrichPuzzlesWithProgress([puzzle]);
+  if (puzzle == null) throw new Error('Puzzle not found');
   const characterTextureAtlasLookup = TEXTURE_RECORD;
   const cellNumberTextureAtlasLookup = NUMBER_RECORD;
   return {
