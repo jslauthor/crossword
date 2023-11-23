@@ -15,7 +15,6 @@ import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { isPuzzleSolved } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
-import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { PuzzleType } from 'app/page';
 
 export enum CubeSidesEnum {
@@ -120,6 +119,11 @@ type LetterBoxesProps = {
   adjacentColor: number;
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
+  answerIndex: number[];
+  characterPositionArray: Float32Array;
+  hasRetrievedGameState: boolean;
+  addAnswerIndex: (answerIndex: number[]) => void;
+  addCharacterPosition: (characterPositionArray: Float32Array) => void;
   onVerticalOrientationChange: (isVerticalOrientation: boolean) => void;
   setInstancedMesh?: (instancedMesh: InstancedMesh | null) => void;
   onLetterInput?: () => void;
@@ -140,6 +144,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   selectedSide,
   keyAndIndexOverride,
   currentKey,
+  addAnswerIndex,
+  addCharacterPosition,
+  answerIndex,
+  characterPositionArray,
+  hasRetrievedGameState,
   onLetterInput,
   onSelectClue,
   defaultColor,
@@ -165,7 +174,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     useState<LetterBoxesProps['selectedSide']>();
   const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
   // const [initialRotations, setInitialRotations] = useState<Euler[]>([]);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  // const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   useEffect(() => {
     if (setInstancedMesh) {
@@ -182,14 +191,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [record, size] = useMemo(() => {
     return [puzzle.record, puzzle.record.solution.length];
   }, [puzzle.record]);
-
-  const {
-    addAnswerIndex,
-    addCharacterPosition,
-    answerIndex,
-    characterPositionArray,
-    hasRetrievedGameState,
-  } = usePuzzleProgress(puzzle, isInitialized === true && ref != null);
 
   useEffect(() => {
     if (isPuzzleSolved(answerIndex) && onSolved != null) {
@@ -358,7 +359,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       // setInitialRotations(rotations);
       // showIntroAnimation(true);
       showRippleAnimation();
-      setIsInitialized(true);
       if (onInitialize) {
         onInitialize();
       }

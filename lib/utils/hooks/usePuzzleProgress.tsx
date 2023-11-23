@@ -51,12 +51,8 @@ export const usePuzzleProgress = (puzzle: PuzzleType, isInitialized = true) => {
     [puzzle],
   );
 
-  // TODO: Use singleton for throttled hook
-  // TODO: Use the right throttled
-
   const saveToServer = useCallback(() => {
     const save = async () => {
-      console.log('saving!');
       const state = await localForage.getItem(characterPositionStorageKey);
       const time = await localForage.getItem(elapsedTimeStorageKey);
       const index = await localForage.getItem(answerIndexStorageKey);
@@ -121,7 +117,6 @@ export const usePuzzleProgress = (puzzle: PuzzleType, isInitialized = true) => {
 
   const addTime = useCallback(
     (elapsedTime: number) => {
-      console.log(elapsedTime);
       add({
         id: elapsedTimeStorageKey,
         task: () =>

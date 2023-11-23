@@ -240,8 +240,15 @@ export default function Puzzle({
     puzzleWidth,
   ]);
 
-  const { addTime, elapsedTime, hasRetrievedGameState } =
-    usePuzzleProgress(puzzle);
+  const {
+    addTime,
+    elapsedTime,
+    hasRetrievedGameState,
+    addAnswerIndex,
+    addCharacterPosition,
+    answerIndex,
+    characterPositionArray,
+  } = usePuzzleProgress(puzzle, isInitialized === true);
   const turnLeft = useCallback(
     () => setSideOffset(sideOffset + 1),
     [sideOffset],
@@ -432,6 +439,11 @@ export default function Puzzle({
                 selectedSide={selectedSide}
                 keyAndIndexOverride={keyAndIndexOverride}
                 currentKey={selectedCharacter}
+                addAnswerIndex={addAnswerIndex}
+                addCharacterPosition={addCharacterPosition}
+                answerIndex={answerIndex}
+                characterPositionArray={characterPositionArray}
+                hasRetrievedGameState={hasRetrievedGameState}
                 onLetterInput={onLetterInput}
                 onSelectClue={setClue}
                 defaultColor={defaultColor}
