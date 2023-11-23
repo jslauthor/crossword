@@ -111,8 +111,8 @@ export const enrichPuzzlesWithProgress = async (puzzles: PuzzleType[]) => {
         if (puzzle != null) {
           puzzle.previewState = getProgressFromSolution(
             getCharacterRecord(puzzle.data),
-            progress.data.state,
-            progress.data.index,
+            progress.data.state.value,
+            progress.data.index.value,
           );
           puzzle.progress = progress;
         }

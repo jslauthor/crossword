@@ -148,8 +148,8 @@ export const isPuzzleSolved = (answerIndex: number[] = []): boolean =>
  */
 export const getProgressFromSolution = (
   characterRecord: CharacterRecord,
-  characterPositions: PrismaJson.ProgressType['state'],
-  answerIndex: PrismaJson.ProgressType['index'],
+  characterPositions: PrismaJson.ProgressType['state']['value'],
+  answerIndex: PrismaJson.ProgressType['index']['value'],
 ): ProgressEnum => {
   if (isPuzzleSolved(answerIndex)) {
     return 3; // Solved
