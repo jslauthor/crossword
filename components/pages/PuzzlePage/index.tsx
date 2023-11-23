@@ -146,6 +146,7 @@ const ClueContainer = styled.div<{ $backgroundColor: string }>`
 const ClueLabel = styled.span<{ celebrate?: boolean }>`
   font-size: 1rem;
   line-height: 1rem !important;
+  user-select: none;
   ${({ celebrate }) =>
     celebrate && 'text-align: center; font-size: 1.5rem; font-weight: 600;'}
 `;
