@@ -5,9 +5,12 @@ declare global {
   var prisma: PrismaClient;
   namespace PrismaJson {
     type ProgressType = {
-      time: number;
-      index: number[];
-      state: Record<string, number>;
+      time: { timestamp: number; value: number };
+      index: { timestamp: number; value: number[] };
+      state: {
+        timestamp: number;
+        value: Record<string, number>;
+      };
     };
   }
 }

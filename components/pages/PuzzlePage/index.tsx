@@ -240,6 +240,8 @@ export default function Puzzle({
     puzzleWidth,
   ]);
 
+  const { addTime, elapsedTime, hasRetrievedGameState } =
+    usePuzzleProgress(puzzle);
   const turnLeft = useCallback(
     () => setSideOffset(sideOffset + 1),
     [sideOffset],
@@ -356,8 +358,6 @@ export default function Puzzle({
     setVerticalOrientation(!isVerticalOrientation);
   }, [isVerticalOrientation]);
 
-  const { addTime, elapsedTime, hasRetrievedGameState } =
-    usePuzzleProgress(puzzle);
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
 
   const { reset } = useElapsedTime({

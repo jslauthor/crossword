@@ -2,12 +2,31 @@ import { PuzzleType } from 'app/page';
 import localForage from 'localforage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import useAsyncQueue from './useAsyncQueue';
-import { CharacterRecord } from '../puzzle';
+import { useUser } from '@clerk/nextjs';
+import { useThrottle } from './useThrottle';
+
+const getItem = async <T,>(
+  key: string,
+  fallback: { value: T; timestamp: number } | undefined,
+): Promise<T | undefined> => {
+  const item = (await localForage.getItem(key)) as {
+    value: T;
+    timestamp: number;
+  } | null;
+
+  if (item != null) {
+    if (fallback && fallback.timestamp > item.timestamp) {
+      return fallback.value;
+    }
+
+    return item.value;
+  }
+
+  return fallback?.value;
+};
 
 export const usePuzzleProgress = (puzzle: PuzzleType, isInitialized = true) => {
-  // TODO: Write api route to save progress to server periodically (should be authenticated)
-  // TODO: If server has newer data, overwrite local storage
-
+  const { user } = useUser();
   const { add } = useAsyncQueue({ concurrency: 1 });
 
   const [elapsedTime, setElapsedTime] = useState<number>(0);
@@ -32,6 +51,42 @@ export const usePuzzleProgress = (puzzle: PuzzleType, isInitialized = true) => {
     [puzzle],
   );
 
+  // TODO: Use singleton for throttled hook
+  // TODO: Use the right throttled
+
+  const saveToServer = useCallback(() => {
+    const save = async () => {
+      console.log('saving!');
+      const state = await localForage.getItem(characterPositionStorageKey);
+      const time = await localForage.getItem(elapsedTimeStorageKey);
+      const index = await localForage.getItem(answerIndexStorageKey);
+
+      // We need to wait until all values are available before saving
+      // And there needs to be an authenticated user
+      if (user == null || state == null || time == null || index == null)
+        return;
+
+      await fetch(`/api/progress/puzzle/${puzzle.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          state,
+          time,
+          index,
+        } as PrismaJson.ProgressType),
+      });
+    };
+    save();
+  }, [
+    answerIndexStorageKey,
+    characterPositionStorageKey,
+    elapsedTimeStorageKey,
+    puzzle.id,
+    user,
+  ]);
+
+  // Debounce saving to server
+  const [saveToServerDebounced] = useThrottle(saveToServer, 5000);
+
   const addCharacterPosition = useCallback(
     (characterPositionArray: Float32Array) => {
       add({
@@ -39,12 +94,13 @@ export const usePuzzleProgress = (puzzle: PuzzleType, isInitialized = true) => {
         task: () =>
           localForage.setItem(characterPositionStorageKey, {
             timestamp: Date.now(),
-            characterPositionArray,
+            value: characterPositionArray,
           }),
       });
       setCharacterPositionArray(characterPositionArray);
+      saveToServerDebounced();
     },
-    [add, characterPositionStorageKey],
+    [add, characterPositionStorageKey, saveToServerDebounced],
   );
 
   const addAnswerIndex = useCallback(
@@ -54,27 +110,30 @@ export const usePuzzleProgress = (puzzle: PuzzleType, isInitialized = true) => {
         task: () =>
           localForage.setItem(answerIndexStorageKey, {
             timestamp: Date.now(),
-            answerIndex,
+            value: answerIndex,
           }),
       });
       setAnswerIndex(answerIndex);
+      saveToServerDebounced();
     },
-    [add, answerIndexStorageKey],
+    [add, answerIndexStorageKey, saveToServerDebounced],
   );
 
   const addTime = useCallback(
     (elapsedTime: number) => {
+      console.log(elapsedTime);
       add({
         id: elapsedTimeStorageKey,
         task: () =>
           localForage.setItem(elapsedTimeStorageKey, {
             timestamp: Date.now(),
-            time: elapsedTime,
+            value: elapsedTime,
           }),
       });
       setElapsedTime(elapsedTime);
+      saveToServerDebounced();
     },
-    [add, elapsedTimeStorageKey],
+    [add, elapsedTimeStorageKey, saveToServerDebounced],
   );
 
   useEffect(() => {
@@ -102,35 +161,60 @@ export const usePuzzleProgress = (puzzle: PuzzleType, isInitialized = true) => {
     if (isInitialized === false || hasRetrievedGameState === true) return;
 
     const retrieveGameState = async () => {
-      const cItem = (await localForage.getItem(
+      const state = await getItem<Float32Array>(
         characterPositionStorageKey,
-      )) as { characterPositionArray: Float32Array };
-      if (cItem != null) {
-        setCharacterPositionArray(cItem.characterPositionArray);
+        puzzle.progress
+          ? {
+              value: new Float32Array(
+                Object.values(puzzle.progress.data.state.value ?? []),
+              ),
+              timestamp: puzzle.progress.data.state.timestamp ?? 0,
+            }
+          : undefined,
+      );
+      if (state != null) {
+        addCharacterPosition(state);
       }
 
-      const aItem = (await localForage.getItem(answerIndexStorageKey)) as {
-        answerIndex: number[];
-      };
-      if (aItem != null) {
-        setAnswerIndex(aItem.answerIndex);
+      const index = await getItem<number[]>(
+        answerIndexStorageKey,
+        puzzle.progress
+          ? {
+              value: puzzle.progress.data.index.value ?? [],
+              timestamp: puzzle.progress.data.index.timestamp ?? 0,
+            }
+          : undefined,
+      );
+      if (index != null) {
+        addAnswerIndex(index);
       }
 
-      const tItem = (await localForage.getItem(elapsedTimeStorageKey)) as {
-        time: number;
-      };
-      if (tItem != null) {
-        setElapsedTime(tItem.time);
+      const time = await getItem<number>(
+        elapsedTimeStorageKey,
+        puzzle.progress
+          ? {
+              value: puzzle.progress.data.time.value ?? 0,
+              timestamp: puzzle.progress.data.time.timestamp ?? 0,
+            }
+          : undefined,
+      );
+      if (time != null) {
+        addTime(time);
       }
+
       setHasRetrievedGameState(true);
     };
     retrieveGameState();
   }, [
+    addAnswerIndex,
+    addCharacterPosition,
+    addTime,
     answerIndexStorageKey,
     characterPositionStorageKey,
     elapsedTimeStorageKey,
     hasRetrievedGameState,
     isInitialized,
+    puzzle.progress,
   ]);
 
   return {
@@ -141,5 +225,6 @@ export const usePuzzleProgress = (puzzle: PuzzleType, isInitialized = true) => {
     characterPositionArray,
     answerIndex,
     hasRetrievedGameState,
+    saveToServer,
   };
 };

@@ -15,7 +15,7 @@ datasource db {
 }
 
 model Progress {
-  id        String   @id @default(cuid())
+  id        String   @id @unique @default(cuid())
   puzzleId  String
   type      String // enum. Will start with CROSSCUBE
   /// [ProgressType]
@@ -25,6 +25,8 @@ model Progress {
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
 
+  @@unique([puzzleId, userId], name: "puzzleId_userId")
+  @@index([userId])
   @@map(name: "progresses")
 }
 

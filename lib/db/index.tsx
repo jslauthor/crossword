@@ -30,3 +30,27 @@ export const getUserForClerkId = (clerkId: string) => {
     },
   });
 };
+
+export const upsertPuzzleProgress = async (
+  puzzleId: string,
+  userId: string,
+  data: PrismaJson.ProgressType,
+) => {
+  return await prisma.progress.upsert({
+    where: {
+      puzzleId_userId: {
+        userId,
+        puzzleId,
+      },
+    },
+    update: {
+      data,
+    },
+    create: {
+      userId,
+      puzzleId,
+      data,
+      type: 'CROSSCUBE',
+    },
+  });
+};
