@@ -16,6 +16,7 @@ import { isPuzzleSolved } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
+import { SolutionCell } from 'types/types';
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -122,7 +123,11 @@ type LetterBoxesProps = {
   answerIndex: number[];
   characterPositionArray: Float32Array;
   hasRetrievedGameState: boolean;
-  addAnswerIndex: (answerIndex: number[]) => void;
+  updateAnswerIndex: (
+    cell: SolutionCell,
+    index: number,
+    letter: string,
+  ) => void;
   addCharacterPosition: (characterPositionArray: Float32Array) => void;
   onVerticalOrientationChange: (isVerticalOrientation: boolean) => void;
   setInstancedMesh?: (instancedMesh: InstancedMesh | null) => void;
@@ -144,7 +149,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   selectedSide,
   keyAndIndexOverride,
   currentKey,
-  addAnswerIndex,
+  updateAnswerIndex,
   addCharacterPosition,
   answerIndex,
   characterPositionArray,
@@ -576,27 +581,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
 
-        const cell = record.solution[selectedIndex];
-        if (cell !== '#') {
-          const chunk = Math.floor(selectedIndex / 32);
-          const bit = selectedIndex % 32;
-          const isCorrect =
-            !(key === '' || key === 'BACKSPACE') &&
-            cell.value.toUpperCase() === key.toUpperCase();
-          const newAnswerIndex = [...answerIndex];
-          if (isCorrect) {
-            // This flips the index bit to 1 (true)
-            newAnswerIndex[chunk] |= 1 << bit;
-          } else {
-            // This flips the index bit to 0 (false)
-            newAnswerIndex[chunk] &= ~(1 << bit);
-          }
-          addAnswerIndex(newAnswerIndex);
-        }
-
+        updateAnswerIndex(
+          record.solution[selectedIndex],
+          selectedIndex,
+          key.toUpperCase(),
+        );
         characterPositionArray[selectedIndex * 2] = x;
         characterPositionArray[selectedIndex * 2 + 1] = y;
-
         addCharacterPosition(characterPositionArray);
 
         ref.geometry.attributes.characterPosition.needsUpdate = true;
@@ -613,6 +604,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       ref,
       characterPositionArray,
       lastCurrentKey,
+      updateAnswerIndex,
       record.solution,
       addCharacterPosition,
       onLetterInput,
@@ -623,8 +615,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       height,
       isVerticalOrientation,
       puzzle.data.length,
-      answerIndex,
-      addAnswerIndex,
     ],
   );
 

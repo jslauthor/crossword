@@ -10,6 +10,7 @@ export type PuzzleType = PuzzlePreviewProps & {
   id: string;
   data: PuzzleData[];
   progress?: Progress;
+  answerIndex: number[];
   record: CharacterRecord;
 };
 

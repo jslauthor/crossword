@@ -5,6 +5,8 @@ import {
   SolutionCell,
   SolutionCellValue,
 } from '../../types/types';
+import memoizeOne from 'memoize-one';
+import { PuzzleType } from 'app/page';
 
 function isSolutionCellValue(cell: SolutionCell): cell is SolutionCellValue {
   return (cell as SolutionCellValue).value !== undefined;
@@ -17,6 +19,73 @@ export interface CharacterRecord {
     down: Clue[];
   };
 }
+
+// Invert the dictionary for faster lookups
+export const invertAtlas = memoizeOne(
+  (atlas: Record<string, [number, number]>) => {
+    const inverted: Record<string, string> = {};
+    for (const [key, value] of Object.entries(atlas)) {
+      inverted[value.join(',')] = key;
+    }
+    return inverted;
+  },
+);
+
+export const initializeAnswerIndex = (solution: SolutionCell[]) => {
+  // We initialize the array with the max safe integer
+  // Each integer will map to the index of the character in the record solution
+  // Since bitwise operations only work on 32 bit integers, we need to split the array into chunks of 32
+  const answerIndex = Array.from(
+    { length: Math.ceil(solution.length / 32) },
+    () => Number.MAX_SAFE_INTEGER >>> 0,
+  );
+
+  for (const [index, cell] of solution.entries()) {
+    if (cell !== '#') {
+      const chunk = Math.floor(index / 32);
+      const bit = index % 32;
+      answerIndex[chunk] &= ~(1 << bit);
+    }
+  }
+
+  return answerIndex;
+};
+
+// This mutates the answerIndex
+export const updateAnswerIndex = (
+  answerIndex: number[],
+  atlas: Record<string, string>,
+  characterPositionArray: Float32Array | undefined,
+  solution: SolutionCell[],
+) => {
+  if (characterPositionArray != null && characterPositionArray.length > 0) {
+    // Update index based on character position array
+    let index = 0;
+    for (let x = 0; x < characterPositionArray.length; x += 2) {
+      const cell = solution[index];
+      if (cell != '#') {
+        const chunk = Math.floor(index / 32);
+        const bit = index % 32;
+        const characterPosition = characterPositionArray.slice(x, x + 2);
+        const character = atlas[characterPosition.join(',')];
+        if (character != null) {
+          const isCorrect =
+            cell.value.toUpperCase() === character.toUpperCase();
+          if (isCorrect) {
+            // This flips the index bit to 1 (true)
+            answerIndex[chunk] |= 1 << bit;
+          } else {
+            // This flips the index bit to 0 (false)
+            answerIndex[chunk] &= ~(1 << bit);
+          }
+        }
+      }
+      index++;
+    }
+  }
+
+  return answerIndex;
+};
 
 /**
  * This takes an array of puzzle data and returns a single puzzle
@@ -140,29 +209,27 @@ export const isPuzzleSolved = (answerIndex: number[] = []): boolean =>
 
 /**
  * This looks at how much the user has filled in and returns a ProgressEnum.
- * This will NEVER return solved, which is a separate flag on the progress model.
  *
  * @param puzzleData
  * @param characterPositions
  * @returns ProgressEnum
  */
 export const getProgressFromSolution = (
-  characterRecord: CharacterRecord,
+  puzzle: PuzzleType,
   characterPositions: PrismaJson.ProgressType['state']['value'],
-  answerIndex: PrismaJson.ProgressType['index']['value'],
 ): ProgressEnum => {
-  if (isPuzzleSolved(answerIndex)) {
+  if (isPuzzleSolved(puzzle.answerIndex) === true) {
     return 3; // Solved
   }
 
-  const puzzleSize = characterRecord.solution.filter((v) => v !== '#').length;
+  const puzzleSize = puzzle.record.solution.filter((v) => v !== '#').length;
   const completedSize =
     Object.values(characterPositions).filter((v) => v > -1).length / 2;
   const percentage = completedSize / puzzleSize;
 
-  if (percentage <= 0.33) {
+  if (percentage <= 0.01) {
     return 0;
-  } else if (percentage <= 0.66) {
+  } else if (percentage <= 0.5) {
     return 1;
   }
 

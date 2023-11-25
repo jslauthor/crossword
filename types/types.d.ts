@@ -6,7 +6,6 @@ declare global {
   namespace PrismaJson {
     type ProgressType = {
       time: { timestamp: number; value: number };
-      index: { timestamp: number; value: number[] };
       state: {
         timestamp: number;
         value: Record<string, number>;

@@ -159,7 +159,7 @@ function Loader() {
   );
 }
 
-type PuzzleProps = {
+export type PuzzleProps = {
   puzzle: PuzzleType;
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
@@ -245,11 +245,16 @@ export default function Puzzle({
     addTime,
     elapsedTime,
     hasRetrievedGameState,
-    addAnswerIndex,
+    updateAnswerIndex,
     addCharacterPosition,
     answerIndex,
     characterPositionArray,
-  } = usePuzzleProgress(puzzle, isInitialized === true);
+    saveToServerDebounced,
+  } = usePuzzleProgress(
+    puzzle,
+    characterTextureAtlasLookup,
+    isInitialized === true,
+  );
   const turnLeft = useCallback(
     () => setSideOffset(sideOffset + 1),
     [sideOffset],
@@ -304,8 +309,9 @@ export default function Puzzle({
   );
 
   const onSolved = useCallback(() => {
+    saveToServerDebounced();
     setIsPuzzleSolved(true);
-  }, []);
+  }, [saveToServerDebounced]);
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -440,7 +446,7 @@ export default function Puzzle({
                 selectedSide={selectedSide}
                 keyAndIndexOverride={keyAndIndexOverride}
                 currentKey={selectedCharacter}
-                addAnswerIndex={addAnswerIndex}
+                updateAnswerIndex={updateAnswerIndex}
                 addCharacterPosition={addCharacterPosition}
                 answerIndex={answerIndex}
                 characterPositionArray={characterPositionArray}

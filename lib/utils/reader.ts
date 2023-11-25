@@ -2,8 +2,15 @@ import { currentUser } from '@clerk/nextjs';
 import { PuzzleType } from 'app/page';
 import { queryDato } from 'lib/dato';
 import { getPuzzlesProgressForUser, getUserForClerkId } from 'lib/db';
-import { getCharacterRecord, getProgressFromSolution } from './puzzle';
+import {
+  updateAnswerIndex,
+  getCharacterRecord,
+  getProgressFromSolution,
+  invertAtlas,
+  initializeAnswerIndex,
+} from './puzzle';
 import { formatDate } from 'lib/utils/date';
+import { TEXTURE_RECORD } from './textures';
 
 export const getPuzzles = async (
   first: number = 100,
@@ -51,7 +58,7 @@ export const getPuzzles = async (
     record: getCharacterRecord(puzzle.data),
   }));
 
-  return await enrichPuzzlesWithProgress(puzzles);
+  return await enrichPuzzles(puzzles);
 };
 
 export const getPuzzleBySlug = async (
@@ -89,13 +96,21 @@ export const getPuzzleBySlug = async (
   }
 
   puzzle.record = getCharacterRecord(puzzle.data);
-  await enrichPuzzlesWithProgress([puzzle]);
+  await enrichPuzzles([puzzle]);
 
   return puzzle;
 };
 
+const atlas = invertAtlas(TEXTURE_RECORD);
+
 // WARNING: This mutates the puzzles that are passed in
-export const enrichPuzzlesWithProgress = async (puzzles: PuzzleType[]) => {
+export const enrichPuzzles = async (puzzles: PuzzleType[]) => {
+  // Initialize the answer index for each puzzle
+  puzzles.map((puzzle) => {
+    puzzle.answerIndex = initializeAnswerIndex(puzzle.record.solution);
+    return puzzle;
+  });
+
   const clerkUser = await currentUser();
   if (clerkUser != null) {
     const user = await getUserForClerkId(clerkUser.id);
@@ -109,10 +124,15 @@ export const enrichPuzzlesWithProgress = async (puzzles: PuzzleType[]) => {
       for (const progress of progresses) {
         const puzzle = puzzles.find((p) => p.id === progress.puzzleId);
         if (puzzle != null) {
+          updateAnswerIndex(
+            puzzle.answerIndex,
+            atlas,
+            new Float32Array(Object.values(progress.data.state.value)),
+            puzzle.record.solution,
+          );
           puzzle.previewState = getProgressFromSolution(
-            getCharacterRecord(puzzle.data),
+            puzzle,
             progress.data.state.value,
-            progress.data.index.value,
           );
           puzzle.progress = progress;
         }
