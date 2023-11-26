@@ -182,9 +182,6 @@ export type MenuWrapperProps = {
   onSignUpPressed?: () => void;
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
-  onGiveFeedback?: () => void;
-  onTermsOfService?: () => void;
-  onPrivacyPolicy?: () => void;
 };
 
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
@@ -192,11 +189,8 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   centerLabel,
   rotatingBoxProps,
   onSignUpPressed,
-  onSignOutPressed: onLogOutPressed,
-  onSignInPressed: onLogInPressed,
-  onGiveFeedback,
-  onPrivacyPolicy,
-  onTermsOfService,
+  onSignOutPressed,
+  onSignInPressed,
 }) => {
   const { isSignedIn, user } = useUser();
   const [headerRef, { height }] = useElementSize();
@@ -258,7 +252,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                 <MenuItemsContainer>
                   {isSignedIn === false && (
                     <MenuItem>
-                      <Link color="foreground" onClick={onLogInPressed}>
+                      <Link color="foreground" onClick={onSignInPressed}>
                         Sign In
                       </Link>
                       <span className="opacity-50 px-1 text-lg"> / </span>
@@ -268,17 +262,25 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                     </MenuItem>
                   )}
                   <MenuItem>
-                    <Link color="foreground" onClick={onGiveFeedback}>
+                    <Link color="foreground" href="mailto:info@crosscube.com">
                       Give Feedback
                     </Link>
                   </MenuItem>
                   <MenuItem>
-                    <Link color="foreground" onClick={onTermsOfService}>
+                    <Link
+                      color="foreground"
+                      target="_blank"
+                      href="https://organic-icicle-eb4.notion.site/Terms-of-Service-79ef0a4a094f4f929a1ea31cf56a7499?pvs=4"
+                    >
                       Terms of Service
                     </Link>
                   </MenuItem>
                   <MenuItem>
-                    <Link color="foreground" onClick={onPrivacyPolicy}>
+                    <Link
+                      color="foreground"
+                      target="_blank"
+                      href="https://organic-icicle-eb4.notion.site/Privacy-Policy-4b3d620031254ea5915660ac55d2efcd?pvs=4"
+                    >
                       Privacy Policy
                     </Link>
                   </MenuItem>
@@ -296,7 +298,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         <Button
                           size="sm"
                           variant="bordered"
-                          onClick={onLogOutPressed}
+                          onClick={onSignOutPressed}
                         >
                           Log Out
                         </Button>
