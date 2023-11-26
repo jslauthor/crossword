@@ -120,6 +120,9 @@ export const usePuzzleProgress = (
     if (isInitialized === false || hasRetrievedGameState === true) return;
 
     const retrieveGameState = async () => {
+      /**
+       * Compare local and server state and merge if needed
+       */
       const localState = (await localForage.getItem(
         characterPositionStorageKey,
       )) as {
@@ -160,7 +163,9 @@ export const usePuzzleProgress = (
       }
       setAnswerIndex(puzzle.answerIndex);
 
-      // Try and find the saved state for time
+      /**
+       * Grab the newer time state
+       */
       let localTime = (await localForage.getItem(elapsedTimeStorageKey)) as {
         value: number;
         timestamp: number;

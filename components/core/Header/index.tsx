@@ -5,6 +5,7 @@ import IconMainLogo from 'components/svg/MainLogo';
 import { useMemo } from 'react';
 import { styled } from 'styled-components';
 import RotatingBox, { RotatingBoxProps } from '../3d/Box';
+import Link from 'next/link';
 
 const Container = styled.nav<{ $hasCenterLabel: boolean }>`
   display: grid;
@@ -69,7 +70,9 @@ const Header: React.FC<HeaderProps> = ({
           <IconHamburger width={20} height={25} />
         )}
       </CloseButtonContainer>
-      <LogoStyled width={140} height={25} />
+      <Link href="/">
+        <LogoStyled width={140} height={25} />
+      </Link>
       {hasCenterLabel === true && (
         <CenterLabelContainer>{centerLabel}</CenterLabelContainer>
       )}
