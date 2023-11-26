@@ -22,7 +22,7 @@ export const getPuzzles = async (
         allPuzzles(
           first: ${first},
           skip: ${skip},
-          orderBy: _firstPublishedAt_ASC
+          orderBy: _firstPublishedAt_DESC
         ) {
           id
           difficulty

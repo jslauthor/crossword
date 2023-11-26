@@ -11,14 +11,15 @@ import { getColorHex } from 'lib/utils/color';
 
 const Container = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   flex-direction: column;
   align-items: center;
   padding: 0.5rem;
   background-color: var(--terciary-bg);
   border-radius: 0.25rem;
-  aspect-ratio: 1 / 1;
+  border: 5px solid var(--grey800);
   user-select: none;
+  min-height: 12rem;
 
   &:hover {
     transition: background-color 0.15s ease-in-out;
@@ -34,34 +35,43 @@ const Container = styled.div`
 `;
 
 const CubeContainer = styled.section`
-  margin: 0.25rem 0;
+  margin: 0.75rem 0;
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+
+  span {
+    line-height: 1.2;
+  }
 `;
 
 const TitleContainer = styled.header`
   display: flex;
-  justify-content: space-between;
+  gap: 0.5rem;
   align-items: center;
   width: 100%;
-  text-align: right;
   font-style: italic;
+  margin-bottom: 0.25rem;
+  span {
+    font-size: 1rem;
+  }
 `;
 
 const InfoContainer = styled.footer`
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  width: 100%;
+  align-items: baseline;
 `;
 
 const AiContainer = styled.div`
   background-color: var(--ai-bg);
   border-radius: 0.25rem;
   padding: 0.05rem 0.25rem;
-  margin-top: 0.25rem;
+  margin-top: 0.33rem;
 `;
 
-export interface PuzzlePreviewProps {
+export interface PuzzleHighlightProps {
   title: string;
   author: string;
   date: string;
@@ -71,7 +81,7 @@ export interface PuzzlePreviewProps {
   colors?: [number, number, number];
 }
 
-const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
+const PuzzleHighlight: React.FC<PuzzleHighlightProps> = ({
   title = '',
   author = '',
   date = '',
@@ -82,39 +92,44 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
 }) => {
   return (
     <Container>
-      <TitleContainer>
-        <IconStar
-          difficulty={difficulty}
-          color={
-            previewState === ProgressEnum.Solved
-              ? getColorHex(0xd1a227)
-              : getColorHex(DEFAULT_SELECTED_ADJACENT_COLOR)
-          }
-        />
-        <span>
-          {previewState === ProgressEnum.Solved ? (
-            <span>🎉&nbsp;&nbsp;</span>
-          ) : (
-            ''
-          )}
-          {title}
-        </span>
-      </TitleContainer>
       <CubeContainer>
-        <PreviewCube progress={previewState} colors={colors} />
+        <PreviewCube
+          width={90}
+          height={80}
+          progress={previewState}
+          colors={colors}
+        />
+        <InfoContainer>
+          <TitleContainer>
+            <span>
+              {previewState === ProgressEnum.Solved ? (
+                <span>🎉&nbsp;&nbsp;</span>
+              ) : (
+                ''
+              )}
+              {title}
+            </span>
+            <IconStar
+              difficulty={difficulty}
+              color={
+                previewState === ProgressEnum.Solved
+                  ? getColorHex(0xd1a227)
+                  : getColorHex(DEFAULT_SELECTED_ADJACENT_COLOR)
+              }
+            />
+          </TitleContainer>
+          <span className="semi">{date}</span>
+          <span className="capital">{author}</span>
+          {isAiAssisted === true ? (
+            <AiContainer className="dim text-sm italic">
+              <span className="semi text-sm italic">ai</span>&nbsp;
+              <span className="text-sm">assisted</span>
+            </AiContainer>
+          ) : null}
+        </InfoContainer>
       </CubeContainer>
-      <InfoContainer>
-        <span className="semi">{date}</span>
-        <span className="capital">{author}</span>
-        {isAiAssisted === true ? (
-          <AiContainer className="dim text-sm italic">
-            <span className="semi text-sm italic">ai</span>&nbsp;
-            <span className="text-sm">assisted</span>
-          </AiContainer>
-        ) : null}
-      </InfoContainer>
     </Container>
   );
 };
 
-export default PuzzlePreview;
+export default PuzzleHighlight;

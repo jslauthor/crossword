@@ -2,21 +2,29 @@
 
 import styled from 'styled-components';
 import Menu from 'components/containers/Menu';
-import PuzzlePreview, {
-  PuzzlePreviewProps,
-} from 'components/composed/PuzzlePreview';
+import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { PuzzleType } from 'app/page';
+import Link from 'next/link';
+import { useMemo } from 'react';
+import PuzzleHighlight from 'components/composed/PuzzleHighlight';
 
-const PreviewContainer = styled.div`
+const Container = styled.div`
   position: relative;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--primary-app-width);
+  padding: 0.75rem;
+`;
+
+const PuzzlesContainer = styled.div`
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
   align-items: stretch;
-  padding: 0.75rem;
-  max-width: var(--primary-app-width);
+  margin-top: 1rem;
+  width: 100%;
 `;
 
 export interface HomePageProps {
@@ -24,32 +32,50 @@ export interface HomePageProps {
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles }) => {
+  const latestPuzzle = useMemo(() => puzzles[0], [puzzles]);
+  const otherPuzzles = useMemo(() => puzzles.slice(1), [puzzles]);
+
   return (
     <Menu>
-      <PreviewContainer>
-        {puzzles.map(
-          ({
-            author,
-            title,
-            date,
-            difficulty,
-            isAiAssisted,
-            previewState,
-            slug,
-          }) => (
-            <a key={slug} href={`/puzzle/${slug}`}>
-              <PuzzlePreview
-                title={title}
-                author={author}
-                date={date}
-                isAiAssisted={isAiAssisted}
-                difficulty={difficulty}
-                previewState={previewState}
-              />
-            </a>
-          ),
-        )}
-      </PreviewContainer>
+      <Container>
+        <Link href={`/puzzle/${latestPuzzle.slug}`}>
+          <PuzzleHighlight
+            title={latestPuzzle.title}
+            author={latestPuzzle.author}
+            date={latestPuzzle.date}
+            isAiAssisted={latestPuzzle.isAiAssisted}
+            difficulty={latestPuzzle.difficulty}
+            previewState={latestPuzzle.previewState}
+          />
+        </Link>
+        <PuzzlesContainer>
+          {otherPuzzles.map(
+            (
+              {
+                author,
+                title,
+                date,
+                difficulty,
+                isAiAssisted,
+                previewState,
+                slug,
+              },
+              index,
+            ) => (
+              <Link key={slug} href={`/puzzle/${slug}`}>
+                <PuzzlePreview
+                  title={title}
+                  author={author}
+                  date={date}
+                  isAiAssisted={isAiAssisted}
+                  difficulty={difficulty}
+                  previewState={previewState}
+                />
+              </Link>
+            ),
+          )}
+        </PuzzlesContainer>
+      </Container>
     </Menu>
   );
 };
