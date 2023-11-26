@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { useThrottle } from './useThrottle';
 import { SolutionCell } from 'types/types';
 import { PuzzleProps } from 'components/pages/PuzzlePage';
+import { invertAtlas, updateAnswerIndex as mutateAnswerIndex } from '../puzzle';
 
 const getItem = async <T,>(
   key: string,
@@ -26,6 +27,8 @@ const getItem = async <T,>(
 
   return fallback?.value;
 };
+
+const getNumber = (val: number) => (val > -1 ? val : undefined);
 
 export const usePuzzleProgress = (
   puzzle: PuzzleType,
@@ -48,10 +51,6 @@ export const usePuzzleProgress = (
     () => `puzzle-${puzzle.id}`,
     [puzzle],
   );
-  const answerIndexStorageKey = useMemo(
-    () => `puzzle-${puzzle.id}-answer-index`,
-    [puzzle],
-  );
   const elapsedTimeStorageKey = useMemo(
     () => `puzzle-${puzzle.id}-time`,
     [puzzle],
@@ -59,8 +58,12 @@ export const usePuzzleProgress = (
 
   const saveToServer = useCallback(() => {
     const save = async () => {
-      const state = await localForage.getItem(characterPositionStorageKey);
-      const time = await localForage.getItem(elapsedTimeStorageKey);
+      const state = (await localForage.getItem(
+        characterPositionStorageKey,
+      )) as PrismaJson.ProgressType['state'];
+      const time = (await localForage.getItem(
+        elapsedTimeStorageKey,
+      )) as PrismaJson.ProgressType['time'];
 
       // We need to wait until all values are available before saving
       // And there needs to be an authenticated user
@@ -117,46 +120,77 @@ export const usePuzzleProgress = (
     if (isInitialized === false || hasRetrievedGameState === true) return;
 
     const retrieveGameState = async () => {
-      // TODO: Merge local and server data
-      // TODO: You know you can just use the server data, right? For the answer index.
-
-      const state = await getItem<Float32Array>(
+      const localState = (await localForage.getItem(
         characterPositionStorageKey,
-        puzzle.progress
-          ? {
-              value: new Float32Array(
-                Object.values(puzzle.progress.data.state.value ?? []),
-              ),
-              timestamp: puzzle.progress.data.state.timestamp ?? 0,
-            }
-          : undefined,
-      );
-      if (state != null) {
-        addCharacterPosition(state);
+      )) as {
+        value: Float32Array;
+        timestamp: number;
+      } | null;
+      const serverState = puzzle.progress
+        ? {
+            value: new Float32Array(
+              Object.values(puzzle.progress.data.state.value ?? []),
+            ),
+            timestamp: puzzle.progress.data.state.timestamp ?? 0,
+          }
+        : undefined;
+      if (localState != null && serverState == null) {
+        addCharacterPosition(localState.value);
+      } else if (localState == null && serverState != null) {
+        addCharacterPosition(serverState.value);
+      } else if (localState != null && serverState != null) {
+        const updatedPosition = characterPositionArray.map((_, index) => {
+          const newerState =
+            serverState.timestamp > localState.timestamp
+              ? serverState
+              : localState;
+          const olderState =
+            serverState.timestamp < localState.timestamp
+              ? serverState
+              : localState;
+          return getNumber(newerState.value[index]) ?? olderState.value[index];
+        });
+        addCharacterPosition(updatedPosition);
+        mutateAnswerIndex(
+          puzzle.answerIndex,
+          invertAtlas(atlas),
+          updatedPosition,
+          puzzle.record.solution,
+        );
       }
-
-      const time = await getItem<number>(
-        elapsedTimeStorageKey,
-        puzzle.progress
-          ? {
-              value: puzzle.progress.data.time.value ?? 0,
-              timestamp: puzzle.progress.data.time.timestamp ?? 0,
-            }
-          : undefined,
-      );
-      if (time != null) {
-        addTime(time);
-      }
-
       setAnswerIndex(puzzle.answerIndex);
+
+      // Try and find the saved state for time
+      let localTime = (await localForage.getItem(elapsedTimeStorageKey)) as {
+        value: number;
+        timestamp: number;
+      } | null;
+
+      const serverTime = puzzle.progress
+        ? {
+            value: puzzle.progress.data.time.value ?? 0,
+            timestamp: puzzle.progress.data.time.timestamp ?? 0,
+          }
+        : undefined;
+
+      if (localTime != null) {
+        // Take the newer of the two
+        if (serverTime && serverTime.timestamp > localTime.timestamp) {
+          localTime = serverTime;
+        }
+        addTime(localTime.value);
+      } else if (serverTime != null) {
+        addTime(serverTime.value);
+      }
+
       setHasRetrievedGameState(true);
     };
     retrieveGameState();
   }, [
     addCharacterPosition,
     addTime,
-    answerIndexStorageKey,
     atlas,
+    characterPositionArray,
     characterPositionStorageKey,
     elapsedTimeStorageKey,
     hasRetrievedGameState,
