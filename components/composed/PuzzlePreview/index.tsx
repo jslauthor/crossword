@@ -17,7 +17,7 @@ const Container = styled.div`
   padding: 0.5rem;
   background-color: var(--terciary-bg);
   border-radius: 0.25rem;
-  aspect-ratio: 1 / 1;
+  min-height: 10rem;
   user-select: none;
 
   &:hover {
@@ -30,6 +30,7 @@ const Container = styled.div`
     p {
       font-size: 0.85rem;
     }
+    aspect-ratio: 1/1;
   }
 `;
 
