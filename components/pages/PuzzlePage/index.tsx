@@ -40,8 +40,6 @@ import { useAnimatedText } from 'lib/utils/hooks/useAnimatedText';
 import Particles from 'components/core/3d/Particles';
 import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
-import localforage from 'localforage';
-import useAsyncQueue from 'lib/utils/hooks/useAsyncQueue';
 import Menu from 'components/containers/Menu';
 import { Spinner } from '@nextui-org/react';
 import { RotatingBoxProps } from 'components/core/3d/Box';

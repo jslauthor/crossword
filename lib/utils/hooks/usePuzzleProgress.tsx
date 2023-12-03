@@ -137,8 +137,15 @@ export const usePuzzleProgress = (
             timestamp: puzzle.progress.data.state.timestamp ?? 0,
           }
         : undefined;
+      console.log(localState, serverState);
       if (localState != null && serverState == null) {
         addCharacterPosition(localState.value);
+        mutateAnswerIndex(
+          puzzle.answerIndex,
+          invertAtlas(atlas),
+          localState.value,
+          puzzle.record.solution,
+        );
       } else if (localState == null && serverState != null) {
         addCharacterPosition(serverState.value);
       } else if (localState != null && serverState != null) {
