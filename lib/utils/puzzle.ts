@@ -8,7 +8,9 @@ import {
 import memoizeOne from 'memoize-one';
 import { PuzzleType } from 'app/page';
 
-function isSolutionCellValue(cell: SolutionCell): cell is SolutionCellValue {
+export function isSolutionCellValue(
+  cell: SolutionCell,
+): cell is SolutionCellValue {
   return (cell as SolutionCellValue).value !== undefined;
 }
 

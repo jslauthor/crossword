@@ -137,7 +137,6 @@ export const usePuzzleProgress = (
             timestamp: puzzle.progress.data.state.timestamp ?? 0,
           }
         : undefined;
-      console.log(localState, serverState);
       if (localState != null && serverState == null) {
         addCharacterPosition(localState.value);
         mutateAnswerIndex(
@@ -148,6 +147,7 @@ export const usePuzzleProgress = (
         );
       } else if (localState == null && serverState != null) {
         addCharacterPosition(serverState.value);
+        // no need to mutate answer index here because it's already been done by the server
       } else if (localState != null && serverState != null) {
         const updatedPosition = characterPositionArray.map((_, index) => {
           const newerState =

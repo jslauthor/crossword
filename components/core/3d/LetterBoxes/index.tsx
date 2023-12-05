@@ -12,7 +12,10 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { isPuzzleSolved } from '../../../../lib/utils/puzzle';
+import {
+  isPuzzleSolved,
+  isSolutionCellValue,
+} from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
@@ -289,68 +292,66 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       const rotations: Euler[] = [];
       for (let j = 0; j < record.solution.length; j++) {
         const cell = record.solution[j];
-        if (cell !== '#') {
-          tempObject.rotation.set(0, 0, 0);
-          tempObject.scale.set(1, 1, 1);
-          const side = Math.ceil(j / totalPerSide) - 1;
-          const x = (j % width) - 1;
-          const y = Math.max(
-            0,
-            Math.ceil((j - side * totalPerSide) / width) - 1,
+
+        tempObject.rotation.set(0, 0, 0);
+        tempObject.scale.set(1, 1, 1);
+        const side = Math.ceil(j / totalPerSide) - 1;
+        const x = (j % width) - 1;
+        const y = Math.max(0, Math.ceil((j - side * totalPerSide) / width) - 1);
+
+        // Sides three and four are the top and bottom (respectively)
+        // 1, 2, 5, 6 are the camera facing sides
+
+        cubeSideDisplayArray[j * 2] =
+          CubeSidesEnum.six | (j % width === width - 1 ? CubeSidesEnum.two : 0);
+
+        if (isSolutionCellValue(cell) && typeof cell.cell === 'number') {
+          cellNumberPositionArray[j * 2] =
+            cellNumberTextureAtlasLookup[cell.cell][0];
+          cellNumberPositionArray[j * 2 + 1] =
+            cellNumberTextureAtlasLookup[cell.cell][1];
+        }
+
+        if (side === 0) {
+          tempObject.position.set(
+            -x + height - 2,
+            -y + height - 1,
+            -height + 1,
           );
+        } else if (side === 1) {
+          tempObject.position.set(-x + height - 2, -y + height - 1, 0);
+          rotateAroundPoint(
+            tempObject,
+            new Vector3(0, 0, 0),
+            new Vector3(0, 1, 0),
+            Math.PI / 2,
+            true,
+          );
+        } else if (side === 2) {
+          tempObject.position.set(-x - 1, -y + height - 1, 0);
+          rotateAroundPoint(
+            tempObject,
+            new Vector3(0, 0, 0),
+            new Vector3(0, 1, 0),
+            Math.PI,
+            true,
+          );
+        } else if (side === 3) {
+          tempObject.position.set(-x - 1, -y + height - 1, -height + 1);
+          rotateAroundPoint(
+            tempObject,
+            new Vector3(0, 0, 0),
+            new Vector3(0, 1, 0),
+            -Math.PI / 2,
+            true,
+          );
+        }
 
-          // Sides three and four are the top and bottom (respectively)
-          // 1, 2, 5, 6 are the camera facing sides
-
-          cubeSideDisplayArray[j * 2] =
-            CubeSidesEnum.six |
-            (j % width === width - 1 ? CubeSidesEnum.two : 0);
-
-          if (typeof cell.cell === 'number') {
-            cellNumberPositionArray[j * 2] =
-              cellNumberTextureAtlasLookup[cell.cell][0];
-            cellNumberPositionArray[j * 2 + 1] =
-              cellNumberTextureAtlasLookup[cell.cell][1];
-          }
-
-          if (side === 0) {
-            tempObject.position.set(
-              -x + height - 2,
-              -y + height - 1,
-              -height + 1,
-            );
-          } else if (side === 1) {
-            tempObject.position.set(-x + height - 2, -y + height - 1, 0);
-            rotateAroundPoint(
-              tempObject,
-              new Vector3(0, 0, 0),
-              new Vector3(0, 1, 0),
-              Math.PI / 2,
-              true,
-            );
-          } else if (side === 2) {
-            tempObject.position.set(-x - 1, -y + height - 1, 0);
-            rotateAroundPoint(
-              tempObject,
-              new Vector3(0, 0, 0),
-              new Vector3(0, 1, 0),
-              Math.PI,
-              true,
-            );
-          } else if (side === 3) {
-            tempObject.position.set(-x - 1, -y + height - 1, -height + 1);
-            rotateAroundPoint(
-              tempObject,
-              new Vector3(0, 0, 0),
-              new Vector3(0, 1, 0),
-              -Math.PI / 2,
-              true,
-            );
-          }
-        } else {
-          // Hide the empty square
+        // Hide blank cells
+        if (cell === '#') {
           tempObject.scale.set(0, 0, 0);
         }
+
         tempObject.updateMatrix();
         ref.setMatrixAt(j, tempObject.matrix);
         rotations[j] = new Euler().copy(tempObject.rotation);

@@ -14,6 +14,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -45,6 +46,7 @@ import { Spinner } from '@nextui-org/react';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { PuzzleType } from 'app/page';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
+import { fitCameraToCenteredObject } from 'lib/utils/three';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -203,41 +205,18 @@ export default function Puzzle({
     return [width, height, totalPerSide];
   }, [puzzle]);
 
-  useEffect(() => {
-    if (
-      cameraRef == null ||
-      instancedRef == null ||
-      isInitialized === false ||
-      groupRef == null
-    ) {
-      return;
+  useLayoutEffect(() => {
+    if (cameraRef == null || groupRef == null) {
+      return undefined;
     }
 
-    // VERY IMPORTANT TO RESET THE SCALE TO GET THE CORRECT WIDTH!
-    groupRef.scale.set(1, 1, 1);
+    fitCameraToCenteredObject(cameraRef, groupRef, 1.02);
+  }, [cameraRef, groupRef, puzzleWidth, canvasHeight, canvasWidth]);
 
-    const containerSize = Math.min(canvasWidth, canvasHeight);
-    const size = new Vector3();
-    groupRef.updateMatrixWorld();
-    new Box3().setFromObject(groupRef).getSize(size);
-    size.multiply(groupRef.scale);
-    size.project(cameraRef);
-
-    const width = Math.abs(size.x - size.z) * canvasWidth;
-    const newScale = (containerSize * 1.125) / width;
-
-    cameraRef.lookAt(instancedRef.position);
-    groupRef.scale.set(newScale, newScale, newScale);
-    groupRef.position.set(-3.5 * newScale, -3.5 * newScale, 3.5 * newScale);
-  }, [
-    groupRef,
-    cameraRef,
-    canvasHeight,
-    canvasWidth,
-    instancedRef,
-    isInitialized,
-    puzzleWidth,
-  ]);
+  const groupRefPosition: Vector3 = useMemo(() => {
+    const multiplier = (puzzleWidth - 1) / 2;
+    return new Vector3(-multiplier, -multiplier, multiplier);
+  }, [puzzleWidth]);
 
   const {
     addTime,
@@ -424,7 +403,7 @@ export default function Puzzle({
           <PerspectiveCamera
             ref={setCameraRef}
             makeDefault
-            position={[0, 0, 3.35]}
+            position={[0, 0, 0]}
           />
           <ambientLight intensity={5} />
           <pointLight position={[0, 0, -2]} intensity={2} />
@@ -435,7 +414,7 @@ export default function Puzzle({
             onSwipeRight={turnRight}
             rotation={[0, rotation * (Math.PI + Math.PI * (sideOffset / 2)), 0]}
           >
-            <group ref={setGroup}>
+            <group ref={setGroup} position={groupRefPosition}>
               <LetterBoxes
                 setInstancedMesh={setInstancedMesh}
                 puzzle={puzzle}
