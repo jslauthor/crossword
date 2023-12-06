@@ -31,6 +31,7 @@
     "@use-gesture/react": "^10.3.0",
     "@vercel/analytics": "^1.1.1",
     "@vercel/postgres": "^0.5.1",
+    "animejs": "^3.2.2",
     "eslint": "8.53.0",
     "framer-motion": "^10.16.4",
     "i": "^0.3.7",
@@ -59,6 +60,7 @@
     "yoga-wasm-web": "^0.3.3"
   },
   "devDependencies": {
+    "@types/animejs": "^3.1.12",
     "@types/md5": "^2.3.5",
     "@types/next-tick": "^1.0.2",
     "@types/node": "20.9.0",

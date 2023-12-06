@@ -16,7 +16,7 @@ import {
 
 const tempObject = new Object3D();
 
-const applyScaleAnimation = ({
+export const applyScaleAnimation = ({
   mesh,
   index,
   value,
@@ -51,7 +51,7 @@ export const useScaleRippleAnimation = (
   totalPerSide: number,
   size: number,
   ref: InstancedMesh | null,
-  onComplete?: () => void
+  onComplete?: () => void,
 ) => {
   const { scale: scaleAnimation } = useSpring({
     scale: SCALE,
@@ -91,7 +91,7 @@ export const useScaleRippleAnimation = (
 
     const animationFn = async (
       props: AnimationResult<SpringValue<number>>,
-      spring: SpringValue<number>
+      spring: SpringValue<number>,
     ) => {
       const value = spring.get();
       rings.forEach((ring, idx) => {

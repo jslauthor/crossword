@@ -20,6 +20,7 @@ import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/
 import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
 import { SolutionCell } from 'types/types';
+import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -283,6 +284,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     size,
     ref,
   );
+
+  const showScaleAnimation = useScaleAnimation(ref);
 
   // Initial setup (orient the instanced boxes)
   useEffect(
@@ -593,6 +596,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
         ref.geometry.attributes.characterPosition.needsUpdate = true;
 
+        showScaleAnimation(selectedIndex);
+
         if (onLetterInput) {
           onLetterInput();
         }
@@ -608,6 +613,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       updateAnswerIndex,
       record.solution,
       addCharacterPosition,
+      showScaleAnimation,
       onLetterInput,
       getInterval,
       totalPerSide,
