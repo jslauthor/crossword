@@ -171,13 +171,15 @@ export const rotateAroundPoint = (
 export const fitCameraToCenteredObject = function (
   camera: PerspectiveCamera,
   object: Object3D,
+  size: Vector3,
   offset?: number,
 ) {
+  object.updateMatrix();
+  object.updateMatrixWorld();
+  object.updateWorldMatrix(true, true);
+
   const boundingBox = new Box3();
   boundingBox.setFromObject(object);
-
-  var size = new Vector3();
-  boundingBox.getSize(size);
 
   // figure out how to fit the box in the view:
   // 1. figure out horizontal FOV (on non-1.0 aspects)

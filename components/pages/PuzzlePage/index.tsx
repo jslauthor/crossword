@@ -14,7 +14,6 @@ import {
   Suspense,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -22,7 +21,6 @@ import {
 import {
   PerspectiveCamera as PerspectiveCameraType,
   InstancedMesh as InstancedMeshType,
-  Box3,
   Vector3,
   Vector2,
   Object3D,
@@ -205,13 +203,25 @@ export default function Puzzle({
     return [width, height, totalPerSide];
   }, [puzzle]);
 
-  useLayoutEffect(() => {
-    if (cameraRef == null || groupRef == null) {
+  useEffect(() => {
+    if (cameraRef == null || groupRef == null || isInitialized === false) {
       return undefined;
     }
 
-    fitCameraToCenteredObject(cameraRef, groupRef, 1.02);
-  }, [cameraRef, groupRef, puzzleWidth, canvasHeight, canvasWidth]);
+    fitCameraToCenteredObject(
+      cameraRef,
+      groupRef,
+      new Vector3(puzzleWidth, puzzleWidth, puzzleWidth),
+      1.02,
+    );
+  }, [
+    cameraRef,
+    groupRef,
+    puzzleWidth,
+    canvasHeight,
+    canvasWidth,
+    isInitialized,
+  ]);
 
   const groupRefPosition: Vector3 = useMemo(() => {
     const multiplier = (puzzleWidth - 1) / 2;

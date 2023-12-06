@@ -364,10 +364,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       setSelected((record.solution.length / 4) * 3 + (width - 1));
       // setInitialRotations(rotations);
       // showIntroAnimation(true);
-      showRippleAnimation();
       if (onInitialize) {
         onInitialize();
       }
+      showRippleAnimation();
     },
     // Only run once on load
     // eslint-disable-next-line react-hooks/exhaustive-deps
