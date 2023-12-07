@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { dark } from '@clerk/themes';
 import { ClerkProvider } from '@clerk/nextjs';
-
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/react';
 import './tailwind.css';
 import { Providers } from './providers';
@@ -28,6 +28,7 @@ export default function RootLayout({
         <body className="dark">
           <Providers>{children}</Providers>
           <Analytics />
+          <SpeedInsights />
         </body>
       </html>
     </ClerkProvider>

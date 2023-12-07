@@ -65,6 +65,9 @@ dependencies:
   '@vercel/postgres':
     specifier: ^0.5.1
     version: 0.5.1
+  '@vercel/speed-insights':
+    specifier: ^1.0.0
+    version: 1.0.0
   animejs:
     specifier: ^3.2.2
     version: 3.2.2
@@ -3773,6 +3776,11 @@ packages:
       bufferutil: 4.0.8
       utf-8-validate: 6.0.3
       ws: 8.14.2(bufferutil@4.0.8)(utf-8-validate@6.0.3)
+    dev: false
+
+  /@vercel/speed-insights@1.0.0:
+    resolution: {integrity: sha512-5blmCVGGPn+3BqwBPb1jc3OnzRozNuLgJVr7xH6XjxCTvocs7z/Bml7lo+JzLKUXR1Q35qI/PlEllmNbZmP9Ew==}
+    requiresBuild: true
     dev: false
 
   /@webassemblyjs/ast@1.11.6:
