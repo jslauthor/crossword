@@ -19,7 +19,6 @@ export const useScaleAnimation = (
       }
 
       const animationFn = (anim: AnimeInstance) => {
-        console.log(anim);
         applyScaleAnimation({
           mesh: ref,
           value: anim.animations[0].currentValue as unknown as number,
