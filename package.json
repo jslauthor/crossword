@@ -31,6 +31,7 @@
     "@use-gesture/react": "^10.3.0",
     "@vercel/analytics": "^1.1.1",
     "@vercel/postgres": "^0.5.1",
+    "@vercel/speed-insights": "^1.0.0",
     "animejs": "^3.2.2",
     "eslint": "8.53.0",
     "framer-motion": "^10.16.4",
