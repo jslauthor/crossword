@@ -309,6 +309,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           CubeSidesEnum.six | (j % width === width - 1 ? CubeSidesEnum.two : 0);
 
         if (isSolutionCellValue(cell) && typeof cell.cell === 'number') {
+          // select first cell
+          if (cell.cell === 1) {
+            setSelected(j);
+          }
           cellNumberPositionArray[j * 2] =
             cellNumberTextureAtlasLookup[cell.cell][0];
           cellNumberPositionArray[j * 2 + 1] =
@@ -363,8 +367,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
       ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
       ref.instanceMatrix.needsUpdate = true;
-      // select first letter on last side
-      setSelected((record.solution.length / 4) * 3 + (width - 1));
       // setInitialRotations(rotations);
       // showIntroAnimation(true);
       if (onInitialize) {
