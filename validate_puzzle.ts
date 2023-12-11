@@ -1,11 +1,14 @@
 import { PuzzleData, SolutionCell } from 'types/types';
 import { Command } from 'commander';
+import chokidar from 'chokidar';
+import clipboardy from 'clipboardy';
+import path from 'path';
 import fs from 'fs';
 
 const program = new Command();
 program.option(
-  '-f, --file [string]',
-  'provide a file containing json with an array of four ipuz objects',
+  '-p, --path [string]',
+  'relative path to a folder that contains four ipuz files labeled 1.ipuz, 2.ipuz, 3.ipuz, and 4.ipuz',
 );
 program.parse();
 
@@ -87,20 +90,19 @@ const validatePuzzle = (record: PuzzleData[]) => {
    */
 
   const allWords = [...down.flatMap((d) => d), ...across];
+  let message = 'Puzzle is valid!';
 
   // All answers should be at least 3 characters
   allWords.forEach((word) => {
     if (word.length < 3) {
-      throw new Error(`Answer "${word}" is less than 3 characters`);
+      message = `Answer "${word}" is less than 3 characters`;
     }
   });
   // Left and right columns should match
   columns.forEach((column, index) => {
     column.forEach((answer, i) => {
       if (answer !== down[index][i]) {
-        throw new Error(
-          `Left and right columns do not match: ${answer} !== ${down[index][i]}`,
-        );
+        message = `Left and right columns do not match: ${answer} !== ${down[index][i]}`;
       }
     });
   });
@@ -108,9 +110,7 @@ const validatePuzzle = (record: PuzzleData[]) => {
   allWords.forEach((_, index) => {
     const otherAnswers = allWords.filter((_, i) => i !== index);
     if (otherAnswers.includes(allWords[index])) {
-      throw new Error(
-        `Duplicate answer found: ${allWords[index]} at index ${index}`,
-      );
+      message = `Duplicate answer found: ${allWords[index]} at index ${index}`;
     }
   });
 
@@ -118,26 +118,46 @@ const validatePuzzle = (record: PuzzleData[]) => {
   record.forEach((side, index) => {
     side.clues.Across.forEach((clue) => {
       if (clue.clue.length < 1) {
-        throw new Error(
-          `Found empty clue! Side: ${index} Number: ${clue.number}`,
-        );
+        message = `Found empty clue! Side: ${index} Number: ${clue.number}`;
       }
     });
     side.clues.Down.forEach((clue) => {
       if (clue.clue.length < 1) {
-        throw new Error(
-          `Found empty clue! Side: ${index} Number: ${clue.number}`,
-        );
+        message = `Found empty clue! Side: ${index} Number: ${clue.number}`;
       }
     });
   });
+
+  return message;
 };
 
-try {
-  const data = fs.readFileSync(program.opts().file, 'utf8');
-  const puzzleData = JSON.parse(data) as PuzzleData[];
-  validatePuzzle(puzzleData);
-  console.log('Puzzle is valid!');
-} catch (e: any) {
-  console.error('ERROR!', e.message);
-}
+const dir = path.join(process.cwd(), program.opts().path);
+
+const update = () => {
+  const files = fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter(
+      (file) =>
+        file.isFile() &&
+        !/(^|\/)\.[^\/\.]/g.test(file.name) &&
+        path.extname(file.name) === '.ipuz',
+    );
+
+  const puzzleData = files.map((file) => {
+    // Read markdown file as string
+    const fullPath = path.join(dir, file.name);
+    const fileContents = fs.readFileSync(fullPath, 'utf8');
+    return JSON.parse(fileContents);
+  });
+
+  clipboardy.writeSync(JSON.stringify(puzzleData));
+
+  console.clear();
+  console.log(`Watching for changes on ${dir}...`);
+  console.log(validatePuzzle(puzzleData));
+};
+
+const watcher = chokidar.watch(dir, { persistent: true });
+watcher.on('change', update);
+
+update();
