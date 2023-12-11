@@ -9,6 +9,30 @@ import PreviewCube, { ProgressEnum } from 'components/svg/PreviewCube';
 import { styled } from 'styled-components';
 import { getColorHex } from 'lib/utils/color';
 
+export const getLabelForDifficulty = (difficulty: DifficultyEnum) => {
+  switch (difficulty) {
+    case DifficultyEnum.Easy:
+      return 'Easy';
+    case DifficultyEnum.Medium:
+      return 'Medium';
+    case DifficultyEnum.Hard:
+      return 'Hard';
+    default:
+      return 'Easy';
+  }
+};
+
+export const getColorForProgress = (difficulty: DifficultyEnum) => {
+  switch (difficulty) {
+    case DifficultyEnum.Medium:
+      return 'var(--medium-difficulty-text);';
+    case DifficultyEnum.Hard:
+      return 'var(--hard-difficulty-text);';
+    default:
+      return getColorHex(DEFAULT_SELECTED_ADJACENT_COLOR);
+  }
+};
+
 const Container = styled.div`
   display: flex;
   justify-content: space-between;
@@ -62,6 +86,12 @@ const AiContainer = styled.div`
   margin-top: 0.25rem;
 `;
 
+export const DifficultyLabel = styled.span<{
+  difficulty: DifficultyEnum;
+}>`
+  color: ${({ difficulty }) => getColorForProgress(difficulty)};
+`;
+
 export interface PuzzlePreviewProps {
   title: string;
   author: string;
@@ -84,14 +114,9 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
   return (
     <Container>
       <TitleContainer>
-        <IconStar
-          difficulty={difficulty}
-          color={
-            previewState === ProgressEnum.Solved
-              ? getColorHex(0xd1a227)
-              : getColorHex(DEFAULT_SELECTED_ADJACENT_COLOR)
-          }
-        />
+        <DifficultyLabel className="semi text-sm" difficulty={difficulty}>
+          {getLabelForDifficulty(difficulty)}
+        </DifficultyLabel>
         <span>
           {previewState === ProgressEnum.Solved ? (
             <span>🎉&nbsp;&nbsp;</span>

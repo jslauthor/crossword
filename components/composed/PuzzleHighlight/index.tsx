@@ -3,13 +3,16 @@
 import * as React from 'react';
 import 'components/svg/PreviewCube';
 import 'components/svg/IconStar';
-import { DEFAULT_SELECTED_ADJACENT_COLOR } from 'components/pages/PuzzlePage';
 import IconStar, { DifficultyEnum } from 'components/svg/IconStar';
 import PreviewCube, { ProgressEnum } from 'components/svg/PreviewCube';
 import { styled } from 'styled-components';
-import { getColorHex } from 'lib/utils/color';
+import {
+  DifficultyLabel,
+  getLabelForDifficulty,
+} from 'components/composed/PuzzlePreview';
 
 const Container = styled.div`
+  position: relative;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -71,6 +74,12 @@ const AiContainer = styled.div`
   margin-top: 0.33rem;
 `;
 
+const DifficultyLabelStyled = styled(DifficultyLabel)`
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+`;
+
 export interface PuzzleHighlightProps {
   title: string;
   author: string;
@@ -92,6 +101,12 @@ const PuzzleHighlight: React.FC<PuzzleHighlightProps> = ({
 }) => {
   return (
     <Container>
+      <DifficultyLabelStyled
+        className="semi text-xs italic"
+        difficulty={difficulty}
+      >
+        {getLabelForDifficulty(difficulty)}
+      </DifficultyLabelStyled>
       <CubeContainer>
         <PreviewCube
           width={90}
@@ -109,14 +124,6 @@ const PuzzleHighlight: React.FC<PuzzleHighlightProps> = ({
               )}
               {title}
             </span>
-            <IconStar
-              difficulty={difficulty}
-              color={
-                previewState === ProgressEnum.Solved
-                  ? getColorHex(0xd1a227)
-                  : getColorHex(DEFAULT_SELECTED_ADJACENT_COLOR)
-              }
-            />
           </TitleContainer>
           <span className="semi">{date}</span>
           <span className="capital">{author}</span>

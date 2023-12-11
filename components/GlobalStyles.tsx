@@ -183,6 +183,9 @@ export default createGlobalStyle`
     --grey800: #2C2F2A;
     --grey900: #20231F;
 
+    --yellow500: #F2C94C;
+    --red500: #EB5757;
+
     --max-app-width: 500px;
   }
 
@@ -197,6 +200,9 @@ export default createGlobalStyle`
     --ai-bg: var(--grey600);
     --menu-border: var(--grey100);
     --preview-hover-bg: var(--grey800);
+
+    --medium-difficulty-text: var(--yellow500);
+    --hard-difficulty-text: var(--red500);
 
     background-color: var(--primary-bg);
     color: var(--primary-text);
