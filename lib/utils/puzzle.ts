@@ -197,9 +197,6 @@ export const getCharacterRecord = (
 
 /**
  *
- * So, this only works for 8x8 puzzles since you can divice 256 by 32 and
- * get a whole number.
- *
  * Just be sure you set blank cells to MAX_SAFE_INTEGER
  *
  * @param answerIndex
