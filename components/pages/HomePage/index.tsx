@@ -15,6 +15,7 @@ const Container = styled.div`
   width: 100%;
   max-width: var(--primary-app-width);
   padding: 0.75rem;
+  background: var(--primary-bg);
 `;
 
 const PuzzlesContainer = styled.div`
