@@ -67,7 +67,7 @@ const CubeContainer = styled.section`
 const TitleContainer = styled.header`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   width: 100%;
   text-align: right;
   font-style: italic;
@@ -86,12 +86,6 @@ const AiContainer = styled.div`
   border-radius: 0.25rem;
   padding: 0.05rem 0.25rem;
   margin-top: 0.25rem;
-`;
-
-const DimensionIndicatorStyled = styled(DimensionIndicator)`
-  position: absolute;
-  bottom: 0.5rem;
-  right: 0.5rem;
 `;
 
 export const DifficultyLabel = styled.span<{
@@ -123,19 +117,11 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
 }) => {
   return (
     <Container>
-      <DimensionIndicatorStyled dimensions={dimensions} />
       <TitleContainer>
-        <DifficultyLabel className="semi text-sm" $difficulty={difficulty}>
+        <DimensionIndicator dimensions={dimensions} />
+        <DifficultyLabel className="bold" $difficulty={difficulty}>
           {getLabelForDifficulty(difficulty)}
         </DifficultyLabel>
-        <span>
-          {previewState === ProgressEnum.Solved ? (
-            <span>🎉&nbsp;&nbsp;</span>
-          ) : (
-            ''
-          )}
-          {title}
-        </span>
       </TitleContainer>
       <CubeContainer>
         <PreviewCube progress={previewState} colors={colors} />

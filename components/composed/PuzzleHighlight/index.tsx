@@ -75,16 +75,16 @@ const AiContainer = styled.div`
   margin-top: 0.33rem;
 `;
 
-const DifficultyLabelStyled = styled(DifficultyLabel)`
+const AboutContainer = styled.div`
   position: absolute;
   top: 0.5rem;
-  left: 0.5rem;
-`;
-
-const DimensionIndicatorStyled = styled(DimensionIndicator)`
-  position: absolute;
-  bottom: 0.5rem;
   right: 0.5rem;
+  left: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.25rem;
 `;
 
 export interface PuzzleHighlightProps {
@@ -110,13 +110,15 @@ const PuzzleHighlight: React.FC<PuzzleHighlightProps> = ({
 }) => {
   return (
     <Container>
-      <DifficultyLabelStyled
-        className="semi text-xs italic"
-        $difficulty={difficulty}
-      >
-        {getLabelForDifficulty(difficulty)}
-      </DifficultyLabelStyled>
-      <DimensionIndicatorStyled dimensions={dimensions} />
+      <AboutContainer>
+        <DimensionIndicator dimensions={dimensions} />
+        <DifficultyLabel
+          className="semi text-xs italic"
+          $difficulty={difficulty}
+        >
+          {getLabelForDifficulty(difficulty)}
+        </DifficultyLabel>
+      </AboutContainer>
       <CubeContainer>
         <PreviewCube
           width={90}
