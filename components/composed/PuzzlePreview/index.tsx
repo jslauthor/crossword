@@ -8,6 +8,7 @@ import IconStar, { DifficultyEnum } from 'components/svg/IconStar';
 import PreviewCube, { ProgressEnum } from 'components/svg/PreviewCube';
 import { styled } from 'styled-components';
 import { getColorHex } from 'lib/utils/color';
+import DimensionIndicator from 'components/core/DimensionIndicator';
 
 export const getLabelForDifficulty = (difficulty: DifficultyEnum) => {
   switch (difficulty) {
@@ -34,6 +35,7 @@ export const getColorForProgress = (difficulty: DifficultyEnum) => {
 };
 
 const Container = styled.div`
+  position: relative;
   display: flex;
   justify-content: space-between;
   flex-direction: column;
@@ -86,10 +88,16 @@ const AiContainer = styled.div`
   margin-top: 0.25rem;
 `;
 
+const DimensionIndicatorStyled = styled(DimensionIndicator)`
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+`;
+
 export const DifficultyLabel = styled.span<{
-  difficulty: DifficultyEnum;
+  $difficulty: DifficultyEnum;
 }>`
-  color: ${({ difficulty }) => getColorForProgress(difficulty)};
+  color: ${({ $difficulty: difficulty }) => getColorForProgress(difficulty)};
 `;
 
 export interface PuzzlePreviewProps {
@@ -100,6 +108,7 @@ export interface PuzzlePreviewProps {
   difficulty: DifficultyEnum;
   previewState: ProgressEnum;
   colors?: [number, number, number];
+  dimensions: [number, number];
 }
 
 const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
@@ -110,11 +119,13 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
   difficulty = DifficultyEnum.Easy,
   previewState = ProgressEnum.ZeroPercent,
   colors = [0x829b9e, 0x1fbe68, 0xd1a227],
+  dimensions,
 }) => {
   return (
     <Container>
+      <DimensionIndicatorStyled dimensions={dimensions} />
       <TitleContainer>
-        <DifficultyLabel className="semi text-sm" difficulty={difficulty}>
+        <DifficultyLabel className="semi text-sm" $difficulty={difficulty}>
           {getLabelForDifficulty(difficulty)}
         </DifficultyLabel>
         <span>

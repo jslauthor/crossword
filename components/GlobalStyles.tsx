@@ -176,9 +176,13 @@ export default createGlobalStyle`
   :root {
     --white: #F4F8F0;
     --black: #131414;
+
+    --cool-grey700: #829b9e;
+
     --grey: #333333;
     --grey100: #1d1d1d;
     --grey500: #b9b9b9;
+    --grey550: #727F6C;
     --grey600: #41483E;
     --grey800: #2C2F2A;
     --grey900: #20231F;
@@ -196,6 +200,8 @@ export default createGlobalStyle`
     --primary-app-width: var(--max-app-width);
     --secondary-bg: var(--grey);
     --terciary-bg: var(--grey900);
+
+    --primary-cell-bg: var(--grey550);
 
     --ai-bg: var(--grey600);
     --menu-border: var(--grey100);

@@ -46,6 +46,10 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
             isAiAssisted={latestPuzzle.isAiAssisted}
             difficulty={latestPuzzle.difficulty}
             previewState={latestPuzzle.previewState}
+            dimensions={[
+              latestPuzzle.data[0].dimensions.width,
+              latestPuzzle.data[0].dimensions.height,
+            ]}
           />
         </Link>
         <PuzzlesContainer>
@@ -59,6 +63,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
                 isAiAssisted,
                 previewState,
                 slug,
+                data,
               },
               index,
             ) => (
@@ -70,6 +75,10 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
                   isAiAssisted={isAiAssisted}
                   difficulty={difficulty}
                   previewState={previewState}
+                  dimensions={[
+                    data[0].dimensions.width,
+                    data[0].dimensions.height,
+                  ]}
                 />
               </Link>
             ),

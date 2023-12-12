@@ -3,13 +3,14 @@
 import * as React from 'react';
 import 'components/svg/PreviewCube';
 import 'components/svg/IconStar';
-import IconStar, { DifficultyEnum } from 'components/svg/IconStar';
+import { DifficultyEnum } from 'components/svg/IconStar';
 import PreviewCube, { ProgressEnum } from 'components/svg/PreviewCube';
 import { styled } from 'styled-components';
 import {
   DifficultyLabel,
   getLabelForDifficulty,
 } from 'components/composed/PuzzlePreview';
+import DimensionIndicator from 'components/core/DimensionIndicator';
 
 const Container = styled.div`
   position: relative;
@@ -80,6 +81,12 @@ const DifficultyLabelStyled = styled(DifficultyLabel)`
   left: 0.5rem;
 `;
 
+const DimensionIndicatorStyled = styled(DimensionIndicator)`
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+`;
+
 export interface PuzzleHighlightProps {
   title: string;
   author: string;
@@ -88,6 +95,7 @@ export interface PuzzleHighlightProps {
   difficulty: DifficultyEnum;
   previewState: ProgressEnum;
   colors?: [number, number, number];
+  dimensions: [number, number];
 }
 
 const PuzzleHighlight: React.FC<PuzzleHighlightProps> = ({
@@ -98,15 +106,17 @@ const PuzzleHighlight: React.FC<PuzzleHighlightProps> = ({
   difficulty = DifficultyEnum.Easy,
   previewState = ProgressEnum.ZeroPercent,
   colors = [0x829b9e, 0x1fbe68, 0xd1a227],
+  dimensions,
 }) => {
   return (
     <Container>
       <DifficultyLabelStyled
         className="semi text-xs italic"
-        difficulty={difficulty}
+        $difficulty={difficulty}
       >
         {getLabelForDifficulty(difficulty)}
       </DifficultyLabelStyled>
+      <DimensionIndicatorStyled dimensions={dimensions} />
       <CubeContainer>
         <PreviewCube
           width={90}
