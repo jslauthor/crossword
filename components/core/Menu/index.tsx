@@ -319,7 +319,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
               <FontAwesomeIcon icon={faClose} size="xl" />
             </CloseModalContainer>
             <h1>How to play Crosscube</h1>
-            <h2>An crossword in 3 dimensions</h2>
+            <h2>A crossword puzzle in 3 dimensions</h2>
             <Center>
               <ExampleCube height={125} width={225} />
             </Center>
