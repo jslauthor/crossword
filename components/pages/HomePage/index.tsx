@@ -5,8 +5,15 @@ import Menu from 'components/containers/Menu';
 import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { PuzzleType } from 'app/page';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import PuzzleHighlight from 'components/composed/PuzzleHighlight';
+import {
+  createDefaultCharacterPositionArray,
+  getCharacterPositionStorageKey,
+  getProgressFromSolution,
+} from 'lib/utils/puzzle';
+import { retrieveGameState } from 'lib/utils/hooks/usePuzzleProgress';
+import { PuzzleProps } from '../PuzzlePage';
 
 const Container = styled.div`
   position: relative;
@@ -30,11 +37,39 @@ const PuzzlesContainer = styled.div`
 
 export interface HomePageProps {
   puzzles: PuzzleType[];
+  atlas: PuzzleProps['characterTextureAtlasLookup'];
 }
 
-const Page: React.FC<HomePageProps> = ({ puzzles }) => {
-  const latestPuzzle = useMemo(() => puzzles[0], [puzzles]);
-  const otherPuzzles = useMemo(() => puzzles.slice(1), [puzzles]);
+const Page: React.FC<HomePageProps> = ({ puzzles, atlas }) => {
+  const [latestPuzzle, setLatestPuzzle] = useState(puzzles[0]);
+  const [otherPuzzles, setOtherPuzzles] = useState(puzzles.slice(1));
+
+  useEffect(() => {
+    const updatePuzzles = async () => {
+      const updatePuzzlePreview = async (puzzle: PuzzleType) => {
+        const positions = await retrieveGameState(
+          puzzle,
+          getCharacterPositionStorageKey(puzzle.id),
+          atlas,
+          createDefaultCharacterPositionArray(puzzle),
+        );
+        puzzle.previewState = getProgressFromSolution(
+          puzzle,
+          JSON.parse(JSON.stringify(positions)) as Record<string, number>,
+        );
+      };
+
+      await updatePuzzlePreview(latestPuzzle);
+      setLatestPuzzle({ ...latestPuzzle });
+
+      for (const puzzle of otherPuzzles) {
+        await updatePuzzlePreview(puzzle);
+      }
+      setOtherPuzzles([...otherPuzzles]);
+    };
+    updatePuzzles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atlas]);
 
   return (
     <Menu>
