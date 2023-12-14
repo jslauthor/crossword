@@ -8,8 +8,34 @@ import IconStar, { DifficultyEnum } from 'components/svg/IconStar';
 import PreviewCube, { ProgressEnum } from 'components/svg/PreviewCube';
 import { styled } from 'styled-components';
 import { getColorHex } from 'lib/utils/color';
+import DimensionIndicator from 'components/core/DimensionIndicator';
+
+export const getLabelForDifficulty = (difficulty: DifficultyEnum) => {
+  switch (difficulty) {
+    case DifficultyEnum.Easy:
+      return 'Easy';
+    case DifficultyEnum.Medium:
+      return 'Medium';
+    case DifficultyEnum.Hard:
+      return 'Hard';
+    default:
+      return 'Easy';
+  }
+};
+
+export const getColorForProgress = (difficulty: DifficultyEnum) => {
+  switch (difficulty) {
+    case DifficultyEnum.Medium:
+      return 'var(--medium-difficulty-text);';
+    case DifficultyEnum.Hard:
+      return 'var(--hard-difficulty-text);';
+    default:
+      return getColorHex(DEFAULT_SELECTED_ADJACENT_COLOR);
+  }
+};
 
 const Container = styled.div`
+  position: relative;
   display: flex;
   justify-content: space-between;
   flex-direction: column;
@@ -41,7 +67,7 @@ const CubeContainer = styled.section`
 const TitleContainer = styled.header`
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   width: 100%;
   text-align: right;
   font-style: italic;
@@ -62,6 +88,12 @@ const AiContainer = styled.div`
   margin-top: 0.25rem;
 `;
 
+export const DifficultyLabel = styled.span<{
+  $difficulty: DifficultyEnum;
+}>`
+  color: ${({ $difficulty: difficulty }) => getColorForProgress(difficulty)};
+`;
+
 export interface PuzzlePreviewProps {
   title: string;
   author: string;
@@ -70,6 +102,7 @@ export interface PuzzlePreviewProps {
   difficulty: DifficultyEnum;
   previewState: ProgressEnum;
   colors?: [number, number, number];
+  dimensions: [number, number];
 }
 
 const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
@@ -80,26 +113,15 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
   difficulty = DifficultyEnum.Easy,
   previewState = ProgressEnum.ZeroPercent,
   colors = [0x829b9e, 0x1fbe68, 0xd1a227],
+  dimensions,
 }) => {
   return (
     <Container>
       <TitleContainer>
-        <IconStar
-          difficulty={difficulty}
-          color={
-            previewState === ProgressEnum.Solved
-              ? getColorHex(0xd1a227)
-              : getColorHex(DEFAULT_SELECTED_ADJACENT_COLOR)
-          }
-        />
-        <span>
-          {previewState === ProgressEnum.Solved ? (
-            <span>🎉&nbsp;&nbsp;</span>
-          ) : (
-            ''
-          )}
-          {title}
-        </span>
+        <DimensionIndicator dimensions={dimensions} />
+        <DifficultyLabel className="bold" $difficulty={difficulty}>
+          {getLabelForDifficulty(difficulty)}
+        </DifficultyLabel>
       </TitleContainer>
       <CubeContainer>
         <PreviewCube progress={previewState} colors={colors} />

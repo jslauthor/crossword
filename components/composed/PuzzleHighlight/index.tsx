@@ -3,13 +3,17 @@
 import * as React from 'react';
 import 'components/svg/PreviewCube';
 import 'components/svg/IconStar';
-import { DEFAULT_SELECTED_ADJACENT_COLOR } from 'components/pages/PuzzlePage';
-import IconStar, { DifficultyEnum } from 'components/svg/IconStar';
+import { DifficultyEnum } from 'components/svg/IconStar';
 import PreviewCube, { ProgressEnum } from 'components/svg/PreviewCube';
 import { styled } from 'styled-components';
-import { getColorHex } from 'lib/utils/color';
+import {
+  DifficultyLabel,
+  getLabelForDifficulty,
+} from 'components/composed/PuzzlePreview';
+import DimensionIndicator from 'components/core/DimensionIndicator';
 
 const Container = styled.div`
+  position: relative;
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -71,6 +75,18 @@ const AiContainer = styled.div`
   margin-top: 0.33rem;
 `;
 
+const AboutContainer = styled.div`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  left: 0.5rem;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.25rem;
+`;
+
 export interface PuzzleHighlightProps {
   title: string;
   author: string;
@@ -79,6 +95,7 @@ export interface PuzzleHighlightProps {
   difficulty: DifficultyEnum;
   previewState: ProgressEnum;
   colors?: [number, number, number];
+  dimensions: [number, number];
 }
 
 const PuzzleHighlight: React.FC<PuzzleHighlightProps> = ({
@@ -89,9 +106,19 @@ const PuzzleHighlight: React.FC<PuzzleHighlightProps> = ({
   difficulty = DifficultyEnum.Easy,
   previewState = ProgressEnum.ZeroPercent,
   colors = [0x829b9e, 0x1fbe68, 0xd1a227],
+  dimensions,
 }) => {
   return (
     <Container>
+      <AboutContainer>
+        <DimensionIndicator dimensions={dimensions} />
+        <DifficultyLabel
+          className="semi text-xs italic"
+          $difficulty={difficulty}
+        >
+          {getLabelForDifficulty(difficulty)}
+        </DifficultyLabel>
+      </AboutContainer>
       <CubeContainer>
         <PreviewCube
           width={90}
@@ -109,14 +136,6 @@ const PuzzleHighlight: React.FC<PuzzleHighlightProps> = ({
               )}
               {title}
             </span>
-            <IconStar
-              difficulty={difficulty}
-              color={
-                previewState === ProgressEnum.Solved
-                  ? getColorHex(0xd1a227)
-                  : getColorHex(DEFAULT_SELECTED_ADJACENT_COLOR)
-              }
-            />
           </TitleContainer>
           <span className="semi">{date}</span>
           <span className="capital">{author}</span>

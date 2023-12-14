@@ -234,3 +234,11 @@ export const getProgressFromSolution = (
 
   return 2;
 };
+
+export const getCharacterPositionStorageKey = memoizeOne(
+  (id) => `puzzle-${id}`,
+);
+export const getElapsedTimeStorageKey = memoizeOne((id) => `puzzle-${id}-time`);
+
+export const createDefaultCharacterPositionArray = (puzzle: PuzzleType) =>
+  Float32Array.from(new Array(puzzle.record.solution.length * 2).fill(-1));

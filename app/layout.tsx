@@ -40,10 +40,10 @@ const prefix = process.env.NODE_ENV === 'development' ? 'http://' : 'https://';
 export const metadata: Metadata = {
   metadataBase: new URL(`${prefix}${process.env.VERCEL_URL}`),
   title: 'Crosscube',
-  description: 'An crossword in three dimensions',
+  description: 'A crossword puzzle in three dimensions',
   openGraph: {
     title: 'Crosscube',
-    description: 'An crossword in three dimensions',
+    description: 'A crossword puzzle in three dimensions',
     url: 'https://crosscube.app',
     siteName: 'Crosscube',
     images: [
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
         url: 'https://crosscube.app/og-alt.png',
         width: 1800,
         height: 1600,
-        alt: 'Crosscube: An crossword in three dimensions',
+        alt: 'Crosscube: A crossword puzzle in three dimensions',
       },
     ],
     locale: 'en_US',

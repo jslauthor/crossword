@@ -6,7 +6,13 @@ import { useUser } from '@clerk/nextjs';
 import { useThrottle } from './useThrottle';
 import { SolutionCell } from 'types/types';
 import { PuzzleProps } from 'components/pages/PuzzlePage';
-import { invertAtlas, updateAnswerIndex as mutateAnswerIndex } from '../puzzle';
+import {
+  createDefaultCharacterPositionArray,
+  getCharacterPositionStorageKey,
+  getElapsedTimeStorageKey,
+  invertAtlas,
+  updateAnswerIndex as mutateAnswerIndex,
+} from '../puzzle';
 
 const getItem = async <T,>(
   key: string,
@@ -28,6 +34,61 @@ const getItem = async <T,>(
   return fallback?.value;
 };
 
+// This mutates the puzzle!
+export const retrieveGameState = async (
+  puzzle: PuzzleType,
+  storageKey: string,
+  atlas: PuzzleProps['characterTextureAtlasLookup'],
+  characterPositionArray: Float32Array,
+) => {
+  let characterPosition: Float32Array =
+    createDefaultCharacterPositionArray(puzzle);
+  /**
+   * Compare local and server state and merge if needed
+   */
+  const localState = (await localForage.getItem(storageKey)) as {
+    value: Float32Array;
+    timestamp: number;
+  } | null;
+  const serverState = puzzle.progress
+    ? {
+        value: new Float32Array(
+          Object.values(puzzle.progress.data.state.value ?? []),
+        ),
+        timestamp: puzzle.progress.data.state.timestamp ?? 0,
+      }
+    : undefined;
+  if (localState != null && serverState == null) {
+    characterPosition = localState.value;
+    mutateAnswerIndex(
+      puzzle.answerIndex,
+      invertAtlas(atlas),
+      localState.value,
+      puzzle.record.solution,
+    );
+  } else if (localState == null && serverState != null) {
+    characterPosition = serverState.value;
+    // no need to mutate answer index here because it's already been done by the server
+  } else if (localState != null && serverState != null) {
+    const updatedPosition = characterPositionArray.map((_, index) => {
+      const newerState =
+        serverState.timestamp > localState.timestamp ? serverState : localState;
+      const olderState =
+        serverState.timestamp < localState.timestamp ? serverState : localState;
+      return getNumber(newerState.value[index]) ?? olderState.value[index];
+    });
+    characterPosition = updatedPosition;
+    mutateAnswerIndex(
+      puzzle.answerIndex,
+      invertAtlas(atlas),
+      updatedPosition,
+      puzzle.record.solution,
+    );
+  }
+
+  return characterPosition;
+};
+
 const getNumber = (val: number) => (val > -1 ? val : undefined);
 
 export const usePuzzleProgress = (
@@ -41,18 +102,18 @@ export const usePuzzleProgress = (
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   const [characterPositionArray, setCharacterPositionArray] =
-    useState<Float32Array>(
-      Float32Array.from(new Array(puzzle.record.solution.length * 2).fill(-1)),
-    );
+    useState<Float32Array>(createDefaultCharacterPositionArray(puzzle));
 
   const [hasRetrievedGameState, setHasRetrievedGameState] =
     useState<boolean>(false);
+
   const characterPositionStorageKey = useMemo(
-    () => `puzzle-${puzzle.id}`,
+    () => getCharacterPositionStorageKey(puzzle.id),
     [puzzle],
   );
+
   const elapsedTimeStorageKey = useMemo(
-    () => `puzzle-${puzzle.id}-time`,
+    () => getElapsedTimeStorageKey(puzzle.id),
     [puzzle],
   );
 
@@ -119,55 +180,14 @@ export const usePuzzleProgress = (
   useEffect(() => {
     if (isInitialized === false || hasRetrievedGameState === true) return;
 
-    const retrieveGameState = async () => {
-      /**
-       * Compare local and server state and merge if needed
-       */
-      const localState = (await localForage.getItem(
+    const initiate = async () => {
+      const characterPosition = await retrieveGameState(
+        puzzle,
         characterPositionStorageKey,
-      )) as {
-        value: Float32Array;
-        timestamp: number;
-      } | null;
-      const serverState = puzzle.progress
-        ? {
-            value: new Float32Array(
-              Object.values(puzzle.progress.data.state.value ?? []),
-            ),
-            timestamp: puzzle.progress.data.state.timestamp ?? 0,
-          }
-        : undefined;
-      if (localState != null && serverState == null) {
-        addCharacterPosition(localState.value);
-        mutateAnswerIndex(
-          puzzle.answerIndex,
-          invertAtlas(atlas),
-          localState.value,
-          puzzle.record.solution,
-        );
-      } else if (localState == null && serverState != null) {
-        addCharacterPosition(serverState.value);
-        // no need to mutate answer index here because it's already been done by the server
-      } else if (localState != null && serverState != null) {
-        const updatedPosition = characterPositionArray.map((_, index) => {
-          const newerState =
-            serverState.timestamp > localState.timestamp
-              ? serverState
-              : localState;
-          const olderState =
-            serverState.timestamp < localState.timestamp
-              ? serverState
-              : localState;
-          return getNumber(newerState.value[index]) ?? olderState.value[index];
-        });
-        addCharacterPosition(updatedPosition);
-        mutateAnswerIndex(
-          puzzle.answerIndex,
-          invertAtlas(atlas),
-          updatedPosition,
-          puzzle.record.solution,
-        );
-      }
+        atlas,
+        characterPositionArray,
+      );
+      addCharacterPosition(characterPosition);
       setAnswerIndex(puzzle.answerIndex);
 
       /**
@@ -197,7 +217,7 @@ export const usePuzzleProgress = (
 
       setHasRetrievedGameState(true);
     };
-    retrieveGameState();
+    initiate();
   }, [
     addCharacterPosition,
     addTime,
@@ -207,6 +227,7 @@ export const usePuzzleProgress = (
     elapsedTimeStorageKey,
     hasRetrievedGameState,
     isInitialized,
+    puzzle,
     puzzle.answerIndex,
     puzzle.progress,
     puzzle.record.solution,
