@@ -7,7 +7,11 @@ import styled from 'styled-components';
 import { Button } from '@nextui-org/react';
 import { useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { useElementSize, useOnClickOutside } from 'usehooks-ts';
+import {
+  useElementSize,
+  useOnClickOutside,
+  useResizeObserver,
+} from 'usehooks-ts';
 import UserInfo from 'components/composed/UserInfo';
 import { Link } from '@nextui-org/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -193,7 +197,10 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   onSignInPressed,
 }) => {
   const { isSignedIn, user } = useUser();
-  const [headerRef, { height }] = useElementSize();
+  const headerRef = useRef<HTMLDivElement>(null);
+  const { height = 0 } = useResizeObserver({
+    ref: headerRef,
+  });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const handleMenuPressed = useCallback(() => {
