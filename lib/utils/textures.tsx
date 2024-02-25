@@ -3,7 +3,6 @@ import path from 'path';
 import satori, { init } from 'satori';
 import Yoga from 'yoga-wasm-web';
 import sharp from 'sharp';
-// import { Resvg, ResvgRenderOptions } from '@resvg/resvg-js';
 
 const characterItems: string[] = [];
 for (let x = 0; x < 10; x++) {
