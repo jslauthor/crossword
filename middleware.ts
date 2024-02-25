@@ -1,4 +1,4 @@
-import { authMiddleware, redirectToSignIn, useAuth } from '@clerk/nextjs';
+import { authMiddleware } from '@clerk/nextjs';
 import prisma from 'lib/prisma';
 
 export default authMiddleware({
