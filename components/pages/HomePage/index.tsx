@@ -90,19 +90,16 @@ const Page: React.FC<HomePageProps> = ({ puzzles, atlas }) => {
         </Link>
         <PuzzlesContainer>
           {otherPuzzles.map(
-            (
-              {
-                author,
-                title,
-                date,
-                difficulty,
-                isAiAssisted,
-                previewState,
-                slug,
-                data,
-              },
-              index,
-            ) => (
+            ({
+              author,
+              title,
+              date,
+              difficulty,
+              isAiAssisted,
+              previewState,
+              slug,
+              data,
+            }) => (
               <Link key={slug} href={`/puzzle/${slug}`}>
                 <PuzzlePreview
                   title={title}

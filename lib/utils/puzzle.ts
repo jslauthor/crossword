@@ -14,6 +14,14 @@ export function isSolutionCellValue(
   return (cell as SolutionCellValue).value !== undefined;
 }
 
+export function isCellWithNumber(
+  cell: SolutionCell,
+): cell is SolutionCellValue {
+  return (
+    isSolutionCellValue(cell) && typeof cell.cell === 'number' && cell.cell > 0
+  );
+}
+
 export interface CharacterRecord {
   solution: SolutionCell[];
   clues: {
@@ -133,9 +141,8 @@ export const getCharacterRecord = (
 
       for (let x = 0; x < flattened.length; x++) {
         const currentCell = flattened[x];
-        const isCell =
-          isSolutionCellValue(currentCell) &&
-          typeof currentCell.cell === 'number';
+        const isCell = isCellWithNumber(currentCell);
+
         if (x % width === 0) {
           // first column
           // we skip the first column since the last column
@@ -150,18 +157,20 @@ export const getCharacterRecord = (
                 }
               : '#',
           );
-          continue;
+        } else {
+          if (isCell) {
+            value.solution.push({
+              // @ts-ignore
+              cell: currentCell.cell + runningTotal,
+              value: currentCell.value,
+            });
+          } else {
+            value.solution.push(currentCell);
+          }
         }
         if (isCell) {
-          value.solution.push({
-            // @ts-ignore
-            cell: currentCell.cell + runningTotal,
-            value: currentCell.value,
-          });
           // @ts-ignore
           highest = currentCell.cell > highest ? currentCell.cell : highest;
-        } else {
-          value.solution.push(currentCell);
         }
       }
       runningTotal = runningTotal + highest;

@@ -12,10 +12,7 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import {
-  isPuzzleSolved,
-  isSolutionCellValue,
-} from '../../../../lib/utils/puzzle';
+import { isCellWithNumber, isPuzzleSolved } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
@@ -308,7 +305,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         cubeSideDisplayArray[j * 2] =
           CubeSidesEnum.six | (j % width === width - 1 ? CubeSidesEnum.two : 0);
 
-        if (isSolutionCellValue(cell) && typeof cell.cell === 'number') {
+        if (isCellWithNumber(cell)) {
           // select first cell
           if (cell.cell === 1) {
             setSelected(j);
