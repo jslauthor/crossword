@@ -157,18 +157,20 @@ export const getCharacterRecord = (
                 }
               : '#',
           );
-          continue;
+        } else {
+          if (isCell) {
+            value.solution.push({
+              // @ts-ignore
+              cell: currentCell.cell + runningTotal,
+              value: currentCell.value,
+            });
+          } else {
+            value.solution.push(currentCell);
+          }
         }
         if (isCell) {
-          value.solution.push({
-            // @ts-ignore
-            cell: currentCell.cell + runningTotal,
-            value: currentCell.value,
-          });
           // @ts-ignore
           highest = currentCell.cell > highest ? currentCell.cell : highest;
-        } else {
-          value.solution.push(currentCell);
         }
       }
       runningTotal = runningTotal + highest;
