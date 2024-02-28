@@ -201,6 +201,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const { height = 0 } = useResizeObserver({
     ref: headerRef,
+    box: 'device-pixel-content-box',
   });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
