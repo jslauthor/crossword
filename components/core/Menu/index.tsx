@@ -7,11 +7,7 @@ import styled from 'styled-components';
 import { Button } from '@nextui-org/react';
 import { useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-import {
-  useElementSize,
-  useOnClickOutside,
-  useResizeObserver,
-} from 'usehooks-ts';
+import { useOnClickOutside, useResizeObserver } from 'usehooks-ts';
 import UserInfo from 'components/composed/UserInfo';
 import { Link } from '@nextui-org/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -62,11 +58,12 @@ const ClipContainer = styled.div<{ $headerHeight: number }>`
   position: fixed;
   width: var(--primary-app-width);
   overflow: hidden;
+  margin-left: -0.5rem;
   display: flex;
   justify-content: stretch;
   ${({ $headerHeight }) => `
-    top: ${$headerHeight}px; 
-    height: calc(100svh - ${$headerHeight}px);
+    top: ${$headerHeight - 10}px; 
+    height: calc(100svh - ${$headerHeight - 10}px);
   `}
 `;
 
@@ -80,6 +77,7 @@ const MenuContainer = styled(motion.nav)`
   width: 100%;
   height: 100%;
   padding: 0.5rem 0.75rem;
+  padding-left: 1.25rem;
   border: 1px solid var(--menu-border);
   box-shadow: 10px 0px 10px 10px rgba(10, 10, 10, 0.25);
 `;
@@ -180,6 +178,13 @@ const CloseModalContainer = styled.div`
   right: 1rem;
 `;
 
+const BlurLayer = styled.div`
+  position: absolute;
+  inset: -5px; // do not clip the blur
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+`;
+
 export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
@@ -249,6 +254,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
           />
         </HeaderContainer>
         {children}
+        {isMenuOpen && <BlurLayer />}
         <AnimatePresence>
           {isMenuOpen && (
             <ClipContainer $headerHeight={height}>
@@ -257,6 +263,10 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                 initial={{ x: '-100%' }}
                 animate={{ x: '0%' }}
                 exit={{ x: '-110%' }}
+                transition={{
+                  ease: 'easeInOut',
+                  duration: 0.1,
+                }}
               >
                 <MenuItemsContainer>
                   {isSignedIn === false && (

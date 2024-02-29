@@ -11,8 +11,8 @@ import { Canvas } from '@react-three/fiber';
 import styled from 'styled-components';
 
 const CanvasContainer = styled.div`
-  width: 30px;
-  height: 30px;
+  width: 25px;
+  height: 25px;
 `;
 
 interface BoxProps {
