@@ -181,6 +181,8 @@ const CloseModalContainer = styled.div`
 const BlurLayer = styled.div`
   position: absolute;
   inset: -5px; // do not clip the blur
+  top: 0px;
+  bottom: 0px;
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5px);
 `;
