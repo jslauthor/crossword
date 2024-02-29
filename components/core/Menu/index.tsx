@@ -181,6 +181,8 @@ const CloseModalContainer = styled.div`
 const BlurLayer = styled.div`
   position: absolute;
   inset: -5px; // do not clip the blur
+  top: 0px;
+  bottom: 0px;
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5px);
 `;
@@ -206,7 +208,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const { height = 0 } = useResizeObserver({
     ref: headerRef,
-    box: 'device-pixel-content-box',
+    box: 'border-box',
   });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
