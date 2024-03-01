@@ -8,6 +8,7 @@ import { SolutionCell } from 'types/types';
 import { PuzzleProps } from 'components/pages/PuzzlePage';
 import {
   createDefaultCharacterPositionArray,
+  getAutocheckStorageKey,
   getCharacterPositionStorageKey,
   getElapsedTimeStorageKey,
   invertAtlas,
@@ -99,10 +100,26 @@ export const usePuzzleProgress = (
   const { user } = useUser();
   const { add } = useAsyncQueue({ concurrency: 1 });
 
+  const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   const [characterPositionArray, setCharacterPositionArray] =
     useState<Float32Array>(createDefaultCharacterPositionArray(puzzle));
+
+  // This can be one of three values:
+  // 0 = default
+  // 1 = error
+  // 2 = verified (cannot change letter later)
+  const cellValidationArray = useMemo(
+    () => Uint8Array.from(new Array(puzzle.record.solution.length).fill(-1)),
+    [puzzle.record.solution.length],
+  );
+
+  // Is the cell in draft mode or default?
+  const cellDraftModeArray = useMemo(
+    () => Uint8Array.from(new Array(puzzle.record.solution.length).fill(-1)),
+    [puzzle.record.solution.length],
+  );
 
   const [hasRetrievedGameState, setHasRetrievedGameState] =
     useState<boolean>(false);
@@ -114,6 +131,11 @@ export const usePuzzleProgress = (
 
   const elapsedTimeStorageKey = useMemo(
     () => getElapsedTimeStorageKey(puzzle.id),
+    [puzzle],
+  );
+
+  const autocheckStorageKey = useMemo(
+    () => getAutocheckStorageKey(puzzle.id),
     [puzzle],
   );
 
@@ -143,6 +165,22 @@ export const usePuzzleProgress = (
 
   // Debounce saving to server
   const [saveToServerDebounced] = useThrottle(saveToServer, 5000);
+
+  const addAutocheckEnabled = useCallback(
+    (autoCheck: boolean) => {
+      add({
+        id: autocheckStorageKey,
+        task: () =>
+          localForage.setItem(autocheckStorageKey, {
+            timestamp: Date.now(),
+            value: autoCheck,
+          }),
+      });
+      setAutocheckEnabled(autoCheck);
+      saveToServerDebounced();
+    },
+    [add, autocheckStorageKey, saveToServerDebounced],
+  );
 
   const addCharacterPosition = useCallback(
     (characterPositionArray: Float32Array) => {
@@ -264,5 +302,9 @@ export const usePuzzleProgress = (
     answerIndex,
     hasRetrievedGameState,
     saveToServerDebounced,
+    cellValidationArray,
+    cellDraftModeArray,
+    autocheckEnabled,
+    addAutocheckEnabled,
   };
 };

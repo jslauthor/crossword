@@ -29,12 +29,14 @@ export enum CubeSidesEnum {
 }
 
 const vertexShader = `
+  attribute vec2 autocheckEnabled;
   attribute vec2 characterPosition;
   attribute vec2 cellNumberPosition;
   attribute vec3 cellColor;
   in ivec2 cubeSideDisplay;
   
   varying vec2 vUv;
+  varying vec2 vAutocheckEnabled;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
   varying vec3 vCellColor;
@@ -43,6 +45,7 @@ const vertexShader = `
   void main()
   {
       vUv = uv;
+      vAutocheckEnabled = autocheckEnabled;
       vCharacterPosition = characterPosition;
       vCellNumberPosition = cellNumberPosition;
       vCubeSideDisplay = cubeSideDisplay;
@@ -60,8 +63,11 @@ const fragmentShader = `
   uniform uint sideIndex;
   uniform float borderWidth;
   uniform vec4 borderColor;
+  uniform float errorWidth;
+  uniform vec4 errorColor;
   
   varying vec2 vUv;
+  varying vec2 vAutocheckEnabled;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
   varying vec3 vCellColor;
@@ -75,6 +81,18 @@ const fragmentShader = `
 
     // Show character when bitflag is on for the side
     if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
+
+      // TODO: Add conditional to toggle showing incorrect letters
+      
+      if (vAutocheckEnabled.x > 0.0) {
+        // Draw the diagonal mark for an incorrect letter
+        // Calculate the distance to the diagonal line (y = x)
+        float distance = abs(vUv.y - vUv.x);
+        if (distance < errorWidth) {
+          c = errorColor.rgb * errorColor.a + c.rgb * (1.0 - errorColor.a);
+        } 
+      }
+
       // Draw the border
       float maxSize = 1.0 - borderWidth;
       float minSize = borderWidth;
@@ -123,6 +141,9 @@ type LetterBoxesProps = {
   isVerticalOrientation: boolean;
   answerIndex: number[];
   characterPositionArray: Float32Array;
+  cellValidationArray: Uint8Array;
+  cellDraftModeArray: Uint8Array;
+  autocheckEnabled: boolean;
   hasRetrievedGameState: boolean;
   updateAnswerIndex: (
     cell: SolutionCell,
@@ -139,6 +160,12 @@ type LetterBoxesProps = {
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
+const cubeUniformConfig = {
+  borderColor: { value: new Vector4(0, 0, 0, 1) },
+  borderWidth: { value: 0.01 },
+  errorColor: { value: new Vector4(1, 0, 0, 1) },
+  errorWidth: { value: 0.025 },
+};
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzle,
@@ -162,6 +189,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   adjacentColor,
   onInitialize,
   onSolved,
+  cellValidationArray,
+  cellDraftModeArray,
+  autocheckEnabled,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   // const [isVerticalOrientation, setVerticalOrientation] =
@@ -229,6 +259,26 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     () => Int32Array.from(new Array(size * 2).fill(0)),
     [size],
   );
+
+  const trueValueArray = useMemo(
+    () => Uint8Array.from(new Array(size * 2).fill(1)),
+    [size],
+  );
+
+  const falseValueArray = useMemo(
+    () => Uint8Array.from(new Array(size * 2).fill(0)),
+    [size],
+  );
+
+  const autocheckEnabledArray = useMemo(
+    () => (autocheckEnabled ? trueValueArray : falseValueArray),
+    [autocheckEnabled, falseValueArray, trueValueArray],
+  );
+
+  useEffect(() => {
+    if (ref == null) return;
+    ref.geometry.attributes.autocheckEnabled.needsUpdate = true;
+  }, [autocheckEnabled, ref]);
 
   const cellColorsArray = useMemo(
     () =>
@@ -667,10 +717,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.one },
-          borderColor: { value: new Vector4(0, 0, 0, 1) },
-          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          ...cubeUniformConfig,
         },
       }),
     [characterTextureAtlas, numberTextureAtlas],
@@ -683,10 +732,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.two },
-          borderColor: { value: new Vector4(0, 0, 0, 1) },
-          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          ...cubeUniformConfig,
         },
       }),
     [characterTextureAtlas, numberTextureAtlas],
@@ -699,10 +747,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.three },
-          borderColor: { value: new Vector4(0, 0, 0, 1) },
-          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          ...cubeUniformConfig,
         },
       }),
     [characterTextureAtlas, numberTextureAtlas],
@@ -715,10 +762,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.four },
-          borderColor: { value: new Vector4(0, 0, 0, 1) },
-          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          ...cubeUniformConfig,
         },
       }),
     [characterTextureAtlas, numberTextureAtlas],
@@ -731,10 +777,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.five },
-          borderColor: { value: new Vector4(0, 0, 0, 1) },
-          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          ...cubeUniformConfig,
         },
       }),
     [characterTextureAtlas, numberTextureAtlas],
@@ -747,10 +792,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.six },
-          borderColor: { value: new Vector4(0, 0, 0, 1) },
-          borderWidth: { value: 0.01 },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          ...cubeUniformConfig,
         },
       }),
     [characterTextureAtlas, numberTextureAtlas],
@@ -828,6 +872,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           count={cellColorsArray.length}
           itemSize={3}
           array={cellColorsArray}
+        />
+        <instancedBufferAttribute
+          attach="attributes-autocheckEnabled"
+          count={autocheckEnabledArray.length}
+          itemSize={2}
+          array={autocheckEnabledArray}
         />
       </boxGeometry>
     </instancedMesh>

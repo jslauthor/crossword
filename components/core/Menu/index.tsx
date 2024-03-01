@@ -4,7 +4,7 @@ import React, { ReactNode, useEffect, useRef } from 'react';
 import md5 from 'md5';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
-import { Button } from '@nextui-org/react';
+import { Button, Switch } from '@nextui-org/react';
 import { useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useOnClickOutside, useResizeObserver } from 'usehooks-ts';
@@ -84,6 +84,12 @@ const MenuContainer = styled(motion.nav)`
 
 const MenuItem = styled.div`
   font-size: 1rem;
+`;
+
+const MenuItemFlex = styled(MenuItem)`
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 `;
 
 const Divider = styled.div`
@@ -190,7 +196,9 @@ const BlurLayer = styled.div`
 export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
+  autocheckEnabled?: boolean;
   rotatingBoxProps?: RotatingBoxProps;
+  onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onSignUpPressed?: () => void;
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
@@ -199,10 +207,12 @@ export type MenuWrapperProps = {
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
   children,
   centerLabel,
+  autocheckEnabled,
   rotatingBoxProps,
   onSignUpPressed,
   onSignOutPressed,
   onSignInPressed,
+  onAutocheckChanged,
 }) => {
   const { isSignedIn, user } = useUser();
   const headerRef = useRef<HTMLDivElement>(null);
@@ -281,6 +291,22 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         Sign Up
                       </Link>
                     </MenuItem>
+                  )}
+                  {autocheckEnabled != null && isSignedIn === true && (
+                    <>
+                      <MenuItemFlex>
+                        <Link color="foreground" onClick={onSignInPressed}>
+                          Autocheck
+                        </Link>
+                        <Switch
+                          size="sm"
+                          color="default"
+                          isSelected={autocheckEnabled}
+                          onValueChange={onAutocheckChanged}
+                        />
+                      </MenuItemFlex>
+                      <HRule />
+                    </>
                   )}
                   <MenuItem>
                     <Link color="foreground" href="mailto:info@crosscube.com">

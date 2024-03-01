@@ -7,6 +7,8 @@ interface MenuProps extends MenuWrapperProps {}
 
 const Menu: React.FC<MenuProps> = ({
   centerLabel,
+  autocheckEnabled,
+  onAutocheckChanged,
   rotatingBoxProps,
   children,
 }) => {
@@ -27,6 +29,8 @@ const Menu: React.FC<MenuProps> = ({
   return (
     <MenuWrapper
       centerLabel={centerLabel}
+      autocheckEnabled={autocheckEnabled}
+      onAutocheckChanged={onAutocheckChanged}
       onSignOutPressed={onSignOut}
       onSignUpPressed={onSignUp}
       onSignInPressed={onSignIn}

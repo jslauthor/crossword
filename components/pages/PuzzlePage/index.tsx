@@ -237,6 +237,10 @@ export default function Puzzle({
     answerIndex,
     characterPositionArray,
     saveToServerDebounced,
+    cellValidationArray,
+    cellDraftModeArray,
+    autocheckEnabled,
+    addAutocheckEnabled,
   } = usePuzzleProgress(
     puzzle,
     characterTextureAtlasLookup,
@@ -397,10 +401,19 @@ export default function Puzzle({
     };
   }, [defaultColor, sideOffset]);
 
+  const handleAutocheckChanged = useCallback(
+    (autocheckEnabled: boolean) => {
+      addAutocheckEnabled(autocheckEnabled);
+    },
+    [addAutocheckEnabled],
+  );
+
   return (
     <Menu
       centerLabel={formattedElapsedTime}
       rotatingBoxProps={rotatingBoxProps}
+      autocheckEnabled={autocheckEnabled}
+      onAutocheckChanged={handleAutocheckChanged}
     >
       <Canvas
         gl={{ antialias: false }}
@@ -447,6 +460,9 @@ export default function Puzzle({
                 onSolved={onSolved}
                 isVerticalOrientation={isVerticalOrientation}
                 onVerticalOrientationChange={setVerticalOrientation}
+                cellValidationArray={cellValidationArray}
+                cellDraftModeArray={cellDraftModeArray}
+                autocheckEnabled={autocheckEnabled}
               />
             </group>
           </SwipeControls>
