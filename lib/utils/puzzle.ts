@@ -251,6 +251,18 @@ export const getElapsedTimeStorageKey = memoizeOne((id) => `puzzle-${id}-time`);
 export const getAutocheckStorageKey = memoizeOne(
   (id) => `puzzle-${id}-autocheck`,
 );
+export const getDraftModeStorageKey = memoizeOne(
+  (id) => `puzzle-${id}-draft-mode`,
+);
+export const getCellValidationStorageKey = memoizeOne(
+  (id) => `puzzle-${id}-cell-validation`,
+);
+export const getCellDraftModeStorageKey = memoizeOne(
+  (id) => `puzzle-${id}-cell-draft-mode`,
+);
 
 export const createDefaultCharacterPositionArray = (puzzle: PuzzleType) =>
   Float32Array.from(new Array(puzzle.record.solution.length * 2).fill(-1));
+
+export const createUint8Array = (puzzle: PuzzleType) =>
+  Uint8Array.from(new Array(puzzle.record.solution.length * 2).fill(0));

@@ -8,8 +8,12 @@ import { SolutionCell } from 'types/types';
 import { PuzzleProps } from 'components/pages/PuzzlePage';
 import {
   createDefaultCharacterPositionArray,
+  createUint8Array,
   getAutocheckStorageKey,
+  getCellDraftModeStorageKey,
+  getCellValidationStorageKey,
   getCharacterPositionStorageKey,
+  getDraftModeStorageKey,
   getElapsedTimeStorageKey,
   invertAtlas,
   updateAnswerIndex as mutateAnswerIndex,
@@ -101,6 +105,7 @@ export const usePuzzleProgress = (
   const { add } = useAsyncQueue({ concurrency: 1 });
 
   const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
+  const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   const [characterPositionArray, setCharacterPositionArray] =
@@ -110,15 +115,15 @@ export const usePuzzleProgress = (
   // 0 = default
   // 1 = error
   // 2 = verified (cannot change letter later)
-  const cellValidationArray = useMemo(
-    () => Uint8Array.from(new Array(puzzle.record.solution.length).fill(-1)),
-    [puzzle.record.solution.length],
+  const [cellValidationArray, setCellValidationArray] = useState<Uint8Array>(
+    createUint8Array(puzzle),
   );
 
   // Is the cell in draft mode or default?
-  const cellDraftModeArray = useMemo(
-    () => Uint8Array.from(new Array(puzzle.record.solution.length).fill(-1)),
-    [puzzle.record.solution.length],
+  // 0 = default
+  // 1 = draft
+  const [cellDraftModeArray, setCellDraftModeArray] = useState<Uint8Array>(
+    createUint8Array(puzzle),
   );
 
   const [hasRetrievedGameState, setHasRetrievedGameState] =
@@ -136,6 +141,21 @@ export const usePuzzleProgress = (
 
   const autocheckStorageKey = useMemo(
     () => getAutocheckStorageKey(puzzle.id),
+    [puzzle],
+  );
+
+  const draftModeStorageKey = useMemo(
+    () => getDraftModeStorageKey(puzzle.id),
+    [puzzle],
+  );
+
+  const cellValidationStorageKey = useMemo(
+    () => getCellValidationStorageKey(puzzle.id),
+    [puzzle],
+  );
+
+  const cellDraftModeStorageKey = useMemo(
+    () => getCellDraftModeStorageKey(puzzle.id),
     [puzzle],
   );
 
@@ -180,6 +200,54 @@ export const usePuzzleProgress = (
       saveToServerDebounced();
     },
     [add, autocheckStorageKey, saveToServerDebounced],
+  );
+
+  const addDraftModeEnabled = useCallback(
+    (draftModeEnabled: boolean) => {
+      add({
+        id: draftModeStorageKey,
+        task: () =>
+          localForage.setItem(draftModeStorageKey, {
+            timestamp: Date.now(),
+            value: draftModeEnabled,
+          }),
+      });
+      setDraftModeEnabled(draftModeEnabled);
+      saveToServerDebounced();
+    },
+    [add, draftModeStorageKey, saveToServerDebounced],
+  );
+
+  const addCellValidation = useCallback(
+    (cellValidationArray: Uint8Array) => {
+      add({
+        id: cellValidationStorageKey,
+        task: () =>
+          localForage.setItem(cellValidationStorageKey, {
+            timestamp: Date.now(),
+            value: cellValidationArray,
+          }),
+      });
+      setCellValidationArray(new Uint8Array(cellValidationArray));
+      saveToServerDebounced();
+    },
+    [add, cellValidationStorageKey, saveToServerDebounced],
+  );
+
+  const addCellDraftMode = useCallback(
+    (cellDraftModeArray: Uint8Array) => {
+      add({
+        id: cellDraftModeStorageKey,
+        task: () =>
+          localForage.setItem(cellDraftModeStorageKey, {
+            timestamp: Date.now(),
+            value: cellDraftModeArray,
+          }),
+      });
+      setCellDraftModeArray(new Uint8Array(cellDraftModeArray));
+      saveToServerDebounced();
+    },
+    [add, cellDraftModeStorageKey, saveToServerDebounced],
   );
 
   const addCharacterPosition = useCallback(
@@ -287,10 +355,33 @@ export const usePuzzleProgress = (
           // This flips the index bit to 0 (false)
           newAnswerIndex[chunk] &= ~(1 << bit);
         }
+
+        if (autocheckEnabled) {
+          // 2 = correct
+          // 1 = incorrect
+          cellValidationArray[index * 2] = isCorrect ? 2 : 1;
+        } else {
+          // 0 = default
+          cellValidationArray[index * 2] = 0;
+        }
+
+        cellDraftModeArray[index * 2] = draftModeEnabled ? 1 : 0;
+
+        addCellDraftMode(cellDraftModeArray);
+        addCellValidation(cellValidationArray);
+
         setAnswerIndex(newAnswerIndex);
       }
     },
-    [answerIndex],
+    [
+      addCellDraftMode,
+      addCellValidation,
+      answerIndex,
+      autocheckEnabled,
+      cellDraftModeArray,
+      cellValidationArray,
+      draftModeEnabled,
+    ],
   );
 
   return {
@@ -303,8 +394,12 @@ export const usePuzzleProgress = (
     hasRetrievedGameState,
     saveToServerDebounced,
     cellValidationArray,
+    addCellValidation,
     cellDraftModeArray,
+    addCellDraftMode,
     autocheckEnabled,
     addAutocheckEnabled,
+    draftModeEnabled,
+    addDraftModeEnabled,
   };
 };
