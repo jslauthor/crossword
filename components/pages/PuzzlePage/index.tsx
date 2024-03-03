@@ -45,6 +45,11 @@ import { RotatingBoxProps } from 'components/core/3d/Box';
 import { PuzzleType } from 'app/page';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
+import {
+  DEFAULT_COLOR,
+  DEFAULT_SELECTED_ADJACENT_COLOR,
+  DEFAULT_SELECTED_COLOR,
+} from 'lib/utils/color';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -57,10 +62,6 @@ for (let x = 0; x <= 1000; x++) {
   SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
 }
 SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
-
-export const DEFAULT_COLOR = 0x708d91;
-export const DEFAULT_SELECTED_COLOR = 0xd31996;
-export const DEFAULT_SELECTED_ADJACENT_COLOR = 0x1fbe68;
 
 const HeaderItem = styled.div`
   display: grid;

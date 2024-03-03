@@ -184,7 +184,7 @@ export const usePuzzleProgress = (
   }, [characterPositionStorageKey, elapsedTimeStorageKey, puzzle.id, user]);
 
   // Debounce saving to server
-  const [saveToServerDebounced] = useThrottle(saveToServer, 5000);
+  const [saveToServerDebounced] = useThrottle(saveToServer, 15000);
 
   const addAutocheckEnabled = useCallback(
     (autoCheck: boolean) => {

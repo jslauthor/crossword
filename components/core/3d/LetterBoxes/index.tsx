@@ -18,6 +18,7 @@ import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
 import { SolutionCell } from 'types/types';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
+import { borderColor, correctColor, errorColor } from 'lib/utils/color';
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -68,6 +69,7 @@ const fragmentShader = `
   uniform vec4 borderColor;
   uniform float errorWidth;
   uniform vec4 errorColor;
+  uniform vec4 correctColor;
   
   varying vec2 vUv;
   varying vec2 vCellValidation;
@@ -77,6 +79,20 @@ const fragmentShader = `
   varying vec3 vCellColor;
   flat varying ivec2 vCubeSideDisplay;
 
+  vec4 desaturateAndDarken(vec4 color, float desaturationFactor, float darkenFactor) {
+    // Calculate the luminance of the original color
+    float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+    vec3 gray = vec3(luminance); // Create a grayscale color from the luminance
+
+    // Mix the original color with the grayscale color based on the desaturation factor
+    vec3 desaturated = mix(color.rgb, gray, desaturationFactor);
+
+    // Darken the desaturated color by multiplying it with the darken factor
+    vec3 darkened = desaturated * darkenFactor;
+
+    return vec4(darkened, color.a); // Return the modified color with the original alpha
+  }
+
   void main(void)
   {
     vec3 c = vCellColor.rgb;
@@ -85,14 +101,6 @@ const fragmentShader = `
 
     // Show character when bitflag is on for the side
     if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
-      // Draw the border
-      float maxSize = 1.0 - borderWidth;
-      float minSize = borderWidth;
-      if (!(vUv.x < maxSize && vUv.x > minSize &&
-        vUv.y < maxSize && vUv.y > minSize)) {
-          c = borderColor.rgb * borderColor.a + c.rgb * (1.0 - borderColor.a);  // blending equation
-      }
-
       // Draw the letter
       // A coord of -1, -1 means do not paint
       if (vCharacterPosition.x >= 0.0 && vCharacterPosition.y >= 0.0) {
@@ -102,10 +110,14 @@ const fragmentShader = `
         vec4 Ca = texture2D(characterTexture, coord);
 
         if (vCellValidation.x == 2.0) {
-          // Draw color for a correct letter
+          // Draw the mark for an correct letter
+          if (vUv.y > (1.0 - vUv.x + 0.75)) {
+            c = correctColor.rgb;
+          } 
         } else {
           if (vCellDraftMode.x > 0.0) {
             // Draw a light grey color for a draft mode letter
+            Ca = desaturateAndDarken(Ca, 0.5, 0.5);
           }
           // 1.0 means we have an incorrect letter
           if (vCellValidation.x > 0.0 && vCellValidation.x < 2.0) {
@@ -119,6 +131,14 @@ const fragmentShader = `
         }
 
         c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
+      }
+
+      // Draw the border
+      float maxSize = 1.0 - borderWidth;
+      float minSize = borderWidth;
+      if (!(vUv.x < maxSize && vUv.x > minSize &&
+        vUv.y < maxSize && vUv.y > minSize)) {
+          c = borderColor.rgb * borderColor.a + c.rgb * (1.0 - borderColor.a);  // blending equation
       }
 
       // Draw the cell number
@@ -171,10 +191,32 @@ type LetterBoxesProps = {
 const tempObject = new Object3D();
 const tempColor = new Color();
 const cubeUniformConfig = {
-  borderColor: { value: new Vector4(0, 0, 0, 1) },
+  borderColor: {
+    value: new Vector4(
+      borderColor.r / 255,
+      borderColor.g / 255,
+      borderColor.b / 255,
+      1.0,
+    ),
+  },
   borderWidth: { value: 0.01 },
-  errorColor: { value: new Vector4(1, 0, 0, 1) },
+  errorColor: {
+    value: new Vector4(
+      errorColor.r / 255,
+      errorColor.g / 255,
+      errorColor.b / 255,
+      1.0,
+    ),
+  },
   errorWidth: { value: 0.025 },
+  correctColor: {
+    value: new Vector4(
+      correctColor.r / 255,
+      correctColor.g / 255,
+      correctColor.b / 255,
+      1.0,
+    ),
+  },
 };
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
