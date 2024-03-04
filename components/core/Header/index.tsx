@@ -22,26 +22,23 @@ const Container = styled.nav<{ $hasCenterLabel: boolean }>`
   align-items: center;
 `;
 
-const CloseButtonContainer = styled.div`
+const MenuIconContainer = styled.div`
   width: 18px;
-  grid-column: 1 / 2;
+  // grid-column: 1 / 2;
 `;
 
 const LogoStyled = styled(IconMainLogo)`
-  grid-column: 2 / 3;
+  // grid-column: 2 / 3;
 `;
 
 const CenterLabelContainer = styled.div`
-  grid-column: 3 / 4;
-  justify-self: center;
-  width: 100%;
-  max-width: 40px;
-  text-overflow: ellipsis;
+  // grid-column: 2 / 4;
 `;
 
 const RightContentContainer = styled.div`
-  grid-column: 4 / 5;
-  justify-self: end;
+  // grid-column: 4 / 5;
+  align-self: end;
+  justify-self: flex-end;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -102,16 +99,18 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <Container $hasCenterLabel={hasCenterLabel}>
-      <CloseButtonContainer onClick={onMenuPressed}>
+      <MenuIconContainer onClick={onMenuPressed}>
         {showCloseButton ? (
           <IconX width={20} height={25} />
         ) : (
           <IconHamburger width={20} height={25} />
         )}
-      </CloseButtonContainer>
-      <Link href="/">
-        <LogoStyled width={140} height={25} />
-      </Link>
+      </MenuIconContainer>
+      {hasCenterLabel === false && (
+        <Link href="/">
+          <LogoStyled width={140} height={25} />
+        </Link>
+      )}
       {hasCenterLabel === true && (
         <CenterLabelContainer>{centerLabel}</CenterLabelContainer>
       )}
