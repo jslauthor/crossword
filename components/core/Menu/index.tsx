@@ -197,8 +197,10 @@ export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
   autocheckEnabled?: boolean;
+  draftModeEnabled?: boolean;
   rotatingBoxProps?: RotatingBoxProps;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
+  onDraftModeChanged?: (draftModeEnabled: boolean) => void;
   onSignUpPressed?: () => void;
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
@@ -208,11 +210,13 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   children,
   centerLabel,
   autocheckEnabled,
+  draftModeEnabled,
   rotatingBoxProps,
   onSignUpPressed,
   onSignOutPressed,
   onSignInPressed,
   onAutocheckChanged,
+  onDraftModeChanged,
 }) => {
   const { isSignedIn, user } = useUser();
   const headerRef = useRef<HTMLDivElement>(null);
@@ -263,6 +267,10 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
             centerLabel={centerLabel}
             rotatingBoxProps={rotatingBoxProps}
             onQuestionPressed={toggleModal}
+            autocheckEnabled={autocheckEnabled}
+            onAutocheckChanged={onAutocheckChanged}
+            draftModeEnabled={draftModeEnabled}
+            onDraftModeChanged={onDraftModeChanged}
           />
         </HeaderContainer>
         {children}
@@ -291,22 +299,6 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         Sign Up
                       </Link>
                     </MenuItem>
-                  )}
-                  {autocheckEnabled != null && isSignedIn === true && (
-                    <>
-                      <MenuItemFlex>
-                        <Link color="foreground" onClick={onSignInPressed}>
-                          Autocheck
-                        </Link>
-                        <Switch
-                          size="sm"
-                          color="default"
-                          isSelected={autocheckEnabled}
-                          onValueChange={onAutocheckChanged}
-                        />
-                      </MenuItemFlex>
-                      <HRule />
-                    </>
                   )}
                   <MenuItem>
                     <Link color="foreground" href="mailto:info@crosscube.com">

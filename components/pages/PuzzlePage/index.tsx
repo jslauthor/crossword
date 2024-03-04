@@ -242,6 +242,8 @@ export default function Puzzle({
     cellDraftModeArray,
     autocheckEnabled,
     addAutocheckEnabled,
+    draftModeEnabled,
+    addDraftModeEnabled,
   } = usePuzzleProgress(
     puzzle,
     characterTextureAtlasLookup,
@@ -409,12 +411,21 @@ export default function Puzzle({
     [addAutocheckEnabled],
   );
 
+  const handleDraftModeChanged = useCallback(
+    (draftModeEnabled: boolean) => {
+      addDraftModeEnabled(draftModeEnabled);
+    },
+    [addDraftModeEnabled],
+  );
+
   return (
     <Menu
       centerLabel={formattedElapsedTime}
       rotatingBoxProps={rotatingBoxProps}
       autocheckEnabled={autocheckEnabled}
+      draftModeEnabled={draftModeEnabled}
       onAutocheckChanged={handleAutocheckChanged}
+      onDraftModeChanged={handleDraftModeChanged}
     >
       <Canvas
         gl={{ antialias: false }}

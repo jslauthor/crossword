@@ -117,7 +117,7 @@ const fragmentShader = `
         } else {
           if (vCellDraftMode.x > 0.0) {
             // Draw a light grey color for a draft mode letter
-            Ca = desaturateAndDarken(Ca, 0.5, 0.5);
+            Ca = desaturateAndDarken(Ca, 0.5, 0.1);
           }
           // 1.0 means we have an incorrect letter
           if (vCellValidation.x > 0.0 && vCellValidation.x < 2.0) {

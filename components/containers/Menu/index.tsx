@@ -1,7 +1,7 @@
-import React, { ReactNode, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import MenuWrapper, { MenuWrapperProps } from 'components/core/Menu';
 import { useClerk } from '@clerk/nextjs';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 interface MenuProps extends MenuWrapperProps {}
 
@@ -9,6 +9,8 @@ const Menu: React.FC<MenuProps> = ({
   centerLabel,
   autocheckEnabled,
   onAutocheckChanged,
+  draftModeEnabled,
+  onDraftModeChanged,
   rotatingBoxProps,
   children,
 }) => {
@@ -35,6 +37,8 @@ const Menu: React.FC<MenuProps> = ({
       onSignUpPressed={onSignUp}
       onSignInPressed={onSignIn}
       rotatingBoxProps={rotatingBoxProps}
+      draftModeEnabled={draftModeEnabled}
+      onDraftModeChanged={onDraftModeChanged}
     >
       {children}
     </MenuWrapper>

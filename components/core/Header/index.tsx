@@ -2,10 +2,13 @@ import IconHamburger from 'components/svg/IconHamburger';
 import IconQuestion from 'components/svg/IconQuestion';
 import IconX from 'components/svg/IconX';
 import IconMainLogo from 'components/svg/MainLogo';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { styled } from 'styled-components';
 import RotatingBox, { RotatingBoxProps } from '../3d/Box';
 import Link from 'next/link';
+import { Button } from '@nextui-org/react';
+import LightBulb from 'components/svg/LightBulb';
+import Pencil from 'components/svg/Pencil';
 
 const Container = styled.nav<{ $hasCenterLabel: boolean }>`
   display: grid;
@@ -41,12 +44,23 @@ const RightContentContainer = styled.div`
   gap: 1rem;
 `;
 
+const HeaderButton = styled(Button)`
+  height: 30px;
+  width: 30px;
+  min-width: 30px;
+  border-radius: 0.25rem;
+`;
+
 interface HeaderProps {
   showCloseButton: boolean;
   centerLabel?: string;
   onMenuPressed: () => void;
   rotatingBoxProps?: RotatingBoxProps;
   onQuestionPressed?: () => void;
+  autocheckEnabled?: boolean;
+  draftModeEnabled?: boolean;
+  onAutocheckChanged?: (autocheckEnabled: boolean) => void;
+  onDraftModeChanged?: (draftModeEnabled: boolean) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -55,11 +69,27 @@ const Header: React.FC<HeaderProps> = ({
   onMenuPressed,
   rotatingBoxProps,
   onQuestionPressed,
+  autocheckEnabled,
+  onAutocheckChanged,
+  onDraftModeChanged,
+  draftModeEnabled,
 }) => {
   const hasCenterLabel = useMemo(
     () => centerLabel != null && centerLabel.length > 0,
     [centerLabel],
   );
+
+  const handleAutocheckChanged = useCallback(() => {
+    if (onAutocheckChanged) {
+      onAutocheckChanged(!autocheckEnabled);
+    }
+  }, [autocheckEnabled, onAutocheckChanged]);
+
+  const handleDraftModeChanged = useCallback(() => {
+    if (onDraftModeChanged) {
+      onDraftModeChanged(!draftModeEnabled);
+    }
+  }, [draftModeEnabled, onDraftModeChanged]);
 
   return (
     <Container $hasCenterLabel={hasCenterLabel}>
@@ -78,10 +108,28 @@ const Header: React.FC<HeaderProps> = ({
       )}
       <RightContentContainer>
         {rotatingBoxProps && (
-          <RotatingBox
-            side={rotatingBoxProps.side}
-            defaultColor={rotatingBoxProps.defaultColor}
-          />
+          <>
+            <HeaderButton
+              onClick={handleDraftModeChanged}
+              color="default"
+              variant={draftModeEnabled ? 'solid' : 'light'}
+              isIconOnly
+            >
+              <Pencil />
+            </HeaderButton>
+            <HeaderButton
+              onClick={handleAutocheckChanged}
+              color="default"
+              variant={autocheckEnabled ? 'solid' : 'light'}
+              isIconOnly
+            >
+              <LightBulb />
+            </HeaderButton>
+            <RotatingBox
+              side={rotatingBoxProps.side}
+              defaultColor={rotatingBoxProps.defaultColor}
+            />
+          </>
         )}
         <div onClick={onQuestionPressed}>
           <IconQuestion width={25} height={25} />
