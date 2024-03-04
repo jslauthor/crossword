@@ -34,6 +34,9 @@ const LogoStyled = styled(IconMainLogo)`
 const CenterLabelContainer = styled.div`
   grid-column: 3 / 4;
   justify-self: center;
+  width: 100%;
+  max-width: 40px;
+  text-overflow: ellipsis;
 `;
 
 const RightContentContainer = styled.div`
@@ -58,7 +61,6 @@ interface HeaderProps {
   centerLabel?: string;
   onMenuPressed: () => void;
   rotatingBoxProps?: RotatingBoxProps;
-  onQuestionPressed?: () => void;
   autocheckEnabled?: boolean;
   draftModeEnabled?: boolean;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
@@ -70,7 +72,6 @@ const Header: React.FC<HeaderProps> = ({
   centerLabel,
   onMenuPressed,
   rotatingBoxProps,
-  onQuestionPressed,
   autocheckEnabled,
   onAutocheckChanged,
   onDraftModeChanged,
@@ -146,9 +147,6 @@ const Header: React.FC<HeaderProps> = ({
             />
           </>
         )}
-        <div onClick={onQuestionPressed}>
-          <IconQuestion width={25} height={25} />
-        </div>
       </RightContentContainer>
     </Container>
   );
