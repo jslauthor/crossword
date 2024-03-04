@@ -12,7 +12,7 @@ interface LightBulbProps {
 
 const LightBulb: FunctionComponent<LightBulbProps> = ({
   fill = 'currentColor',
-  width = 22,
+  width = 14,
   height = 18,
   className,
 }) => {

@@ -45,10 +45,11 @@ const RightContentContainer = styled.div`
 `;
 
 const HeaderButton = styled(Button)`
-  height: 30px;
-  width: 30px;
-  min-width: 30px;
+  height: 25px;
+  width: 25px;
+  min-width: 25px;
   border-radius: 0.25rem;
+  padding-top: 0.1rem;
 `;
 
 interface HeaderProps {
