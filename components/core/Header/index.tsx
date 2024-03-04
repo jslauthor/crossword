@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Button } from '@nextui-org/react';
 import LightBulb from 'components/svg/LightBulb';
 import Pencil from 'components/svg/Pencil';
+import { DEFAULT_CORRECT_COLOR, getColorHex } from 'lib/utils/color';
 
 const Container = styled.nav<{ $hasCenterLabel: boolean }>`
   display: grid;
@@ -49,7 +50,7 @@ const HeaderButton = styled(Button)`
   width: 25px;
   min-width: 25px;
   border-radius: 0.25rem;
-  padding-top: 0.1rem;
+  padding-top: 0.2rem;
 `;
 
 interface HeaderProps {
@@ -92,6 +93,12 @@ const Header: React.FC<HeaderProps> = ({
     }
   }, [draftModeEnabled, onDraftModeChanged]);
 
+  const correctColor = useMemo(() => {
+    return autocheckEnabled
+      ? getColorHex(DEFAULT_CORRECT_COLOR)
+      : 'var(--primary-text)';
+  }, [autocheckEnabled]);
+
   return (
     <Container $hasCenterLabel={hasCenterLabel}>
       <CloseButtonContainer onClick={onMenuPressed}>
@@ -116,7 +123,10 @@ const Header: React.FC<HeaderProps> = ({
               variant={draftModeEnabled ? 'solid' : 'light'}
               isIconOnly
             >
-              <Pencil />
+              <Pencil
+                width={draftModeEnabled ? 22 : 26}
+                height={draftModeEnabled ? 18 : 22}
+              />
             </HeaderButton>
             <HeaderButton
               onClick={handleAutocheckChanged}
@@ -124,7 +134,11 @@ const Header: React.FC<HeaderProps> = ({
               variant={autocheckEnabled ? 'solid' : 'light'}
               isIconOnly
             >
-              <LightBulb />
+              <LightBulb
+                fill={correctColor}
+                width={autocheckEnabled ? 14 : 18}
+                height={autocheckEnabled ? 18 : 22}
+              />
             </HeaderButton>
             <RotatingBox
               side={rotatingBoxProps.side}
