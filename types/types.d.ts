@@ -10,6 +10,14 @@ declare global {
         timestamp: number;
         value: Record<string, number>;
       };
+      validations: {
+        timestamp: number;
+        value: Record<string, number>;
+      };
+      draftModes: {
+        timestamp: number;
+        value: Record<string, number>;
+      };
     };
   }
 }

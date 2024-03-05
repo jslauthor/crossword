@@ -30,8 +30,11 @@ export async function PUT(
   if (storedProgress != null) {
     // Merge the current progress with the new progress and honor the timestamps
     for (const [key, { timestamp }] of Object.entries(data)) {
-      const { timestamp: storedTimestamp } =
-        storedProgress.data[key as keyof typeof data];
+      let storedTimestamp = -1;
+      if (storedProgress.data[key as keyof typeof data] != null) {
+        storedTimestamp =
+          storedProgress.data[key as keyof typeof data].timestamp;
+      }
 
       if (storedTimestamp > timestamp) {
         data[key as keyof typeof data].value =

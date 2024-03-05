@@ -24,16 +24,11 @@ const Container = styled.nav<{ $hasCenterLabel: boolean }>`
 
 const MenuIconContainer = styled.div`
   width: 18px;
-  // grid-column: 1 / 2;
 `;
 
-const LogoStyled = styled(IconMainLogo)`
-  // grid-column: 2 / 3;
-`;
+const LogoStyled = styled(IconMainLogo)``;
 
-const CenterLabelContainer = styled.div`
-  // grid-column: 2 / 4;
-`;
+const CenterLabelContainer = styled.div``;
 
 const RightContentContainer = styled.div`
   // grid-column: 4 / 5;

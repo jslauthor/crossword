@@ -167,24 +167,46 @@ export const usePuzzleProgress = (
       const time = (await localForage.getItem(
         elapsedTimeStorageKey,
       )) as PrismaJson.ProgressType['time'];
+      const validations = (await localForage.getItem(
+        cellValidationStorageKey,
+      )) as PrismaJson.ProgressType['validations'];
+      const draftModes = (await localForage.getItem(
+        cellDraftModeStorageKey,
+      )) as PrismaJson.ProgressType['draftModes'];
 
       // We need to wait until all values are available before saving
       // And there needs to be an authenticated user
-      if (user == null || state == null || time == null) return;
+      if (
+        user == null ||
+        state == null ||
+        validations == null ||
+        draftModes == null ||
+        time == null
+      )
+        return;
 
       await fetch(`/api/progress/puzzle/${puzzle.id}`, {
         method: 'PUT',
         body: JSON.stringify({
           state,
           time,
+          validations,
+          draftModes,
         } as PrismaJson.ProgressType),
       });
     };
     save();
-  }, [characterPositionStorageKey, elapsedTimeStorageKey, puzzle.id, user]);
+  }, [
+    cellDraftModeStorageKey,
+    cellValidationStorageKey,
+    characterPositionStorageKey,
+    elapsedTimeStorageKey,
+    puzzle.id,
+    user,
+  ]);
 
   // Debounce saving to server
-  const [saveToServerDebounced] = useThrottle(saveToServer, 15000);
+  const [saveToServerDebounced] = useThrottle(saveToServer, 1000);
 
   const addAutocheckEnabled = useCallback(
     (autoCheck: boolean) => {
