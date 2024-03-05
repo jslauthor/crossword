@@ -206,7 +206,7 @@ export const usePuzzleProgress = (
   ]);
 
   // Debounce saving to server
-  const [saveToServerDebounced] = useThrottle(saveToServer, 1000);
+  const [saveToServerDebounced] = useThrottle(saveToServer, 5000);
 
   const addAutocheckEnabled = useCallback(
     (autoCheck: boolean) => {

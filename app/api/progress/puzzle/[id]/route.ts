@@ -27,6 +27,7 @@ export async function PUT(
     },
   });
 
+  let usedHint = undefined;
   if (storedProgress != null) {
     // Merge the current progress with the new progress and honor the timestamps
     for (const [key, { timestamp }] of Object.entries(data)) {
@@ -43,8 +44,14 @@ export async function PUT(
           storedProgress.data[key as keyof typeof data].timestamp;
       }
     }
+
+    if (storedProgress.usedHint === false && data.validations.value != null) {
+      usedHint = Object.values(data.validations.value).some(
+        (v: number) => v > 0, // If any of the validations are greater than 0, then a hint was used
+      );
+    }
   }
 
-  const progress = await upsertPuzzleProgress(id, user.id, data);
+  const progress = await upsertPuzzleProgress(id, user.id, data, usedHint);
   return NextResponse.json(progress.data, { status: 200 });
 }
