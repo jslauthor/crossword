@@ -208,6 +208,22 @@ export const usePuzzleProgress = (
   // Debounce saving to server
   const [saveToServerDebounced] = useThrottle(saveToServer, 5000);
 
+  const addCellValidation = useCallback(
+    (cellValidationArray: Uint8Array) => {
+      add({
+        id: cellValidationStorageKey,
+        task: () =>
+          localForage.setItem(cellValidationStorageKey, {
+            timestamp: Date.now(),
+            value: cellValidationArray,
+          }),
+      });
+      setCellValidationArray(new Uint8Array(cellValidationArray));
+      saveToServerDebounced();
+    },
+    [add, cellValidationStorageKey, saveToServerDebounced],
+  );
+
   const addAutocheckEnabled = useCallback(
     (autoCheck: boolean) => {
       add({
@@ -218,10 +234,34 @@ export const usePuzzleProgress = (
             value: autoCheck,
           }),
       });
+      if (autoCheck === true) {
+        // Iterate through answer index and update cellValidationArray
+        const newCellValidationArray = new Uint8Array(cellValidationArray);
+        for (let index = 0; index < puzzle.record.solution.length; index++) {
+          if (puzzle.record.solution[index] !== '#') {
+            const chunk = Math.floor(index / 32);
+            const bit = index % 32;
+            newCellValidationArray[index * 2] =
+              ((answerIndex[chunk] >> bit) & 1) === 1 ? 2 : 1;
+          } else {
+            newCellValidationArray[index * 2] = 0;
+          }
+        }
+        addCellValidation(newCellValidationArray);
+      }
+
       setAutocheckEnabled(autoCheck);
       saveToServerDebounced();
     },
-    [add, autocheckStorageKey, saveToServerDebounced],
+    [
+      add,
+      addCellValidation,
+      answerIndex,
+      autocheckStorageKey,
+      cellValidationArray,
+      puzzle.record.solution,
+      saveToServerDebounced,
+    ],
   );
 
   const addDraftModeEnabled = useCallback(
@@ -238,22 +278,6 @@ export const usePuzzleProgress = (
       saveToServerDebounced();
     },
     [add, draftModeStorageKey, saveToServerDebounced],
-  );
-
-  const addCellValidation = useCallback(
-    (cellValidationArray: Uint8Array) => {
-      add({
-        id: cellValidationStorageKey,
-        task: () =>
-          localForage.setItem(cellValidationStorageKey, {
-            timestamp: Date.now(),
-            value: cellValidationArray,
-          }),
-      });
-      setCellValidationArray(new Uint8Array(cellValidationArray));
-      saveToServerDebounced();
-    },
-    [add, cellValidationStorageKey, saveToServerDebounced],
   );
 
   const addCellDraftMode = useCallback(
