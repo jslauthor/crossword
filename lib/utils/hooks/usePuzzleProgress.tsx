@@ -406,6 +406,32 @@ export const usePuzzleProgress = (
     ],
   );
 
+  const updateCharacterPosition = useCallback(
+    (selectedIndex: number, key: string, x: number, y: number) => {
+      if (cellValidationArray[selectedIndex * 2] !== 2) {
+        updateAnswerIndex(
+          puzzle.record.solution[selectedIndex],
+          selectedIndex,
+          key.toUpperCase(),
+        );
+        const newArray = new Float32Array([...characterPositionArray]);
+        newArray[selectedIndex * 2] = x;
+        newArray[selectedIndex * 2 + 1] = y;
+        addCharacterPosition(newArray);
+        return true;
+      }
+
+      return false;
+    },
+    [
+      addCharacterPosition,
+      cellValidationArray,
+      characterPositionArray,
+      puzzle.record.solution,
+      updateAnswerIndex,
+    ],
+  );
+
   return {
     addCharacterPosition,
     addTime,
@@ -423,5 +449,6 @@ export const usePuzzleProgress = (
     addAutocheckEnabled,
     draftModeEnabled,
     addDraftModeEnabled,
+    updateCharacterPosition,
   };
 };

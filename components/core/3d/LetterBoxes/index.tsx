@@ -180,7 +180,12 @@ type LetterBoxesProps = {
     index: number,
     letter: string,
   ) => void;
-  addCharacterPosition: (characterPositionArray: Float32Array) => void;
+  updateCharacterPosition: (
+    selectedIndex: number,
+    key: string,
+    x: number,
+    y: number,
+  ) => boolean;
   onVerticalOrientationChange: (isVerticalOrientation: boolean) => void;
   setInstancedMesh?: (instancedMesh: InstancedMesh | null) => void;
   onLetterInput?: () => void;
@@ -230,7 +235,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   keyAndIndexOverride,
   currentKey,
   updateAnswerIndex,
-  addCharacterPosition,
+  updateCharacterPosition,
   answerIndex,
   characterPositionArray,
   hasRetrievedGameState,
@@ -320,6 +325,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     if (ref == null) return;
     ref.geometry.attributes.cellDraftMode.needsUpdate = true;
   }, [cellDraftModeArray, ref]);
+
+  useEffect(() => {
+    if (ref == null) return;
+    ref.geometry.attributes.characterPosition.needsUpdate = true;
+  }, [characterPositionArray, ref]);
 
   const cellColorsArray = useMemo(
     () =>
@@ -675,19 +685,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
 
-        // Do not update letter if it is correct (2)
-        if (cellValidationArray[selectedIndex * 2] !== 2) {
-          updateAnswerIndex(
-            record.solution[selectedIndex],
-            selectedIndex,
-            key.toUpperCase(),
-          );
-          characterPositionArray[selectedIndex * 2] = x;
-          characterPositionArray[selectedIndex * 2 + 1] = y;
-          addCharacterPosition(characterPositionArray);
-
-          ref.geometry.attributes.characterPosition.needsUpdate = true;
-
+        if (updateCharacterPosition(selectedIndex, key, x, y) === true) {
           showScaleAnimation(selectedIndex);
         }
 
@@ -703,7 +701,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       ref,
       characterPositionArray,
       lastCurrentKey,
-      cellValidationArray,
+      updateCharacterPosition,
       onLetterInput,
       getInterval,
       totalPerSide,
@@ -713,8 +711,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       record.solution,
       isVerticalOrientation,
       puzzle.data.length,
-      updateAnswerIndex,
-      addCharacterPosition,
       showScaleAnimation,
     ],
   );

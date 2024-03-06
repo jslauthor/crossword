@@ -234,7 +234,7 @@ export default function Puzzle({
     elapsedTime,
     hasRetrievedGameState,
     updateAnswerIndex,
-    addCharacterPosition,
+    updateCharacterPosition,
     answerIndex,
     characterPositionArray,
     saveToServerDebounced,
@@ -459,7 +459,7 @@ export default function Puzzle({
                 keyAndIndexOverride={keyAndIndexOverride}
                 currentKey={selectedCharacter}
                 updateAnswerIndex={updateAnswerIndex}
-                addCharacterPosition={addCharacterPosition}
+                updateCharacterPosition={updateCharacterPosition}
                 answerIndex={answerIndex}
                 characterPositionArray={characterPositionArray}
                 hasRetrievedGameState={hasRetrievedGameState}
