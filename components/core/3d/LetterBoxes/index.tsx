@@ -675,18 +675,21 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
 
-        updateAnswerIndex(
-          record.solution[selectedIndex],
-          selectedIndex,
-          key.toUpperCase(),
-        );
-        characterPositionArray[selectedIndex * 2] = x;
-        characterPositionArray[selectedIndex * 2 + 1] = y;
-        addCharacterPosition(characterPositionArray);
+        // Do not update letter if it is correct (2)
+        if (cellValidationArray[selectedIndex * 2] !== 2) {
+          updateAnswerIndex(
+            record.solution[selectedIndex],
+            selectedIndex,
+            key.toUpperCase(),
+          );
+          characterPositionArray[selectedIndex * 2] = x;
+          characterPositionArray[selectedIndex * 2 + 1] = y;
+          addCharacterPosition(characterPositionArray);
 
-        ref.geometry.attributes.characterPosition.needsUpdate = true;
+          ref.geometry.attributes.characterPosition.needsUpdate = true;
 
-        showScaleAnimation(selectedIndex);
+          showScaleAnimation(selectedIndex);
+        }
 
         if (onLetterInput) {
           onLetterInput();
@@ -700,18 +703,19 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       ref,
       characterPositionArray,
       lastCurrentKey,
-      updateAnswerIndex,
-      record.solution,
-      addCharacterPosition,
-      showScaleAnimation,
+      cellValidationArray,
       onLetterInput,
       getInterval,
       totalPerSide,
       width,
       selectedSide,
       height,
+      record.solution,
       isVerticalOrientation,
       puzzle.data.length,
+      updateAnswerIndex,
+      addCharacterPosition,
+      showScaleAnimation,
     ],
   );
 
