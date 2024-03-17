@@ -211,7 +211,7 @@ export const getCharacterRecord = (
  * @param answerIndex
  * @returns boolean
  */
-export const isPuzzleSolved = (answerIndex: number[] = []): boolean =>
+export const verifyAnswerIndex = (answerIndex: number[] = []): boolean =>
   answerIndex.length > 0 &&
   answerIndex.every((i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0);
 
@@ -224,9 +224,9 @@ export const isPuzzleSolved = (answerIndex: number[] = []): boolean =>
  */
 export const getProgressFromSolution = (
   puzzle: PuzzleType,
-  characterPositions: PrismaJson.ProgressType['state']['value'],
+  characterPositions: PrismaJson.ProgressType['state'],
 ): ProgressEnum => {
-  if (isPuzzleSolved(puzzle.answerIndex) === true) {
+  if (verifyAnswerIndex(puzzle.answerIndex) === true) {
     return 3; // Solved
   }
 
@@ -244,25 +244,8 @@ export const getProgressFromSolution = (
   return 2;
 };
 
-export const getCharacterPositionStorageKey = memoizeOne(
-  (id) => `puzzle-${id}`,
-);
-export const getElapsedTimeStorageKey = memoizeOne((id) => `puzzle-${id}-time`);
-export const getAutocheckStorageKey = memoizeOne(
-  (id) => `puzzle-${id}-autocheck`,
-);
-export const getDraftModeStorageKey = memoizeOne(
-  (id) => `puzzle-${id}-draft-mode`,
-);
-export const getCellValidationStorageKey = memoizeOne(
-  (id) => `puzzle-${id}-cell-validation`,
-);
-export const getCellDraftModeStorageKey = memoizeOne(
-  (id) => `puzzle-${id}-cell-draft-mode`,
-);
-
-export const createDefaultCharacterPositionArray = (puzzle: PuzzleType) =>
+export const createFloat32Array = (puzzle: PuzzleType) =>
   Float32Array.from(new Array(puzzle.record.solution.length * 2).fill(-1));
 
-export const createUint8Array = (puzzle: PuzzleType) =>
-  Uint8Array.from(new Array(puzzle.record.solution.length * 2).fill(0));
+export const createUint16Array = (puzzle: PuzzleType) =>
+  Uint16Array.from(new Array(puzzle.record.solution.length * 2).fill(0));

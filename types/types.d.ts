@@ -5,19 +5,10 @@ declare global {
   var prisma: PrismaClient;
   namespace PrismaJson {
     type ProgressType = {
-      time: { timestamp: number; value: number };
-      state: {
-        timestamp: number;
-        value: Record<string, number>;
-      };
-      validations: {
-        timestamp: number;
-        value: Record<string, number>;
-      };
-      draftModes: {
-        timestamp: number;
-        value: Record<string, number>;
-      };
+      time: number;
+      state: Record<string, number>;
+      validations: Record<string, number>;
+      draftModes: Record<string, number>;
     };
   }
 }

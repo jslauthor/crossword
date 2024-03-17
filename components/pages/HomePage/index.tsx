@@ -7,13 +7,9 @@ import { PuzzleType } from 'app/page';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import PuzzleHighlight from 'components/composed/PuzzleHighlight';
-import {
-  createDefaultCharacterPositionArray,
-  getCharacterPositionStorageKey,
-  getProgressFromSolution,
-} from 'lib/utils/puzzle';
-import { retrieveGameState } from 'lib/utils/hooks/usePuzzleProgress';
+import { createFloat32Array, getProgressFromSolution } from 'lib/utils/puzzle';
 import { PuzzleProps } from '../PuzzlePage';
+import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 
 const Container = styled.div`
   position: relative;
@@ -47,16 +43,17 @@ const Page: React.FC<HomePageProps> = ({ puzzles, atlas }) => {
   useEffect(() => {
     const updatePuzzles = async () => {
       const updatePuzzlePreview = async (puzzle: PuzzleType) => {
-        const positions = await retrieveGameState(
-          puzzle,
-          getCharacterPositionStorageKey(puzzle.id),
-          atlas,
-          createDefaultCharacterPositionArray(puzzle),
-        );
-        puzzle.previewState = getProgressFromSolution(
-          puzzle,
-          JSON.parse(JSON.stringify(positions)) as Record<string, number>,
-        );
+        // TODO: Get all puzzle states from replicache here
+        // const positions = await retrieveGameState(
+        //   puzzle,
+        //   getCharacterPositionStorageKey(puzzle.id),
+        //   atlas,
+        //   createFloat32Array(puzzle),
+        // );
+        // puzzle.previewState = getProgressFromSolution(
+        //   puzzle,
+        //   JSON.parse(JSON.stringify(positions)) as Record<string, number>,
+        // );
       };
 
       await updatePuzzlePreview(latestPuzzle);

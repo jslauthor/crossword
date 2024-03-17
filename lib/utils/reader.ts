@@ -132,7 +132,7 @@ export const enrichPuzzles = async (puzzles: PuzzleType[]) => {
           );
           puzzle.previewState = getProgressFromSolution(
             puzzle,
-            progress.data.state.value,
+            progress.data.state,
           );
           puzzle.progress = progress;
         }

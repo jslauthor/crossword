@@ -192,7 +192,6 @@ export default function Puzzle({
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
-  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const animatedClueText = useAnimatedText(clue, 120);
 
   const [puzzleWidth] = useMemo(() => {
@@ -230,25 +229,25 @@ export default function Puzzle({
   }, [puzzleWidth]);
 
   const {
-    addTime,
+    isPuzzleSolved,
     elapsedTime,
+    updateTime,
+    timeIsReady,
     hasRetrievedGameState,
-    updateAnswerIndex,
     updateCharacterPosition,
-    answerIndex,
     characterPositionArray,
-    saveToServerDebounced,
     cellValidationArray,
     cellDraftModeArray,
     autocheckEnabled,
-    addAutocheckEnabled,
     draftModeEnabled,
-    addDraftModeEnabled,
+    setAutocheckEnabled,
+    setDraftModeEnabled,
   } = usePuzzleProgress(
     puzzle,
     characterTextureAtlasLookup,
     isInitialized === true,
   );
+
   const turnLeft = useCallback(
     () => setSideOffset(sideOffset + 1),
     [sideOffset],
@@ -301,11 +300,6 @@ export default function Puzzle({
     },
     [finishPuzzle, isPuzzleSolved, turnLeft, turnRight],
   );
-
-  const onSolved = useCallback(() => {
-    saveToServerDebounced();
-    setIsPuzzleSolved(true);
-  }, [saveToServerDebounced]);
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -366,27 +360,24 @@ export default function Puzzle({
     setVerticalOrientation(!isVerticalOrientation);
   }, [isVerticalOrientation]);
 
-  const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
-
   const { reset } = useElapsedTime({
     isPlaying:
-      shouldStartTimer === true &&
+      timeIsReady === true &&
       (typeof window === 'undefined' ? false : !document.hidden) &&
       (isPuzzleSolved || !isInitialized) === false,
     updateInterval: 1,
     onUpdate: (elapsedTime) => {
       if (hasRetrievedGameState === true) {
-        addTime(elapsedTime);
+        updateTime(elapsedTime);
       }
     },
   });
 
   useEffect(() => {
-    if (hasRetrievedGameState === true && shouldStartTimer === false) {
+    if (hasRetrievedGameState === true && timeIsReady === true) {
       reset(Number(elapsedTime ?? 0));
-      setShouldStartTimer(true);
     }
-  }, [elapsedTime, hasRetrievedGameState, reset, shouldStartTimer]);
+  }, [elapsedTime, hasRetrievedGameState, reset, timeIsReady]);
 
   // TODO: Convert into separate component
   const formattedElapsedTime = useMemo(
@@ -406,16 +397,16 @@ export default function Puzzle({
 
   const handleAutocheckChanged = useCallback(
     (autocheckEnabled: boolean) => {
-      addAutocheckEnabled(autocheckEnabled);
+      setAutocheckEnabled(autocheckEnabled);
     },
-    [addAutocheckEnabled],
+    [setAutocheckEnabled],
   );
 
   const handleDraftModeChanged = useCallback(
     (draftModeEnabled: boolean) => {
-      addDraftModeEnabled(draftModeEnabled);
+      setDraftModeEnabled(draftModeEnabled);
     },
-    [addDraftModeEnabled],
+    [setDraftModeEnabled],
   );
 
   return (
@@ -458,9 +449,7 @@ export default function Puzzle({
                 selectedSide={selectedSide}
                 keyAndIndexOverride={keyAndIndexOverride}
                 currentKey={selectedCharacter}
-                updateAnswerIndex={updateAnswerIndex}
                 updateCharacterPosition={updateCharacterPosition}
-                answerIndex={answerIndex}
                 characterPositionArray={characterPositionArray}
                 hasRetrievedGameState={hasRetrievedGameState}
                 onLetterInput={onLetterInput}
@@ -469,7 +458,6 @@ export default function Puzzle({
                 selectedColor={selectedColor}
                 adjacentColor={adjacentColor}
                 onInitialize={onInitialize}
-                onSolved={onSolved}
                 isVerticalOrientation={isVerticalOrientation}
                 onVerticalOrientationChange={setVerticalOrientation}
                 cellValidationArray={cellValidationArray}

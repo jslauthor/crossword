@@ -12,7 +12,10 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { isCellWithNumber, isPuzzleSolved } from '../../../../lib/utils/puzzle';
+import {
+  isCellWithNumber,
+  verifyAnswerIndex,
+} from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
@@ -169,17 +172,11 @@ type LetterBoxesProps = {
   adjacentColor: number;
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
-  answerIndex: number[];
   characterPositionArray: Float32Array;
-  cellValidationArray: Uint8Array;
-  cellDraftModeArray: Uint8Array;
+  cellValidationArray: Uint16Array;
+  cellDraftModeArray: Uint16Array;
   autocheckEnabled: boolean;
   hasRetrievedGameState: boolean;
-  updateAnswerIndex: (
-    cell: SolutionCell,
-    index: number,
-    letter: string,
-  ) => void;
   updateCharacterPosition: (
     selectedIndex: number,
     key: string,
@@ -234,9 +231,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   selectedSide,
   keyAndIndexOverride,
   currentKey,
-  updateAnswerIndex,
   updateCharacterPosition,
-  answerIndex,
   characterPositionArray,
   hasRetrievedGameState,
   onLetterInput,
@@ -283,12 +278,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [record, size] = useMemo(() => {
     return [puzzle.record, puzzle.record.solution.length];
   }, [puzzle.record]);
-
-  useEffect(() => {
-    if (isPuzzleSolved(answerIndex) && onSolved != null) {
-      onSolved();
-    }
-  }, [answerIndex, onSolved]);
 
   useEffect(() => {
     if (onSelectClue != null) {

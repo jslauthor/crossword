@@ -1,391 +1,120 @@
 import { PuzzleType } from 'app/page';
-import localForage from 'localforage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import useAsyncQueue from './useAsyncQueue';
-import { useUser } from '@clerk/nextjs';
-import { useThrottle } from './useThrottle';
 import { SolutionCell } from 'types/types';
-import { PuzzleProps } from 'components/pages/PuzzlePage';
 import {
-  createDefaultCharacterPositionArray,
-  createUint8Array,
-  getAutocheckStorageKey,
-  getCellDraftModeStorageKey,
-  getCellValidationStorageKey,
-  getCharacterPositionStorageKey,
-  getDraftModeStorageKey,
-  getElapsedTimeStorageKey,
+  createFloat32Array,
+  createUint16Array,
   invertAtlas,
-  updateAnswerIndex as mutateAnswerIndex,
+  verifyAnswerIndex,
 } from '../puzzle';
-
-const getItem = async <T,>(
-  key: string,
-  fallback: { value: T; timestamp: number } | undefined,
-): Promise<T | undefined> => {
-  const item = (await localForage.getItem(key)) as {
-    value: T;
-    timestamp: number;
-  } | null;
-
-  if (item != null) {
-    if (fallback && fallback.timestamp > item.timestamp) {
-      return fallback.value;
-    }
-
-    return item.value;
-  }
-
-  return fallback?.value;
-};
-
-// This mutates the puzzle!
-export const retrieveGameState = async (
-  puzzle: PuzzleType,
-  storageKey: string,
-  atlas: PuzzleProps['characterTextureAtlasLookup'],
-  characterPositionArray: Float32Array,
-) => {
-  let characterPosition: Float32Array =
-    createDefaultCharacterPositionArray(puzzle);
-  /**
-   * Compare local and server state and merge if needed
-   */
-  const localState = (await localForage.getItem(storageKey)) as {
-    value: Float32Array;
-    timestamp: number;
-  } | null;
-  const serverState = puzzle.progress
-    ? {
-        value: new Float32Array(
-          Object.values(puzzle.progress.data.state.value ?? []),
-        ),
-        timestamp: puzzle.progress.data.state.timestamp ?? 0,
-      }
-    : undefined;
-  if (localState != null && serverState == null) {
-    characterPosition = localState.value;
-    mutateAnswerIndex(
-      puzzle.answerIndex,
-      invertAtlas(atlas),
-      localState.value,
-      puzzle.record.solution,
-    );
-  } else if (localState == null && serverState != null) {
-    characterPosition = serverState.value;
-    // no need to mutate answer index here because it's already been done by the server
-  } else if (localState != null && serverState != null) {
-    const updatedPosition = characterPositionArray.map((_, index) => {
-      const newerState =
-        serverState.timestamp > localState.timestamp ? serverState : localState;
-      const olderState =
-        serverState.timestamp < localState.timestamp ? serverState : localState;
-      return getNumber(newerState.value[index]) ?? olderState.value[index];
-    });
-    characterPosition = updatedPosition;
-    mutateAnswerIndex(
-      puzzle.answerIndex,
-      invertAtlas(atlas),
-      updatedPosition,
-      puzzle.record.solution,
-    );
-  }
-
-  return characterPosition;
-};
-
-const getNumber = (val: number) => (val > -1 ? val : undefined);
+import { usePuzzleCache } from './usePuzzleCache';
+import {
+  CELL_DRAFT_MODES_KEY,
+  CELL_VALIDATIONS_KEY,
+  CHARACTER_POSITION_KEY,
+  TIME_KEY,
+} from 'lib/replicache/mutators';
+import { PuzzleProps } from 'components/pages/PuzzlePage';
 
 export const usePuzzleProgress = (
   puzzle: PuzzleType,
   atlas: PuzzleProps['characterTextureAtlasLookup'],
   isInitialized = true,
 ) => {
-  const { user } = useUser();
-  const { add } = useAsyncQueue({ concurrency: 1 });
+  const { replicache, hasSynced } = usePuzzleCache(puzzle.id, isInitialized);
 
+  const invertedAtlas = useMemo(() => invertAtlas(atlas), [atlas]);
+  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const [answerIndex, setAnswerIndex] = useState<number[]>([]);
+  const [answerIndex, setAnswerIndex] = useState<number[]>(puzzle.answerIndex);
+  const [timeIsReady, setTimeIsReady] = useState<boolean>(false);
+
+  const initialCharacterPositionArray = useMemo(
+    () => createFloat32Array(puzzle),
+    [puzzle],
+  );
   const [characterPositionArray, setCharacterPositionArray] =
-    useState<Float32Array>(createDefaultCharacterPositionArray(puzzle));
+    useState<Float32Array>(initialCharacterPositionArray);
 
   // This can be one of three values:
   // 0 = default
   // 1 = error
   // 2 = verified (cannot change letter later)
-  const [cellValidationArray, setCellValidationArray] = useState<Uint8Array>(
-    createUint8Array(puzzle),
+  const initialCellValidationsArray = useMemo(
+    () => createUint16Array(puzzle),
+    [puzzle],
+  );
+  const [cellValidationArray, setCellValidationArray] = useState<Uint16Array>(
+    initialCellValidationsArray,
   );
 
   // Is the cell in draft mode or default?
   // 0 = default
   // 1 = draft
-  const [cellDraftModeArray, setCellDraftModeArray] = useState<Uint8Array>(
-    createUint8Array(puzzle),
-  );
-
-  const [hasRetrievedGameState, setHasRetrievedGameState] =
-    useState<boolean>(false);
-
-  const characterPositionStorageKey = useMemo(
-    () => getCharacterPositionStorageKey(puzzle.id),
+  const initialCellDraftModesArray = useMemo(
+    () => createUint16Array(puzzle),
     [puzzle],
   );
-
-  const elapsedTimeStorageKey = useMemo(
-    () => getElapsedTimeStorageKey(puzzle.id),
-    [puzzle],
+  const [cellDraftModeArray, setCellDraftModeArray] = useState<Uint16Array>(
+    initialCellDraftModesArray,
   );
 
-  const autocheckStorageKey = useMemo(
-    () => getAutocheckStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const draftModeStorageKey = useMemo(
-    () => getDraftModeStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const cellValidationStorageKey = useMemo(
-    () => getCellValidationStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const cellDraftModeStorageKey = useMemo(
-    () => getCellDraftModeStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const saveToServer = useCallback(() => {
-    const save = async () => {
-      const state = (await localForage.getItem(
-        characterPositionStorageKey,
-      )) as PrismaJson.ProgressType['state'];
-      const time = (await localForage.getItem(
-        elapsedTimeStorageKey,
-      )) as PrismaJson.ProgressType['time'];
-      const validations = (await localForage.getItem(
-        cellValidationStorageKey,
-      )) as PrismaJson.ProgressType['validations'];
-      const draftModes = (await localForage.getItem(
-        cellDraftModeStorageKey,
-      )) as PrismaJson.ProgressType['draftModes'];
-
-      // We need to wait until all values are available before saving
-      // And there needs to be an authenticated user
-      if (
-        user == null ||
-        state == null ||
-        validations == null ||
-        draftModes == null ||
-        time == null
-      )
-        return;
-
-      await fetch(`/api/progress/puzzle/${puzzle.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          state,
-          time,
-          validations,
-          draftModes,
-        } as PrismaJson.ProgressType),
-      });
-    };
-    save();
-  }, [
-    cellDraftModeStorageKey,
-    cellValidationStorageKey,
-    characterPositionStorageKey,
-    elapsedTimeStorageKey,
-    puzzle.id,
-    user,
-  ]);
-
-  // Debounce saving to server
-  const [saveToServerDebounced] = useThrottle(saveToServer, 5000);
-
-  const addCellValidation = useCallback(
-    (cellValidationArray: Uint8Array) => {
-      add({
-        id: cellValidationStorageKey,
-        task: () =>
-          localForage.setItem(cellValidationStorageKey, {
-            timestamp: Date.now(),
-            value: cellValidationArray,
-          }),
-      });
-      setCellValidationArray(new Uint8Array(cellValidationArray));
-      saveToServerDebounced();
+  const updateTime = useCallback(
+    (value: number) => {
+      replicache?.mutate.setTime(value);
     },
-    [add, cellValidationStorageKey, saveToServerDebounced],
+    [replicache?.mutate],
   );
 
-  const addAutocheckEnabled = useCallback(
-    (autoCheck: boolean) => {
-      add({
-        id: autocheckStorageKey,
-        task: () =>
-          localForage.setItem(autocheckStorageKey, {
-            timestamp: Date.now(),
-            value: autoCheck,
-          }),
-      });
-      if (autoCheck === true) {
-        // Iterate through answer index and update cellValidationArray
-        const newCellValidationArray = new Uint8Array(cellValidationArray);
-        for (let index = 0; index < puzzle.record.solution.length; index++) {
-          if (puzzle.record.solution[index] !== '#') {
-            const chunk = Math.floor(index / 32);
-            const bit = index % 32;
-            newCellValidationArray[index * 2] =
-              ((answerIndex[chunk] >> bit) & 1) === 1 ? 2 : 1;
-          } else {
-            newCellValidationArray[index * 2] = 0;
-          }
-        }
-        addCellValidation(newCellValidationArray);
-      }
-
-      setAutocheckEnabled(autoCheck);
-      saveToServerDebounced();
+  const updateCellDraftModes = useCallback(
+    (value: Uint16Array) => {
+      replicache?.mutate.setCellDraftModes(JSON.parse(JSON.stringify(value)));
     },
-    [
-      add,
-      addCellValidation,
-      answerIndex,
-      autocheckStorageKey,
-      cellValidationArray,
-      puzzle.record.solution,
-      saveToServerDebounced,
-    ],
+    [replicache?.mutate],
   );
 
-  const addDraftModeEnabled = useCallback(
-    (draftModeEnabled: boolean) => {
-      add({
-        id: draftModeStorageKey,
-        task: () =>
-          localForage.setItem(draftModeStorageKey, {
-            timestamp: Date.now(),
-            value: draftModeEnabled,
-          }),
-      });
-      setDraftModeEnabled(draftModeEnabled);
-      saveToServerDebounced();
+  const updateCellvalidations = useCallback(
+    (value: Uint16Array) => {
+      replicache?.mutate.setValidations(JSON.parse(JSON.stringify(value)));
     },
-    [add, draftModeStorageKey, saveToServerDebounced],
+    [replicache?.mutate],
   );
 
-  const addCellDraftMode = useCallback(
-    (cellDraftModeArray: Uint8Array) => {
-      add({
-        id: cellDraftModeStorageKey,
-        task: () =>
-          localForage.setItem(cellDraftModeStorageKey, {
-            timestamp: Date.now(),
-            value: cellDraftModeArray,
-          }),
-      });
-      setCellDraftModeArray(new Uint8Array(cellDraftModeArray));
-      saveToServerDebounced();
-    },
-    [add, cellDraftModeStorageKey, saveToServerDebounced],
-  );
-
-  const addCharacterPosition = useCallback(
-    (characterPositionArray: Float32Array) => {
-      add({
-        id: characterPositionStorageKey,
-        task: () =>
-          localForage.setItem(characterPositionStorageKey, {
-            timestamp: Date.now(),
-            value: characterPositionArray,
-          }),
-      });
-      setCharacterPositionArray(characterPositionArray);
-      saveToServerDebounced();
-    },
-    [add, characterPositionStorageKey, saveToServerDebounced],
-  );
-
-  const addTime = useCallback(
-    (elapsedTime: number) => {
-      add({
-        id: elapsedTimeStorageKey,
-        task: () =>
-          localForage.setItem(elapsedTimeStorageKey, {
-            timestamp: Date.now(),
-            value: elapsedTime,
-          }),
-      });
-      setElapsedTime(elapsedTime);
-      saveToServerDebounced();
-    },
-    [add, elapsedTimeStorageKey, saveToServerDebounced],
-  );
-
-  // Load previous state from local storage and compare to server data
+  // Check if the puzzle is solved when the answer index changes
   useEffect(() => {
-    if (isInitialized === false || hasRetrievedGameState === true) return;
+    if (verifyAnswerIndex(answerIndex)) {
+      setIsPuzzleSolved(true);
+    }
+  }, [answerIndex]);
 
-    const initiate = async () => {
-      const characterPosition = await retrieveGameState(
-        puzzle,
-        characterPositionStorageKey,
-        atlas,
-        characterPositionArray,
-      );
-      addCharacterPosition(characterPosition);
-      setAnswerIndex(puzzle.answerIndex);
-
-      /**
-       * Grab the newer time state
-       */
-      let localTime = (await localForage.getItem(elapsedTimeStorageKey)) as {
-        value: number;
-        timestamp: number;
-      } | null;
-
-      const serverTime = puzzle.progress
-        ? {
-            value: puzzle.progress.data.time.value ?? 0,
-            timestamp: puzzle.progress.data.time.timestamp ?? 0,
-          }
-        : undefined;
-
-      if (localTime != null) {
-        // Take the newer of the two
-        if (serverTime && serverTime.timestamp > localTime.timestamp) {
-          localTime = serverTime;
+  // Update validations when autocheck is enabled
+  useEffect(() => {
+    if (autocheckEnabled === true) {
+      // Iterate through answer index and update cellValidationArray
+      const newCellValidationArray = new Uint16Array(cellValidationArray);
+      for (let index = 0; index < puzzle.record.solution.length; index++) {
+        if (puzzle.record.solution[index] !== '#') {
+          const chunk = Math.floor(index / 32);
+          const bit = index % 32;
+          newCellValidationArray[index * 2] =
+            ((answerIndex[chunk] >> bit) & 1) === 1 ? 2 : 1;
+        } else {
+          newCellValidationArray[index * 2] = 0;
         }
-        addTime(localTime.value);
-      } else if (serverTime != null) {
-        addTime(serverTime.value);
       }
-
-      setHasRetrievedGameState(true);
-    };
-    initiate();
+      updateCellvalidations(newCellValidationArray);
+    }
   }, [
-    addCharacterPosition,
-    addTime,
-    atlas,
-    characterPositionArray,
-    characterPositionStorageKey,
-    elapsedTimeStorageKey,
-    hasRetrievedGameState,
-    isInitialized,
-    puzzle,
-    puzzle.answerIndex,
-    puzzle.progress,
+    answerIndex,
+    autocheckEnabled,
+    cellValidationArray,
     puzzle.record.solution,
+    updateCellvalidations,
   ]);
 
-  const updateAnswerIndex = useCallback(
+  const updatePuzzleMetadata = useCallback(
     (cell: SolutionCell, index: number, letter: string) => {
       if (cell !== '#') {
         const chunk = Math.floor(index / 32);
@@ -393,6 +122,7 @@ export const usePuzzleProgress = (
         const isCorrect =
           !(letter === '' || letter === 'BACKSPACE') &&
           cell.value.toUpperCase() === letter.toUpperCase();
+
         const newAnswerIndex = [...answerIndex];
         if (isCorrect) {
           // This flips the index bit to 1 (true)
@@ -402,38 +132,124 @@ export const usePuzzleProgress = (
           newAnswerIndex[chunk] &= ~(1 << bit);
         }
 
+        const newCellValidationArray = new Uint16Array(cellValidationArray);
         if (autocheckEnabled) {
           // 2 = correct
           // 1 = incorrect
-          cellValidationArray[index * 2] = isCorrect ? 2 : 1;
+          newCellValidationArray[index * 2] = isCorrect ? 2 : 1;
         } else {
           // 0 = default
-          cellValidationArray[index * 2] = 0;
+          newCellValidationArray[index * 2] = 0;
         }
 
-        cellDraftModeArray[index * 2] = draftModeEnabled ? 1 : 0;
+        const newCellDraftModeArray = new Uint16Array(cellDraftModeArray);
+        newCellDraftModeArray[index * 2] = draftModeEnabled ? 1 : 0;
 
-        addCellDraftMode(cellDraftModeArray);
-        addCellValidation(cellValidationArray);
-
+        updateCellDraftModes(newCellDraftModeArray);
+        updateCellvalidations(newCellValidationArray);
         setAnswerIndex(newAnswerIndex);
       }
     },
     [
-      addCellDraftMode,
-      addCellValidation,
       answerIndex,
       autocheckEnabled,
       cellDraftModeArray,
       cellValidationArray,
       draftModeEnabled,
+      updateCellDraftModes,
+      updateCellvalidations,
     ],
   );
+
+  // Listen for changes to the character position array
+  useEffect(() => {
+    if (replicache == null) return;
+
+    const unsubscribe = replicache.subscribe(
+      async (tx) =>
+        (await tx.get<PrismaJson.ProgressType['state']>(
+          CHARACTER_POSITION_KEY,
+        )) ?? initialCharacterPositionArray,
+      (newCharacterPosition) => {
+        const characterArray = new Float32Array(
+          Object.values(newCharacterPosition),
+        );
+        setCharacterPositionArray(characterArray);
+      },
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [
+    initialCharacterPositionArray,
+    invertedAtlas,
+    puzzle.record.solution,
+    replicache,
+    updatePuzzleMetadata,
+  ]);
+
+  // Listen for changes to the cell draft modes
+  useEffect(() => {
+    if (replicache == null) return;
+
+    const unsubscribe = replicache?.subscribe(
+      async (tx) =>
+        (await tx.get<PrismaJson.ProgressType['draftModes']>(
+          CELL_DRAFT_MODES_KEY,
+        )) ?? initialCellDraftModesArray,
+      (newValue) => {
+        if (newValue == null) return;
+        setCellDraftModeArray(new Uint16Array(Object.values(newValue)));
+      },
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [initialCellDraftModesArray, replicache]);
+
+  // Listen for changes to the cell validations
+  useEffect(() => {
+    if (replicache == null) return;
+
+    const unsubscribe = replicache.subscribe(
+      async (tx) =>
+        (await tx.get<PrismaJson.ProgressType['validations']>(
+          CELL_VALIDATIONS_KEY,
+        )) ?? initialCellValidationsArray,
+      (newValue) => {
+        if (newValue == null) return;
+        setCellValidationArray(new Uint16Array(Object.values(newValue)));
+      },
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [initialCellValidationsArray, replicache]);
+
+  // Listen for changes to the elapsed time
+  useEffect(() => {
+    if (replicache == null) return;
+
+    const unsubscribe = replicache.subscribe(
+      async (tx) =>
+        (await tx.get<PrismaJson.ProgressType['time']>(TIME_KEY)) ?? 0,
+      (newTime) => {
+        setElapsedTime(newTime);
+        if (timeIsReady === false) {
+          setTimeIsReady(true);
+        }
+      },
+    );
+    return () => {
+      unsubscribe();
+    };
+  }, [replicache, timeIsReady]);
 
   const updateCharacterPosition = useCallback(
     (selectedIndex: number, key: string, x: number, y: number) => {
       if (cellValidationArray[selectedIndex * 2] !== 2) {
-        updateAnswerIndex(
+        // Update the answer index, cell validations, and cell draft modes
+        updatePuzzleMetadata(
           puzzle.record.solution[selectedIndex],
           selectedIndex,
           key.toUpperCase(),
@@ -441,38 +257,35 @@ export const usePuzzleProgress = (
         const newArray = new Float32Array([...characterPositionArray]);
         newArray[selectedIndex * 2] = x;
         newArray[selectedIndex * 2 + 1] = y;
-        addCharacterPosition(newArray);
+        replicache?.mutate.setCharacterPosition(
+          JSON.parse(JSON.stringify(newArray)),
+        );
         return true;
       }
-
       return false;
     },
     [
-      addCharacterPosition,
       cellValidationArray,
       characterPositionArray,
       puzzle.record.solution,
-      updateAnswerIndex,
+      replicache?.mutate,
+      updatePuzzleMetadata,
     ],
   );
 
   return {
-    addCharacterPosition,
-    addTime,
-    updateAnswerIndex,
+    isPuzzleSolved,
     elapsedTime,
+    timeIsReady,
+    updateTime,
     characterPositionArray,
-    answerIndex,
-    hasRetrievedGameState,
-    saveToServerDebounced,
+    hasRetrievedGameState: hasSynced,
     cellValidationArray,
-    addCellValidation,
     cellDraftModeArray,
-    addCellDraftMode,
     autocheckEnabled,
-    addAutocheckEnabled,
     draftModeEnabled,
-    addDraftModeEnabled,
     updateCharacterPosition,
+    setAutocheckEnabled,
+    setDraftModeEnabled,
   };
 };
