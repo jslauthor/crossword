@@ -11,14 +11,17 @@ export const getReplicache = async (
     return replicacheMap.get(name);
   }
 
+  const [userId, puzzleId] = name.split(':');
+  const params = `?userId=${userId}&puzzleId=${puzzleId}`;
+
   replicacheMap.set(
     name,
     new Replicache<Mutators>({
       name,
       licenseKey: process.env.NEXT_PUBLIC_REPLICACHE_TOKEN!,
       mutators,
-      pushURL: offline == true ? undefined : '/api/replicache-push',
-      pullURL: offline == true ? undefined : '/api/replicache-pull',
+      pushURL: offline == true ? undefined : `/api/replicache/push${params}`,
+      pullURL: offline == true ? undefined : `/api/replicache/pull${params}`,
     }),
   );
 

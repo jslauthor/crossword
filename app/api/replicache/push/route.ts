@@ -2,11 +2,13 @@ import { currentUser } from '@clerk/nextjs';
 import { getUserForClerkId, upsertPuzzleProgress } from 'lib/db';
 import { NextResponse } from 'next/server';
 
-export const dynamic = 'force-dynamic'; // defaults to force-static
-export async function PUT(
+// export const dynamic = 'force-dynamic'; // defaults to auto
+export async function POST(
   request: Request,
-  context: { params: { id: string } },
+  context: { params: { spaceID: string } },
 ) {
+  console.log('POST /api/replicache/post', context);
+
   // const clerkUser = await currentUser();
   // if (!clerkUser) {
   //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -46,5 +48,5 @@ export async function PUT(
   //   }
   // }
   // const progress = await upsertPuzzleProgress(id, user.id, data, usedHint);
-  // return NextResponse.json(progress.data, { status: 200 });
+  return NextResponse.json({}, { status: 200 });
 }

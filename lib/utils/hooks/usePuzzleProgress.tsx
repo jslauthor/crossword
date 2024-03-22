@@ -1,6 +1,6 @@
 import { PuzzleType } from 'app/page';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { SolutionCell } from 'types/types';
+import { PuzzleProgress, SolutionCell } from 'types/types';
 import {
   createFloat32Array,
   createUint16Array,
@@ -27,7 +27,7 @@ export const usePuzzleProgress = (
   const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [elapsedTime, setElapsedTime] = useState<PuzzleProgress['time']>(0);
   const [answerIndex, setAnswerIndex] = useState<number[]>(puzzle.answerIndex);
   const [timeIsReady, setTimeIsReady] = useState<boolean>(false);
 
@@ -35,8 +35,9 @@ export const usePuzzleProgress = (
     () => createFloat32Array(puzzle),
     [puzzle],
   );
-  const [characterPositionArray, setCharacterPositionArray] =
-    useState<Float32Array>(initialCharacterPositionArray);
+  const [characterPositionArray, setCharacterPositionArray] = useState<
+    PuzzleProgress['state']
+  >(initialCharacterPositionArray);
 
   // This can be one of three values:
   // 0 = default
@@ -46,9 +47,9 @@ export const usePuzzleProgress = (
     () => createUint16Array(puzzle),
     [puzzle],
   );
-  const [cellValidationArray, setCellValidationArray] = useState<Uint16Array>(
-    initialCellValidationsArray,
-  );
+  const [cellValidationArray, setCellValidationArray] = useState<
+    PuzzleProgress['validations']
+  >(initialCellValidationsArray);
 
   // Is the cell in draft mode or default?
   // 0 = default
@@ -57,9 +58,9 @@ export const usePuzzleProgress = (
     () => createUint16Array(puzzle),
     [puzzle],
   );
-  const [cellDraftModeArray, setCellDraftModeArray] = useState<Uint16Array>(
-    initialCellDraftModesArray,
-  );
+  const [cellDraftModeArray, setCellDraftModeArray] = useState<
+    PuzzleProgress['draftModes']
+  >(initialCellDraftModesArray);
 
   const updateTime = useCallback(
     (value: number) => {

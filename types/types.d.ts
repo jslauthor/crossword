@@ -13,6 +13,13 @@ declare global {
   }
 }
 
+export type PuzzleProgress = {
+  time: number;
+  state: Float32Array;
+  validations: Uint16Array;
+  draftModes: Uint16Array;
+};
+
 export type BlankCell = '#';
 
 export type StandardCell = number | ':';

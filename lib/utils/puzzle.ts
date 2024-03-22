@@ -2,6 +2,7 @@ import { ProgressEnum } from 'components/svg/PreviewCube';
 import {
   Clue,
   PuzzleData,
+  PuzzleProgress,
   SolutionCell,
   SolutionCellValue,
 } from '../../types/types';
@@ -249,3 +250,19 @@ export const createFloat32Array = (puzzle: PuzzleType) =>
 
 export const createUint16Array = (puzzle: PuzzleType) =>
   Uint16Array.from(new Array(puzzle.record.solution.length * 2).fill(0));
+
+export const createInitialProgress = (puzzle: PuzzleType): PuzzleProgress => ({
+  time: 0,
+  state: createFloat32Array(puzzle),
+  validations: createUint16Array(puzzle),
+  draftModes: createUint16Array(puzzle),
+});
+
+export const convertProgressToJson = (
+  progress: PuzzleProgress,
+): PrismaJson.ProgressType => ({
+  time: 0,
+  state: JSON.parse(JSON.stringify(progress.state)),
+  validations: JSON.parse(JSON.stringify(progress.validations)),
+  draftModes: JSON.parse(JSON.stringify(progress.draftModes)),
+});

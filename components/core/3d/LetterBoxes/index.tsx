@@ -12,14 +12,10 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import {
-  isCellWithNumber,
-  verifyAnswerIndex,
-} from '../../../../lib/utils/puzzle';
+import { isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
-import { SolutionCell } from 'types/types';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
 import { borderColor, correctColor, errorColor } from 'lib/utils/color';
 
@@ -188,7 +184,6 @@ type LetterBoxesProps = {
   onLetterInput?: () => void;
   onSelectClue?: (clue: string | undefined) => void;
   onInitialize?: () => void;
-  onSolved?: () => void;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -240,7 +235,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   selectedColor,
   adjacentColor,
   onInitialize,
-  onSolved,
   cellValidationArray,
   cellDraftModeArray,
 }) => {
