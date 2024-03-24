@@ -14,29 +14,59 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
+model ReplicacheClientGroup {
+  id           String             @id @default(cuid())
+  user         User               @relation(fields: [userId], references: [id])
+  userId       String
+  clientGroups ReplicacheClient[]
+  cvrVersion   Int                @map(name: "cvr_version")
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@map(name: "replicache_client_groups")
+}
+
+model ReplicacheClient {
+  id             String                @id @default(cuid())
+  clientGroup    ReplicacheClientGroup @relation(fields: [clientGroupId], references: [id])
+  clientGroupId  String                @map(name: "group_id")
+  lastMutationID Int                   @map(name: "last_mutation_id")
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
+
+  @@map(name: "replicache_clients")
+}
+
 model Progress {
-  id        String   @id @unique @default(cuid())
-  puzzleId  String
-  type      String // enum. Will start with CROSSCUBE
+  id       String @id @unique @default(cuid())
+  puzzleId String
+  type     String // enum. Will start with CROSSCUBE
   /// [ProgressType]
-  data      Json
-  usedHint  Boolean  @default(false) @map(name: "used_hint")
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
+  data     Json
+  user     User   @relation(fields: [userId], references: [id])
+  userId   String
+  // Required for replicache. Normally we'd use the xmin column, but that's not available in Prisma
+  version  Int    @default(0)
+
   createdAt DateTime @default(now()) @map(name: "created_at")
   updatedAt DateTime @updatedAt @map(name: "updated_at")
 
   @@unique([puzzleId, userId], name: "puzzleId_userId")
   @@index([userId])
+  @@index([puzzleId])
   @@map(name: "progresses")
 }
 
 model User {
-  id        String     @id @default(cuid())
-  clerkId   String?    @unique
-  createdAt DateTime   @default(now()) @map(name: "created_at")
-  updatedAt DateTime   @updatedAt @map(name: "updated_at")
-  progress  Progress[]
+  id         String                  @id @default(cuid())
+  clerkId    String?                 @unique
+  progresses Progress[]
+  groups     ReplicacheClientGroup[]
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @updatedAt @map(name: "updated_at")
 
   @@map(name: "users")
 }

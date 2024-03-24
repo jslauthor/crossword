@@ -5,22 +5,20 @@ declare global {
   var prisma: PrismaClient;
   namespace PrismaJson {
     type ProgressType = {
-      time: { timestamp: number; value: number };
-      state: {
-        timestamp: number;
-        value: Record<string, number>;
-      };
-      validations: {
-        timestamp: number;
-        value: Record<string, number>;
-      };
-      draftModes: {
-        timestamp: number;
-        value: Record<string, number>;
-      };
+      time: number;
+      state: Record<string, number>;
+      validations: Record<string, number>;
+      draftModes: Record<string, number>;
     };
   }
 }
+
+export type PuzzleProgress = {
+  time: number;
+  state: Float32Array;
+  validations: Uint16Array;
+  draftModes: Uint16Array;
+};
 
 export type BlankCell = '#';
 
