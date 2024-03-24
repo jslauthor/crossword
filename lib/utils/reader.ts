@@ -165,7 +165,7 @@ export const enrichPuzzles = async (puzzles: PuzzleType[]) => {
           updateAnswerIndex(
             puzzle.answerIndex,
             atlas,
-            new Float32Array(Object.values(progress.data.state.value)),
+            new Float32Array(Object.values(progress.data.state)),
             puzzle.record.solution,
           );
           puzzle.previewState = getProgressFromSolution(

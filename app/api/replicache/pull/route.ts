@@ -63,10 +63,10 @@ export async function POST(request: NextRequest) {
   const result = await prisma.$transaction(async (tx) => {
     // Grab CVR cache from Redis
 
-    let progress = await getOrCreateVersionedProgress(tx, user.id, puzzleId);
+    let progress = await getOrCreateVersionedProgress(user.id, puzzleId, tx);
 
     // Get client group and verify user owns group
-    const baseClientGroup = await getClientGroup(tx, user.id, clientGroupID);
+    const baseClientGroup = await getClientGroup(user.id, clientGroupID, tx);
     const clientsMetadata = await getClientsMetadata(tx, clientGroupID);
 
     // Build the next Client View Record
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       cvrVersion: nextCVRVersion,
     };
     console.log('nextClientGroupRecord', { nextClientGroupRecord });
-    await putClientGroup(tx, nextClientGroupRecord);
+    await putClientGroup(nextClientGroupRecord, tx);
 
     return {
       entities: {

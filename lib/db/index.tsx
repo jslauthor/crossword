@@ -1,10 +1,20 @@
-import { Prisma, ReplicacheClientGroup } from '@prisma/client';
+import {
+  Prisma,
+  Progress,
+  ReplicacheClient,
+  ReplicacheClientGroup,
+} from '@prisma/client';
+import { Affected } from 'app/api/replicache/push/route';
 import prisma from 'lib/prisma';
 import { convertProgressToJson, createInitialProgress } from 'lib/utils/puzzle';
 import { getPuzzleById } from 'lib/utils/reader';
 
-export const getPuzzleProgressForUser = (userId: string, puzzleId: string) => {
-  return prisma.progress.findFirst({
+export const getPuzzleProgressForUser = (
+  userId: string,
+  puzzleId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  return (tx ?? prisma).progress.findFirst({
     where: {
       userId: userId,
       puzzleId: puzzleId,
@@ -38,8 +48,9 @@ export const upsertPuzzleProgress = async (
   puzzleId: string,
   userId: string,
   data: PrismaJson.ProgressType,
+  tx?: Prisma.TransactionClient,
 ) => {
-  return await prisma.progress.upsert({
+  return await (tx ?? prisma).progress.upsert({
     where: {
       puzzleId_userId: {
         userId,
@@ -66,15 +77,18 @@ export type ClientGroup = Omit<
   'createdAt' | 'updatedAt'
 >;
 
+export type Client = Omit<ReplicacheClient, 'createdAt' | 'updatedAt'>;
+
 export const putClientGroup = async (
-  tx: Prisma.TransactionClient,
   { id, cvrVersion, userId }: ClientGroup,
+  tx?: Prisma.TransactionClient,
 ) => {
-  await tx.replicacheClientGroup.upsert({
+  await (tx ?? prisma).replicacheClientGroup.upsert({
     where: {
       id,
     },
     update: {
+      userId,
       cvrVersion,
     },
     create: {
@@ -85,12 +99,12 @@ export const putClientGroup = async (
   });
 };
 
-export const getOrCreateVersionedProgress = async (
-  tx: Prisma.TransactionClient,
+export const getOrCreateProgress = async (
   userId: string,
   puzzleId: string,
-) => {
-  let progress = await getPuzzleProgressForUser(userId, puzzleId);
+  tx?: Prisma.TransactionClient,
+): Promise<Progress> => {
+  let progress = await getPuzzleProgressForUser(userId, puzzleId, tx);
 
   if (progress == null) {
     const puzzle = await getPuzzleById(puzzleId);
@@ -101,12 +115,20 @@ export const getOrCreateVersionedProgress = async (
       puzzleId,
       userId,
       convertProgressToJson(createInitialProgress(puzzle)),
+      tx,
     );
-    return {
-      id: progress.id,
-      rowversion: 0,
-    };
+    progress;
   }
+
+  return progress;
+};
+
+export const getOrCreateVersionedProgress = async (
+  userId: string,
+  puzzleId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  let progress = await getOrCreateProgress(userId, puzzleId, tx);
 
   return {
     id: progress.id,
@@ -115,11 +137,11 @@ export const getOrCreateVersionedProgress = async (
 };
 
 export const getClientGroup = async (
-  tx: Prisma.TransactionClient,
   userId: string,
   clientGroupId: string,
+  tx?: Prisma.TransactionClient,
 ): Promise<ClientGroup> => {
-  const group = await tx.replicacheClientGroup.findFirst({
+  const group = await (tx ?? prisma).replicacheClientGroup.findFirst({
     where: {
       id: clientGroupId,
     },
@@ -136,10 +158,61 @@ export const getClientGroup = async (
     throw new Error('Unauthorized: Client group does not belong to user!');
   }
   return {
-    id: clientGroupId,
-    userId,
+    id: group.id,
+    userId: group.userId,
     cvrVersion: group.cvrVersion,
   };
+};
+
+export const getClient = async (
+  clientId: string,
+  clientGroupId: string,
+  tx?: Prisma.TransactionClient,
+) => {
+  const client = await (tx ?? prisma).replicacheClient.findFirst({
+    where: {
+      id: clientId,
+    },
+    select: {
+      id: true,
+      clientGroupId: true,
+      lastMutationID: true,
+    },
+  });
+
+  if (client == null) {
+    return {
+      id: clientId,
+      clientGroupID: '',
+      lastMutationID: 0,
+    };
+  }
+
+  if (client.clientGroupId !== clientGroupId) {
+    throw new Error('Unauthorized: Client does not belong to group!');
+  }
+
+  return client;
+};
+
+export const putClient = async (
+  { id, clientGroupId, lastMutationID }: Client,
+  tx?: Prisma.TransactionClient,
+) => {
+  await (tx ?? prisma).replicacheClient.upsert({
+    where: {
+      id,
+    },
+    update: {
+      clientGroupId,
+      lastMutationID,
+    },
+    create: {
+      id,
+      clientGroupId,
+      lastMutationID,
+    },
+  });
 };
 
 export const getClientsMetadata = async (
@@ -160,4 +233,80 @@ export const getClientsMetadata = async (
     id: client.id,
     rowversion: client.lastMutationID,
   }));
+};
+
+export const updateTime = async (
+  progress: Progress,
+  time: PrismaJson.ProgressType['time'],
+  tx?: Prisma.TransactionClient,
+): Promise<Affected> => {
+  await upsertPuzzleProgress(
+    progress.puzzleId,
+    progress.userId,
+    {
+      ...progress.data,
+      time,
+    },
+    tx,
+  );
+  return {
+    ids: [[progress.userId, progress.puzzleId]],
+  };
+};
+
+export const updateCharacterPosition = async (
+  progress: Progress,
+  state: PrismaJson.ProgressType['state'],
+  tx?: Prisma.TransactionClient,
+): Promise<Affected> => {
+  await upsertPuzzleProgress(
+    progress.puzzleId,
+    progress.userId,
+    {
+      ...progress.data,
+      state,
+    },
+    tx,
+  );
+  return {
+    ids: [[progress.userId, progress.puzzleId]],
+  };
+};
+
+export const updateCellDraftModes = async (
+  progress: Progress,
+  draftModes: PrismaJson.ProgressType['draftModes'],
+  tx?: Prisma.TransactionClient,
+): Promise<Affected> => {
+  await upsertPuzzleProgress(
+    progress.puzzleId,
+    progress.userId,
+    {
+      ...progress.data,
+      draftModes,
+    },
+    tx,
+  );
+  return {
+    ids: [[progress.userId, progress.puzzleId]],
+  };
+};
+
+export const updateValidations = async (
+  progress: Progress,
+  validations: PrismaJson.ProgressType['validations'],
+  tx?: Prisma.TransactionClient,
+): Promise<Affected> => {
+  await upsertPuzzleProgress(
+    progress.puzzleId,
+    progress.userId,
+    {
+      ...progress.data,
+      validations,
+    },
+    tx,
+  );
+  return {
+    ids: [[progress.userId, progress.puzzleId]],
+  };
 };
