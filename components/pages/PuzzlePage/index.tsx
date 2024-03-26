@@ -192,7 +192,6 @@ export default function Puzzle({
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
-  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const animatedClueText = useAnimatedText(clue, 120);
 
   const [puzzleWidth] = useMemo(() => {
@@ -230,16 +229,14 @@ export default function Puzzle({
   }, [puzzleWidth]);
 
   const {
+    isPuzzleSolved,
     addTime,
     elapsedTime,
     hasRetrievedGameState,
-    updateAnswerIndex,
     updateCharacterPosition,
-    answerIndex,
-    characterPositionArray,
-    saveToServerDebounced,
-    cellValidationArray,
-    cellDraftModeArray,
+    characterPositions,
+    validations,
+    draftModes,
     autocheckEnabled,
     addAutocheckEnabled,
     draftModeEnabled,
@@ -301,11 +298,6 @@ export default function Puzzle({
     },
     [finishPuzzle, isPuzzleSolved, turnLeft, turnRight],
   );
-
-  const onSolved = useCallback(() => {
-    saveToServerDebounced();
-    setIsPuzzleSolved(true);
-  }, [saveToServerDebounced]);
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -458,10 +450,8 @@ export default function Puzzle({
                 selectedSide={selectedSide}
                 keyAndIndexOverride={keyAndIndexOverride}
                 currentKey={selectedCharacter}
-                updateAnswerIndex={updateAnswerIndex}
                 updateCharacterPosition={updateCharacterPosition}
-                answerIndex={answerIndex}
-                characterPositionArray={characterPositionArray}
+                characterPositionArray={characterPositions}
                 hasRetrievedGameState={hasRetrievedGameState}
                 onLetterInput={onLetterInput}
                 onSelectClue={setClue}
@@ -469,11 +459,10 @@ export default function Puzzle({
                 selectedColor={selectedColor}
                 adjacentColor={adjacentColor}
                 onInitialize={onInitialize}
-                onSolved={onSolved}
                 isVerticalOrientation={isVerticalOrientation}
                 onVerticalOrientationChange={setVerticalOrientation}
-                cellValidationArray={cellValidationArray}
-                cellDraftModeArray={cellDraftModeArray}
+                cellValidationArray={validations}
+                cellDraftModeArray={draftModes}
                 autocheckEnabled={autocheckEnabled}
               />
             </group>

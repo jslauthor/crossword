@@ -12,11 +12,10 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { isCellWithNumber, isPuzzleSolved } from '../../../../lib/utils/puzzle';
+import { isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
-import { SolutionCell } from 'types/types';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
 import { borderColor, correctColor, errorColor } from 'lib/utils/color';
 
@@ -169,17 +168,11 @@ type LetterBoxesProps = {
   adjacentColor: number;
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
-  answerIndex: number[];
-  characterPositionArray: Float32Array;
-  cellValidationArray: Uint8Array;
-  cellDraftModeArray: Uint8Array;
+  characterPositionArray: readonly number[];
+  cellValidationArray: readonly number[];
+  cellDraftModeArray: readonly number[];
   autocheckEnabled: boolean;
   hasRetrievedGameState: boolean;
-  updateAnswerIndex: (
-    cell: SolutionCell,
-    index: number,
-    letter: string,
-  ) => void;
   updateCharacterPosition: (
     selectedIndex: number,
     key: string,
@@ -191,7 +184,6 @@ type LetterBoxesProps = {
   onLetterInput?: () => void;
   onSelectClue?: (clue: string | undefined) => void;
   onInitialize?: () => void;
-  onSolved?: () => void;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -234,9 +226,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   selectedSide,
   keyAndIndexOverride,
   currentKey,
-  updateAnswerIndex,
   updateCharacterPosition,
-  answerIndex,
   characterPositionArray,
   hasRetrievedGameState,
   onLetterInput,
@@ -245,7 +235,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   selectedColor,
   adjacentColor,
   onInitialize,
-  onSolved,
   cellValidationArray,
   cellDraftModeArray,
 }) => {
@@ -283,12 +272,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [record, size] = useMemo(() => {
     return [puzzle.record, puzzle.record.solution.length];
   }, [puzzle.record]);
-
-  useEffect(() => {
-    if (isPuzzleSolved(answerIndex) && onSolved != null) {
-      onSolved();
-    }
-  }, [answerIndex, onSolved]);
 
   useEffect(() => {
     if (onSelectClue != null) {
@@ -880,6 +863,19 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     ],
   );
 
+  const characterPositions = useMemo(
+    () => new Float32Array(characterPositionArray),
+    [characterPositionArray],
+  );
+  const validations = useMemo(
+    () => new Uint16Array(cellValidationArray),
+    [cellValidationArray],
+  );
+  const draftModes = useMemo(
+    () => new Uint16Array(cellDraftModeArray),
+    [cellDraftModeArray],
+  );
+
   return (
     <instancedMesh
       ref={setRef}
@@ -894,7 +890,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           attach="attributes-characterPosition"
           count={characterPositionArray.length}
           itemSize={2}
-          array={characterPositionArray}
+          array={characterPositions}
         />
         <instancedBufferAttribute
           attach="attributes-cellNumberPosition"
@@ -918,13 +914,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           attach="attributes-cellValidation"
           count={cellValidationArray.length}
           itemSize={2}
-          array={cellValidationArray}
+          array={validations}
         />
         <instancedBufferAttribute
           attach="attributes-cellDraftMode"
           count={cellDraftModeArray.length}
           itemSize={2}
-          array={cellDraftModeArray}
+          array={draftModes}
         />
       </boxGeometry>
     </instancedMesh>
