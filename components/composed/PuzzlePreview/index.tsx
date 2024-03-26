@@ -3,11 +3,10 @@
 import * as React from 'react';
 import 'components/svg/PreviewCube';
 import 'components/svg/IconStar';
-import { DEFAULT_SELECTED_ADJACENT_COLOR } from 'components/pages/PuzzlePage';
 import IconStar, { DifficultyEnum } from 'components/svg/IconStar';
 import PreviewCube, { ProgressEnum } from 'components/svg/PreviewCube';
 import { styled } from 'styled-components';
-import { getColorHex } from 'lib/utils/color';
+import { DEFAULT_SELECTED_ADJACENT_COLOR, getColorHex } from 'lib/utils/color';
 import DimensionIndicator from 'components/core/DimensionIndicator';
 
 export const getLabelForDifficulty = (difficulty: DifficultyEnum) => {

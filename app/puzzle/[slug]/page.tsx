@@ -7,6 +7,7 @@ import {
   TEXTURE_RECORD,
   generateTextures,
 } from 'lib/utils/textures';
+import { Room } from './room';
 
 type PuzzleProps = {
   puzzle: PuzzleType;
@@ -53,7 +54,11 @@ export default async function Page({
   params: { slug: string };
 }) {
   const props = await getProps(slug);
-  return <PuzzlePage {...props} />;
+  return (
+    <Room puzzle={props.puzzle}>
+      <PuzzlePage {...props} />
+    </Room>
+  );
 }
 
 export const dynamic = 'force-dynamic';

@@ -35,6 +35,7 @@ export const upsertPuzzleProgress = async (
   puzzleId: string,
   userId: string,
   data: PrismaJson.ProgressType,
+  usedHint?: boolean,
 ) => {
   return await prisma.progress.upsert({
     where: {
@@ -44,6 +45,7 @@ export const upsertPuzzleProgress = async (
       },
     },
     update: {
+      usedHint,
       data,
     },
     create: {

@@ -45,6 +45,11 @@ import { RotatingBoxProps } from 'components/core/3d/Box';
 import { PuzzleType } from 'app/page';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
+import {
+  DEFAULT_COLOR,
+  DEFAULT_SELECTED_ADJACENT_COLOR,
+  DEFAULT_SELECTED_COLOR,
+} from 'lib/utils/color';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -57,10 +62,6 @@ for (let x = 0; x <= 1000; x++) {
   SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
 }
 SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
-
-export const DEFAULT_COLOR = 0x708d91;
-export const DEFAULT_SELECTED_COLOR = 0xd31996;
-export const DEFAULT_SELECTED_ADJACENT_COLOR = 0x1fbe68;
 
 const HeaderItem = styled.div`
   display: grid;
@@ -191,7 +192,6 @@ export default function Puzzle({
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
-  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const animatedClueText = useAnimatedText(clue, 120);
 
   const [puzzleWidth] = useMemo(() => {
@@ -229,14 +229,18 @@ export default function Puzzle({
   }, [puzzleWidth]);
 
   const {
+    isPuzzleSolved,
     addTime,
     elapsedTime,
     hasRetrievedGameState,
-    updateAnswerIndex,
-    addCharacterPosition,
-    answerIndex,
-    characterPositionArray,
-    saveToServerDebounced,
+    updateCharacterPosition,
+    characterPositions,
+    validations,
+    draftModes,
+    autocheckEnabled,
+    addAutocheckEnabled,
+    draftModeEnabled,
+    addDraftModeEnabled,
   } = usePuzzleProgress(
     puzzle,
     characterTextureAtlasLookup,
@@ -294,11 +298,6 @@ export default function Puzzle({
     },
     [finishPuzzle, isPuzzleSolved, turnLeft, turnRight],
   );
-
-  const onSolved = useCallback(() => {
-    saveToServerDebounced();
-    setIsPuzzleSolved(true);
-  }, [saveToServerDebounced]);
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -397,10 +396,28 @@ export default function Puzzle({
     };
   }, [defaultColor, sideOffset]);
 
+  const handleAutocheckChanged = useCallback(
+    (autocheckEnabled: boolean) => {
+      addAutocheckEnabled(autocheckEnabled);
+    },
+    [addAutocheckEnabled],
+  );
+
+  const handleDraftModeChanged = useCallback(
+    (draftModeEnabled: boolean) => {
+      addDraftModeEnabled(draftModeEnabled);
+    },
+    [addDraftModeEnabled],
+  );
+
   return (
     <Menu
       centerLabel={formattedElapsedTime}
       rotatingBoxProps={rotatingBoxProps}
+      autocheckEnabled={autocheckEnabled}
+      draftModeEnabled={draftModeEnabled}
+      onAutocheckChanged={handleAutocheckChanged}
+      onDraftModeChanged={handleDraftModeChanged}
     >
       <Canvas
         gl={{ antialias: false }}
@@ -433,10 +450,8 @@ export default function Puzzle({
                 selectedSide={selectedSide}
                 keyAndIndexOverride={keyAndIndexOverride}
                 currentKey={selectedCharacter}
-                updateAnswerIndex={updateAnswerIndex}
-                addCharacterPosition={addCharacterPosition}
-                answerIndex={answerIndex}
-                characterPositionArray={characterPositionArray}
+                updateCharacterPosition={updateCharacterPosition}
+                characterPositionArray={characterPositions}
                 hasRetrievedGameState={hasRetrievedGameState}
                 onLetterInput={onLetterInput}
                 onSelectClue={setClue}
@@ -444,9 +459,11 @@ export default function Puzzle({
                 selectedColor={selectedColor}
                 adjacentColor={adjacentColor}
                 onInitialize={onInitialize}
-                onSolved={onSolved}
                 isVerticalOrientation={isVerticalOrientation}
                 onVerticalOrientationChange={setVerticalOrientation}
+                cellValidationArray={validations}
+                cellDraftModeArray={draftModes}
+                autocheckEnabled={autocheckEnabled}
               />
             </group>
           </SwipeControls>
