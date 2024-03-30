@@ -1,242 +1,204 @@
+'use client';
+
 import { PuzzleType } from 'app/page';
-import localForage from 'localforage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import useAsyncQueue from './useAsyncQueue';
-import { useUser } from '@clerk/nextjs';
-import { useThrottle } from './useThrottle';
-import { SolutionCell } from 'types/types';
+import { GameState, SolutionCell } from 'types/types';
 import { PuzzleProps } from 'components/pages/PuzzlePage';
 import {
-  createDefaultCharacterPositionArray,
-  createUint8Array,
-  getAutocheckStorageKey,
-  getCellDraftModeStorageKey,
-  getCellValidationStorageKey,
-  getCharacterPositionStorageKey,
-  getDraftModeStorageKey,
-  getElapsedTimeStorageKey,
+  CHARACTER_POSITIONS_KEY,
+  DRAFT_MODES_KEY,
+  GAME_STATE_KEY,
+  TIME_KEY,
+  VALIDATIONS_KEY,
+  createInitialState,
+  createInitialYDoc,
   invertAtlas,
   updateAnswerIndex as mutateAnswerIndex,
+  verifyAnswerIndex,
 } from '../puzzle';
+import YPartyKitProvider from 'y-partykit/provider';
+import localforage from 'localforage';
+import { nanoid } from 'nanoid';
+import { useUser } from '@clerk/nextjs';
+import { IndexeddbPersistence } from 'y-indexeddb';
 
-const getItem = async <T,>(
-  key: string,
-  fallback: { value: T; timestamp: number } | undefined,
-): Promise<T | undefined> => {
-  const item = (await localForage.getItem(key)) as {
-    value: T;
-    timestamp: number;
-  } | null;
-
-  if (item != null) {
-    if (fallback && fallback.timestamp > item.timestamp) {
-      return fallback.value;
-    }
-
-    return item.value;
-  }
-
-  return fallback?.value;
-};
-
-// This mutates the puzzle!
-export const retrieveGameState = async (
-  puzzle: PuzzleType,
-  storageKey: string,
-  atlas: PuzzleProps['characterTextureAtlasLookup'],
-  characterPositionArray: Float32Array,
-) => {
-  let characterPosition: Float32Array =
-    createDefaultCharacterPositionArray(puzzle);
-  /**
-   * Compare local and server state and merge if needed
-   */
-  const localState = (await localForage.getItem(storageKey)) as {
-    value: Float32Array;
-    timestamp: number;
-  } | null;
-  const serverState = puzzle.progress
-    ? {
-        value: new Float32Array(
-          Object.values(puzzle.progress.data.state.value ?? []),
-        ),
-        timestamp: puzzle.progress.data.state.timestamp ?? 0,
-      }
-    : undefined;
-  if (localState != null && serverState == null) {
-    characterPosition = localState.value;
-    mutateAnswerIndex(
-      puzzle.answerIndex,
-      invertAtlas(atlas),
-      localState.value,
-      puzzle.record.solution,
-    );
-  } else if (localState == null && serverState != null) {
-    characterPosition = serverState.value;
-    // no need to mutate answer index here because it's already been done by the server
-  } else if (localState != null && serverState != null) {
-    const updatedPosition = characterPositionArray.map((_, index) => {
-      const newerState =
-        serverState.timestamp > localState.timestamp ? serverState : localState;
-      const olderState =
-        serverState.timestamp < localState.timestamp ? serverState : localState;
-      return getNumber(newerState.value[index]) ?? olderState.value[index];
-    });
-    characterPosition = updatedPosition;
-    mutateAnswerIndex(
-      puzzle.answerIndex,
-      invertAtlas(atlas),
-      updatedPosition,
-      puzzle.record.solution,
-    );
-  }
-
-  return characterPosition;
-};
-
-const getNumber = (val: number) => (val > -1 ? val : undefined);
+const ANONYMOUS_PLAYER_STORAGE_KEY = 'anonymous-player-key';
 
 export const usePuzzleProgress = (
   puzzle: PuzzleType,
   atlas: PuzzleProps['characterTextureAtlasLookup'],
   isInitialized = true,
+  gameState: GameState = createInitialState(puzzle),
 ) => {
   const { user } = useUser();
-  const { add } = useAsyncQueue({ concurrency: 1 });
+  const [cacheId, setCacheId] = useState<string | null>(null);
+  const [provider, setProvider] = useState<YPartyKitProvider | null>(null);
+  const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
+
+  // Generate a cache id for the user
+  useEffect(() => {
+    if (user?.id == null) {
+      const getCacheId = async () => {
+        let anonymousKey = await localforage.getItem<string>(
+          ANONYMOUS_PLAYER_STORAGE_KEY,
+        );
+        if (anonymousKey == null) {
+          anonymousKey = nanoid();
+          await localforage.setItem(ANONYMOUS_PLAYER_STORAGE_KEY, anonymousKey);
+        }
+        setCacheId(`${anonymousKey}:${puzzle.id}`);
+      };
+      getCacheId();
+    } else {
+      setCacheId(`${user?.id}:${puzzle.id}`);
+    }
+  }, [puzzle.id, user?.id]);
+
+  // Initialize the local and server documents
+  useEffect(() => {
+    if (cacheId == null || isInitialized === false) return;
+
+    let ypartyProvider: YPartyKitProvider | null = null;
+
+    const initialize = async () => {
+      const yDoc = createInitialYDoc(cacheId, puzzle);
+      const indexdb = new IndexeddbPersistence(cacheId, yDoc);
+      indexdb.once('synced', () => {
+        const ypartyProvider = new YPartyKitProvider(
+          process.env.NEXT_PUBLIC_PARTYKIT_URL!,
+          cacheId,
+          yDoc,
+          {
+            connect: user?.id != null,
+          },
+        );
+        setProvider(ypartyProvider);
+        setElapsedTime(
+          indexdb.doc.getMap(GAME_STATE_KEY).get(TIME_KEY) as number,
+        );
+        const positions = new Float32Array(
+          indexdb.doc
+            .getMap(GAME_STATE_KEY)
+            .get(CHARACTER_POSITIONS_KEY) as number[],
+        );
+        setCharacterPositionArray(positions);
+        setCellValidationArray(
+          new Uint16Array(
+            indexdb.doc.getMap(GAME_STATE_KEY).get(VALIDATIONS_KEY) as number[],
+          ),
+        );
+        setCellDraftModeArray(
+          new Uint16Array(
+            indexdb.doc.getMap(GAME_STATE_KEY).get(DRAFT_MODES_KEY) as number[],
+          ),
+        );
+        const index = mutateAnswerIndex(
+          puzzle.answerIndex.slice(),
+          invertAtlas(atlas),
+          positions,
+          puzzle.record.solution,
+        );
+        setAnswerIndex(index);
+        setHasRetrievedState(true);
+      });
+    };
+
+    initialize();
+
+    return () => {
+      ypartyProvider?.disconnect();
+    };
+  }, [atlas, cacheId, isInitialized, puzzle, user?.id]);
+
+  // Observe the document for changes and update the state
+  useEffect(() => {
+    provider?.doc.getMap(GAME_STATE_KEY).observe((event) => {
+      event.keysChanged.forEach((key) => {
+        switch (key) {
+          case CHARACTER_POSITIONS_KEY:
+            setCharacterPositionArray(
+              new Float32Array(
+                event.target.get(CHARACTER_POSITIONS_KEY) as number[],
+              ),
+            );
+            break;
+          case VALIDATIONS_KEY:
+            setCellValidationArray(
+              new Uint16Array(event.target.get(VALIDATIONS_KEY) as number[]),
+            );
+            break;
+          case DRAFT_MODES_KEY:
+            setCellDraftModeArray(
+              new Uint16Array(event.target.get(DRAFT_MODES_KEY) as number[]),
+            );
+            break;
+          case TIME_KEY:
+            setElapsedTime(event.target.get(TIME_KEY) as number);
+            break;
+          default:
+            break;
+        }
+      });
+    });
+  }, [provider?.doc]);
+
+  // const socket = usePartySocket({
+  //   host: process.env.NEXT_PUBLIC_PARTYKIT_URL,
+  //   room: 'hello',
+  //   onMessage(event) {
+  //     console.log(event);
+  //   },
+  // });
+  // socket.send('hello from client');
+
+  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
 
   const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [elapsedTime, setElapsedTime] = useState<number>(gameState.time);
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
-  const [characterPositionArray, setCharacterPositionArray] =
-    useState<Float32Array>(createDefaultCharacterPositionArray(puzzle));
+  const [characterPositions, setCharacterPositionArray] =
+    useState<Float32Array>(gameState.characterPositions);
 
   // This can be one of three values:
   // 0 = default
   // 1 = error
   // 2 = verified (cannot change letter later)
-  const [cellValidationArray, setCellValidationArray] = useState<Uint8Array>(
-    createUint8Array(puzzle),
+  const [validations, setCellValidationArray] = useState<Uint16Array>(
+    gameState.validations,
   );
 
   // Is the cell in draft mode or default?
   // 0 = default
   // 1 = draft
-  const [cellDraftModeArray, setCellDraftModeArray] = useState<Uint8Array>(
-    createUint8Array(puzzle),
+  const [draftModes, setCellDraftModeArray] = useState<Uint16Array>(
+    gameState.draftModes,
   );
 
-  const [hasRetrievedGameState, setHasRetrievedGameState] =
-    useState<boolean>(false);
-
-  const characterPositionStorageKey = useMemo(
-    () => getCharacterPositionStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const elapsedTimeStorageKey = useMemo(
-    () => getElapsedTimeStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const autocheckStorageKey = useMemo(
-    () => getAutocheckStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const draftModeStorageKey = useMemo(
-    () => getDraftModeStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const cellValidationStorageKey = useMemo(
-    () => getCellValidationStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const cellDraftModeStorageKey = useMemo(
-    () => getCellDraftModeStorageKey(puzzle.id),
-    [puzzle],
-  );
-
-  const saveToServer = useCallback(() => {
-    const save = async () => {
-      const state = (await localForage.getItem(
-        characterPositionStorageKey,
-      )) as PrismaJson.ProgressType['state'];
-      const time = (await localForage.getItem(
-        elapsedTimeStorageKey,
-      )) as PrismaJson.ProgressType['time'];
-      const validations = (await localForage.getItem(
-        cellValidationStorageKey,
-      )) as PrismaJson.ProgressType['validations'];
-      const draftModes = (await localForage.getItem(
-        cellDraftModeStorageKey,
-      )) as PrismaJson.ProgressType['draftModes'];
-
-      // We need to wait until all values are available before saving
-      // And there needs to be an authenticated user
-      if (
-        user == null ||
-        state == null ||
-        validations == null ||
-        draftModes == null ||
-        time == null
-      )
-        return;
-
-      await fetch(`/api/progress/puzzle/${puzzle.id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          state,
-          time,
-          validations,
-          draftModes,
-        } as PrismaJson.ProgressType),
-      });
-    };
-    save();
-  }, [
-    cellDraftModeStorageKey,
-    cellValidationStorageKey,
-    characterPositionStorageKey,
-    elapsedTimeStorageKey,
-    puzzle.id,
-    user,
-  ]);
-
-  // Debounce saving to server
-  const [saveToServerDebounced] = useThrottle(saveToServer, 5000);
+  // Check if the puzzle is solved when the answer index changes
+  useEffect(() => {
+    if (verifyAnswerIndex(answerIndex)) {
+      setAutocheckEnabled(false);
+      setDraftModeEnabled(false);
+      setIsPuzzleSolved(true);
+    }
+  }, [answerIndex]);
 
   const addCellValidation = useCallback(
-    (cellValidationArray: Uint8Array) => {
-      add({
-        id: cellValidationStorageKey,
-        task: () =>
-          localForage.setItem(cellValidationStorageKey, {
-            timestamp: Date.now(),
-            value: cellValidationArray,
-          }),
-      });
-      setCellValidationArray(new Uint8Array(cellValidationArray));
-      saveToServerDebounced();
+    (validations: Uint16Array) => {
+      provider?.doc
+        .getMap(GAME_STATE_KEY)
+        .set(VALIDATIONS_KEY, Array.from(validations));
     },
-    [add, cellValidationStorageKey, saveToServerDebounced],
+    [provider?.doc],
   );
 
   const addAutocheckEnabled = useCallback(
     (autoCheck: boolean) => {
-      add({
-        id: autocheckStorageKey,
-        task: () =>
-          localForage.setItem(autocheckStorageKey, {
-            timestamp: Date.now(),
-            value: autoCheck,
-          }),
-      });
+      if (isPuzzleSolved) return;
       if (autoCheck === true) {
-        // Iterate through answer index and update cellValidationArray
-        const newCellValidationArray = new Uint8Array(cellValidationArray);
+        // Iterate through answer index and update validations
+        const newCellValidationArray = new Uint16Array(validations);
         for (let index = 0; index < puzzle.record.solution.length; index++) {
           if (puzzle.record.solution[index] !== '#') {
             const chunk = Math.floor(index / 32);
@@ -251,139 +213,48 @@ export const usePuzzleProgress = (
       }
 
       setAutocheckEnabled(autoCheck);
-      saveToServerDebounced();
     },
     [
-      add,
+      isPuzzleSolved,
+      validations,
       addCellValidation,
-      answerIndex,
-      autocheckStorageKey,
-      cellValidationArray,
       puzzle.record.solution,
-      saveToServerDebounced,
+      answerIndex,
     ],
   );
 
   const addDraftModeEnabled = useCallback(
     (draftModeEnabled: boolean) => {
-      add({
-        id: draftModeStorageKey,
-        task: () =>
-          localForage.setItem(draftModeStorageKey, {
-            timestamp: Date.now(),
-            value: draftModeEnabled,
-          }),
-      });
+      if (isPuzzleSolved) return;
       setDraftModeEnabled(draftModeEnabled);
-      saveToServerDebounced();
     },
-    [add, draftModeStorageKey, saveToServerDebounced],
+    [isPuzzleSolved],
   );
 
   const addCellDraftMode = useCallback(
-    (cellDraftModeArray: Uint8Array) => {
-      add({
-        id: cellDraftModeStorageKey,
-        task: () =>
-          localForage.setItem(cellDraftModeStorageKey, {
-            timestamp: Date.now(),
-            value: cellDraftModeArray,
-          }),
-      });
-      setCellDraftModeArray(new Uint8Array(cellDraftModeArray));
-      saveToServerDebounced();
+    (draftModes: Uint16Array) => {
+      provider?.doc
+        .getMap(GAME_STATE_KEY)
+        .set(DRAFT_MODES_KEY, Array.from(draftModes));
     },
-    [add, cellDraftModeStorageKey, saveToServerDebounced],
+    [provider?.doc],
   );
 
   const addCharacterPosition = useCallback(
-    (characterPositionArray: Float32Array) => {
-      add({
-        id: characterPositionStorageKey,
-        task: () =>
-          localForage.setItem(characterPositionStorageKey, {
-            timestamp: Date.now(),
-            value: characterPositionArray,
-          }),
-      });
-      setCharacterPositionArray(characterPositionArray);
-      saveToServerDebounced();
+    (characterPositions: Float32Array) => {
+      provider?.doc
+        .getMap(GAME_STATE_KEY)
+        .set(CHARACTER_POSITIONS_KEY, Array.from(characterPositions));
     },
-    [add, characterPositionStorageKey, saveToServerDebounced],
+    [provider?.doc],
   );
 
   const addTime = useCallback(
     (elapsedTime: number) => {
-      add({
-        id: elapsedTimeStorageKey,
-        task: () =>
-          localForage.setItem(elapsedTimeStorageKey, {
-            timestamp: Date.now(),
-            value: elapsedTime,
-          }),
-      });
-      setElapsedTime(elapsedTime);
-      saveToServerDebounced();
+      provider?.doc.getMap(GAME_STATE_KEY).set(TIME_KEY, elapsedTime);
     },
-    [add, elapsedTimeStorageKey, saveToServerDebounced],
+    [provider?.doc],
   );
-
-  // Load previous state from local storage and compare to server data
-  useEffect(() => {
-    if (isInitialized === false || hasRetrievedGameState === true) return;
-
-    const initiate = async () => {
-      const characterPosition = await retrieveGameState(
-        puzzle,
-        characterPositionStorageKey,
-        atlas,
-        characterPositionArray,
-      );
-      addCharacterPosition(characterPosition);
-      setAnswerIndex(puzzle.answerIndex);
-
-      /**
-       * Grab the newer time state
-       */
-      let localTime = (await localForage.getItem(elapsedTimeStorageKey)) as {
-        value: number;
-        timestamp: number;
-      } | null;
-
-      const serverTime = puzzle.progress
-        ? {
-            value: puzzle.progress.data.time.value ?? 0,
-            timestamp: puzzle.progress.data.time.timestamp ?? 0,
-          }
-        : undefined;
-
-      if (localTime != null) {
-        // Take the newer of the two
-        if (serverTime && serverTime.timestamp > localTime.timestamp) {
-          localTime = serverTime;
-        }
-        addTime(localTime.value);
-      } else if (serverTime != null) {
-        addTime(serverTime.value);
-      }
-
-      setHasRetrievedGameState(true);
-    };
-    initiate();
-  }, [
-    addCharacterPosition,
-    addTime,
-    atlas,
-    characterPositionArray,
-    characterPositionStorageKey,
-    elapsedTimeStorageKey,
-    hasRetrievedGameState,
-    isInitialized,
-    puzzle,
-    puzzle.answerIndex,
-    puzzle.progress,
-    puzzle.record.solution,
-  ]);
 
   const updateAnswerIndex = useCallback(
     (cell: SolutionCell, index: number, letter: string) => {
@@ -405,16 +276,16 @@ export const usePuzzleProgress = (
         if (autocheckEnabled) {
           // 2 = correct
           // 1 = incorrect
-          cellValidationArray[index * 2] = isCorrect ? 2 : 1;
+          validations[index * 2] = isCorrect ? 2 : 1;
         } else {
           // 0 = default
-          cellValidationArray[index * 2] = 0;
+          validations[index * 2] = 0;
         }
 
-        cellDraftModeArray[index * 2] = draftModeEnabled ? 1 : 0;
+        draftModes[index * 2] = draftModeEnabled ? 1 : 0;
 
-        addCellDraftMode(cellDraftModeArray);
-        addCellValidation(cellValidationArray);
+        addCellDraftMode(draftModes);
+        addCellValidation(validations);
 
         setAnswerIndex(newAnswerIndex);
       }
@@ -424,21 +295,21 @@ export const usePuzzleProgress = (
       addCellValidation,
       answerIndex,
       autocheckEnabled,
-      cellDraftModeArray,
-      cellValidationArray,
+      draftModes,
+      validations,
       draftModeEnabled,
     ],
   );
 
   const updateCharacterPosition = useCallback(
     (selectedIndex: number, key: string, x: number, y: number) => {
-      if (cellValidationArray[selectedIndex * 2] !== 2) {
+      if (validations[selectedIndex * 2] !== 2) {
         updateAnswerIndex(
           puzzle.record.solution[selectedIndex],
           selectedIndex,
           key.toUpperCase(),
         );
-        const newArray = new Float32Array([...characterPositionArray]);
+        const newArray = new Float32Array([...characterPositions]);
         newArray[selectedIndex * 2] = x;
         newArray[selectedIndex * 2 + 1] = y;
         addCharacterPosition(newArray);
@@ -448,31 +319,29 @@ export const usePuzzleProgress = (
       return false;
     },
     [
-      addCharacterPosition,
-      cellValidationArray,
-      characterPositionArray,
-      puzzle.record.solution,
+      validations,
       updateAnswerIndex,
+      puzzle.record.solution,
+      characterPositions,
+      addCharacterPosition,
     ],
   );
 
   return {
+    isPuzzleSolved,
     addCharacterPosition,
     addTime,
-    updateAnswerIndex,
     elapsedTime,
-    characterPositionArray,
-    answerIndex,
-    hasRetrievedGameState,
-    saveToServerDebounced,
-    cellValidationArray,
     addCellValidation,
-    cellDraftModeArray,
     addCellDraftMode,
     autocheckEnabled,
     addAutocheckEnabled,
     draftModeEnabled,
     addDraftModeEnabled,
     updateCharacterPosition,
+    validations,
+    draftModes,
+    characterPositions,
+    hasRetrievedState,
   };
 };

@@ -22,6 +22,14 @@ declare global {
   }
 }
 
+export type GameState = {
+  time: number;
+  characterPositions: Float32Array;
+  validations: Uint16Array;
+  draftModes: Uint16Array;
+  usedHint: boolean;
+};
+
 export type BlankCell = '#';
 
 export type StandardCell = number | ':';

@@ -192,7 +192,6 @@ export default function Puzzle({
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
-  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const animatedClueText = useAnimatedText(clue, 120);
 
   const [puzzleWidth] = useMemo(() => {
@@ -230,20 +229,18 @@ export default function Puzzle({
   }, [puzzleWidth]);
 
   const {
+    isPuzzleSolved,
     addTime,
     elapsedTime,
-    hasRetrievedGameState,
-    updateAnswerIndex,
     updateCharacterPosition,
-    answerIndex,
-    characterPositionArray,
-    saveToServerDebounced,
-    cellValidationArray,
-    cellDraftModeArray,
+    characterPositions,
+    validations,
+    draftModes,
     autocheckEnabled,
     addAutocheckEnabled,
     draftModeEnabled,
     addDraftModeEnabled,
+    hasRetrievedState,
   } = usePuzzleProgress(
     puzzle,
     characterTextureAtlasLookup,
@@ -301,11 +298,6 @@ export default function Puzzle({
     },
     [finishPuzzle, isPuzzleSolved, turnLeft, turnRight],
   );
-
-  const onSolved = useCallback(() => {
-    saveToServerDebounced();
-    setIsPuzzleSolved(true);
-  }, [saveToServerDebounced]);
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -371,22 +363,21 @@ export default function Puzzle({
   const { reset } = useElapsedTime({
     isPlaying:
       shouldStartTimer === true &&
+      hasRetrievedState === true &&
       (typeof window === 'undefined' ? false : !document.hidden) &&
       (isPuzzleSolved || !isInitialized) === false,
     updateInterval: 1,
     onUpdate: (elapsedTime) => {
-      if (hasRetrievedGameState === true) {
-        addTime(elapsedTime);
-      }
+      addTime(elapsedTime);
     },
   });
 
   useEffect(() => {
-    if (hasRetrievedGameState === true && shouldStartTimer === false) {
+    if (hasRetrievedState === true && shouldStartTimer === false) {
       reset(Number(elapsedTime ?? 0));
       setShouldStartTimer(true);
     }
-  }, [elapsedTime, hasRetrievedGameState, reset, shouldStartTimer]);
+  }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
   // TODO: Convert into separate component
   const formattedElapsedTime = useMemo(
@@ -458,23 +449,19 @@ export default function Puzzle({
                 selectedSide={selectedSide}
                 keyAndIndexOverride={keyAndIndexOverride}
                 currentKey={selectedCharacter}
-                updateAnswerIndex={updateAnswerIndex}
                 updateCharacterPosition={updateCharacterPosition}
-                answerIndex={answerIndex}
-                characterPositionArray={characterPositionArray}
-                hasRetrievedGameState={hasRetrievedGameState}
                 onLetterInput={onLetterInput}
                 onSelectClue={setClue}
                 defaultColor={defaultColor}
                 selectedColor={selectedColor}
                 adjacentColor={adjacentColor}
                 onInitialize={onInitialize}
-                onSolved={onSolved}
                 isVerticalOrientation={isVerticalOrientation}
                 onVerticalOrientationChange={setVerticalOrientation}
-                cellValidationArray={cellValidationArray}
-                cellDraftModeArray={cellDraftModeArray}
                 autocheckEnabled={autocheckEnabled}
+                characterPositionArray={characterPositions}
+                cellValidationArray={validations}
+                cellDraftModeArray={draftModes}
               />
             </group>
           </SwipeControls>
