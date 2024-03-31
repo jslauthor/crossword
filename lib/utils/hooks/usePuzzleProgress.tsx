@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GameState, SolutionCell } from 'types/types';
 import { PuzzleProps } from 'components/pages/PuzzlePage';
 import {
+  CACHE_ID_KEY,
   CHARACTER_POSITIONS_KEY,
   DRAFT_MODES_KEY,
   GAME_STATE_KEY,
@@ -12,17 +13,33 @@ import {
   VALIDATIONS_KEY,
   createInitialState,
   createInitialYDoc,
+  initializeAnswerIndex,
   invertAtlas,
   updateAnswerIndex as mutateAnswerIndex,
   verifyAnswerIndex,
 } from '../puzzle';
-import YPartyKitProvider from 'y-partykit/provider';
 import localforage from 'localforage';
 import { nanoid } from 'nanoid';
 import { useUser } from '@clerk/nextjs';
+import { doesDatabaseExist } from '../indexeddb';
 import { IndexeddbPersistence } from 'y-indexeddb';
+import * as Y from 'yjs';
+import YPartyKitProvider from 'y-partykit/provider';
 
 const ANONYMOUS_PLAYER_STORAGE_KEY = 'anonymous-player-key';
+
+// Manual memoziation
+const getLocalCacheId = async (puzzleId: string) => {
+  let anonymousKey = await localforage.getItem<string>(
+    ANONYMOUS_PLAYER_STORAGE_KEY,
+  );
+  if (anonymousKey == null) {
+    anonymousKey = nanoid();
+    await localforage.setItem(ANONYMOUS_PLAYER_STORAGE_KEY, anonymousKey);
+  }
+
+  return `${anonymousKey}:${puzzleId}`;
+};
 
 export const usePuzzleProgress = (
   puzzle: PuzzleType,
@@ -32,21 +49,14 @@ export const usePuzzleProgress = (
 ) => {
   const { user } = useUser();
   const [cacheId, setCacheId] = useState<string | null>(null);
-  const [provider, setProvider] = useState<YPartyKitProvider | null>(null);
+  const [doc, setDoc] = useState<Y.Doc | null>(null);
   const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
 
   // Generate a cache id for the user
   useEffect(() => {
     if (user?.id == null) {
       const getCacheId = async () => {
-        let anonymousKey = await localforage.getItem<string>(
-          ANONYMOUS_PLAYER_STORAGE_KEY,
-        );
-        if (anonymousKey == null) {
-          anonymousKey = nanoid();
-          await localforage.setItem(ANONYMOUS_PLAYER_STORAGE_KEY, anonymousKey);
-        }
-        setCacheId(`${anonymousKey}:${puzzle.id}`);
+        setCacheId(await getLocalCacheId(puzzle.id));
       };
       getCacheId();
     } else {
@@ -63,43 +73,50 @@ export const usePuzzleProgress = (
     const initialize = async () => {
       const yDoc = createInitialYDoc(cacheId, puzzle);
       const indexdb = new IndexeddbPersistence(cacheId, yDoc);
-      indexdb.once('synced', () => {
-        const ypartyProvider = new YPartyKitProvider(
-          process.env.NEXT_PUBLIC_PARTYKIT_URL!,
-          cacheId,
-          yDoc,
-          {
-            connect: user?.id != null,
-          },
-        );
-        setProvider(ypartyProvider);
-        setElapsedTime(
-          indexdb.doc.getMap(GAME_STATE_KEY).get(TIME_KEY) as number,
-        );
+      setDoc(yDoc);
+      const initState = () => {
+        // Reset the cache id
+        yDoc.getText(CACHE_ID_KEY).delete(0, yDoc.getText(CACHE_ID_KEY).length);
+        yDoc.getText(CACHE_ID_KEY).insert(0, cacheId);
+
+        // Set the initial state
+        setElapsedTime(yDoc.getMap(GAME_STATE_KEY).get(TIME_KEY) as number);
         const positions = new Float32Array(
-          indexdb.doc
-            .getMap(GAME_STATE_KEY)
-            .get(CHARACTER_POSITIONS_KEY) as number[],
+          yDoc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) as number[],
         );
         setCharacterPositionArray(positions);
         setCellValidationArray(
           new Uint16Array(
-            indexdb.doc.getMap(GAME_STATE_KEY).get(VALIDATIONS_KEY) as number[],
+            yDoc.getMap(GAME_STATE_KEY).get(VALIDATIONS_KEY) as number[],
           ),
         );
         setCellDraftModeArray(
           new Uint16Array(
-            indexdb.doc.getMap(GAME_STATE_KEY).get(DRAFT_MODES_KEY) as number[],
+            yDoc.getMap(GAME_STATE_KEY).get(DRAFT_MODES_KEY) as number[],
           ),
         );
         const index = mutateAnswerIndex(
-          puzzle.answerIndex.slice(),
+          initializeAnswerIndex(puzzle.record.solution),
           invertAtlas(atlas),
           positions,
           puzzle.record.solution,
         );
         setAnswerIndex(index);
         setHasRetrievedState(true);
+      };
+      indexdb.once('synced', async () => {
+        if (user?.id != null && cacheId.includes(user.id)) {
+          const ypartyProvider = new YPartyKitProvider(
+            process.env.NEXT_PUBLIC_PARTYKIT_URL!,
+            cacheId,
+            yDoc,
+          );
+          ypartyProvider.once('synced', () => {
+            initState();
+          });
+        }
+
+        initState();
       });
     };
 
@@ -112,7 +129,7 @@ export const usePuzzleProgress = (
 
   // Observe the document for changes and update the state
   useEffect(() => {
-    provider?.doc.getMap(GAME_STATE_KEY).observe((event) => {
+    doc?.getMap(GAME_STATE_KEY).observe((event) => {
       event.keysChanged.forEach((key) => {
         switch (key) {
           case CHARACTER_POSITIONS_KEY:
@@ -140,7 +157,7 @@ export const usePuzzleProgress = (
         }
       });
     });
-  }, [provider?.doc]);
+  }, [doc]);
 
   // const socket = usePartySocket({
   //   host: process.env.NEXT_PUBLIC_PARTYKIT_URL,
@@ -186,11 +203,11 @@ export const usePuzzleProgress = (
 
   const addCellValidation = useCallback(
     (validations: Uint16Array) => {
-      provider?.doc
-        .getMap(GAME_STATE_KEY)
-        .set(VALIDATIONS_KEY, Array.from(validations));
+      doc
+        ?.getMap(GAME_STATE_KEY)
+        .set(VALIDATIONS_KEY, Y.Array.from(Array.from(validations)));
     },
-    [provider?.doc],
+    [doc],
   );
 
   const addAutocheckEnabled = useCallback(
@@ -233,27 +250,32 @@ export const usePuzzleProgress = (
 
   const addCellDraftMode = useCallback(
     (draftModes: Uint16Array) => {
-      provider?.doc
-        .getMap(GAME_STATE_KEY)
-        .set(DRAFT_MODES_KEY, Array.from(draftModes));
+      doc
+        ?.getMap(GAME_STATE_KEY)
+        .set(DRAFT_MODES_KEY, Y.Array.from(Array.from(draftModes)));
     },
-    [provider?.doc],
+    [doc],
   );
 
   const addCharacterPosition = useCallback(
     (characterPositions: Float32Array) => {
-      provider?.doc
-        .getMap(GAME_STATE_KEY)
-        .set(CHARACTER_POSITIONS_KEY, Array.from(characterPositions));
+      doc
+        ?.getMap(GAME_STATE_KEY)
+        .set(
+          CHARACTER_POSITIONS_KEY,
+          Y.Array.from(Array.from(characterPositions)),
+        );
     },
-    [provider?.doc],
+    [doc],
   );
 
   const addTime = useCallback(
-    (elapsedTime: number) => {
-      provider?.doc.getMap(GAME_STATE_KEY).set(TIME_KEY, elapsedTime);
+    (time: number) => {
+      // Always take the larger of the two times since multiple
+      // clients can be on the page longer
+      doc?.getMap(GAME_STATE_KEY).set(TIME_KEY, Math.max(time, elapsedTime));
     },
-    [provider?.doc],
+    [doc, elapsedTime],
   );
 
   const updateAnswerIndex = useCallback(
@@ -273,19 +295,21 @@ export const usePuzzleProgress = (
           newAnswerIndex[chunk] &= ~(1 << bit);
         }
 
+        const newValidations = new Uint16Array(validations);
         if (autocheckEnabled) {
           // 2 = correct
           // 1 = incorrect
-          validations[index * 2] = isCorrect ? 2 : 1;
+          newValidations[index * 2] = isCorrect ? 2 : 1;
         } else {
           // 0 = default
-          validations[index * 2] = 0;
+          newValidations[index * 2] = 0;
         }
 
-        draftModes[index * 2] = draftModeEnabled ? 1 : 0;
+        const newDraftModes = new Uint16Array(draftModes);
+        newDraftModes[index * 2] = draftModeEnabled ? 1 : 0;
 
-        addCellDraftMode(draftModes);
-        addCellValidation(validations);
+        addCellDraftMode(newDraftModes);
+        addCellValidation(newValidations);
 
         setAnswerIndex(newAnswerIndex);
       }

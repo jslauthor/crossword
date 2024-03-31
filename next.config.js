@@ -1,5 +1,7 @@
 // const withLitSSR = require('@lit-labs/nextjs')(); // this support web component ssr
 
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -9,6 +11,10 @@ const nextConfig = {
     styledComponents: {
       ssr: true,
     },
+  },
+  webpack: (config) => {
+    config.resolve.alias.yjs = path.resolve('node_modules/yjs/dist/yjs.mjs');
+    return config;
   },
 };
 

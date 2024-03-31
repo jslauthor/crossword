@@ -10,6 +10,7 @@ import memoizeOne from 'memoize-one';
 import { PuzzleType } from 'app/page';
 import * as Y from 'yjs';
 
+export const CACHE_ID_KEY = 'CACHE_ID_KEY';
 export const GAME_STATE_KEY = 'GAME_STATE_KEY';
 export const CHARACTER_POSITIONS_KEY = 'characterPositions';
 export const VALIDATIONS_KEY = 'validations';
@@ -232,9 +233,10 @@ export const verifyAnswerIndex = (answerIndex: number[] = []): boolean =>
  */
 export const getProgressFromSolution = (
   puzzle: PuzzleType,
-  characterPositions: PrismaJson.ProgressType['state']['value'],
+  characterPositions: GameState['characterPositions'],
+  answerIndex: GameState['answerIndex'],
 ): ProgressEnum => {
-  if (verifyAnswerIndex(puzzle.answerIndex) === true) {
+  if (verifyAnswerIndex(answerIndex) === true) {
     return 3; // Solved
   }
 
@@ -260,29 +262,35 @@ export const createUint16Array = (puzzle: PuzzleType) =>
 export const createInitialArray = (puzzle: PuzzleType, fill: number = -1) =>
   new Array(puzzle.record.solution.length * 2).fill(fill);
 
-export const createInitialYDoc = (id: string, puzzle: PuzzleType): Y.Doc => {
-  const doc = new Y.Doc({
-    guid: id,
-  });
-
-  doc
-    .getMap(GAME_STATE_KEY)
-    .set(CHARACTER_POSITIONS_KEY, Array.from(createFloat32Array(puzzle)));
-  doc
-    .getMap(GAME_STATE_KEY)
-    .set(VALIDATIONS_KEY, Array.from(createUint16Array(puzzle)));
-  doc
-    .getMap(GAME_STATE_KEY)
-    .set(DRAFT_MODES_KEY, Array.from(createUint16Array(puzzle)));
-  doc.getMap(GAME_STATE_KEY).set(TIME_KEY, 0);
-
-  return doc;
-};
-
 export const createInitialState = (puzzle: PuzzleType): GameState => ({
   time: 0,
   characterPositions: createFloat32Array(puzzle),
   validations: createUint16Array(puzzle),
   draftModes: createUint16Array(puzzle),
+  answerIndex: initializeAnswerIndex(puzzle.record.solution),
   usedHint: false,
 });
+
+export const createInitialYDoc = (id: string, puzzle: PuzzleType): Y.Doc => {
+  const doc = new Y.Doc({
+    guid: id,
+  });
+
+  doc.getText(CACHE_ID_KEY).insert(0, id);
+
+  doc
+    .getMap(GAME_STATE_KEY)
+    .set(
+      CHARACTER_POSITIONS_KEY,
+      Y.Array.from(Array.from(createFloat32Array(puzzle))),
+    );
+  doc
+    .getMap(GAME_STATE_KEY)
+    .set(VALIDATIONS_KEY, Y.Array.from(Array.from(createUint16Array(puzzle))));
+  doc
+    .getMap(GAME_STATE_KEY)
+    .set(DRAFT_MODES_KEY, Y.Array.from(Array.from(createUint16Array(puzzle))));
+  doc.getMap(GAME_STATE_KEY).set(TIME_KEY, 0);
+
+  return doc;
+};

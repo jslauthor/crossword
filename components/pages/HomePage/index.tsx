@@ -34,52 +34,23 @@ export interface HomePageProps {
   atlas: PuzzleProps['characterTextureAtlasLookup'];
 }
 
-const Page: React.FC<HomePageProps> = ({ puzzles, atlas }) => {
-  const [latestPuzzle, setLatestPuzzle] = useState(puzzles[0]);
-  const [otherPuzzles, setOtherPuzzles] = useState(puzzles.slice(1));
-
-  useEffect(() => {
-    const updatePuzzles = async () => {
-      const updatePuzzlePreview = async (puzzle: PuzzleType) => {
-        // TODO: Grab the positions from partykit
-        // const positions = await retrieveGameState(
-        //   puzzle,
-        //   getCharacterPositionStorageKey(puzzle.id),
-        //   atlas,
-        //   createFloat32Array(puzzle),
-        // );
-        // puzzle.previewState = getProgressFromSolution(
-        //   puzzle,
-        //   JSON.parse(JSON.stringify(positions)) as Record<string, number>,
-        // );
-      };
-
-      await updatePuzzlePreview(latestPuzzle);
-      setLatestPuzzle({ ...latestPuzzle });
-
-      for (const puzzle of otherPuzzles) {
-        await updatePuzzlePreview(puzzle);
-      }
-      setOtherPuzzles([...otherPuzzles]);
-    };
-    updatePuzzles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [atlas]);
+const Page: React.FC<HomePageProps> = ({ puzzles }) => {
+  const [otherPuzzles] = useState(puzzles.slice(1));
 
   return (
     <Menu>
       <Container>
-        <Link href={`/puzzle/${latestPuzzle.slug}`}>
+        <Link href={`/puzzle/${puzzles[0].slug}`}>
           <PuzzleHighlight
-            title={latestPuzzle.title}
-            author={latestPuzzle.author}
-            date={latestPuzzle.date}
-            isAiAssisted={latestPuzzle.isAiAssisted}
-            difficulty={latestPuzzle.difficulty}
-            previewState={latestPuzzle.previewState}
+            title={puzzles[0].title}
+            author={puzzles[0].author}
+            date={puzzles[0].date}
+            isAiAssisted={puzzles[0].isAiAssisted}
+            difficulty={puzzles[0].difficulty}
+            previewState={puzzles[0].previewState}
             dimensions={[
-              latestPuzzle.data[0].dimensions.width,
-              latestPuzzle.data[0].dimensions.height,
+              puzzles[0].data[0].dimensions.width,
+              puzzles[0].data[0].dimensions.height,
             ]}
           />
         </Link>
