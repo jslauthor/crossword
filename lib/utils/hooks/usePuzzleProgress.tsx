@@ -21,7 +21,6 @@ import {
 import localforage from 'localforage';
 import { nanoid } from 'nanoid';
 import { useUser } from '@clerk/nextjs';
-import { doesDatabaseExist } from '../indexeddb';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
