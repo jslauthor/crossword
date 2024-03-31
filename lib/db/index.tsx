@@ -40,8 +40,10 @@ export const upsertPuzzleProgress = (
   const content = Buffer.from(encodeStateAsUpdateV2(state));
   return prisma.progress.upsert({
     where: {
-      userId: userId,
-      puzzleId: puzzleId,
+      puzzleId_userId: {
+        userId,
+        puzzleId,
+      },
     },
     update: {
       state: content,
