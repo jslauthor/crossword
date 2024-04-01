@@ -4,11 +4,12 @@ on:
   push:
     branches:
       - main
-      - staging
+      - '**'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -18,7 +19,15 @@ jobs:
           node-version: 18
           cache: 'npm'
       - run: npm ci
-      - run: npx partykit deploy
+      - name: Deploy to production
+        if: github.ref == 'refs/heads/main'
+        run: npx partykit deploy
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
-          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN  }}
+          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
+      - name: Deploy to staging
+        if: github.ref != 'refs/heads/main'
+        run: npx partykit deploy --preview staging
+        env:
+          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
