@@ -50,6 +50,7 @@ import {
   DEFAULT_SELECTED_ADJACENT_COLOR,
   DEFAULT_SELECTED_COLOR,
 } from 'lib/utils/color';
+import { createInitialState } from 'lib/utils/puzzle';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -368,6 +369,7 @@ export default function Puzzle({
       (isPuzzleSolved || !isInitialized) === false,
     updateInterval: 1,
     onUpdate: (elapsedTime) => {
+      // console.log('Elapsed time:', elapsedTime);
       addTime(elapsedTime);
     },
   });
@@ -382,9 +384,9 @@ export default function Puzzle({
   // TODO: Convert into separate component
   const formattedElapsedTime = useMemo(
     () =>
-      elapsedTime < 3600
-        ? new Date(elapsedTime * 1000).toISOString().slice(14, 19)
-        : new Date(elapsedTime * 1000).toISOString().slice(11, 19),
+      (elapsedTime ?? 0) < 3600
+        ? new Date((elapsedTime ?? 0) * 1000).toISOString().slice(14, 19)
+        : new Date((elapsedTime ?? 0) * 1000).toISOString().slice(11, 19),
     [elapsedTime],
   );
 
@@ -408,6 +410,16 @@ export default function Puzzle({
     },
     [addDraftModeEnabled],
   );
+
+  const {
+    characterPositions: defaultCharacterPositions,
+    draftModes: defaultDraftModes,
+    validations: defaultValidations,
+  } = useMemo(() => {
+    return createInitialState(puzzle);
+  }, [puzzle]);
+
+  // console.log(characterPositions);
 
   return (
     <Menu
@@ -459,9 +471,11 @@ export default function Puzzle({
                 isVerticalOrientation={isVerticalOrientation}
                 onVerticalOrientationChange={setVerticalOrientation}
                 autocheckEnabled={autocheckEnabled}
-                characterPositionArray={characterPositions}
-                cellValidationArray={validations}
-                cellDraftModeArray={draftModes}
+                characterPositionArray={
+                  characterPositions ?? defaultCharacterPositions
+                }
+                cellValidationArray={validations ?? defaultValidations}
+                cellDraftModeArray={draftModes ?? defaultDraftModes}
               />
             </group>
           </SwipeControls>

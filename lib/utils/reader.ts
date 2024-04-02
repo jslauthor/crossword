@@ -103,6 +103,44 @@ export const getPuzzleBySlug = async (
   return puzzle;
 };
 
+export const getPuzzleById = async (id: string): Promise<PuzzleType | null> => {
+  const result = await queryDato({
+    query: `
+      {
+        allPuzzles(
+          filter: {
+            id: { eq: "${id}" }
+          }
+        ) {
+          id
+          difficulty
+          puzzleType
+          data
+          author {
+            fullName
+          }
+          isAiAssisted
+          slug
+          title
+          _status
+          _firstPublishedAt
+        }
+      }
+    `,
+  });
+
+  const puzzle = result?.allPuzzles[0];
+
+  if (puzzle == null) {
+    return puzzle;
+  }
+
+  puzzle.record = getCharacterRecord(puzzle.data);
+  await enrichPuzzles([puzzle]);
+
+  return puzzle;
+};
+
 const atlas = invertAtlas(TEXTURE_RECORD);
 
 // WARNING: This mutates the puzzles that are passed in

@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client/edge';
-import { CACHE_ID_KEY } from 'lib/utils/puzzle';
 import type * as Party from 'partykit/server';
 import { onConnect } from 'y-partykit';
 import { Buffer } from 'buffer';
-import { encodeStateAsUpdateV2 } from 'yjs';
+import { encodeStateAsUpdateV2, Doc, applyUpdateV2 } from 'yjs';
+import { createInitialYDoc } from 'lib/utils/puzzle';
 
 const prisma = new PrismaClient();
 
@@ -15,11 +15,47 @@ export default class Server implements Party.Server {
       persist: {
         mode: 'snapshot',
       },
+      // async load() {
+      //   try {
+      //     const url = new URL(ctx.request.url);
+      //     const clerkId = url.searchParams.get('clerkId');
+      //     const puzzleId = url.searchParams.get('puzzleId');
+      //     const user = await prisma.user.findFirst({
+      //       where: {
+      //         clerkId,
+      //       },
+      //     });
+      //     if (user == null || puzzleId == null) {
+      //       throw new Error(
+      //         `Load: User or puzzle not found! ${user?.id} ${puzzleId}`,
+      //       );
+      //     }
+      //     const progress = await prisma.progress.findFirst({
+      //       where: {
+      //         userId: user.id,
+      //         puzzleId,
+      //       },
+      //     });
+      //     if (progress == null) {
+      //       throw new Error(
+      //         `Load: Progress not found for! ${user?.id} ${puzzleId}`,
+      //       );
+      //     }
+      //     const doc = new Doc();
+      //     const state = Buffer.from(progress.state);
+      //     applyUpdateV2(doc, state);
+      //     return doc;
+      //   } catch (e) {
+      //     console.error(e);
+      //     return null;
+      //   }
+      // },
       callback: {
         async handler(yDoc) {
           try {
-            const cacheId = yDoc.getText(CACHE_ID_KEY).toString();
-            const [clerkId, puzzleId] = cacheId.split(':');
+            const url = new URL(conn.uri);
+            const clerkId = url.searchParams.get('clerkId');
+            const puzzleId = url.searchParams.get('puzzleId');
             const user = await prisma.user.findFirst({
               where: {
                 clerkId,
@@ -27,7 +63,7 @@ export default class Server implements Party.Server {
             });
             if (user == null || puzzleId == null) {
               throw new Error(
-                `User or puzzle not found! ${user?.id} ${puzzleId}`,
+                `Save: User or puzzle not found! ${user?.id} ${puzzleId}`,
               );
             }
             const state = Buffer.from(encodeStateAsUpdateV2(yDoc));

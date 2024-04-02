@@ -2,16 +2,14 @@
 
 import { PuzzleType } from 'app/page';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { GameState, SolutionCell } from 'types/types';
+import { SolutionCell } from 'types/types';
 import { PuzzleProps } from 'components/pages/PuzzlePage';
 import {
-  CACHE_ID_KEY,
   CHARACTER_POSITIONS_KEY,
   DRAFT_MODES_KEY,
   GAME_STATE_KEY,
   TIME_KEY,
   VALIDATIONS_KEY,
-  createInitialState,
   createInitialYDoc,
   initializeAnswerIndex,
   invertAtlas,
@@ -26,8 +24,6 @@ import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
 
 const ANONYMOUS_PLAYER_STORAGE_KEY = 'anonymous-player-key';
-
-// Manual memoziation
 const getLocalCacheId = async (puzzleId: string) => {
   let anonymousKey = await localforage.getItem<string>(
     ANONYMOUS_PLAYER_STORAGE_KEY,
@@ -40,83 +36,101 @@ const getLocalCacheId = async (puzzleId: string) => {
   return `${anonymousKey}:${puzzleId}`;
 };
 
+// TODO
+// Authentication
+// Load the document from postgres (once your PR is merged)
+// Verify how much the state will grow in the database
+// fix multiple yjs instance error
+
 export const usePuzzleProgress = (
   puzzle: PuzzleType,
   atlas: PuzzleProps['characterTextureAtlasLookup'],
   isInitialized = true,
-  gameState: GameState = createInitialState(puzzle),
 ) => {
   const { user } = useUser();
-  const [cacheId, setCacheId] = useState<string | null>(null);
-  const [doc, setDoc] = useState<Y.Doc | null>(null);
+  const [anonCacheId, setAnonCacheId] = useState<string | null>(null);
+  // Always initialize the document with reasonable defaults
+  const [doc, setDoc] = useState<Y.Doc>(createInitialYDoc(puzzle));
+  const [indexDb, setIndexDb] = useState<IndexeddbPersistence | null>(null);
+  const [partykit, setPartykit] = useState<YPartyKitProvider | null>(null);
   const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
 
-  // Generate a cache id for the user
-  useEffect(() => {
-    if (user?.id == null) {
-      const getCacheId = async () => {
-        setCacheId(await getLocalCacheId(puzzle.id));
-      };
-      getCacheId();
-    } else {
-      setCacheId(`${user?.id}:${puzzle.id}`);
-    }
-  }, [puzzle.id, user?.id]);
+  const initState = useCallback(() => {
+    // Set the initial state
+    setElapsedTime(doc.getMap(GAME_STATE_KEY).get(TIME_KEY) as number);
+    const positions = new Float32Array(
+      doc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) as number[],
+    );
 
-  // Initialize the local and server documents
+    setCharacterPositionArray(positions);
+    setCellValidationArray(
+      new Uint16Array(
+        doc.getMap(GAME_STATE_KEY).get(VALIDATIONS_KEY) as number[],
+      ),
+    );
+    setCellDraftModeArray(
+      new Uint16Array(
+        doc.getMap(GAME_STATE_KEY).get(DRAFT_MODES_KEY) as number[],
+      ),
+    );
+    const index = mutateAnswerIndex(
+      initializeAnswerIndex(puzzle.record.solution),
+      invertAtlas(atlas),
+      positions,
+      puzzle.record.solution,
+    );
+    setAnswerIndex(index);
+    setHasRetrievedState(true);
+  }, [atlas, doc, puzzle.record.solution]);
+
+  // Create local cache to store offline progress. This will always be anonymous
+  // but will be merged with the user cache when the user logs in
   useEffect(() => {
-    if (cacheId == null || isInitialized === false) return;
+    const initializeLocalCache = async () => {
+      const anonCacheId = await getLocalCacheId(puzzle.id);
+      setAnonCacheId(anonCacheId);
+    };
+    initializeLocalCache();
+  }, [puzzle, doc]);
+
+  // Setup indexdb yjs provider for local storage
+  useEffect(() => {
+    if (anonCacheId != null) {
+      const db = new IndexeddbPersistence(anonCacheId, doc);
+      db.once('synced', () => {
+        initState();
+        setIndexDb(db);
+      });
+
+      return () => {
+        db.destroy();
+      };
+    }
+  }, [anonCacheId, doc, initState]);
+
+  // Initialize the server after local cache is synced
+  useEffect(() => {
+    if (user?.id == null || indexDb == null || isInitialized === false) return;
 
     let ypartyProvider: YPartyKitProvider | null = null;
 
     const initialize = async () => {
-      const yDoc = createInitialYDoc(cacheId, puzzle);
-      const indexdb = new IndexeddbPersistence(cacheId, yDoc);
-      setDoc(yDoc);
-      const initState = () => {
-        // Reset the cache id
-        yDoc.getText(CACHE_ID_KEY).delete(0, yDoc.getText(CACHE_ID_KEY).length);
-        yDoc.getText(CACHE_ID_KEY).insert(0, cacheId);
-
-        // Set the initial state
-        setElapsedTime(yDoc.getMap(GAME_STATE_KEY).get(TIME_KEY) as number);
-        const positions = new Float32Array(
-          yDoc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) as number[],
-        );
-        setCharacterPositionArray(positions);
-        setCellValidationArray(
-          new Uint16Array(
-            yDoc.getMap(GAME_STATE_KEY).get(VALIDATIONS_KEY) as number[],
-          ),
-        );
-        setCellDraftModeArray(
-          new Uint16Array(
-            yDoc.getMap(GAME_STATE_KEY).get(DRAFT_MODES_KEY) as number[],
-          ),
-        );
-        const index = mutateAnswerIndex(
-          initializeAnswerIndex(puzzle.record.solution),
-          invertAtlas(atlas),
-          positions,
-          puzzle.record.solution,
-        );
-        setAnswerIndex(index);
-        setHasRetrievedState(true);
-      };
-      indexdb.once('synced', async () => {
-        if (user?.id != null && cacheId.includes(user.id)) {
-          const ypartyProvider = new YPartyKitProvider(
-            process.env.NEXT_PUBLIC_PARTYKIT_URL!,
-            cacheId,
-            yDoc,
-          );
-          ypartyProvider.once('synced', () => {
-            initState();
-          });
-        }
-
+      const ypartyProvider: YPartyKitProvider = new YPartyKitProvider(
+        process.env.NEXT_PUBLIC_PARTYKIT_URL!,
+        `${user.id}:${puzzle.id}`,
+        doc,
+        {
+          params: {
+            clerkId: user.id,
+            puzzleId: puzzle.id,
+          },
+        },
+      );
+      ypartyProvider.once('synced', () => {
         initState();
+        setPartykit(ypartyProvider);
       });
+      initState();
     };
 
     initialize();
@@ -124,7 +138,15 @@ export const usePuzzleProgress = (
     return () => {
       ypartyProvider?.disconnect();
     };
-  }, [atlas, cacheId, isInitialized, puzzle, user?.id]);
+  }, [doc, indexDb, initState, isInitialized, puzzle.id, user?.id]);
+
+  useEffect(() => {
+    // disconnect from server if the user is no longer logged in
+    if (user?.id == null && partykit != null) {
+      partykit.disconnect();
+      setPartykit(null);
+    }
+  }, [partykit, user?.id]);
 
   // Observe the document for changes and update the state
   useEffect(() => {
@@ -171,25 +193,21 @@ export const usePuzzleProgress = (
 
   const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
-  const [elapsedTime, setElapsedTime] = useState<number>(gameState.time);
+  const [elapsedTime, setElapsedTime] = useState<number>();
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   const [characterPositions, setCharacterPositionArray] =
-    useState<Float32Array>(gameState.characterPositions);
+    useState<Float32Array>();
 
   // This can be one of three values:
   // 0 = default
   // 1 = error
   // 2 = verified (cannot change letter later)
-  const [validations, setCellValidationArray] = useState<Uint16Array>(
-    gameState.validations,
-  );
+  const [validations, setCellValidationArray] = useState<Uint16Array>();
 
   // Is the cell in draft mode or default?
   // 0 = default
   // 1 = draft
-  const [draftModes, setCellDraftModeArray] = useState<Uint16Array>(
-    gameState.draftModes,
-  );
+  const [draftModes, setCellDraftModeArray] = useState<Uint16Array>();
 
   // Check if the puzzle is solved when the answer index changes
   useEffect(() => {
@@ -211,7 +229,7 @@ export const usePuzzleProgress = (
 
   const addAutocheckEnabled = useCallback(
     (autoCheck: boolean) => {
-      if (isPuzzleSolved) return;
+      if (isPuzzleSolved || validations == null) return;
       if (autoCheck === true) {
         // Iterate through answer index and update validations
         const newCellValidationArray = new Uint16Array(validations);
@@ -270,6 +288,7 @@ export const usePuzzleProgress = (
 
   const addTime = useCallback(
     (time: number) => {
+      if (elapsedTime == null) return;
       // Always take the larger of the two times since multiple
       // clients can be on the page longer
       doc?.getMap(GAME_STATE_KEY).set(TIME_KEY, Math.max(time, elapsedTime));
@@ -294,21 +313,24 @@ export const usePuzzleProgress = (
           newAnswerIndex[chunk] &= ~(1 << bit);
         }
 
-        const newValidations = new Uint16Array(validations);
-        if (autocheckEnabled) {
-          // 2 = correct
-          // 1 = incorrect
-          newValidations[index * 2] = isCorrect ? 2 : 1;
-        } else {
-          // 0 = default
-          newValidations[index * 2] = 0;
+        if (validations != null) {
+          const newValidations = new Uint16Array(validations);
+          if (autocheckEnabled) {
+            // 2 = correct
+            // 1 = incorrect
+            newValidations[index * 2] = isCorrect ? 2 : 1;
+          } else {
+            // 0 = default
+            newValidations[index * 2] = 0;
+          }
+          addCellValidation(newValidations);
         }
+        if (draftModes != null) {
+          const newDraftModes = new Uint16Array(draftModes);
+          newDraftModes[index * 2] = draftModeEnabled ? 1 : 0;
 
-        const newDraftModes = new Uint16Array(draftModes);
-        newDraftModes[index * 2] = draftModeEnabled ? 1 : 0;
-
-        addCellDraftMode(newDraftModes);
-        addCellValidation(newValidations);
+          addCellDraftMode(newDraftModes);
+        }
 
         setAnswerIndex(newAnswerIndex);
       }
@@ -326,6 +348,7 @@ export const usePuzzleProgress = (
 
   const updateCharacterPosition = useCallback(
     (selectedIndex: number, key: string, x: number, y: number) => {
+      if (validations == null || characterPositions == null) return false;
       if (validations[selectedIndex * 2] !== 2) {
         updateAnswerIndex(
           puzzle.record.solution[selectedIndex],

@@ -10,7 +10,6 @@ import memoizeOne from 'memoize-one';
 import { PuzzleType } from 'app/page';
 import * as Y from 'yjs';
 
-export const CACHE_ID_KEY = 'CACHE_ID_KEY';
 export const GAME_STATE_KEY = 'GAME_STATE_KEY';
 export const CHARACTER_POSITIONS_KEY = 'characterPositions';
 export const VALIDATIONS_KEY = 'validations';
@@ -271,12 +270,8 @@ export const createInitialState = (puzzle: PuzzleType): GameState => ({
   usedHint: false,
 });
 
-export const createInitialYDoc = (id: string, puzzle: PuzzleType): Y.Doc => {
-  const doc = new Y.Doc({
-    guid: id,
-  });
-
-  doc.getText(CACHE_ID_KEY).insert(0, id);
+export const createInitialYDoc = (puzzle: PuzzleType): Y.Doc => {
+  const doc = new Y.Doc();
 
   doc
     .getMap(GAME_STATE_KEY)
