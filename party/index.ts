@@ -3,12 +3,27 @@ import type * as Party from 'partykit/server';
 import { onConnect } from 'y-partykit';
 import { Buffer } from 'buffer';
 import { encodeStateAsUpdateV2, Doc, applyUpdateV2 } from 'yjs';
-import { createInitialYDoc } from 'lib/utils/puzzle';
+import { verifyToken } from '@clerk/backend';
 
 const prisma = new PrismaClient();
 
 export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {}
+
+  static async onBeforeConnect(request: Party.Request, lobby: Party.Lobby) {
+    try {
+      const token = new URL(request.url).searchParams.get('token') ?? '';
+      const session = await verifyToken(token, {
+        issuer: lobby.env.CLERK_ENDPOINT as string,
+      });
+      request.headers.set('X-User-ID', session.sub);
+      // forward the request onwards on onConnect
+      return request;
+    } catch (e) {
+      console.error(e);
+      return new Response('Unauthorized', { status: 401 });
+    }
+  }
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     return onConnect(conn, this.room, {

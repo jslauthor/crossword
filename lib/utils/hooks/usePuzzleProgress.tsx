@@ -18,7 +18,7 @@ import {
 } from '../puzzle';
 import localforage from 'localforage';
 import { nanoid } from 'nanoid';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
@@ -48,6 +48,7 @@ export const usePuzzleProgress = (
   isInitialized = true,
 ) => {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [anonCacheId, setAnonCacheId] = useState<string | null>(null);
   // Always initialize the document with reasonable defaults
   const [doc, setDoc] = useState<Y.Doc>(createInitialYDoc(puzzle));
@@ -115,6 +116,7 @@ export const usePuzzleProgress = (
     let ypartyProvider: YPartyKitProvider | null = null;
 
     const initialize = async () => {
+      const token = await getToken();
       const ypartyProvider: YPartyKitProvider = new YPartyKitProvider(
         process.env.NEXT_PUBLIC_PARTYKIT_URL!,
         `${user.id}:${puzzle.id}`,
@@ -123,7 +125,9 @@ export const usePuzzleProgress = (
           params: {
             clerkId: user.id,
             puzzleId: puzzle.id,
+            token,
           },
+          connect: token != null,
         },
       );
       ypartyProvider.once('synced', () => {
@@ -138,7 +142,7 @@ export const usePuzzleProgress = (
     return () => {
       ypartyProvider?.disconnect();
     };
-  }, [doc, indexDb, initState, isInitialized, puzzle.id, user?.id]);
+  }, [doc, getToken, indexDb, initState, isInitialized, puzzle.id, user?.id]);
 
   useEffect(() => {
     // disconnect from server if the user is no longer logged in
