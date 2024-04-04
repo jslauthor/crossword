@@ -64,7 +64,7 @@
     "use-elapsed-time": "^3.0.4",
     "usehooks-ts": "^2.15.1",
     "y-indexeddb": "^9.0.12",
-    "y-partykit": "^0.0.27",
+    "y-partykit": "^0.0.28",
     "yjs": "^13.6.14",
     "yoga-wasm-web": "^0.3.3"
   },
@@ -85,7 +85,7 @@
     "eslint-config-next": "13.4.19",
     "eslint-config-prettier": "^9.1.0",
     "node-loader": "^2.0.0",
-    "partykit": "0.0.101",
+    "partykit": "0.0.102",
     "postcss": "^8.4.35",
     "prettier": "^3.2.5",
     "prisma": "^5.11.0",

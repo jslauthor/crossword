@@ -37,10 +37,9 @@ const getLocalCacheId = async (puzzleId: string) => {
 };
 
 // TODO
-// Authentication
-// Load the document from postgres (once your PR is merged)
-// Verify how much the state will grow in the database
+// Load the document from postgres (nce your PR is merged)
 // fix multiple yjs instance error
+// Move to Supabase et al for postgres. Vercel too pricey
 
 export const usePuzzleProgress = (
   puzzle: PuzzleType,
