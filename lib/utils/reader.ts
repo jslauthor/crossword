@@ -18,89 +18,101 @@ export const getPuzzles = async (
   first: number = 100,
   skip: number = 0,
 ): Promise<PuzzleType[]> => {
-  const result = await queryDato({
-    query: `
-      {
-        allPuzzles(
-          first: ${first},
-          skip: ${skip},
-          orderBy: _firstPublishedAt_DESC
-        ) {
-          id
-          difficulty
-          puzzleType
-          data
-          author {
-            fullName
+  try {
+    const result = await queryDato({
+      query: `
+        {
+          allPuzzles(
+            first: ${first},
+            skip: ${skip},
+            orderBy: _firstPublishedAt_DESC
+          ) {
+            id
+            difficulty
+            puzzleType
+            data
+            author {
+              fullName
+            }
+            isAiAssisted
+            slug
+            title
+            _status
+            _firstPublishedAt
           }
-          isAiAssisted
-          slug
-          title
-          _status
-          _firstPublishedAt
+  
+          _allPuzzlesMeta {
+            count
+          }
         }
+      `,
+    });
 
-        _allPuzzlesMeta {
-          count
-        }
-      }
-    `,
-  });
+    const puzzles: PuzzleType[] = result?.allPuzzles.map((puzzle: any) => ({
+      id: puzzle.id,
+      title: puzzle.title,
+      author: puzzle.author.fullName,
+      date: formatDate(puzzle._firstPublishedAt),
+      isAiAssisted: puzzle.isAiAssisted,
+      difficulty: puzzle.difficulty,
+      previewState: 0,
+      slug: puzzle.slug,
+      data: puzzle.data,
+      record: getCharacterRecord(puzzle.data),
+    }));
 
-  const puzzles: PuzzleType[] = result?.allPuzzles.map((puzzle: any) => ({
-    id: puzzle.id,
-    title: puzzle.title,
-    author: puzzle.author.fullName,
-    date: formatDate(puzzle._firstPublishedAt),
-    isAiAssisted: puzzle.isAiAssisted,
-    difficulty: puzzle.difficulty,
-    previewState: 0,
-    slug: puzzle.slug,
-    data: puzzle.data,
-    record: getCharacterRecord(puzzle.data),
-  }));
+    return await enrichPuzzles(puzzles);
+  } catch (error) {
+    console.error('Error calling dato!', error);
+  }
 
-  return await enrichPuzzles(puzzles);
+  return [];
 };
 
 export const getPuzzleBySlug = async (
   slug: string,
 ): Promise<PuzzleType | null> => {
-  const result = await queryDato({
-    query: `
-      {
-        allPuzzles(
-          filter: {
-            slug: { eq: "${slug}" }
+  try {
+    const result = await queryDato({
+      query: `
+        {
+          allPuzzles(
+            filter: {
+              slug: { eq: "${slug}" }
+            }
+          ) {
+            id
+            difficulty
+            puzzleType
+            data
+            author {
+              fullName
+            }
+            isAiAssisted
+            slug
+            title
+            _status
+            _firstPublishedAt
           }
-        ) {
-          id
-          difficulty
-          puzzleType
-          data
-          author {
-            fullName
-          }
-          isAiAssisted
-          slug
-          title
-          _status
-          _firstPublishedAt
         }
-      }
-    `,
-  });
+      `,
+    });
 
-  const puzzle = result?.allPuzzles[0];
+    const puzzle = result?.allPuzzles[0];
 
-  if (puzzle == null) {
+    if (puzzle == null) {
+      return puzzle;
+    }
+
+    puzzle.record = getCharacterRecord(puzzle.data);
+    await enrichPuzzles([puzzle]);
+
     return puzzle;
+  } catch (error) {
+    console.error('Error calling dato!', error);
   }
 
-  puzzle.record = getCharacterRecord(puzzle.data);
-  await enrichPuzzles([puzzle]);
-
-  return puzzle;
+  return null;
 };
 
 export const getPuzzleById = async (id: string): Promise<PuzzleType | null> => {

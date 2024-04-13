@@ -5,7 +5,8 @@ import Menu from 'components/containers/Menu';
 import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { PuzzleType } from 'app/page';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Link as StyledLink } from '@nextui-org/react';
 import PuzzleHighlight from 'components/composed/PuzzleHighlight';
 import { PuzzleProps } from '../PuzzlePage';
 
@@ -29,6 +30,10 @@ const PuzzlesContainer = styled.div`
   width: 100%;
 `;
 
+const ErrorContainer = styled.div`
+  padding: 1rem;
+`;
+
 export interface HomePageProps {
   puzzles: PuzzleType[];
   atlas: PuzzleProps['characterTextureAtlasLookup'];
@@ -36,6 +41,25 @@ export interface HomePageProps {
 
 const Page: React.FC<HomePageProps> = ({ puzzles }) => {
   const [otherPuzzles] = useState(puzzles.slice(1));
+
+  if (puzzles.length === 0) {
+    return (
+      <Menu>
+        <Container>
+          <ErrorContainer>
+            <h2>
+              No puzzles found! Something must have gone terribly wrong with the
+              server. Please{' '}
+              <StyledLink color="warning" href="mailto:info@crosscube.com">
+                contact support
+              </StyledLink>
+              .
+            </h2>
+          </ErrorContainer>
+        </Container>
+      </Menu>
+    );
+  }
 
   return (
     <Menu>
