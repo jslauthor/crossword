@@ -36,12 +36,6 @@ const getLocalCacheId = async (puzzleId: string) => {
   return `${anonymousKey}:${puzzleId}`;
 };
 
-// TODO
-// fix multiple yjs instance error
-// Move to Supabase et al for postgres. Vercel too pricey
-// TODO: you need to make sure to restore a puzzle state if they aren't the main user
-// TODO: Steal puzzmo's UI
-
 export const usePuzzleProgress = (
   puzzle: PuzzleType,
   atlas: PuzzleProps['characterTextureAtlasLookup'],

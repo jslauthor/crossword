@@ -81,7 +81,7 @@ export const updateAnswerIndex = (
     let index = 0;
     for (let x = 0; x < characterPositionArray.length; x += 2) {
       const cell = solution[index];
-      if (cell != '#') {
+      if (cell && cell != '#') {
         const chunk = Math.floor(index / 32);
         const bit = index % 32;
         const characterPosition = characterPositionArray.slice(x, x + 2);
