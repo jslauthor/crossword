@@ -45,38 +45,40 @@ export const usePuzzleProgress = (
   const { getToken } = useAuth();
   const [anonCacheId, setAnonCacheId] = useState<string | null>(null);
   // Always initialize the document with reasonable defaults
-  const [doc, setDoc] = useState<Y.Doc>(createInitialYDoc(puzzle));
   const [indexDb, setIndexDb] = useState<IndexeddbPersistence | null>(null);
   const [partykit, setPartykit] = useState<YPartyKitProvider | null>(null);
   const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
 
-  const initState = useCallback(() => {
-    // Set the initial state
-    setElapsedTime(doc.getMap(GAME_STATE_KEY).get(TIME_KEY) as number);
-    const positions = new Float32Array(
-      doc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) as number[],
-    );
+  const initState = useCallback(
+    (doc: Y.Doc) => {
+      // Set the initial state
+      setElapsedTime(doc.getMap(GAME_STATE_KEY).get(TIME_KEY) as number);
+      const positions = new Float32Array(
+        doc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) as number[],
+      );
 
-    setCharacterPositionArray(positions);
-    setCellValidationArray(
-      new Uint16Array(
-        doc.getMap(GAME_STATE_KEY).get(VALIDATIONS_KEY) as number[],
-      ),
-    );
-    setCellDraftModeArray(
-      new Uint16Array(
-        doc.getMap(GAME_STATE_KEY).get(DRAFT_MODES_KEY) as number[],
-      ),
-    );
-    const index = mutateAnswerIndex(
-      initializeAnswerIndex(puzzle.record.solution),
-      invertAtlas(atlas),
-      positions,
-      puzzle.record.solution,
-    );
-    setAnswerIndex(index);
-    setHasRetrievedState(true);
-  }, [atlas, doc, puzzle.record.solution]);
+      setCharacterPositionArray(positions);
+      setCellValidationArray(
+        new Int16Array(
+          doc.getMap(GAME_STATE_KEY).get(VALIDATIONS_KEY) as number[],
+        ),
+      );
+      setCellDraftModeArray(
+        new Int16Array(
+          doc.getMap(GAME_STATE_KEY).get(DRAFT_MODES_KEY) as number[],
+        ),
+      );
+      const index = mutateAnswerIndex(
+        initializeAnswerIndex(puzzle.record.solution),
+        invertAtlas(atlas),
+        positions,
+        puzzle.record.solution,
+      );
+      setAnswerIndex(index);
+      setHasRetrievedState(true);
+    },
+    [atlas, puzzle.record.solution],
+  );
 
   // Create local cache to store offline progress. This will always be anonymous
   // but will be merged with the user cache when the user logs in
@@ -86,14 +88,17 @@ export const usePuzzleProgress = (
       setAnonCacheId(anonCacheId);
     };
     initializeLocalCache();
-  }, [puzzle, doc]);
+  }, [puzzle]);
 
   // Setup indexdb yjs provider for local storage
   useEffect(() => {
     if (anonCacheId != null) {
-      const db = new IndexeddbPersistence(anonCacheId, doc);
+      const db = new IndexeddbPersistence(
+        anonCacheId,
+        createInitialYDoc(puzzle),
+      );
       db.once('synced', () => {
-        initState();
+        initState(db.doc);
         setIndexDb(db);
       });
 
@@ -101,7 +106,7 @@ export const usePuzzleProgress = (
         db.destroy();
       };
     }
-  }, [anonCacheId, doc, initState]);
+  }, [anonCacheId, puzzle, initState]);
 
   // Initialize the server after local cache is synced
   useEffect(() => {
@@ -114,7 +119,7 @@ export const usePuzzleProgress = (
       const ypartyProvider: YPartyKitProvider = new YPartyKitProvider(
         process.env.NEXT_PUBLIC_PARTYKIT_URL!,
         `${user.id}:${puzzle.id}`,
-        doc,
+        indexDb.doc,
         {
           params: {
             clerkId: user.id,
@@ -125,10 +130,9 @@ export const usePuzzleProgress = (
         },
       );
       ypartyProvider.once('synced', () => {
-        initState();
+        initState(ypartyProvider.doc);
         setPartykit(ypartyProvider);
       });
-      initState();
     };
 
     initialize();
@@ -136,7 +140,7 @@ export const usePuzzleProgress = (
     return () => {
       ypartyProvider?.disconnect();
     };
-  }, [doc, getToken, indexDb, initState, isInitialized, puzzle.id, user?.id]);
+  }, [getToken, indexDb, initState, isInitialized, puzzle.id, user?.id]);
 
   useEffect(() => {
     // disconnect from server if the user is no longer logged in
@@ -148,7 +152,7 @@ export const usePuzzleProgress = (
 
   // Observe the document for changes and update the state
   useEffect(() => {
-    doc?.getMap(GAME_STATE_KEY).observe((event) => {
+    indexDb?.doc?.getMap(GAME_STATE_KEY).observe((event) => {
       event.keysChanged.forEach((key) => {
         switch (key) {
           case CHARACTER_POSITIONS_KEY:
@@ -160,12 +164,12 @@ export const usePuzzleProgress = (
             break;
           case VALIDATIONS_KEY:
             setCellValidationArray(
-              new Uint16Array(event.target.get(VALIDATIONS_KEY) as number[]),
+              new Int16Array(event.target.get(VALIDATIONS_KEY) as number[]),
             );
             break;
           case DRAFT_MODES_KEY:
             setCellDraftModeArray(
-              new Uint16Array(event.target.get(DRAFT_MODES_KEY) as number[]),
+              new Int16Array(event.target.get(DRAFT_MODES_KEY) as number[]),
             );
             break;
           case TIME_KEY:
@@ -176,19 +180,9 @@ export const usePuzzleProgress = (
         }
       });
     });
-  }, [doc]);
-
-  // const socket = usePartySocket({
-  //   host: process.env.NEXT_PUBLIC_PARTYKIT_URL,
-  //   room: 'hello',
-  //   onMessage(event) {
-  //     console.log(event);
-  //   },
-  // });
-  // socket.send('hello from client');
+  }, [indexDb?.doc]);
 
   const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
-
   const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<number>();
@@ -200,12 +194,12 @@ export const usePuzzleProgress = (
   // 0 = default
   // 1 = error
   // 2 = verified (cannot change letter later)
-  const [validations, setCellValidationArray] = useState<Uint16Array>();
+  const [validations, setCellValidationArray] = useState<Int16Array>();
 
   // Is the cell in draft mode or default?
   // 0 = default
   // 1 = draft
-  const [draftModes, setCellDraftModeArray] = useState<Uint16Array>();
+  const [draftModes, setCellDraftModeArray] = useState<Int16Array>();
 
   // Check if the puzzle is solved when the answer index changes
   useEffect(() => {
@@ -217,12 +211,12 @@ export const usePuzzleProgress = (
   }, [answerIndex]);
 
   const addCellValidation = useCallback(
-    (validations: Uint16Array) => {
-      doc
+    (validations: Int16Array) => {
+      indexDb?.doc
         ?.getMap(GAME_STATE_KEY)
         .set(VALIDATIONS_KEY, Y.Array.from(Array.from(validations)));
     },
-    [doc],
+    [indexDb?.doc],
   );
 
   const addAutocheckEnabled = useCallback(
@@ -230,7 +224,7 @@ export const usePuzzleProgress = (
       if (isPuzzleSolved || validations == null) return;
       if (autoCheck === true) {
         // Iterate through answer index and update validations
-        const newCellValidationArray = new Uint16Array(validations);
+        const newCellValidationArray = new Int16Array(validations);
         for (let index = 0; index < puzzle.record.solution.length; index++) {
           if (puzzle.record.solution[index] !== '#') {
             const chunk = Math.floor(index / 32);
@@ -264,24 +258,24 @@ export const usePuzzleProgress = (
   );
 
   const addCellDraftMode = useCallback(
-    (draftModes: Uint16Array) => {
-      doc
+    (draftModes: Int16Array) => {
+      indexDb?.doc
         ?.getMap(GAME_STATE_KEY)
         .set(DRAFT_MODES_KEY, Y.Array.from(Array.from(draftModes)));
     },
-    [doc],
+    [indexDb?.doc],
   );
 
   const addCharacterPosition = useCallback(
     (characterPositions: Float32Array) => {
-      doc
+      indexDb?.doc
         ?.getMap(GAME_STATE_KEY)
         .set(
           CHARACTER_POSITIONS_KEY,
           Y.Array.from(Array.from(characterPositions)),
         );
     },
-    [doc],
+    [indexDb?.doc],
   );
 
   const addTime = useCallback(
@@ -289,9 +283,11 @@ export const usePuzzleProgress = (
       if (elapsedTime == null) return;
       // Always take the larger of the two times since multiple
       // clients can be on the page longer
-      doc?.getMap(GAME_STATE_KEY).set(TIME_KEY, Math.max(time, elapsedTime));
+      indexDb?.doc
+        ?.getMap(GAME_STATE_KEY)
+        .set(TIME_KEY, Math.max(time, elapsedTime));
     },
-    [doc, elapsedTime],
+    [indexDb?.doc, elapsedTime],
   );
 
   const updateAnswerIndex = useCallback(
@@ -312,7 +308,7 @@ export const usePuzzleProgress = (
         }
 
         if (validations != null) {
-          const newValidations = new Uint16Array(validations);
+          const newValidations = new Int16Array(validations);
           if (autocheckEnabled) {
             // 2 = correct
             // 1 = incorrect
@@ -324,7 +320,7 @@ export const usePuzzleProgress = (
           addCellValidation(newValidations);
         }
         if (draftModes != null) {
-          const newDraftModes = new Uint16Array(draftModes);
+          const newDraftModes = new Int16Array(draftModes);
           newDraftModes[index * 2] = draftModeEnabled ? 1 : 0;
 
           addCellDraftMode(newDraftModes);

@@ -169,8 +169,8 @@ type LetterBoxesProps = {
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
   characterPositionArray: Float32Array;
-  cellValidationArray: Uint16Array;
-  cellDraftModeArray: Uint16Array;
+  cellValidationArray: Int16Array;
+  cellDraftModeArray: Int16Array;
   autocheckEnabled: boolean;
   updateCharacterPosition: (
     selectedIndex: number,

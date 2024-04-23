@@ -8,8 +8,8 @@ declare global {
 export type GameState = {
   time: number;
   characterPositions: Float32Array;
-  validations: Uint16Array;
-  draftModes: Uint16Array;
+  validations: Int16Array;
+  draftModes: Int16Array;
   answerIndex: number[];
   usedHint: boolean;
 };

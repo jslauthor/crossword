@@ -255,8 +255,8 @@ export const getProgressFromSolution = (
 export const createFloat32Array = (puzzle: PuzzleType) =>
   Float32Array.from(createInitialArray(puzzle));
 
-export const createUint16Array = (puzzle: PuzzleType) =>
-  Uint16Array.from(createInitialArray(puzzle, 0));
+export const createInt16Array = (puzzle: PuzzleType) =>
+  Int16Array.from(createInitialArray(puzzle, 0));
 
 export const createInitialArray = (puzzle: PuzzleType, fill: number = -1) =>
   new Array(puzzle.record.solution.length * 2).fill(fill);
@@ -264,8 +264,8 @@ export const createInitialArray = (puzzle: PuzzleType, fill: number = -1) =>
 export const createInitialState = (puzzle: PuzzleType): GameState => ({
   time: 0,
   characterPositions: createFloat32Array(puzzle),
-  validations: createUint16Array(puzzle),
-  draftModes: createUint16Array(puzzle),
+  validations: createInt16Array(puzzle),
+  draftModes: createInt16Array(puzzle),
   answerIndex: initializeAnswerIndex(puzzle.record.solution),
   usedHint: false,
 });
@@ -281,10 +281,10 @@ export const createInitialYDoc = (puzzle: PuzzleType): Y.Doc => {
     );
   doc
     .getMap(GAME_STATE_KEY)
-    .set(VALIDATIONS_KEY, Y.Array.from(Array.from(createUint16Array(puzzle))));
+    .set(VALIDATIONS_KEY, Y.Array.from(Array.from(createInt16Array(puzzle))));
   doc
     .getMap(GAME_STATE_KEY)
-    .set(DRAFT_MODES_KEY, Y.Array.from(Array.from(createUint16Array(puzzle))));
+    .set(DRAFT_MODES_KEY, Y.Array.from(Array.from(createInt16Array(puzzle))));
   doc.getMap(GAME_STATE_KEY).set(TIME_KEY, 0);
 
   return doc;

@@ -101,6 +101,9 @@ export default class Server implements Party.Server {
                 state,
               },
             });
+            console.log(
+              `Successfully saved progress for ${user?.id} ${puzzleId}`,
+            );
           } catch (e) {
             console.error('Error saving progress to postgres!', e);
           }
