@@ -50,6 +50,7 @@ import {
   DEFAULT_SELECTED_ADJACENT_COLOR,
   DEFAULT_SELECTED_COLOR,
 } from 'lib/utils/color';
+import { createInitialState } from 'lib/utils/puzzle';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -192,7 +193,6 @@ export default function Puzzle({
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
-  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const animatedClueText = useAnimatedText(clue, 120);
 
   const [puzzleWidth] = useMemo(() => {
@@ -230,20 +230,18 @@ export default function Puzzle({
   }, [puzzleWidth]);
 
   const {
+    isPuzzleSolved,
     addTime,
     elapsedTime,
-    hasRetrievedGameState,
-    updateAnswerIndex,
     updateCharacterPosition,
-    answerIndex,
-    characterPositionArray,
-    saveToServerDebounced,
-    cellValidationArray,
-    cellDraftModeArray,
+    characterPositions,
+    validations,
+    draftModes,
     autocheckEnabled,
     addAutocheckEnabled,
     draftModeEnabled,
     addDraftModeEnabled,
+    hasRetrievedState,
   } = usePuzzleProgress(
     puzzle,
     characterTextureAtlasLookup,
@@ -301,11 +299,6 @@ export default function Puzzle({
     },
     [finishPuzzle, isPuzzleSolved, turnLeft, turnRight],
   );
-
-  const onSolved = useCallback(() => {
-    saveToServerDebounced();
-    setIsPuzzleSolved(true);
-  }, [saveToServerDebounced]);
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -371,29 +364,29 @@ export default function Puzzle({
   const { reset } = useElapsedTime({
     isPlaying:
       shouldStartTimer === true &&
+      hasRetrievedState === true &&
       (typeof window === 'undefined' ? false : !document.hidden) &&
       (isPuzzleSolved || !isInitialized) === false,
     updateInterval: 1,
     onUpdate: (elapsedTime) => {
-      if (hasRetrievedGameState === true) {
-        addTime(elapsedTime);
-      }
+      // console.log('Elapsed time:', elapsedTime);
+      addTime(elapsedTime);
     },
   });
 
   useEffect(() => {
-    if (hasRetrievedGameState === true && shouldStartTimer === false) {
+    if (hasRetrievedState === true && shouldStartTimer === false) {
       reset(Number(elapsedTime ?? 0));
       setShouldStartTimer(true);
     }
-  }, [elapsedTime, hasRetrievedGameState, reset, shouldStartTimer]);
+  }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
   // TODO: Convert into separate component
   const formattedElapsedTime = useMemo(
     () =>
-      elapsedTime < 3600
-        ? new Date(elapsedTime * 1000).toISOString().slice(14, 19)
-        : new Date(elapsedTime * 1000).toISOString().slice(11, 19),
+      (elapsedTime ?? 0) < 3600
+        ? new Date((elapsedTime ?? 0) * 1000).toISOString().slice(14, 19)
+        : new Date((elapsedTime ?? 0) * 1000).toISOString().slice(11, 19),
     [elapsedTime],
   );
 
@@ -417,6 +410,16 @@ export default function Puzzle({
     },
     [addDraftModeEnabled],
   );
+
+  const {
+    characterPositions: defaultCharacterPositions,
+    draftModes: defaultDraftModes,
+    validations: defaultValidations,
+  } = useMemo(() => {
+    return createInitialState(puzzle);
+  }, [puzzle]);
+
+  // console.log(characterPositions);
 
   return (
     <Menu
@@ -458,23 +461,21 @@ export default function Puzzle({
                 selectedSide={selectedSide}
                 keyAndIndexOverride={keyAndIndexOverride}
                 currentKey={selectedCharacter}
-                updateAnswerIndex={updateAnswerIndex}
                 updateCharacterPosition={updateCharacterPosition}
-                answerIndex={answerIndex}
-                characterPositionArray={characterPositionArray}
-                hasRetrievedGameState={hasRetrievedGameState}
                 onLetterInput={onLetterInput}
                 onSelectClue={setClue}
                 defaultColor={defaultColor}
                 selectedColor={selectedColor}
                 adjacentColor={adjacentColor}
                 onInitialize={onInitialize}
-                onSolved={onSolved}
                 isVerticalOrientation={isVerticalOrientation}
                 onVerticalOrientationChange={setVerticalOrientation}
-                cellValidationArray={cellValidationArray}
-                cellDraftModeArray={cellDraftModeArray}
                 autocheckEnabled={autocheckEnabled}
+                characterPositionArray={
+                  characterPositions ?? defaultCharacterPositions
+                }
+                cellValidationArray={validations ?? defaultValidations}
+                cellDraftModeArray={draftModes ?? defaultDraftModes}
               />
             </group>
           </SwipeControls>
