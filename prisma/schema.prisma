@@ -17,9 +17,7 @@ datasource db {
 model Progress {
   id        String   @id @unique @default(cuid())
   puzzleId  String
-  type      String // enum. Will start with CROSSCUBE
-  /// [ProgressType]
-  data      Json
+  state     Bytes // Stored as Y.Doc
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now()) @map(name: "created_at")
@@ -31,11 +29,11 @@ model Progress {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  clerkId   String?    @unique
-  createdAt DateTime   @default(now()) @map(name: "created_at")
-  updatedAt DateTime   @updatedAt @map(name: "updated_at")
-  progress  Progress[]
+  id         String     @id @default(cuid())
+  clerkId    String?    @unique
+  progresses Progress[]
+  createdAt  DateTime   @default(now()) @map(name: "created_at")
+  updatedAt  DateTime   @updatedAt @map(name: "updated_at")
 
   @@map(name: "users")
 }

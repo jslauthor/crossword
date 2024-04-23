@@ -45,6 +45,12 @@ import { RotatingBoxProps } from 'components/core/3d/Box';
 import { PuzzleType } from 'app/page';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
+import {
+  DEFAULT_COLOR,
+  DEFAULT_SELECTED_ADJACENT_COLOR,
+  DEFAULT_SELECTED_COLOR,
+} from 'lib/utils/color';
+import { createInitialState } from 'lib/utils/puzzle';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -57,10 +63,6 @@ for (let x = 0; x <= 1000; x++) {
   SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
 }
 SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
-
-export const DEFAULT_COLOR = 0x708d91;
-export const DEFAULT_SELECTED_COLOR = 0xd31996;
-export const DEFAULT_SELECTED_ADJACENT_COLOR = 0x1fbe68;
 
 const HeaderItem = styled.div`
   display: grid;
@@ -191,7 +193,6 @@ export default function Puzzle({
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
-  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
   const animatedClueText = useAnimatedText(clue, 120);
 
   const [puzzleWidth] = useMemo(() => {
@@ -229,14 +230,18 @@ export default function Puzzle({
   }, [puzzleWidth]);
 
   const {
+    isPuzzleSolved,
     addTime,
     elapsedTime,
-    hasRetrievedGameState,
-    updateAnswerIndex,
-    addCharacterPosition,
-    answerIndex,
-    characterPositionArray,
-    saveToServerDebounced,
+    updateCharacterPosition,
+    characterPositions,
+    validations,
+    draftModes,
+    autocheckEnabled,
+    addAutocheckEnabled,
+    draftModeEnabled,
+    addDraftModeEnabled,
+    hasRetrievedState,
   } = usePuzzleProgress(
     puzzle,
     characterTextureAtlasLookup,
@@ -294,11 +299,6 @@ export default function Puzzle({
     },
     [finishPuzzle, isPuzzleSolved, turnLeft, turnRight],
   );
-
-  const onSolved = useCallback(() => {
-    saveToServerDebounced();
-    setIsPuzzleSolved(true);
-  }, [saveToServerDebounced]);
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -364,29 +364,29 @@ export default function Puzzle({
   const { reset } = useElapsedTime({
     isPlaying:
       shouldStartTimer === true &&
+      hasRetrievedState === true &&
       (typeof window === 'undefined' ? false : !document.hidden) &&
       (isPuzzleSolved || !isInitialized) === false,
     updateInterval: 1,
     onUpdate: (elapsedTime) => {
-      if (hasRetrievedGameState === true) {
-        addTime(elapsedTime);
-      }
+      // console.log('Elapsed time:', elapsedTime);
+      addTime(elapsedTime);
     },
   });
 
   useEffect(() => {
-    if (hasRetrievedGameState === true && shouldStartTimer === false) {
+    if (hasRetrievedState === true && shouldStartTimer === false) {
       reset(Number(elapsedTime ?? 0));
       setShouldStartTimer(true);
     }
-  }, [elapsedTime, hasRetrievedGameState, reset, shouldStartTimer]);
+  }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
   // TODO: Convert into separate component
   const formattedElapsedTime = useMemo(
     () =>
-      elapsedTime < 3600
-        ? new Date(elapsedTime * 1000).toISOString().slice(14, 19)
-        : new Date(elapsedTime * 1000).toISOString().slice(11, 19),
+      (elapsedTime ?? 0) < 3600
+        ? new Date((elapsedTime ?? 0) * 1000).toISOString().slice(14, 19)
+        : new Date((elapsedTime ?? 0) * 1000).toISOString().slice(11, 19),
     [elapsedTime],
   );
 
@@ -397,10 +397,38 @@ export default function Puzzle({
     };
   }, [defaultColor, sideOffset]);
 
+  const handleAutocheckChanged = useCallback(
+    (autocheckEnabled: boolean) => {
+      addAutocheckEnabled(autocheckEnabled);
+    },
+    [addAutocheckEnabled],
+  );
+
+  const handleDraftModeChanged = useCallback(
+    (draftModeEnabled: boolean) => {
+      addDraftModeEnabled(draftModeEnabled);
+    },
+    [addDraftModeEnabled],
+  );
+
+  const {
+    characterPositions: defaultCharacterPositions,
+    draftModes: defaultDraftModes,
+    validations: defaultValidations,
+  } = useMemo(() => {
+    return createInitialState(puzzle);
+  }, [puzzle]);
+
+  // console.log(characterPositions);
+
   return (
     <Menu
       centerLabel={formattedElapsedTime}
       rotatingBoxProps={rotatingBoxProps}
+      autocheckEnabled={autocheckEnabled}
+      draftModeEnabled={draftModeEnabled}
+      onAutocheckChanged={handleAutocheckChanged}
+      onDraftModeChanged={handleDraftModeChanged}
     >
       <Canvas
         gl={{ antialias: false }}
@@ -433,20 +461,21 @@ export default function Puzzle({
                 selectedSide={selectedSide}
                 keyAndIndexOverride={keyAndIndexOverride}
                 currentKey={selectedCharacter}
-                updateAnswerIndex={updateAnswerIndex}
-                addCharacterPosition={addCharacterPosition}
-                answerIndex={answerIndex}
-                characterPositionArray={characterPositionArray}
-                hasRetrievedGameState={hasRetrievedGameState}
+                updateCharacterPosition={updateCharacterPosition}
                 onLetterInput={onLetterInput}
                 onSelectClue={setClue}
                 defaultColor={defaultColor}
                 selectedColor={selectedColor}
                 adjacentColor={adjacentColor}
                 onInitialize={onInitialize}
-                onSolved={onSolved}
                 isVerticalOrientation={isVerticalOrientation}
                 onVerticalOrientationChange={setVerticalOrientation}
+                autocheckEnabled={autocheckEnabled}
+                characterPositionArray={
+                  characterPositions ?? defaultCharacterPositions
+                }
+                cellValidationArray={validations ?? defaultValidations}
+                cellDraftModeArray={draftModes ?? defaultDraftModes}
               />
             </group>
           </SwipeControls>

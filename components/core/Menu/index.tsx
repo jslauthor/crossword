@@ -4,7 +4,7 @@ import React, { ReactNode, useEffect, useRef } from 'react';
 import md5 from 'md5';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
-import { Button } from '@nextui-org/react';
+import { Button, Switch } from '@nextui-org/react';
 import { useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useOnClickOutside, useResizeObserver } from 'usehooks-ts';
@@ -62,8 +62,8 @@ const ClipContainer = styled.div<{ $headerHeight: number }>`
   display: flex;
   justify-content: stretch;
   ${({ $headerHeight }) => `
-    top: ${$headerHeight - 10}px; 
-    height: calc(100svh - ${$headerHeight - 10}px);
+    top: ${$headerHeight}px; 
+    height: calc(100svh - ${$headerHeight}px);
   `}
 `;
 
@@ -77,13 +77,19 @@ const MenuContainer = styled(motion.nav)`
   width: 100%;
   height: 100%;
   padding: 0.5rem 0.75rem;
-  padding-left: 1.25rem;
+  padding-left: 1.15rem;
   border: 1px solid var(--menu-border);
   box-shadow: 10px 0px 10px 10px rgba(10, 10, 10, 0.25);
 `;
 
 const MenuItem = styled.div`
   font-size: 1rem;
+`;
+
+const MenuItemFlex = styled(MenuItem)`
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 `;
 
 const Divider = styled.div`
@@ -190,7 +196,11 @@ const BlurLayer = styled.div`
 export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
+  autocheckEnabled?: boolean;
+  draftModeEnabled?: boolean;
   rotatingBoxProps?: RotatingBoxProps;
+  onAutocheckChanged?: (autocheckEnabled: boolean) => void;
+  onDraftModeChanged?: (draftModeEnabled: boolean) => void;
   onSignUpPressed?: () => void;
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
@@ -199,10 +209,14 @@ export type MenuWrapperProps = {
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
   children,
   centerLabel,
+  autocheckEnabled,
+  draftModeEnabled,
   rotatingBoxProps,
   onSignUpPressed,
   onSignOutPressed,
   onSignInPressed,
+  onAutocheckChanged,
+  onDraftModeChanged,
 }) => {
   const { isSignedIn, user } = useUser();
   const headerRef = useRef<HTMLDivElement>(null);
@@ -241,6 +255,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   const [showHelpModal, setShowHelpModal] = useState(false);
   const toggleModal = useCallback(() => {
     setShowHelpModal(!showHelpModal);
+    setIsMenuOpen(false);
   }, [showHelpModal]);
 
   return (
@@ -252,7 +267,10 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
             showCloseButton={isMenuOpen}
             centerLabel={centerLabel}
             rotatingBoxProps={rotatingBoxProps}
-            onQuestionPressed={toggleModal}
+            autocheckEnabled={autocheckEnabled}
+            onAutocheckChanged={onAutocheckChanged}
+            draftModeEnabled={draftModeEnabled}
+            onDraftModeChanged={onDraftModeChanged}
           />
         </HeaderContainer>
         {children}
@@ -271,16 +289,26 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                 }}
               >
                 <MenuItemsContainer>
+                  <Link color="foreground" href="/">
+                    Home
+                  </Link>
+                  <Link color="foreground" onClick={toggleModal}>
+                    How to Play
+                  </Link>
+                  <HRule />
                   {isSignedIn === false && (
-                    <MenuItem>
-                      <Link color="foreground" onClick={onSignInPressed}>
-                        Sign In
-                      </Link>
-                      <span className="opacity-50 px-1 text-lg"> / </span>
-                      <Link color="foreground" onClick={onSignUpPressed}>
-                        Sign Up
-                      </Link>
-                    </MenuItem>
+                    <>
+                      <MenuItem>
+                        <Link color="foreground" onClick={onSignInPressed}>
+                          Sign In
+                        </Link>
+                        <span className="opacity-50 px-1 text-lg"> / </span>
+                        <Link color="foreground" onClick={onSignUpPressed}>
+                          Sign Up
+                        </Link>
+                      </MenuItem>
+                      <HRule />
+                    </>
                   )}
                   <MenuItem>
                     <Link color="foreground" href="mailto:info@crosscube.com">

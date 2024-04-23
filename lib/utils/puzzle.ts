@@ -1,12 +1,20 @@
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import {
   Clue,
+  GameState,
   PuzzleData,
   SolutionCell,
   SolutionCellValue,
 } from '../../types/types';
 import memoizeOne from 'memoize-one';
 import { PuzzleType } from 'app/page';
+import * as Y from 'yjs';
+
+export const GAME_STATE_KEY = 'GAME_STATE_KEY';
+export const CHARACTER_POSITIONS_KEY = 'characterPositions';
+export const VALIDATIONS_KEY = 'validations';
+export const DRAFT_MODES_KEY = 'draftModes';
+export const TIME_KEY = 'time';
 
 export function isSolutionCellValue(
   cell: SolutionCell,
@@ -73,7 +81,7 @@ export const updateAnswerIndex = (
     let index = 0;
     for (let x = 0; x < characterPositionArray.length; x += 2) {
       const cell = solution[index];
-      if (cell != '#') {
+      if (cell && cell != '#') {
         const chunk = Math.floor(index / 32);
         const bit = index % 32;
         const characterPosition = characterPositionArray.slice(x, x + 2);
@@ -211,7 +219,7 @@ export const getCharacterRecord = (
  * @param answerIndex
  * @returns boolean
  */
-export const isPuzzleSolved = (answerIndex: number[] = []): boolean =>
+export const verifyAnswerIndex = (answerIndex: number[] = []): boolean =>
   answerIndex.length > 0 &&
   answerIndex.every((i) => i >>> 0 === Number.MAX_SAFE_INTEGER >>> 0);
 
@@ -224,9 +232,10 @@ export const isPuzzleSolved = (answerIndex: number[] = []): boolean =>
  */
 export const getProgressFromSolution = (
   puzzle: PuzzleType,
-  characterPositions: PrismaJson.ProgressType['state']['value'],
+  characterPositions: GameState['characterPositions'],
+  answerIndex: GameState['answerIndex'],
 ): ProgressEnum => {
-  if (isPuzzleSolved(puzzle.answerIndex) === true) {
+  if (verifyAnswerIndex(answerIndex) === true) {
     return 3; // Solved
   }
 
@@ -243,11 +252,40 @@ export const getProgressFromSolution = (
 
   return 2;
 };
+export const createFloat32Array = (puzzle: PuzzleType) =>
+  Float32Array.from(createInitialArray(puzzle));
 
-export const getCharacterPositionStorageKey = memoizeOne(
-  (id) => `puzzle-${id}`,
-);
-export const getElapsedTimeStorageKey = memoizeOne((id) => `puzzle-${id}-time`);
+export const createInt16Array = (puzzle: PuzzleType) =>
+  Int16Array.from(createInitialArray(puzzle, 0));
 
-export const createDefaultCharacterPositionArray = (puzzle: PuzzleType) =>
-  Float32Array.from(new Array(puzzle.record.solution.length * 2).fill(-1));
+export const createInitialArray = (puzzle: PuzzleType, fill: number = -1) =>
+  new Array(puzzle.record.solution.length * 2).fill(fill);
+
+export const createInitialState = (puzzle: PuzzleType): GameState => ({
+  time: 0,
+  characterPositions: createFloat32Array(puzzle),
+  validations: createInt16Array(puzzle),
+  draftModes: createInt16Array(puzzle),
+  answerIndex: initializeAnswerIndex(puzzle.record.solution),
+  usedHint: false,
+});
+
+export const createInitialYDoc = (puzzle: PuzzleType): Y.Doc => {
+  const doc = new Y.Doc();
+
+  doc
+    .getMap(GAME_STATE_KEY)
+    .set(
+      CHARACTER_POSITIONS_KEY,
+      Y.Array.from(Array.from(createFloat32Array(puzzle))),
+    );
+  doc
+    .getMap(GAME_STATE_KEY)
+    .set(VALIDATIONS_KEY, Y.Array.from(Array.from(createInt16Array(puzzle))));
+  doc
+    .getMap(GAME_STATE_KEY)
+    .set(DRAFT_MODES_KEY, Y.Array.from(Array.from(createInt16Array(puzzle))));
+  doc.getMap(GAME_STATE_KEY).set(TIME_KEY, 0);
+
+  return doc;
+};

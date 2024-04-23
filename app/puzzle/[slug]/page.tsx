@@ -26,7 +26,7 @@ export async function generateStaticParams() {
     `,
   });
 
-  return result.allPuzzles ?? [];
+  return (result != null && result.allPuzzles) ?? [];
 }
 
 async function getProps(slug: string): Promise<PuzzleProps> {

@@ -3,16 +3,16 @@ import { Object3DNode, MaterialNode } from '@react-three/fiber';
 
 declare global {
   var prisma: PrismaClient;
-  namespace PrismaJson {
-    type ProgressType = {
-      time: { timestamp: number; value: number };
-      state: {
-        timestamp: number;
-        value: Record<string, number>;
-      };
-    };
-  }
 }
+
+export type GameState = {
+  time: number;
+  characterPositions: Float32Array;
+  validations: Int16Array;
+  draftModes: Int16Array;
+  answerIndex: number[];
+  usedHint: boolean;
+};
 
 export type BlankCell = '#';
 

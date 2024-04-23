@@ -5,14 +5,9 @@ import Menu from 'components/containers/Menu';
 import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { PuzzleType } from 'app/page';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Link as StyledLink } from '@nextui-org/react';
 import PuzzleHighlight from 'components/composed/PuzzleHighlight';
-import {
-  createDefaultCharacterPositionArray,
-  getCharacterPositionStorageKey,
-  getProgressFromSolution,
-} from 'lib/utils/puzzle';
-import { retrieveGameState } from 'lib/utils/hooks/usePuzzleProgress';
 import { PuzzleProps } from '../PuzzlePage';
 
 const Container = styled.div`
@@ -35,56 +30,51 @@ const PuzzlesContainer = styled.div`
   width: 100%;
 `;
 
+const ErrorContainer = styled.div`
+  padding: 1rem;
+`;
+
 export interface HomePageProps {
   puzzles: PuzzleType[];
   atlas: PuzzleProps['characterTextureAtlasLookup'];
 }
 
-const Page: React.FC<HomePageProps> = ({ puzzles, atlas }) => {
-  const [latestPuzzle, setLatestPuzzle] = useState(puzzles[0]);
-  const [otherPuzzles, setOtherPuzzles] = useState(puzzles.slice(1));
+const Page: React.FC<HomePageProps> = ({ puzzles }) => {
+  const [otherPuzzles] = useState(puzzles.slice(1));
 
-  useEffect(() => {
-    const updatePuzzles = async () => {
-      const updatePuzzlePreview = async (puzzle: PuzzleType) => {
-        const positions = await retrieveGameState(
-          puzzle,
-          getCharacterPositionStorageKey(puzzle.id),
-          atlas,
-          createDefaultCharacterPositionArray(puzzle),
-        );
-        puzzle.previewState = getProgressFromSolution(
-          puzzle,
-          JSON.parse(JSON.stringify(positions)) as Record<string, number>,
-        );
-      };
-
-      await updatePuzzlePreview(latestPuzzle);
-      setLatestPuzzle({ ...latestPuzzle });
-
-      for (const puzzle of otherPuzzles) {
-        await updatePuzzlePreview(puzzle);
-      }
-      setOtherPuzzles([...otherPuzzles]);
-    };
-    updatePuzzles();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [atlas]);
+  if (puzzles.length === 0) {
+    return (
+      <Menu>
+        <Container>
+          <ErrorContainer>
+            <h2>
+              No puzzles found! Something must have gone terribly wrong with the
+              server. Please{' '}
+              <StyledLink color="warning" href="mailto:info@crosscube.com">
+                contact support
+              </StyledLink>
+              .
+            </h2>
+          </ErrorContainer>
+        </Container>
+      </Menu>
+    );
+  }
 
   return (
     <Menu>
       <Container>
-        <Link href={`/puzzle/${latestPuzzle.slug}`}>
+        <Link href={`/puzzle/${puzzles[0].slug}`}>
           <PuzzleHighlight
-            title={latestPuzzle.title}
-            author={latestPuzzle.author}
-            date={latestPuzzle.date}
-            isAiAssisted={latestPuzzle.isAiAssisted}
-            difficulty={latestPuzzle.difficulty}
-            previewState={latestPuzzle.previewState}
+            title={puzzles[0].title}
+            author={puzzles[0].author}
+            date={puzzles[0].date}
+            isAiAssisted={puzzles[0].isAiAssisted}
+            difficulty={puzzles[0].difficulty}
+            previewState={puzzles[0].previewState}
             dimensions={[
-              latestPuzzle.data[0].dimensions.width,
-              latestPuzzle.data[0].dimensions.height,
+              puzzles[0].data[0].dimensions.width,
+              puzzles[0].data[0].dimensions.height,
             ]}
           />
         </Link>

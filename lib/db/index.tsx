@@ -1,4 +1,5 @@
 import prisma from 'lib/prisma';
+import { Doc, encodeStateAsUpdateV2 } from 'yjs';
 
 export const getPuzzleProgressForUser = (userId: string, puzzleId: string) => {
   return prisma.progress.findFirst({
@@ -31,12 +32,13 @@ export const getUserForClerkId = (clerkId: string) => {
   });
 };
 
-export const upsertPuzzleProgress = async (
+export const upsertPuzzleProgress = (
   puzzleId: string,
   userId: string,
-  data: PrismaJson.ProgressType,
+  state: Doc,
 ) => {
-  return await prisma.progress.upsert({
+  const content = Buffer.from(encodeStateAsUpdateV2(state));
+  return prisma.progress.upsert({
     where: {
       puzzleId_userId: {
         userId,
@@ -44,13 +46,12 @@ export const upsertPuzzleProgress = async (
       },
     },
     update: {
-      data,
+      state: content,
     },
     create: {
       userId,
       puzzleId,
-      data,
-      type: 'CROSSCUBE',
+      state: content,
     },
   });
 };
