@@ -44,7 +44,6 @@ export const usePuzzleProgress = (
   const { user } = useUser();
   const { getToken } = useAuth();
   const [anonCacheId, setAnonCacheId] = useState<string | null>(null);
-  // Always initialize the document with reasonable defaults
   const [indexDb, setIndexDb] = useState<IndexeddbPersistence | null>(null);
   const [partykit, setPartykit] = useState<YPartyKitProvider | null>(null);
   const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
@@ -95,7 +94,7 @@ export const usePuzzleProgress = (
     if (anonCacheId != null) {
       const db = new IndexeddbPersistence(
         anonCacheId,
-        createInitialYDoc(puzzle),
+        createInitialYDoc(puzzle), // Always initialize the document with reasonable defaults
       );
       db.once('synced', () => {
         initState(db.doc);
