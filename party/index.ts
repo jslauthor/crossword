@@ -81,7 +81,7 @@ export default class Server implements Party.Server {
             });
             if (user == null || puzzleId == null) {
               throw new Error(
-                `Save: User or puzzle not found! ${user?.id} ${puzzleId}`,
+                `Save: User or puzzle not found! ${clerkId} ${user?.id} ${puzzleId}`,
               );
             }
             const state = Buffer.from(encodeStateAsUpdateV2(yDoc));
