@@ -419,8 +419,6 @@ export default function Puzzle({
     return createInitialState(puzzle);
   }, [puzzle]);
 
-  // console.log(characterPositions);
-
   return (
     <Menu
       centerLabel={formattedElapsedTime}
