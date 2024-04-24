@@ -25,7 +25,7 @@ const Menu: React.FC<MenuProps> = ({
   }, [router]);
 
   const onSignUp = useCallback(() => {
-    router.push('/signup?redirect_url=${window.location.href}');
+    router.push(`/signup?redirect_url=${window.location.href}`);
   }, [router]);
 
   return (
