@@ -12,7 +12,7 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { isCellWithNumber } from '../../../../lib/utils/puzzle';
+import { getAnswers, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
@@ -172,6 +172,7 @@ type LetterBoxesProps = {
   cellValidationArray: Int16Array;
   cellDraftModeArray: Int16Array;
   autocheckEnabled: boolean;
+  autoNextEnabled: boolean;
   updateCharacterPosition: (
     selectedIndex: number,
     key: string,
@@ -235,6 +236,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onInitialize,
   cellValidationArray,
   cellDraftModeArray,
+  autoNextEnabled,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   // const [isVerticalOrientation, setVerticalOrientation] =
@@ -270,6 +272,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [record, size] = useMemo(() => {
     return [puzzle.record, puzzle.record.solution.length];
   }, [puzzle.record]);
+
+  const [acrossNumbers, downNumbers] = useMemo(() => {
+    if (record == null) return [];
+    return [
+      record.clues.across.map((c) => c.number).sort((a, b) => a - b),
+      record.clues.down.map((c) => c.number).sort((a, b) => a - b),
+    ];
+  }, [record]);
 
   useEffect(() => {
     if (onSelectClue != null) {
@@ -618,7 +628,25 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             }
           } else if (selectedX !== 0) {
             const cell = record.solution[nextCell];
-            if (!((isVerticalOrientation && side !== sSide) || cell === '#')) {
+            // Are we on the last letter in the word?
+            // See if autoNextEnabled is on and get the next word via the clue
+            // Then set setSelected(clueCellNumber) and setSelectedWordCell(clueCellNumber)
+            if (
+              autoNextEnabled === true &&
+              cell === '#' &&
+              selectedWordCell != null
+            ) {
+              const nextNumber = isVerticalOrientation
+                ? downNumbers?.slice(
+                    downNumbers?.findIndex((n) => n === selectedWordCell) + 1,
+                  )[0]
+                : acrossNumbers?.slice(
+                    acrossNumbers?.findIndex((n) => n === selectedWordCell) + 1,
+                  )[0];
+              getAnswers(puzzle.data);
+            } else if (
+              !((isVerticalOrientation && side !== sSide) || cell === '#')
+            ) {
               setSelected(nextCell);
             }
           }
@@ -689,8 +717,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       width,
       selectedSide,
       height,
-      record.solution,
+      record,
+      autoNextEnabled,
+      selectedWordCell,
       isVerticalOrientation,
+      downNumbers,
+      acrossNumbers,
       puzzle.data.length,
       showScaleAnimation,
     ],

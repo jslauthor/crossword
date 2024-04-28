@@ -4,6 +4,7 @@ import {
   GameState,
   PuzzleData,
   SolutionCell,
+  SolutionCellNumber,
   SolutionCellValue,
 } from '../../types/types';
 import memoizeOne from 'memoize-one';
@@ -24,7 +25,7 @@ export function isSolutionCellValue(
 
 export function isCellWithNumber(
   cell: SolutionCell,
-): cell is SolutionCellValue {
+): cell is SolutionCellNumber {
   return (
     isSolutionCellValue(cell) && typeof cell.cell === 'number' && cell.cell > 0
   );
@@ -288,4 +289,45 @@ export const createInitialYDoc = (puzzle: PuzzleType): Y.Doc => {
   doc.getMap(GAME_STATE_KEY).set(TIME_KEY, 0);
 
   return doc;
+};
+
+export const getAnswers = (puzzleData: PuzzleData[]) => {
+  const { width } = puzzleData[0].dimensions;
+  const flattened = puzzleData.flatMap((p) => p.solution);
+  const across: Record<number, string> = {};
+
+  // Across
+  let highest = 0;
+  let lastIndex = -1;
+  let lastCellNumber = 0;
+
+  for (let x = 0; x < flattened.length; x++) {
+    const index = Math.floor(x / width);
+    const current = flattened[x];
+    let cellNumber: number | undefined = undefined;
+
+    if (lastIndex !== index) {
+      lastCellNumber = 0;
+      lastIndex = index;
+    }
+
+    for (let y = 0; y < width; y++) {
+      const cell = current[y];
+      if (cellNumber === undefined && isCellWithNumber(cell)) {
+        const diff = cell.cell - lastCellNumber;
+        cellNumber = index > 0 ? highest + diff : cell.cell;
+        highest = Math.max(highest, cellNumber);
+        lastCellNumber = cell.cell;
+      }
+      if (cell === '#') {
+        cellNumber = undefined;
+        continue;
+      }
+      if (cellNumber !== undefined) {
+        across[cellNumber] = (across[cellNumber] ?? '').concat(cell.value);
+      }
+    }
+  }
+
+  console.log(across);
 };

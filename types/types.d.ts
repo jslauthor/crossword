@@ -21,6 +21,10 @@ export type SolutionCellValue = {
   value: string;
   cell: StandardCell;
 };
+export type SolutionCellNumber = {
+  value: string;
+  cell: number;
+};
 
 export type SolutionCell = BlankCell | SolutionCellValue;
 
