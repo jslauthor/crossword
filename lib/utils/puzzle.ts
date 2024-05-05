@@ -114,7 +114,13 @@ export const updateAnswerIndex = (
  */
 export const getCharacterRecord = (
   puzzleData: PuzzleData[],
-): CharacterRecord => {
+): {
+  solution: SolutionCell[];
+  clues: {
+    across: (Clue & { originalNumber: number; side: number })[];
+    down: (Clue & { originalNumber: number; side: number })[];
+  };
+} => {
   let runningTotal = 0;
   // We need to store the columns we hide so we can grab
   // their cell numbers and add them back in
@@ -122,8 +128,8 @@ export const getCharacterRecord = (
   const data = puzzleData.reduce<{
     solution: SolutionCell[];
     clues: {
-      across: Clue[];
-      down: Clue[];
+      across: (Clue & { originalNumber: number; side: number })[];
+      down: (Clue & { originalNumber: number; side: number })[];
     };
   }>(
     (value, { solution, dimensions, clues }, index) => {
@@ -133,20 +139,6 @@ export const getCharacterRecord = (
         hiddenColumns[index] = [];
       }
       let highest: number = 0;
-
-      value.clues.across = value.clues.across.concat(
-        clues.Across.map((clue) => ({
-          ...clue,
-          number: clue.number + runningTotal,
-        })),
-      );
-
-      value.clues.down = value.clues.down.concat(
-        clues.Down.map((clue) => ({
-          ...clue,
-          number: clue.number + runningTotal,
-        })),
-      );
 
       for (let x = 0; x < flattened.length; x++) {
         const currentCell = flattened[x];
@@ -160,25 +152,63 @@ export const getCharacterRecord = (
           hiddenColumns[index].push(
             isCell
               ? {
-                  // @ts-ignore
                   cell: currentCell.cell + runningTotal,
                   value: currentCell.value,
                 }
               : '#',
           );
+          if (isCell) {
+            const a = clues.Across.find((c) => c.number === currentCell.cell);
+            const c = clues.Down.find((c) => c.number === currentCell.cell);
+            if (a) {
+              value.clues.across.push({
+                ...a,
+                number: a.number + runningTotal,
+                originalNumber: a.number,
+                side: index,
+              });
+            }
+            if (c) {
+              value.clues.down.push({
+                ...c,
+                number: c.number + runningTotal,
+                originalNumber: c.number,
+                side: index,
+              });
+            }
+          }
         } else {
           if (isCell) {
             value.solution.push({
-              // @ts-ignore
               cell: currentCell.cell + runningTotal,
               value: currentCell.value,
             });
+            // skip the last column
+            if (x % width !== width - 1) {
+              const a = clues.Across.find((c) => c.number === currentCell.cell);
+              const c = clues.Down.find((c) => c.number === currentCell.cell);
+              if (a) {
+                value.clues.across.push({
+                  ...a,
+                  number: a.number + runningTotal,
+                  originalNumber: a.number,
+                  side: index,
+                });
+              }
+              if (c) {
+                value.clues.down.push({
+                  ...c,
+                  number: c.number + runningTotal,
+                  originalNumber: c.number,
+                  side: index,
+                });
+              }
+            }
           } else {
             value.solution.push(currentCell);
           }
         }
         if (isCell) {
-          // @ts-ignore
           highest = currentCell.cell > highest ? currentCell.cell : highest;
         }
       }
@@ -292,32 +322,25 @@ export const createInitialYDoc = (puzzle: PuzzleType): Y.Doc => {
 };
 
 export const getAnswers = (puzzleData: PuzzleData[]) => {
+  const { clues } = getCharacterRecord(puzzleData);
+
   const { width } = puzzleData[0].dimensions;
   const flattened = puzzleData.flatMap((p) => p.solution);
-  const across: Record<number, string> = {};
 
   // Across
-  let highest = 0;
-  let lastIndex = -1;
-  let lastCellNumber = 0;
+  const across: Record<number, string> = {};
 
   for (let x = 0; x < flattened.length; x++) {
-    const index = Math.floor(x / width);
     const current = flattened[x];
+    const side = Math.floor(x / width);
     let cellNumber: number | undefined = undefined;
-
-    if (lastIndex !== index) {
-      lastCellNumber = 0;
-      lastIndex = index;
-    }
 
     for (let y = 0; y < width; y++) {
       const cell = current[y];
       if (cellNumber === undefined && isCellWithNumber(cell)) {
-        const diff = cell.cell - lastCellNumber;
-        cellNumber = index > 0 ? highest + diff : cell.cell;
-        highest = Math.max(highest, cellNumber);
-        lastCellNumber = cell.cell;
+        cellNumber = clues.across.find(
+          (c) => c.originalNumber === cell.cell && side === c.side,
+        )?.number;
       }
       if (cell === '#') {
         cellNumber = undefined;
@@ -329,5 +352,37 @@ export const getAnswers = (puzzleData: PuzzleData[]) => {
     }
   }
 
-  console.log(across);
+  // Down
+  const down: Record<number, string> = {};
+
+  for (let x = 0; x < puzzleData.length; x++) {
+    // Get the first row of each side
+    const index = Math.floor(x * width);
+
+    // Loop through the first row of the each side
+    for (let y = 0; y < width; y++) {
+      let cellNumber: number | undefined = undefined;
+      for (let i = 0; i < width; i++) {
+        // We break when we are on the last column of the last side
+        // since that's the first column of the first side
+        if (y === width - 1) {
+          break;
+        }
+
+        const cell = flattened[index + i][y];
+        if (cellNumber === undefined && isCellWithNumber(cell)) {
+          cellNumber = clues.down.find(
+            (c) => c.originalNumber === cell.cell && x === c.side,
+          )?.number;
+        }
+        if (cell === '#') {
+          cellNumber = undefined;
+          continue;
+        }
+        if (cellNumber !== undefined) {
+          down[cellNumber] = (down[cellNumber] ?? '').concat(cell.value);
+        }
+      }
+    }
+  }
 };
