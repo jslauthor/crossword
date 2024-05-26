@@ -225,7 +225,7 @@ export const usePuzzleProgress = (
         // Iterate through answer index and update validations
         const newCellValidationArray = new Int16Array(validations);
         for (let index = 0; index < puzzle.record.solution.length; index++) {
-          if (puzzle.record.solution[index] !== '#') {
+          if (puzzle.record.solution[index].value !== '#') {
             const chunk = Math.floor(index / 32);
             const bit = index % 32;
             newCellValidationArray[index * 2] =
@@ -344,7 +344,7 @@ export const usePuzzleProgress = (
       if (validations == null || characterPositions == null) return false;
       if (validations[selectedIndex * 2] !== 2) {
         updateAnswerIndex(
-          puzzle.record.solution[selectedIndex],
+          puzzle.record.solution[selectedIndex].value,
           selectedIndex,
           key.toUpperCase(),
         );

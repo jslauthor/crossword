@@ -269,7 +269,7 @@ export default function Puzzle({
     ) {
       const { solution } = puzzle.record;
       for (let x = 0; x < solution.length; x++) {
-        const cell = solution[x];
+        const { value: cell } = solution[x];
         if (cell !== '#') {
           setTimeout(() => {
             setKeyAndIndexOverride([cell.value, x]);

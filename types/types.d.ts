@@ -37,7 +37,7 @@ export type PuzzleCell =
     };
 
 export type Clue = {
-  answer: string;
+  answer?: string;
   number: number;
   clue: string;
 };
