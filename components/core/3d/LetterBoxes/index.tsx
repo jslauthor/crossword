@@ -17,6 +17,7 @@ import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/
 import { PuzzleType } from 'app/page';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
 import { borderColor, correctColor, errorColor } from 'lib/utils/color';
+import { is } from '@react-three/fiber/dist/declarations/src/core/utils';
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -505,6 +506,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
             if (sequenceIndex != null) {
               const range = wordSequences[sequenceIndex];
+              // For the clue
+              const rootWord = solution[range[0]];
+              if (
+                isCellWithNumber(rootWord.value) &&
+                typeof rootWord.value.cell === 'number'
+              ) {
+                setSelectedWordCell(rootWord.value.cell);
+              }
               range.forEach((index) => {
                 if (index === selected) return;
                 tempColor
