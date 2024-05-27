@@ -196,9 +196,11 @@ const BlurLayer = styled.div`
 export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
+  autoNextEnabled?: boolean;
   autocheckEnabled?: boolean;
   draftModeEnabled?: boolean;
   rotatingBoxProps?: RotatingBoxProps;
+  onAutoNextChanged?: (autoNextEnabled: boolean) => void;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
   onSignUpPressed?: () => void;
@@ -209,12 +211,14 @@ export type MenuWrapperProps = {
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
   children,
   centerLabel,
+  autoNextEnabled,
   autocheckEnabled,
   draftModeEnabled,
   rotatingBoxProps,
   onSignUpPressed,
   onSignOutPressed,
   onSignInPressed,
+  onAutoNextChanged,
   onAutocheckChanged,
   onDraftModeChanged,
 }) => {
@@ -229,6 +233,11 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   const handleMenuPressed = useCallback(() => {
     setIsMenuOpen(!isMenuOpen);
   }, [isMenuOpen]);
+  const handleAutoNextTogglePressed = useCallback(() => {
+    if (onAutoNextChanged) {
+      onAutoNextChanged(!autoNextEnabled);
+    }
+  }, [autoNextEnabled, onAutoNextChanged]);
   const handleClickOutside = useCallback(() => {
     setIsMenuOpen(false);
   }, []);
@@ -289,6 +298,14 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                 }}
               >
                 <MenuItemsContainer>
+                  <Switch
+                    color="default"
+                    isSelected={autoNextEnabled}
+                    onValueChange={handleAutoNextTogglePressed}
+                  >
+                    Jump to next word
+                  </Switch>
+                  <HRule />
                   <Link color="foreground" href="/">
                     Home
                   </Link>

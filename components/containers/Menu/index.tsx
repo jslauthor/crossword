@@ -8,6 +8,8 @@ interface MenuProps extends MenuWrapperProps {}
 const Menu: React.FC<MenuProps> = ({
   centerLabel,
   autocheckEnabled,
+  autoNextEnabled,
+  onAutoNextChanged,
   onAutocheckChanged,
   draftModeEnabled,
   onDraftModeChanged,
@@ -31,6 +33,8 @@ const Menu: React.FC<MenuProps> = ({
   return (
     <MenuWrapper
       centerLabel={centerLabel}
+      autoNextEnabled={autoNextEnabled}
+      onAutoNextChanged={onAutoNextChanged}
       autocheckEnabled={autocheckEnabled}
       onAutocheckChanged={onAutocheckChanged}
       onSignOutPressed={onSignOut}

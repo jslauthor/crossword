@@ -237,6 +237,8 @@ export default function Puzzle({
     characterPositions,
     validations,
     draftModes,
+    autoNextEnabled,
+    addAutoNextEnabled,
     autocheckEnabled,
     addAutocheckEnabled,
     draftModeEnabled,
@@ -423,6 +425,8 @@ export default function Puzzle({
     <Menu
       centerLabel={formattedElapsedTime}
       rotatingBoxProps={rotatingBoxProps}
+      autoNextEnabled={autoNextEnabled}
+      onAutoNextChanged={addAutoNextEnabled}
       autocheckEnabled={autocheckEnabled}
       draftModeEnabled={draftModeEnabled}
       onAutocheckChanged={handleAutocheckChanged}
@@ -474,7 +478,7 @@ export default function Puzzle({
                 }
                 cellValidationArray={validations ?? defaultValidations}
                 cellDraftModeArray={draftModes ?? defaultDraftModes}
-                autoNextEnabled={true}
+                autoNextEnabled={autoNextEnabled}
                 turnLeft={turnLeft}
                 turnRight={turnRight}
               />

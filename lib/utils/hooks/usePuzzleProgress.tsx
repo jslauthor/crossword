@@ -23,6 +23,8 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
 
+const AUTO_NEXT_KEY = 'auto-next';
+
 const ANONYMOUS_PLAYER_STORAGE_KEY = 'anonymous-player-key';
 const getLocalCacheId = async (puzzleId: string) => {
   let anonymousKey = await localforage.getItem<string>(
@@ -83,6 +85,9 @@ export const usePuzzleProgress = (
   // but will be merged with the user cache when the user logs in
   useEffect(() => {
     const initializeLocalCache = async () => {
+      const autoNext = await localforage.getItem<boolean>(AUTO_NEXT_KEY);
+      setAutoNextEnabled(autoNext ?? true);
+
       const anonCacheId = await getLocalCacheId(puzzle.id);
       setAnonCacheId(anonCacheId);
     };
@@ -182,6 +187,7 @@ export const usePuzzleProgress = (
   }, [indexDb?.doc]);
 
   const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
+  const [autoNextEnabled, setAutoNextEnabled] = useState<boolean>(true);
   const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<number>();
@@ -246,6 +252,17 @@ export const usePuzzleProgress = (
       puzzle.record.solution,
       answerIndex,
     ],
+  );
+
+  const addAutoNextEnabled = useCallback(
+    (autoNext: boolean) => {
+      setAutoNextEnabled(autoNext);
+      const save = async () => {
+        await localforage.setItem<boolean>(AUTO_NEXT_KEY, autoNext);
+      };
+      save();
+    },
+    [setAutoNextEnabled],
   );
 
   const addDraftModeEnabled = useCallback(
@@ -373,6 +390,8 @@ export const usePuzzleProgress = (
     elapsedTime,
     addCellValidation,
     addCellDraftMode,
+    autoNextEnabled,
+    addAutoNextEnabled,
     autocheckEnabled,
     addAutocheckEnabled,
     draftModeEnabled,
