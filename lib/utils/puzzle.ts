@@ -31,10 +31,17 @@ export function isCellWithNumber(
   );
 }
 
+export type SequenceKeys = 'across' | 'down';
+
 export interface CharacterRecord {
   words: WordType[];
   wordSequences: SequenceType[];
-  // adjacentWords: AdjacentWordType[];
+  wordSequencesBySide: Record<
+    number,
+    {
+      [K in SequenceKeys]: CharacterRecord['wordSequences'];
+    }
+  >;
   solution: SolutionType[];
   clues: {
     across: Clue[];
@@ -42,7 +49,6 @@ export interface CharacterRecord {
   };
 }
 
-// type AdjacentWordType = [number, number][]; // prev, next words
 type SequenceType = number[]; // grid coordinates for full word
 type WordType = string[]; // the string value (answer) for the word
 
@@ -57,8 +63,6 @@ type SolutionType = {
       downSequenceIndex?: number;
     }
   >; // [side]: word indices
-  // acrossAdjacentIndex: number;
-  // downAdjacentIndex: number;
   x: number;
   y: number;
 };
@@ -203,6 +207,7 @@ export const getCharacterRecord = (
   const { width, height } = puzzleData[0].dimensions;
   const words: CharacterRecord['words'] = [];
   const wordSequences: CharacterRecord['wordSequences'] = [];
+  const wordSequencesBySide: CharacterRecord['wordSequencesBySide'] = {};
   const solution: Record<number, SolutionType> = {};
 
   const {
@@ -233,6 +238,15 @@ export const getCharacterRecord = (
         wordSequences[currentWord] = (wordSequences[currentWord] ?? []).concat(
           finalIndex - x * puzzleData.length, // subtract the extra columns
         );
+
+        if (wordSequencesBySide[side] == null) {
+          wordSequencesBySide[side] = {
+            across: [],
+            down: [],
+          };
+        }
+        wordSequencesBySide[side].across[currentWord] =
+          wordSequences[currentWord];
       }
 
       solution[finalIndex] = {
@@ -274,6 +288,15 @@ export const getCharacterRecord = (
         wordSequences[currentWord] = (wordSequences[currentWord] ?? []).concat(
           finalIndex - y * puzzleData.length, // subtract the extra columns
         );
+
+        if (wordSequencesBySide[side] == null) {
+          wordSequencesBySide[side] = {
+            across: [],
+            down: [],
+          };
+        }
+        wordSequencesBySide[side].down[currentWord] =
+          wordSequences[currentWord];
       }
 
       solution[finalIndex] = {
@@ -304,6 +327,7 @@ export const getCharacterRecord = (
   return {
     words,
     wordSequences,
+    wordSequencesBySide,
     solution: solutionArray,
     clues: {
       across,

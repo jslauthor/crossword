@@ -475,6 +475,8 @@ export default function Puzzle({
                 cellValidationArray={validations ?? defaultValidations}
                 cellDraftModeArray={draftModes ?? defaultDraftModes}
                 autoNextEnabled={true}
+                turnLeft={turnLeft}
+                turnRight={turnRight}
               />
             </group>
           </SwipeControls>

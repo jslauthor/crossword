@@ -12,12 +12,13 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { isCellWithNumber } from '../../../../lib/utils/puzzle';
+import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { PuzzleType } from 'app/page';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
 import { borderColor, correctColor, errorColor } from 'lib/utils/color';
 import { is } from '@react-three/fiber/dist/declarations/src/core/utils';
+import { constrain, rangeOperation } from 'lib/utils/math';
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -184,6 +185,8 @@ type LetterBoxesProps = {
   onLetterInput?: () => void;
   onSelectClue?: (clue: string | undefined) => void;
   onInitialize?: () => void;
+  turnLeft: () => void;
+  turnRight: () => void;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -237,6 +240,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   cellValidationArray,
   cellDraftModeArray,
   autoNextEnabled,
+  turnLeft,
+  turnRight,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   // const [isVerticalOrientation, setVerticalOrientation] =
@@ -506,7 +511,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
             if (sequenceIndex != null) {
               const range = wordSequences[sequenceIndex];
-              // For the clue
+              // Select the clue. It will always be the first cell in the sequence
               const rootWord = solution[range[0]];
               if (
                 isCellWithNumber(rootWord.value) &&
@@ -531,168 +536,148 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const onLetterChange = useCallback(
     (key: string, selectedOverride?: number) => {
+      if (onLetterInput) {
+        onLetterInput();
+      }
+
       const selectedIndex = selectedOverride ?? selected;
 
       if (isVisibleSide(selectedIndex) === false && selectedOverride == null) {
         return;
       }
 
-      // const coord = characterTextureAtlasLookup[key.toUpperCase()];
-      // if (selectedIndex != null && ref != null) {
-      //   const x =
-      //     coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[0];
-      //   const y =
-      //     coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[1];
-      //   setLastCurrentKey(key);
+      const coord = characterTextureAtlasLookup[key.toUpperCase()];
+      if (selectedIndex != null && ref != null) {
+        const x =
+          coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[0];
+        const y =
+          coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[1];
 
-      //   if (x !== -1) {
-      //     // select the next cell
-      //     const nextCell = selectedIndex + getInterval();
-      //     const sSide = Math.ceil(selectedIndex / totalPerSide) - 1;
-      //     const side = Math.ceil(nextCell / totalPerSide) - 1;
-      //     const selectedX = nextCell % width;
-      //     const selectedY = Math.max(
-      //       0,
-      //       Math.ceil((selectedIndex - sSide * totalPerSide) / width) - 1,
-      //     );
-      //     console.log(selectedX, selectedSide, sSide);
-      //     if (selectedX === 0 && selectedSide !== sSide) {
-      //       const int =
-      //         selectedSide !== 0
-      //           ? nextCell + (width * width - (width - 1))
-      //           : selectedY * height + 1;
-      //       const cell = record.solution[int];
-      //       if (cell !== '#') {
-      //         setSelected(int);
-      //       }
-      //       console.log('selectedX hor');
-      //     } else if (selectedX !== 0) {
-      //       const cell = record.solution[nextCell];
-      //       console.log('auto hor');
+        setLastCurrentKey(key);
 
-      //       if (
-      //         autoNextEnabled === true &&
-      //         (selectedY === width - 1 ||
-      //           cell === '#' ||
-      //           (typeof cell?.cell === 'number' &&
-      //             cell?.cell === selectedWordCell)) &&
-      //         selectedWordCell != null
-      //       ) {
-      //         // console.log('auto hor');
-      //         // const side = isVerticalOrientation
-      //         //   ? answersDown[selectedSide]
-      //         //   : answersAcross[selectedSide];
-      //         // const goTo = side[selectedWordCell];
-      //         // if (goTo != null) {
-      //         //   setSelected(cellMapping[goTo[1]]);
-      //         // }
-      //       } else if (
-      //         !((isVerticalOrientation && side !== sSide) || cell === '#')
-      //       ) {
-      //         console.log('other hor');
-      //         setSelected(nextCell);
-      //       }
-      //     }
-      //   } else if (
-      //     // select the prev cell
-      //     characterPositionArray[selectedIndex * 2] === -1 ||
-      //     lastCurrentKey === '' ||
-      //     lastCurrentKey === 'BACKSPACE'
-      //   ) {
-      //     // select the previous cell
-      //     const nextCell = selectedIndex - getInterval();
-      //     const selectedX = nextCell % width;
-      //     const sSide = Math.ceil(selectedIndex / totalPerSide) - 1;
+        if (updateCharacterPosition(selectedIndex, key, x, y) === true) {
+          showScaleAnimation(selectedIndex);
+        }
 
-      //     // We need to check if we are on the first cell of a row
-      //     // and if it is, we check the previous sides last row for a letter
-      //     if (selectedX === 0) {
-      //       const int =
-      //         selectedSide !== 0
-      //           ? nextCell - (width * width - (width - 1))
-      //           : totalPerSide * puzzle.data.length -
-      //             1 -
-      //             (width * width - width - 1) +
-      //             nextCell -
-      //             1;
-      //       const cell = record.solution[int];
-      //       if (cell !== '#') {
-      //         setSelected(int);
-      //       }
-      //     } else {
-      //       const side = Math.ceil(nextCell / totalPerSide) - 1;
-      //       const cell = record.solution[nextCell];
+        /**
+         * This is the logic for moving to the next or prev cell
+         */
 
-      //       if (
-      //         autoNextEnabled === true &&
-      //         (cell === '#' ||
-      //           (typeof cell?.cell === 'number' &&
-      //             cell?.cell === selectedWordCell)) &&
-      //         selectedWordCell != null
-      //       ) {
-      //         // const side = isVerticalOrientation
-      //         //   ? answersDown[selectedSide]
-      //         //   : answersAcross[selectedSide];
-      //         // const goTo = side[selectedWordCell];
-      //         // if (goTo != null) {
-      //         //   const wordEnd = cellMapping[goTo[0]] + goTo[3] * getInterval();
-      //         //   // If it's the first row, we need to continue on the previous side
-      //         //   if (goTo[5] === width - 1) {
-      //         //     const end =
-      //         //       width * width +
-      //         //       (goTo[4] - 1) * (width - 1) +
-      //         //       goTo[4] +
-      //         //       (goTo[3] - 1);
-      //         //     console.log(end);
-      //         //     setSelected(end);
-      //         //   } else {
-      //         //     console.log(cellMapping[goTo[0]], goTo, wordEnd);
-      //         //     setSelected(wordEnd);
-      //         //   }
-      //         // }
-      //       } else if (
-      //         !(
-      //           (isVerticalOrientation && side !== sSide) ||
-      //           cell === '#' ||
-      //           // the -2 would normally be -1, but we skip a column, so we need to
-      //           // subtract that one as well
-      //           (selectedX === width - 2 && selectedSide !== sSide)
-      //         )
-      //       ) {
-      //         setSelected(nextCell);
-      //       }
-      //     }
-      //   }
+        const { solution, wordSequencesBySide } = record;
+        const cell = solution[selectedIndex];
 
-      //   if (updateCharacterPosition(selectedIndex, key, x, y) === true) {
-      //     showScaleAnimation(selectedIndex);
-      //   }
+        if (cell?.mapping != null) {
+          const direction: SequenceKeys = isVerticalOrientation
+            ? 'down'
+            : 'across';
+          const sequenceIndex = isVerticalOrientation
+            ? cell?.mapping[selectedSide].downSequenceIndex
+            : cell?.mapping[selectedSide].acrossSequenceIndex;
 
-      //   if (onLetterInput) {
-      //     onLetterInput();
-      //   }
-      // }
+          if (sequenceIndex != null) {
+            const range =
+              wordSequencesBySide[selectedSide][direction][sequenceIndex];
+            if (range == null) return;
+            const sIndex = range.findIndex((i) => i === selectedIndex);
+            if (x !== -1) {
+              // Are we on the last letter in the sequence?
+              if (sIndex > -1 && sIndex < range.length - 1) {
+                // Update letter and move to the next cell
+                const nextCell = range[sIndex + 1];
+                setSelected(nextCell);
+              } else if (autoNextEnabled === true) {
+                // Update letter and move to the next word
+                const keys = Object.keys(
+                  wordSequencesBySide[selectedSide][direction],
+                );
+                const currentIndex = keys.findIndex(
+                  (i) => sequenceIndex === parseInt(i, 10),
+                );
+                const nextIndex = keys[currentIndex + 1];
+                if (nextIndex != null) {
+                  const nextRange =
+                    wordSequencesBySide[selectedSide][direction][
+                      parseInt(nextIndex, 10)
+                    ];
+                  if (nextRange != null) {
+                    setSelected(nextRange[0]);
+                  }
+                } else {
+                  // Move to the next side!
+                  const nextSide = constrain(
+                    0,
+                    puzzle.data.length - 1,
+                    selectedSide + 1,
+                  );
+                  const range = wordSequencesBySide[nextSide][direction].find(
+                    (i) => i != null,
+                  );
+                  if (range != null) {
+                    setSelected(range[0]);
+                    turnRight();
+                  }
+                }
+              }
+            } else {
+              // Delete letter and move to the previous cell
+              // Are we on the first letter in the sequence?
+              if (sIndex > 0) {
+                // Update letter and move to the next cell
+                const nextCell = range[sIndex - 1];
+                setSelected(nextCell);
+              } else if (autoNextEnabled === true) {
+                // Update letter and move to the next word
+                const keys = Object.keys(
+                  wordSequencesBySide[selectedSide][direction],
+                );
+                const currentIndex = keys.findIndex(
+                  (i) => sequenceIndex === parseInt(i, 10),
+                );
+                const nextIndex = keys[currentIndex - 1];
+                if (nextIndex != null) {
+                  const nextRange =
+                    wordSequencesBySide[selectedSide][direction][
+                      parseInt(nextIndex, 10)
+                    ];
+                  if (nextRange != null) {
+                    setSelected(nextRange[nextRange.length - 1]);
+                  }
+                } else {
+                  // Move to the previous side!
+                  const nextSide = constrain(
+                    0,
+                    puzzle.data.length - 1,
+                    selectedSide - 1,
+                  );
+                  const range = wordSequencesBySide[nextSide][
+                    direction
+                  ].findLast((i) => i != null);
+                  if (range != null) {
+                    setSelected(range[range.length - 1]);
+                    turnLeft();
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     [
+      onLetterInput,
       selected,
       isVisibleSide,
-      // characterTextureAtlasLookup,
-      // ref,
-      // characterPositionArray,
-      // lastCurrentKey,
-      // updateCharacterPosition,
-      // onLetterInput,
-      // getInterval,
-      // totalPerSide,
-      // width,
-      // selectedSide,
-      // height,
-      // record.solution,
-      // autoNextEnabled,
-      // selectedWordCell,
-      // isVerticalOrientation,
-      // puzzle.data.length,
-      // showScaleAnimation,
+      characterTextureAtlasLookup,
+      ref,
+      updateCharacterPosition,
+      record,
+      showScaleAnimation,
+      isVerticalOrientation,
+      selectedSide,
+      autoNextEnabled,
+      puzzle.data.length,
+      turnRight,
+      turnLeft,
     ],
   );
 
