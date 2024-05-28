@@ -105,33 +105,37 @@ export const updateAnswerIndex = (
   characterPositionArray: Float32Array | undefined,
   solution: SolutionType[],
 ) => {
-  if (characterPositionArray != null && characterPositionArray.length > 0) {
-    // Update index based on character position array
-    let index = 0;
-    for (let x = 0; x < characterPositionArray.length; x += 2) {
-      const { value: cell } = solution[index];
-      if (cell && cell != '#') {
-        const chunk = Math.floor(index / 32);
-        const bit = index % 32;
-        const characterPosition = characterPositionArray.slice(x, x + 2);
-        const character = atlas[characterPosition.join(',')];
-        if (character != null) {
-          const isCorrect =
-            cell.value.toUpperCase() === character.toUpperCase();
-          if (isCorrect) {
-            // This flips the index bit to 1 (true)
-            answerIndex[chunk] |= 1 << bit;
-          } else {
-            // This flips the index bit to 0 (false)
-            answerIndex[chunk] &= ~(1 << bit);
+  try {
+    if (characterPositionArray != null && characterPositionArray.length > 0) {
+      // Update index based on character position array
+      let index = 0;
+      for (let x = 0; x < characterPositionArray.length; x += 2) {
+        const { value: cell } = solution[index];
+        if (cell && cell != '#') {
+          const chunk = Math.floor(index / 32);
+          const bit = index % 32;
+          const characterPosition = characterPositionArray.slice(x, x + 2);
+          const character = atlas[characterPosition.join(',')];
+          if (character != null) {
+            const isCorrect =
+              cell.value.toUpperCase() === character.toUpperCase();
+            if (isCorrect) {
+              // This flips the index bit to 1 (true)
+              answerIndex[chunk] |= 1 << bit;
+            } else {
+              // This flips the index bit to 0 (false)
+              answerIndex[chunk] &= ~(1 << bit);
+            }
           }
         }
+        index++;
       }
-      index++;
     }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    return answerIndex;
   }
-
-  return answerIndex;
 };
 
 const resequenceSolutionAndClues = (

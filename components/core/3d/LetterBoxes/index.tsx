@@ -685,8 +685,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             ? 'down'
             : 'across';
           const sequenceIndex = isVerticalOrientation
-            ? cell?.mapping[selectedSide].downSequenceIndex
-            : cell?.mapping[selectedSide].acrossSequenceIndex;
+            ? cell?.mapping[selectedSide]?.downSequenceIndex
+            : cell?.mapping[selectedSide]?.acrossSequenceIndex;
 
           if (sequenceIndex != null) {
             const range =
