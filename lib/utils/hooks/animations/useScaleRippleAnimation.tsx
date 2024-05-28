@@ -48,8 +48,7 @@ const SCALE = 1.75;
 export const useScaleRippleAnimation = (
   width: number,
   height: number,
-  totalPerSide: number,
-  size: number,
+  numSides: number,
   ref: InstancedMesh | null,
   onComplete?: () => void,
 ) => {
@@ -78,14 +77,13 @@ export const useScaleRippleAnimation = (
     // Holy quadratic batman!
     // This creates an array of arrays that hold each "ring"
     const rings: number[][] = [];
-    for (let h = 0; h < height; h++) {
-      if (rings[h] == null) {
-        rings[h] = [];
+    for (let x = 0; x < height; x++) {
+      if (rings[x] == null) {
+        rings[x] = [];
       }
-      for (let x = 0; x < size; x += totalPerSide) {
-        for (let y = 1; y < width; y++) {
-          rings[h].push(x + y + h * height);
-        }
+      const start = x * (width * numSides);
+      for (let y = 0; y < width * numSides; y++) {
+        rings[x].push(start + y);
       }
     }
 
@@ -132,8 +130,7 @@ export const useScaleRippleAnimation = (
     ref,
     scaleAnimation,
     scaleDownAnimation,
-    size,
-    totalPerSide,
+    numSides,
     width,
   ]);
 

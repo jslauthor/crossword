@@ -17,8 +17,7 @@ import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/
 import { PuzzleType } from 'app/page';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
 import { borderColor, correctColor, errorColor } from 'lib/utils/color';
-import { is } from '@react-three/fiber/dist/declarations/src/core/utils';
-import { constrain, rangeOperation } from 'lib/utils/math';
+import { constrain } from 'lib/utils/math';
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -382,8 +381,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const showRippleAnimation = useScaleRippleAnimation(
     width,
     height,
-    totalPerSide,
-    size,
+    puzzle.data.length,
     ref,
   );
 
