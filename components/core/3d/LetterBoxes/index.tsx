@@ -12,11 +12,7 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import {
-  CharacterRecord,
-  SequenceKeys,
-  isCellWithNumber,
-} from '../../../../lib/utils/puzzle';
+import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { PuzzleType } from 'app/page';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
@@ -600,7 +596,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   );
 
   const goToPreviousWord = useCallback(
-    (selected: number) => {
+    (selected: number, startFromBeginning: boolean = false) => {
       const { solution, wordSequencesBySide } = record;
       const cell = solution[selected];
 
@@ -623,7 +619,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         const nextRange =
           wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];
         if (nextRange != null) {
-          setSelected(nextRange[nextRange.length - 1]);
+          setSelected(nextRange[startFromBeginning ? 0 : nextRange.length - 1]);
         }
       } else {
         // Move to the previous side!
@@ -632,7 +628,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           (i) => i != null,
         );
         if (range != null) {
-          setSelected(range[range.length - 1]);
+          setSelected(range[startFromBeginning ? 0 : range.length - 1]);
           turnLeft();
         }
       }

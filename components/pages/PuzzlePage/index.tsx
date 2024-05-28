@@ -248,7 +248,10 @@ export default function Puzzle({
     setIsInitialized(true);
   }, []);
 
-  const onPrevWord = useRef<(selected: number) => void | undefined>();
+  const onPrevWord =
+    useRef<
+      (selected: number, startFromBeginning?: boolean) => void | undefined
+    >();
   const onNextWord = useRef<(selected: number) => void | undefined>();
 
   const [isVerticalOrientation, setVerticalOrientation] =
@@ -498,7 +501,7 @@ export default function Puzzle({
     (selected?: number) => (event: MouseEvent) => {
       if (event) event.stopPropagation();
       if (onPrevWord.current == null || selected == null) return;
-      onPrevWord.current(selected);
+      onPrevWord.current(selected, true);
     },
     [],
   );
