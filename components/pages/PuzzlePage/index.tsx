@@ -137,7 +137,7 @@ const InfoBar = styled.div`
 const ClueContainer = styled.div<{ $backgroundColor: string }>`
   position: relative;
   display: grid;
-  text-selection: none;
+  user-select: none;
   grid-template-columns: 1fr 0.15fr;
   grid-column-gap: 0.5rem;
   align-items: center;
@@ -180,7 +180,7 @@ const SelectedInfo = styled.span<{ $backgroundColor: string }>`
   width: fit-content;
   padding: 0 0.15rem;
   border-radius: 0.25rem;
-  text-selection: none;
+  user-select: none;
   ${({ $backgroundColor }) =>
     `background-color: #${tinycolor($backgroundColor).toHex()}`}
 `;
