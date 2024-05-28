@@ -133,6 +133,7 @@ export default createGlobalStyle`
     font-family: 'franklin-gothic-atf', sans-serif;
     font-weight: 400;
     font-style: normal;
+    user-select: none;
   }
 
   h1 {
