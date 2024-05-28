@@ -12,7 +12,11 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
+import {
+  CharacterRecord,
+  SequenceKeys,
+  isCellWithNumber,
+} from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { PuzzleType } from 'app/page';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
@@ -161,6 +165,7 @@ const fragmentShader = `
 export type SelectClueFn = (
   clue: string | undefined,
   cellNumber?: number,
+  selected?: number,
 ) => void;
 
 export type LetterBoxesProps = {
@@ -192,6 +197,8 @@ export type LetterBoxesProps = {
   onInitialize?: () => void;
   turnLeft: () => void;
   turnRight: () => void;
+  setOnNextWord?: (callback: (selected: number) => void) => void;
+  setOnPrevWord?: (callback: (selected: number) => void) => void;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -247,6 +254,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   autoNextEnabled,
   turnLeft,
   turnRight,
+  setOnPrevWord,
+  setOnNextWord,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   // const [isVerticalOrientation, setVerticalOrientation] =
@@ -297,11 +306,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         onSelectClue(
           clues.down.find((c) => c.number === selectedWordCell)?.clue,
           selectedWordCell,
+          selected,
         );
       } else {
         onSelectClue(
           clues.across.find((c) => c.number === selectedWordCell)?.clue,
           selectedWordCell,
+          selected,
         );
       }
     }
@@ -541,6 +552,106 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   });
 
+  const goToNextWord = useCallback(
+    (selected: number) => {
+      const { solution, wordSequencesBySide } = record;
+      const cell = solution[selected];
+
+      if (cell?.mapping == null) {
+        return;
+      }
+
+      const direction: SequenceKeys = isVerticalOrientation ? 'down' : 'across';
+      const sequenceIndex = isVerticalOrientation
+        ? cell?.mapping[selectedSide]?.downSequenceIndex
+        : cell?.mapping[selectedSide]?.acrossSequenceIndex;
+
+      // Update letter and move to the next word
+      const keys = Object.keys(wordSequencesBySide[selectedSide][direction]);
+      const currentIndex = keys.findIndex(
+        (i) => sequenceIndex === parseInt(i, 10),
+      );
+      const nextIndex = keys[currentIndex + 1];
+      if (nextIndex != null) {
+        const nextRange =
+          wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];
+        if (nextRange != null) {
+          setSelected(nextRange[0]);
+        }
+      } else {
+        // Move to the next side!
+        const nextSide = constrain(0, puzzle.data.length - 1, selectedSide + 1);
+        const range = wordSequencesBySide[nextSide][direction].find(
+          (i) => i != null,
+        );
+        if (range != null) {
+          setSelected(range[0]);
+          turnRight();
+        }
+      }
+    },
+    [
+      isVerticalOrientation,
+      puzzle.data.length,
+      record,
+      selectedSide,
+      turnRight,
+    ],
+  );
+
+  const goToPreviousWord = useCallback(
+    (selected: number) => {
+      const { solution, wordSequencesBySide } = record;
+      const cell = solution[selected];
+
+      if (cell?.mapping == null) {
+        return;
+      }
+
+      const direction: SequenceKeys = isVerticalOrientation ? 'down' : 'across';
+      const sequenceIndex = isVerticalOrientation
+        ? cell?.mapping[selectedSide]?.downSequenceIndex
+        : cell?.mapping[selectedSide]?.acrossSequenceIndex;
+
+      // Update letter and move to the next word
+      const keys = Object.keys(wordSequencesBySide[selectedSide][direction]);
+      const currentIndex = keys.findIndex(
+        (i) => sequenceIndex === parseInt(i, 10),
+      );
+      const nextIndex = keys[currentIndex - 1];
+      if (nextIndex != null) {
+        const nextRange =
+          wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];
+        if (nextRange != null) {
+          setSelected(nextRange[nextRange.length - 1]);
+        }
+      } else {
+        // Move to the previous side!
+        const nextSide = constrain(0, puzzle.data.length - 1, selectedSide - 1);
+        const range = wordSequencesBySide[nextSide][direction].findLast(
+          (i) => i != null,
+        );
+        if (range != null) {
+          setSelected(range[range.length - 1]);
+          turnLeft();
+        }
+      }
+    },
+    [isVerticalOrientation, puzzle.data.length, record, selectedSide, turnLeft],
+  );
+
+  useEffect(() => {
+    if (setOnNextWord) {
+      setOnNextWord(goToNextWord);
+    }
+  }, [goToNextWord, setOnNextWord]);
+
+  useEffect(() => {
+    if (setOnPrevWord) {
+      setOnPrevWord(goToPreviousWord);
+    }
+  }, [goToPreviousWord, setOnPrevWord]);
+
   const onLetterChange = useCallback(
     (key: string, selectedOverride?: number) => {
       if (onLetterInput) {
@@ -593,77 +704,17 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 const nextCell = range[sIndex + 1];
                 setSelected(nextCell);
               } else if (autoNextEnabled === true) {
-                // Update letter and move to the next word
-                const keys = Object.keys(
-                  wordSequencesBySide[selectedSide][direction],
-                );
-                const currentIndex = keys.findIndex(
-                  (i) => sequenceIndex === parseInt(i, 10),
-                );
-                const nextIndex = keys[currentIndex + 1];
-                if (nextIndex != null) {
-                  const nextRange =
-                    wordSequencesBySide[selectedSide][direction][
-                      parseInt(nextIndex, 10)
-                    ];
-                  if (nextRange != null) {
-                    setSelected(nextRange[0]);
-                  }
-                } else {
-                  // Move to the next side!
-                  const nextSide = constrain(
-                    0,
-                    puzzle.data.length - 1,
-                    selectedSide + 1,
-                  );
-                  const range = wordSequencesBySide[nextSide][direction].find(
-                    (i) => i != null,
-                  );
-                  if (range != null) {
-                    setSelected(range[0]);
-                    turnRight();
-                  }
-                }
+                goToNextWord(selectedIndex);
               }
             } else {
               // Delete letter and move to the previous cell
               // Are we on the first letter in the sequence?
               if (sIndex > 0) {
-                // Update letter and move to the next cell
+                // Update letter and move to the previous cell
                 const nextCell = range[sIndex - 1];
                 setSelected(nextCell);
               } else if (autoNextEnabled === true) {
-                // Update letter and move to the next word
-                const keys = Object.keys(
-                  wordSequencesBySide[selectedSide][direction],
-                );
-                const currentIndex = keys.findIndex(
-                  (i) => sequenceIndex === parseInt(i, 10),
-                );
-                const nextIndex = keys[currentIndex - 1];
-                if (nextIndex != null) {
-                  const nextRange =
-                    wordSequencesBySide[selectedSide][direction][
-                      parseInt(nextIndex, 10)
-                    ];
-                  if (nextRange != null) {
-                    setSelected(nextRange[nextRange.length - 1]);
-                  }
-                } else {
-                  // Move to the previous side!
-                  const nextSide = constrain(
-                    0,
-                    puzzle.data.length - 1,
-                    selectedSide - 1,
-                  );
-                  const range = wordSequencesBySide[nextSide][
-                    direction
-                  ].findLast((i) => i != null);
-                  if (range != null) {
-                    setSelected(range[range.length - 1]);
-                    turnLeft();
-                  }
-                }
+                goToPreviousWord(selectedIndex);
               }
             }
           }
@@ -682,9 +733,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       isVerticalOrientation,
       selectedSide,
       autoNextEnabled,
-      puzzle.data.length,
-      turnRight,
-      turnLeft,
+      goToNextWord,
+      goToPreviousWord,
     ],
   );
 
