@@ -158,7 +158,12 @@ const fragmentShader = `
   }
 `;
 
-type LetterBoxesProps = {
+export type SelectClueFn = (
+  clue: string | undefined,
+  cellNumber?: number,
+) => void;
+
+export type LetterBoxesProps = {
   puzzle: PuzzleType;
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
@@ -183,7 +188,7 @@ type LetterBoxesProps = {
   onVerticalOrientationChange: (isVerticalOrientation: boolean) => void;
   setInstancedMesh?: (instancedMesh: InstancedMesh | null) => void;
   onLetterInput?: () => void;
-  onSelectClue?: (clue: string | undefined) => void;
+  onSelectClue?: SelectClueFn;
   onInitialize?: () => void;
   turnLeft: () => void;
   turnRight: () => void;
@@ -291,10 +296,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       if (isVerticalOrientation === true) {
         onSelectClue(
           clues.down.find((c) => c.number === selectedWordCell)?.clue,
+          selectedWordCell,
         );
       } else {
         onSelectClue(
           clues.across.find((c) => c.number === selectedWordCell)?.clue,
+          selectedWordCell,
         );
       }
     }
