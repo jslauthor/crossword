@@ -106,10 +106,13 @@ export const updateAnswerIndex = (
   solution: SolutionType[],
 ) => {
   try {
-    if (characterPositionArray != null && characterPositionArray.length > 0) {
+    if (
+      characterPositionArray != null &&
+      characterPositionArray.length >= solution.length * 2
+    ) {
       // Update index based on character position array
       let index = 0;
-      for (let x = 0; x < characterPositionArray.length; x += 2) {
+      for (let x = 0; x < solution.length * 2; x += 2) {
         const { value: cell } = solution[index];
         if (cell && cell != '#') {
           const chunk = Math.floor(index / 32);

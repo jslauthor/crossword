@@ -278,15 +278,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   }, [ref, setInstancedMesh]);
 
-  const [width, height, totalPerSide, rowLength] = useMemo(() => {
+  const [width, height, rowLength] = useMemo(() => {
     let { width, height } = puzzle.data[0].dimensions;
-    const totalPerSide = width * (width - 1);
-    return [
-      width,
-      height,
-      totalPerSide,
-      width * puzzle.data.length - puzzle.data.length,
-    ];
+    return [width, height, width * puzzle.data.length - puzzle.data.length];
   }, [puzzle.data]);
 
   const [record, size] = useMemo(() => {
