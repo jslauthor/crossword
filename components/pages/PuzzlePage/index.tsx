@@ -4,7 +4,6 @@ import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
 import {
-  Bloom,
   EffectComposer,
   ChromaticAberration,
 } from '@react-three/postprocessing';
@@ -600,11 +599,6 @@ export default function Puzzle({
             </>
           )}
           <EffectComposer>
-            <Bloom
-              luminanceThreshold={1}
-              luminanceSmoothing={2}
-              height={canvasHeight}
-            />
             <ChromaticAberration
               radialModulation={false}
               modulationOffset={0}
