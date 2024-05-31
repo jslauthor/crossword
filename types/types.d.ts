@@ -21,6 +21,10 @@ export type SolutionCellValue = {
   value: string;
   cell: StandardCell;
 };
+export type SolutionCellNumber = {
+  value: string;
+  cell: number;
+};
 
 export type SolutionCell = BlankCell | SolutionCellValue;
 
@@ -33,7 +37,7 @@ export type PuzzleCell =
     };
 
 export type Clue = {
-  answer: string;
+  answer?: string;
   number: number;
   clue: string;
 };

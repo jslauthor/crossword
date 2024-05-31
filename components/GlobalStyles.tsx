@@ -133,6 +133,7 @@ export default createGlobalStyle`
     font-family: 'franklin-gothic-atf', sans-serif;
     font-weight: 400;
     font-style: normal;
+    user-select: none;
   }
 
   h1 {
@@ -296,6 +297,13 @@ export default createGlobalStyle`
     color: white;
     border: none;
     flex-grow: unset;
+  }
+
+  .hg-theme-default .hg-button span {
+    font-family: 'franklin-gothic-atf', sans-serif;
+    font-weight: 500;    
+    font-style: normal;
+    font-size: 1rem;
   }
 
   .simple-keyboard.keyboardTheme .hg-button:active {

@@ -1,15 +1,15 @@
 'use client';
 
+import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
 import {
-  Bloom,
   EffectComposer,
   ChromaticAberration,
 } from '@react-three/postprocessing';
 import { BlendFunction } from 'postprocessing';
 import { Stats, PerspectiveCamera, Html } from '@react-three/drei';
-import LetterBoxes from 'components/core/3d/LetterBoxes';
+import LetterBoxes, { SelectClueFn } from 'components/core/3d/LetterBoxes';
 import {
   Suspense,
   useCallback,
@@ -51,6 +51,13 @@ import {
   DEFAULT_SELECTED_COLOR,
 } from 'lib/utils/color';
 import { createInitialState } from 'lib/utils/puzzle';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faChevronCircleDown,
+  faChevronCircleRight,
+  faChevronLeft,
+  faChevronRight,
+} from '@fortawesome/free-solid-svg-icons';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -128,10 +135,11 @@ const InfoBar = styled.div`
 `;
 
 const ClueContainer = styled.div<{ $backgroundColor: string }>`
+  position: relative;
   display: grid;
-  // grid-template-columns: min-content 1fr min-content;
-  grid-template-columns: 1fr;
-  grid-column-gap: 1rem;
+  user-select: none;
+  grid-template-columns: 1fr 0.15fr;
+  grid-column-gap: 0.5rem;
   align-items: center;
   border-radius: 0.25rem;
   padding: 0 0.5rem;
@@ -139,16 +147,63 @@ const ClueContainer = styled.div<{ $backgroundColor: string }>`
   height: 100%;
   width: 100%;
   min-height: 54px;
+  overflow: hidden;
   ${({ $backgroundColor }) =>
     `background-color: #${tinycolor($backgroundColor).darken(5).toHex()}`}
 `;
 
 const ClueLabel = styled.span<{ celebrate?: boolean }>`
-  font-size: 1rem;
+  font-size: 0.85rem;
   line-height: 1rem !important;
   user-select: none;
   ${({ celebrate }) =>
     celebrate && 'text-align: center; font-size: 1.5rem; font-weight: 600;'}
+`;
+
+const ForwardNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
+  position: relative;
+  display: flex;
+  right: -0.5rem;
+  gap: 0.5rem;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.5rem;
+  cursor: pointer;
+  ${({ $backgroundColor }) =>
+    `background-color: #${tinycolor($backgroundColor).darken(10).toHex()}`}
+`;
+
+const SelectedInfo = styled.span<{ $backgroundColor: string }>`
+  font-weight: 600;
+  gap: 0.25rem;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  width: fit-content;
+  padding: 0 0.15rem;
+  border-radius: 0.25rem;
+  user-select: none;
+  ${({ $backgroundColor }) =>
+    `background-color: #${tinycolor($backgroundColor).toHex()}`}
+`;
+
+const VRule = styled.div`
+  width: 1px;
+  background: var(--primary-text);
+  opacity: 0.1;
+  height: 100%;
+`;
+
+const IconContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
 `;
 
 function Loader() {
@@ -177,6 +232,8 @@ export default function Puzzle({
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
     useState<[string, number]>();
   const [clue, setClue] = useState<string | undefined>();
+  const [cellNumber, setCellNumber] = useState<number | undefined>();
+  const [selected, setSelected] = useState<number | undefined>();
   const [selectedCharacter, setSelectedCharacter] = useState<
     string | undefined
   >();
@@ -190,10 +247,16 @@ export default function Puzzle({
     setIsInitialized(true);
   }, []);
 
+  const onPrevWord =
+    useRef<
+      (selected: number, startFromBeginning?: boolean) => void | undefined
+    >();
+  const onNextWord = useRef<(selected: number) => void | undefined>();
+
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
-  const animatedClueText = useAnimatedText(clue, 120);
+  const animatedClueText = useAnimatedText(clue, 60);
 
   const [puzzleWidth] = useMemo(() => {
     if (puzzle == null || puzzle.data.length < 1) {
@@ -203,6 +266,15 @@ export default function Puzzle({
     const totalPerSide = width * height;
     return [width, height, totalPerSide];
   }, [puzzle]);
+
+  const handleClueChange = useCallback<SelectClueFn>(
+    (clue, cellNumber, selected) => {
+      setClue(clue);
+      setCellNumber(cellNumber);
+      setSelected(selected);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (cameraRef == null || groupRef == null || isInitialized === false) {
@@ -237,6 +309,8 @@ export default function Puzzle({
     characterPositions,
     validations,
     draftModes,
+    autoNextEnabled,
+    addAutoNextEnabled,
     autocheckEnabled,
     addAutocheckEnabled,
     draftModeEnabled,
@@ -269,7 +343,7 @@ export default function Puzzle({
     ) {
       const { solution } = puzzle.record;
       for (let x = 0; x < solution.length; x++) {
-        const cell = solution[x];
+        const { value: cell } = solution[x];
         if (cell !== '#') {
           setTimeout(() => {
             setKeyAndIndexOverride([cell.value, x]);
@@ -411,6 +485,35 @@ export default function Puzzle({
     [addDraftModeEnabled],
   );
 
+  /**
+   * setState did not work for this callback, so I used a reference instead. Very odd.
+   */
+  const setOnNextWord = useCallback((s: (selected: number) => void) => {
+    onNextWord.current = s;
+  }, []);
+
+  const setOnPrevWord = useCallback((s: (selected: number) => void) => {
+    onPrevWord.current = s;
+  }, []);
+
+  const handlePrevWord = useCallback(
+    (selected?: number) => (event: MouseEvent) => {
+      if (event) event.stopPropagation();
+      if (onPrevWord.current == null || selected == null) return;
+      onPrevWord.current(selected, true);
+    },
+    [],
+  );
+
+  const handleNextWord = useCallback(
+    (selected?: number) => (event: MouseEvent) => {
+      if (event) event.stopPropagation();
+      if (onNextWord.current == null || selected == null) return;
+      onNextWord.current(selected);
+    },
+    [],
+  );
+
   const {
     characterPositions: defaultCharacterPositions,
     draftModes: defaultDraftModes,
@@ -419,12 +522,12 @@ export default function Puzzle({
     return createInitialState(puzzle);
   }, [puzzle]);
 
-  // console.log(characterPositions);
-
   return (
     <Menu
       centerLabel={formattedElapsedTime}
       rotatingBoxProps={rotatingBoxProps}
+      autoNextEnabled={autoNextEnabled}
+      onAutoNextChanged={addAutoNextEnabled}
       autocheckEnabled={autocheckEnabled}
       draftModeEnabled={draftModeEnabled}
       onAutocheckChanged={handleAutocheckChanged}
@@ -463,7 +566,7 @@ export default function Puzzle({
                 currentKey={selectedCharacter}
                 updateCharacterPosition={updateCharacterPosition}
                 onLetterInput={onLetterInput}
-                onSelectClue={setClue}
+                onSelectClue={handleClueChange}
                 defaultColor={defaultColor}
                 selectedColor={selectedColor}
                 adjacentColor={adjacentColor}
@@ -476,6 +579,11 @@ export default function Puzzle({
                 }
                 cellValidationArray={validations ?? defaultValidations}
                 cellDraftModeArray={draftModes ?? defaultDraftModes}
+                autoNextEnabled={autoNextEnabled}
+                turnLeft={turnLeft}
+                turnRight={turnRight}
+                setOnNextWord={setOnNextWord}
+                setOnPrevWord={setOnPrevWord}
               />
             </group>
           </SwipeControls>
@@ -491,11 +599,6 @@ export default function Puzzle({
             </>
           )}
           <EffectComposer>
-            <Bloom
-              luminanceThreshold={1}
-              luminanceSmoothing={2}
-              height={canvasHeight}
-            />
             <ChromaticAberration
               radialModulation={false}
               modulationOffset={0}
@@ -513,9 +616,31 @@ export default function Puzzle({
           $backgroundColor={toHex(adjacentColor)}
           onClick={onClueClick}
         >
-          {/* <FontAwesomeIcon icon={faChevronLeft} width={12} /> */}
-          <ClueLabel dangerouslySetInnerHTML={{ __html: animatedClueText }} />
-          {/* <FontAwesomeIcon icon={faChevronRight} width={12} /> */}
+          <div>
+            {cellNumber != null && (
+              <SelectedInfo $backgroundColor={toHex(selectedColor)}>
+                {`${cellNumber}`}
+                {isVerticalOrientation ? (
+                  <FontAwesomeIcon icon={faChevronCircleDown} width={10} />
+                ) : (
+                  <FontAwesomeIcon icon={faChevronCircleRight} width={10} />
+                )}
+              </SelectedInfo>
+            )}
+            &nbsp;
+            <ClueLabel
+              dangerouslySetInnerHTML={{ __html: animatedClueText }}
+            />{' '}
+          </div>
+          <ForwardNextButtonsContainer $backgroundColor={toHex(adjacentColor)}>
+            <IconContainer onClick={handlePrevWord(selected)}>
+              <FontAwesomeIcon icon={faChevronLeft} width={20} />
+            </IconContainer>
+            <VRule />
+            <IconContainer onClick={handleNextWord(selected)}>
+              <FontAwesomeIcon icon={faChevronRight} width={20} />
+            </IconContainer>
+          </ForwardNextButtonsContainer>
         </ClueContainer>
         <TurnButton onClick={turnRight} $borderColor={toHex(defaultColor)}>
           <TurnArrow

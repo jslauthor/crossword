@@ -12,12 +12,12 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { isCellWithNumber } from '../../../../lib/utils/puzzle';
+import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
-import { rangeOperation } from '../../../../lib/utils/math';
 import { PuzzleType } from 'app/page';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
 import { borderColor, correctColor, errorColor } from 'lib/utils/color';
+import { constrain } from 'lib/utils/math';
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -157,7 +157,13 @@ const fragmentShader = `
   }
 `;
 
-type LetterBoxesProps = {
+export type SelectClueFn = (
+  clue: string | undefined,
+  cellNumber?: number,
+  selected?: number,
+) => void;
+
+export type LetterBoxesProps = {
   puzzle: PuzzleType;
   characterTextureAtlasLookup: Record<string, [number, number]>;
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
@@ -172,6 +178,7 @@ type LetterBoxesProps = {
   cellValidationArray: Int16Array;
   cellDraftModeArray: Int16Array;
   autocheckEnabled: boolean;
+  autoNextEnabled: boolean;
   updateCharacterPosition: (
     selectedIndex: number,
     key: string,
@@ -181,8 +188,12 @@ type LetterBoxesProps = {
   onVerticalOrientationChange: (isVerticalOrientation: boolean) => void;
   setInstancedMesh?: (instancedMesh: InstancedMesh | null) => void;
   onLetterInput?: () => void;
-  onSelectClue?: (clue: string | undefined) => void;
+  onSelectClue?: SelectClueFn;
   onInitialize?: () => void;
+  turnLeft: () => void;
+  turnRight: () => void;
+  setOnNextWord?: (callback: (selected: number) => void) => void;
+  setOnPrevWord?: (callback: (selected: number) => void) => void;
 };
 const tempObject = new Object3D();
 const tempColor = new Color();
@@ -235,6 +246,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onInitialize,
   cellValidationArray,
   cellDraftModeArray,
+  autoNextEnabled,
+  turnLeft,
+  turnRight,
+  setOnPrevWord,
+  setOnNextWord,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   // const [isVerticalOrientation, setVerticalOrientation] =
@@ -252,6 +268,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [prevSelectedSide, setPrevSelectedSide] =
     useState<LetterBoxesProps['selectedSide']>();
   const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
+  const [cellMapping, setCellMapping] = useState<Record<number, number>>({});
   // const [initialRotations, setInitialRotations] = useState<Euler[]>([]);
   // const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
@@ -261,10 +278,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   }, [ref, setInstancedMesh]);
 
-  const [width, height, totalPerSide] = useMemo(() => {
+  const [width, height, rowLength] = useMemo(() => {
     let { width, height } = puzzle.data[0].dimensions;
-    const totalPerSide = width * height;
-    return [width, height, totalPerSide];
+    return [width, height, width * puzzle.data.length - puzzle.data.length];
   }, [puzzle.data]);
 
   const [record, size] = useMemo(() => {
@@ -278,10 +294,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       if (isVerticalOrientation === true) {
         onSelectClue(
           clues.down.find((c) => c.number === selectedWordCell)?.clue,
+          selectedWordCell,
+          selected,
         );
       } else {
         onSelectClue(
           clues.across.find((c) => c.number === selectedWordCell)?.clue,
+          selectedWordCell,
+          selected,
         );
       }
     }
@@ -332,16 +352,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       if (selected == null) {
         return false;
       }
-      const xPos = selected % width;
-      const previousSide = rangeOperation(0, 3, selectedSide, -1);
-      const cellSide = Math.ceil(selected / totalPerSide) - 1;
 
-      return (
-        cellSide === selectedSide ||
-        (xPos === width - 1 && cellSide === previousSide)
+      return Object.keys(record.solution[selected].mapping ?? []).includes(
+        selectedSide.toString(),
       );
     },
-    [selectedSide, totalPerSide, width],
+    [record.solution, selectedSide],
   );
 
   // const showIntroAnimation = useIntroAnimation(
@@ -359,8 +375,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const showRippleAnimation = useScaleRippleAnimation(
     width,
     height,
-    totalPerSide,
-    size,
+    puzzle.data.length,
     ref,
   );
 
@@ -372,20 +387,20 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       if (ref == null) return;
 
       const rotations: Euler[] = [];
+      const tempCellMapping: Record<number, number> = {};
+
       for (let j = 0; j < record.solution.length; j++) {
-        const cell = record.solution[j];
+        const { x, y, value: cell } = record.solution[j];
 
         tempObject.rotation.set(0, 0, 0);
         tempObject.scale.set(1, 1, 1);
-        const side = Math.ceil(j / totalPerSide) - 1;
-        const x = (j % width) - 1;
-        const y = Math.max(0, Math.ceil((j - side * totalPerSide) / width) - 1);
+        const side = Math.floor((j % rowLength) / (width - 1));
 
         // Sides three and four are the top and bottom (respectively)
         // 1, 2, 5, 6 are the camera facing sides
 
         cubeSideDisplayArray[j * 2] =
-          CubeSidesEnum.six | (j % width === width - 1 ? CubeSidesEnum.two : 0);
+          CubeSidesEnum.six | (x === 0 ? CubeSidesEnum.one : 0);
 
         if (isCellWithNumber(cell)) {
           // select first cell
@@ -396,16 +411,18 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             cellNumberTextureAtlasLookup[cell.cell][0];
           cellNumberPositionArray[j * 2 + 1] =
             cellNumberTextureAtlasLookup[cell.cell][1];
+
+          tempCellMapping[cell.cell] = j;
         }
 
         if (side === 0) {
           tempObject.position.set(
-            -x + height - 2,
+            -x + height - 1,
             -y + height - 1,
             -height + 1,
           );
         } else if (side === 1) {
-          tempObject.position.set(-x + height - 2, -y + height - 1, 0);
+          tempObject.position.set(-x + height - 1, -y + height - 1, 0);
           rotateAroundPoint(
             tempObject,
             new Vector3(0, 0, 0),
@@ -414,7 +431,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             true,
           );
         } else if (side === 2) {
-          tempObject.position.set(-x - 1, -y + height - 1, 0);
+          tempObject.position.set(-x, -y + height - 1, 0);
           rotateAroundPoint(
             tempObject,
             new Vector3(0, 0, 0),
@@ -423,7 +440,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             true,
           );
         } else if (side === 3) {
-          tempObject.position.set(-x - 1, -y + height - 1, -height + 1);
+          tempObject.position.set(-x, -y + height - 1, -height + 1);
           rotateAroundPoint(
             tempObject,
             new Vector3(0, 0, 0),
@@ -442,6 +459,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         ref.setMatrixAt(j, tempObject.matrix);
         rotations[j] = new Euler().copy(tempObject.rotation);
       }
+
+      setCellMapping(tempCellMapping);
+
       ref.geometry.attributes.characterPosition.needsUpdate = true;
       ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
       ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
@@ -474,11 +494,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         prevOrientation !== isVerticalOrientation ||
         prevSelectedSide !== selectedSide
       ) {
-        (id === hovered || id === selected
-          ? tempColor.set(selectedColor)
-          : tempColor.set(defaultColor)
-        ).toArray(cellColorsArray, id * 3);
-
         // Store the prev so we can avoid this calculation next time
         setPrevHovered(hovered);
         setPrevSelected(selected);
@@ -486,92 +501,36 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setPrevOrientation(isVerticalOrientation);
         setSelectedWordCell(undefined);
 
-        // Change the color of surrounding cells
+        (id === hovered || id === selected
+          ? tempColor.set(selectedColor)
+          : tempColor.set(defaultColor)
+        ).toArray(cellColorsArray, id * 3);
+
         if (selected != null && isVisibleSide(selected) === true) {
-          // We default to the selected cell for the first place in the word
-          // and will override this if it is not the first place below
-          const cell = record.solution[selected];
-          if (cell != null && cell !== '#' && typeof cell.cell === 'number') {
-            setSelectedWordCell(cell.cell);
-          }
+          const { solution, wordSequences } = record;
+          const cell = solution[selected];
 
-          // We need to check if the selected cell is on the same side as the hovered cell in the case of the
-          // first column (which is from the previous side)
-          const sSide = Math.ceil(selected / totalPerSide) - 1;
-          const isSameSide = sSide === selectedSide;
-          // const selectedCellX = selected % width;
-          const selectedCellY = Math.max(
-            0,
-            Math.ceil((selected - sSide * totalPerSide) / width) - 1,
-          );
+          if (cell?.mapping != null) {
+            const sequenceIndex = isVerticalOrientation
+              ? cell?.mapping[selectedSide].downSequenceIndex
+              : cell?.mapping[selectedSide].acrossSequenceIndex;
 
-          let interval = getInterval();
-          const startingId =
-            isVerticalOrientation || isSameSide
-              ? selected
-              : selectedSide * totalPerSide + selectedCellY * height;
-
-          for (
-            let adjacentId = startingId + interval;
-            adjacentId <= size;
-            adjacentId += interval
-          ) {
-            const side = Math.ceil(adjacentId / totalPerSide) - 1;
-            if (isVerticalOrientation && side !== sSide) continue;
-            const cell = record.solution[adjacentId];
-            if (cell === '#') {
-              break;
-            } else {
-              tempColor
-                .set(adjacentColor)
-                .toArray(cellColorsArray, adjacentId * 3);
-            }
-          }
-
-          if (isVerticalOrientation === false && isSameSide === false) {
-            ref.geometry.attributes.cellColor.needsUpdate = true;
-            continue;
-          }
-
-          for (
-            let adjacentId = selected - interval;
-            adjacentId > -interval;
-            adjacentId -= interval
-          ) {
-            const x = adjacentId % width;
-
-            // We need to check if we are on the first cell of a row
-            // and if it is, we check the previous side's last row for a letter
-            if (x === 0) {
-              const int =
-                selectedSide !== 0
-                  ? adjacentId - (width * width - (width - 1))
-                  : totalPerSide * puzzle.data.length -
-                    1 -
-                    (width * width - width - 1) +
-                    adjacentId -
-                    1;
-              const cell = record.solution[int];
-              if (cell !== '#') {
-                if (typeof cell.cell === 'number') {
-                  setSelectedWordCell(cell.cell);
-                }
-                tempColor.set(adjacentColor).toArray(cellColorsArray, int * 3);
+            if (sequenceIndex != null) {
+              const range = wordSequences[sequenceIndex];
+              // Select the clue. It will always be the first cell in the sequence
+              const rootWord = solution[range[0]];
+              if (
+                isCellWithNumber(rootWord.value) &&
+                typeof rootWord.value.cell === 'number'
+              ) {
+                setSelectedWordCell(rootWord.value.cell);
               }
-            }
-            const side = Math.ceil(adjacentId / totalPerSide) - 1;
-            if (isVerticalOrientation && side !== sSide) continue;
-            const cell = record.solution[adjacentId];
-
-            if (cell === '#') {
-              break;
-            } else {
-              if (typeof cell.cell === 'number') {
-                setSelectedWordCell(cell.cell);
-              }
-              tempColor
-                .set(adjacentColor)
-                .toArray(cellColorsArray, adjacentId * 3);
+              range.forEach((index) => {
+                if (index === selected) return;
+                tempColor
+                  .set(adjacentColor)
+                  .toArray(cellColorsArray, index * 3);
+              });
             }
           }
         }
@@ -581,8 +540,112 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   });
 
+  const goToNextWord = useCallback(
+    (selected: number) => {
+      const { solution, wordSequencesBySide } = record;
+      const cell = solution[selected];
+
+      if (cell?.mapping == null) {
+        return;
+      }
+
+      const direction: SequenceKeys = isVerticalOrientation ? 'down' : 'across';
+      const sequenceIndex = isVerticalOrientation
+        ? cell?.mapping[selectedSide]?.downSequenceIndex
+        : cell?.mapping[selectedSide]?.acrossSequenceIndex;
+
+      // Update letter and move to the next word
+      const keys = Object.keys(wordSequencesBySide[selectedSide][direction]);
+      const currentIndex = keys.findIndex(
+        (i) => sequenceIndex === parseInt(i, 10),
+      );
+      const nextIndex = keys[currentIndex + 1];
+      if (nextIndex != null) {
+        const nextRange =
+          wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];
+        if (nextRange != null) {
+          setSelected(nextRange[0]);
+        }
+      } else {
+        // Move to the next side!
+        const nextSide = constrain(0, puzzle.data.length - 1, selectedSide + 1);
+        const range = wordSequencesBySide[nextSide][direction].find(
+          (i) => i != null,
+        );
+        if (range != null) {
+          setSelected(range[0]);
+          turnRight();
+        }
+      }
+    },
+    [
+      isVerticalOrientation,
+      puzzle.data.length,
+      record,
+      selectedSide,
+      turnRight,
+    ],
+  );
+
+  const goToPreviousWord = useCallback(
+    (selected: number, startFromBeginning: boolean = false) => {
+      const { solution, wordSequencesBySide } = record;
+      const cell = solution[selected];
+
+      if (cell?.mapping == null) {
+        return;
+      }
+
+      const direction: SequenceKeys = isVerticalOrientation ? 'down' : 'across';
+      const sequenceIndex = isVerticalOrientation
+        ? cell?.mapping[selectedSide]?.downSequenceIndex
+        : cell?.mapping[selectedSide]?.acrossSequenceIndex;
+
+      // Update letter and move to the next word
+      const keys = Object.keys(wordSequencesBySide[selectedSide][direction]);
+      const currentIndex = keys.findIndex(
+        (i) => sequenceIndex === parseInt(i, 10),
+      );
+      const nextIndex = keys[currentIndex - 1];
+      if (nextIndex != null) {
+        const nextRange =
+          wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];
+        if (nextRange != null) {
+          setSelected(nextRange[startFromBeginning ? 0 : nextRange.length - 1]);
+        }
+      } else {
+        // Move to the previous side!
+        const nextSide = constrain(0, puzzle.data.length - 1, selectedSide - 1);
+        const range = wordSequencesBySide[nextSide][direction].findLast(
+          (i) => i != null,
+        );
+        if (range != null) {
+          setSelected(range[startFromBeginning ? 0 : range.length - 1]);
+          turnLeft();
+        }
+      }
+    },
+    [isVerticalOrientation, puzzle.data.length, record, selectedSide, turnLeft],
+  );
+
+  useEffect(() => {
+    if (setOnNextWord) {
+      setOnNextWord(goToNextWord);
+    }
+  }, [goToNextWord, setOnNextWord]);
+
+  useEffect(() => {
+    if (setOnPrevWord) {
+      setOnPrevWord(goToPreviousWord);
+    }
+  }, [goToPreviousWord, setOnPrevWord]);
+
   const onLetterChange = useCallback(
     (key: string, selectedOverride?: number) => {
+      if (onLetterInput) {
+        onLetterInput();
+      }
+
       const selectedIndex = selectedOverride ?? selected;
 
       if (isVisibleSide(selectedIndex) === false && selectedOverride == null) {
@@ -595,104 +658,71 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[0];
         const y =
           coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[1];
+
         setLastCurrentKey(key);
-
-        if (x !== -1) {
-          // select the next cell
-          const nextCell = selectedIndex + getInterval();
-          const sSide = Math.ceil(selectedIndex / totalPerSide) - 1;
-          const side = Math.ceil(nextCell / totalPerSide) - 1;
-          const selectedX = nextCell % width;
-          const selectedY = Math.max(
-            0,
-            Math.ceil((selectedIndex - sSide * totalPerSide) / width) - 1,
-          );
-          if (selectedX === 0 && selectedSide !== sSide) {
-            const int =
-              selectedSide !== 0
-                ? nextCell + (width * width - (width - 1))
-                : selectedY * height + 1;
-            const cell = record.solution[int];
-            if (cell !== '#') {
-              setSelected(int);
-            }
-          } else if (selectedX !== 0) {
-            const cell = record.solution[nextCell];
-            if (!((isVerticalOrientation && side !== sSide) || cell === '#')) {
-              setSelected(nextCell);
-            }
-          }
-        } else if (
-          // select the prev cell
-          characterPositionArray[selectedIndex * 2] === -1 ||
-          lastCurrentKey === '' ||
-          lastCurrentKey === 'BACKSPACE'
-        ) {
-          // select the previous cell
-          const nextCell = selectedIndex - getInterval();
-          const selectedX = nextCell % width;
-          const sSide = Math.ceil(selectedIndex / totalPerSide) - 1;
-
-          // We need to check if we are on the first cell of a row
-          // and if it is, we check the previous sides last row for a letter
-          if (selectedX === 0) {
-            const int =
-              selectedSide !== 0
-                ? nextCell - (width * width - (width - 1))
-                : totalPerSide * puzzle.data.length -
-                  1 -
-                  (width * width - width - 1) +
-                  nextCell -
-                  1;
-            const cell = record.solution[int];
-            if (cell !== '#') {
-              setSelected(int);
-            }
-          } else {
-            const side = Math.ceil(nextCell / totalPerSide) - 1;
-            const cell = record.solution[nextCell];
-
-            if (
-              !(
-                (isVerticalOrientation && side !== sSide) ||
-                cell === '#' ||
-                // the -2 would normally be -1, but we skip a column, so we need to
-                // subtract that one as well
-                (selectedX === width - 2 && selectedSide !== sSide)
-              )
-            ) {
-              setSelected(nextCell);
-            }
-          }
-        }
 
         if (updateCharacterPosition(selectedIndex, key, x, y) === true) {
           showScaleAnimation(selectedIndex);
         }
 
-        if (onLetterInput) {
-          onLetterInput();
+        /**
+         * This is the logic for moving to the next or prev cell
+         */
+
+        const { solution, wordSequencesBySide } = record;
+        const cell = solution[selectedIndex];
+
+        if (cell?.mapping != null) {
+          const direction: SequenceKeys = isVerticalOrientation
+            ? 'down'
+            : 'across';
+          const sequenceIndex = isVerticalOrientation
+            ? cell?.mapping[selectedSide]?.downSequenceIndex
+            : cell?.mapping[selectedSide]?.acrossSequenceIndex;
+
+          if (sequenceIndex != null) {
+            const range =
+              wordSequencesBySide[selectedSide][direction][sequenceIndex];
+            if (range == null) return;
+            const sIndex = range.findIndex((i) => i === selectedIndex);
+            if (x !== -1) {
+              // Are we on the last letter in the sequence?
+              if (sIndex > -1 && sIndex < range.length - 1) {
+                // Update letter and move to the next cell
+                const nextCell = range[sIndex + 1];
+                setSelected(nextCell);
+              } else if (autoNextEnabled === true) {
+                goToNextWord(selectedIndex);
+              }
+            } else {
+              // Delete letter and move to the previous cell
+              // Are we on the first letter in the sequence?
+              if (sIndex > 0) {
+                // Update letter and move to the previous cell
+                const nextCell = range[sIndex - 1];
+                setSelected(nextCell);
+              } else if (autoNextEnabled === true) {
+                goToPreviousWord(selectedIndex);
+              }
+            }
+          }
         }
       }
     },
     [
+      onLetterInput,
       selected,
       isVisibleSide,
       characterTextureAtlasLookup,
       ref,
-      characterPositionArray,
-      lastCurrentKey,
       updateCharacterPosition,
-      onLetterInput,
-      getInterval,
-      totalPerSide,
-      width,
-      selectedSide,
-      height,
-      record.solution,
-      isVerticalOrientation,
-      puzzle.data.length,
+      record,
       showScaleAnimation,
+      isVerticalOrientation,
+      selectedSide,
+      autoNextEnabled,
+      goToNextWord,
+      goToPreviousWord,
     ],
   );
 

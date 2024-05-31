@@ -4,6 +4,7 @@ import {
   GameState,
   PuzzleData,
   SolutionCell,
+  SolutionCellNumber,
   SolutionCellValue,
 } from '../../types/types';
 import memoizeOne from 'memoize-one';
@@ -24,19 +25,47 @@ export function isSolutionCellValue(
 
 export function isCellWithNumber(
   cell: SolutionCell,
-): cell is SolutionCellValue {
+): cell is SolutionCellNumber {
   return (
     isSolutionCellValue(cell) && typeof cell.cell === 'number' && cell.cell > 0
   );
 }
 
+export type SequenceKeys = 'across' | 'down';
+
 export interface CharacterRecord {
-  solution: SolutionCell[];
+  words: WordType[];
+  wordSequences: SequenceType[];
+  wordSequencesBySide: Record<
+    number,
+    {
+      [K in SequenceKeys]: CharacterRecord['wordSequences'];
+    }
+  >;
+  solution: SolutionType[];
   clues: {
     across: Clue[];
     down: Clue[];
   };
 }
+
+type SequenceType = number[]; // grid coordinates for full word
+type WordType = string[]; // the string value (answer) for the word
+
+type SolutionType = {
+  value: SolutionCell;
+  mapping?: Record<
+    number,
+    {
+      wordAcrossIndex?: number;
+      wordDownIndex?: number;
+      acrossSequenceIndex?: number;
+      downSequenceIndex?: number;
+    }
+  >; // [side]: word indices
+  x: number;
+  y: number;
+};
 
 // Invert the dictionary for faster lookups
 export const invertAtlas = memoizeOne(
@@ -49,7 +78,7 @@ export const invertAtlas = memoizeOne(
   },
 );
 
-export const initializeAnswerIndex = (solution: SolutionCell[]) => {
+export const initializeAnswerIndex = (solution: SolutionType[]) => {
   // We initialize the array with the max safe integer
   // Each integer will map to the index of the character in the record solution
   // Since bitwise operations only work on 32 bit integers, we need to split the array into chunks of 32
@@ -58,7 +87,7 @@ export const initializeAnswerIndex = (solution: SolutionCell[]) => {
     () => Number.MAX_SAFE_INTEGER >>> 0,
   );
 
-  for (const [index, cell] of solution.entries()) {
+  for (const [index, { value: cell }] of solution.entries()) {
     if (cell !== '#') {
       const chunk = Math.floor(index / 32);
       const bit = index % 32;
@@ -74,142 +103,244 @@ export const updateAnswerIndex = (
   answerIndex: number[],
   atlas: Record<string, string>,
   characterPositionArray: Float32Array | undefined,
-  solution: SolutionCell[],
+  solution: SolutionType[],
 ) => {
-  if (characterPositionArray != null && characterPositionArray.length > 0) {
-    // Update index based on character position array
-    let index = 0;
-    for (let x = 0; x < characterPositionArray.length; x += 2) {
-      const cell = solution[index];
-      if (cell && cell != '#') {
-        const chunk = Math.floor(index / 32);
-        const bit = index % 32;
-        const characterPosition = characterPositionArray.slice(x, x + 2);
-        const character = atlas[characterPosition.join(',')];
-        if (character != null) {
-          const isCorrect =
-            cell.value.toUpperCase() === character.toUpperCase();
-          if (isCorrect) {
-            // This flips the index bit to 1 (true)
-            answerIndex[chunk] |= 1 << bit;
-          } else {
-            // This flips the index bit to 0 (false)
-            answerIndex[chunk] &= ~(1 << bit);
+  try {
+    if (
+      characterPositionArray != null &&
+      characterPositionArray.length >= solution.length * 2
+    ) {
+      // Update index based on character position array
+      let index = 0;
+      for (let x = 0; x < solution.length * 2; x += 2) {
+        const { value: cell } = solution[index];
+        if (cell && cell != '#') {
+          const chunk = Math.floor(index / 32);
+          const bit = index % 32;
+          const characterPosition = characterPositionArray.slice(x, x + 2);
+          const character = atlas[characterPosition.join(',')];
+          if (character != null) {
+            const isCorrect =
+              cell.value.toUpperCase() === character.toUpperCase();
+            if (isCorrect) {
+              // This flips the index bit to 1 (true)
+              answerIndex[chunk] |= 1 << bit;
+            } else {
+              // This flips the index bit to 0 (false)
+              answerIndex[chunk] &= ~(1 << bit);
+            }
+          }
+        }
+        index++;
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    return answerIndex;
+  }
+};
+
+const resequenceSolutionAndClues = (
+  puzzleData: PuzzleData[],
+): {
+  solution: SolutionCell[];
+  across: Clue[];
+  down: Clue[];
+} => {
+  const { width, height } = puzzleData[0].dimensions;
+
+  const original = puzzleData.map((p) => p.solution);
+  // Make a copy of the original so we can mutate it
+  const solution: SolutionCell[][][] = JSON.parse(JSON.stringify(original));
+  const acrossClues = puzzleData.map((p) => p.clues.Across);
+  const downClues = puzzleData.map((p) => p.clues.Down);
+
+  const across: Clue[] = [];
+  const down: Clue[] = [];
+
+  // Loop through and reassign cell numbers and map the clues
+  let ascending = 1;
+  for (let x = 0; x < original.length; x++) {
+    for (let y = 0; y < width; y++) {
+      for (let z = 0; z < height; z++) {
+        const current = original[x][y][z];
+        if (current != null && isCellWithNumber(current)) {
+          const acrossClue = acrossClues[x].find(
+            (c) => c.number === current.cell,
+          );
+          const downClue = downClues[x].find((c) => c.number === current.cell);
+          if (acrossClue != null) {
+            across.push({
+              ...acrossClue,
+              number: ascending,
+            });
+          }
+          if (downClue != null) {
+            down.push({
+              ...downClue,
+              number: ascending,
+            });
+          }
+          const cell = solution[x][y][z];
+          if (isCellWithNumber(cell)) {
+            cell.cell = ascending++;
           }
         }
       }
-      index++;
     }
   }
 
-  return answerIndex;
+  const flattened = solution.flatMap((p) => p);
+  // We need reorder the rows so each row wraps the entire cube
+  const rowFirstOrder: SolutionCell[][] = [];
+  for (let x = 0; x < width; x++) {
+    for (let y = 0; y < puzzleData.length; y++) {
+      const current = flattened[x + width * y];
+      rowFirstOrder.push(current);
+    }
+  }
+
+  return {
+    solution: rowFirstOrder.flatMap((i) => i),
+    across,
+    down,
+  };
 };
 
-/**
- * This takes an array of puzzle data and returns a single puzzle
- * data object with the solution and clues merged together.
- *
- * @param puzzleData
- */
 export const getCharacterRecord = (
   puzzleData: PuzzleData[],
 ): CharacterRecord => {
-  let runningTotal = 0;
-  // We need to store the columns we hide so we can grab
-  // their cell numbers and add them back in
-  const hiddenColumns: SolutionCell[][] = [];
-  const data = puzzleData.reduce<{
-    solution: SolutionCell[];
+  const { width, height } = puzzleData[0].dimensions;
+  const words: CharacterRecord['words'] = [];
+  const wordSequences: CharacterRecord['wordSequences'] = [];
+  const wordSequencesBySide: CharacterRecord['wordSequencesBySide'] = {};
+  const solution: Record<number, SolutionType> = {};
+
+  const {
+    solution: rowFirstOrderFlat,
+    across,
+    down,
+  } = resequenceSolutionAndClues(puzzleData);
+  let currentWord = 0;
+  // Build dictionary for words and word sequences [ACROSS]
+  const rowLength = width * puzzleData.length;
+  for (let x = 0; x < height; x++) {
+    for (let y = 0; y < rowLength; y++) {
+      // Math.floor(y / width) subtracts the extra columns from the running total (index)
+      // so it matches the the rendered cross cube
+      const side = Math.floor(y / width);
+      const index = x * rowLength + y;
+      const cell = rowFirstOrderFlat[index];
+      let finalIndex = index - side;
+      // The final column needs to start from the beginning
+      if (y === rowLength - 1) {
+        finalIndex = x * rowLength;
+      }
+      if (cell === '#' || y % width === 0) {
+        currentWord++;
+      }
+      if (cell !== '#') {
+        words[currentWord] = (words[currentWord] ?? '').concat(cell.value);
+        wordSequences[currentWord] = (wordSequences[currentWord] ?? []).concat(
+          finalIndex - x * puzzleData.length, // subtract the extra columns
+        );
+
+        if (wordSequencesBySide[side] == null) {
+          wordSequencesBySide[side] = {
+            across: [],
+            down: [],
+          };
+        }
+        wordSequencesBySide[side].across[currentWord] =
+          wordSequences[currentWord];
+      }
+
+      solution[finalIndex] = {
+        value: y === rowLength - 1 ? solution[finalIndex]?.value : cell,
+        mapping:
+          cell === '#'
+            ? undefined
+            : {
+                ...solution[finalIndex]?.mapping,
+                [side]: {
+                  wordAcrossIndex: currentWord,
+                  acrossSequenceIndex: currentWord,
+                },
+              },
+        x: -1, // we will set this later
+        y: x,
+      };
+    }
+  }
+
+  // Build dictionary for words and word sequences [DOWN]
+  for (let x = 0; x < rowLength; x++) {
+    // Math.floor(y / width) subtracts the doubled columns from the running total (index)
+    // so it matches the the rendered cross cube
+    const side = Math.floor(x / width);
+    for (let y = 0; y < height; y++) {
+      const index = x + rowLength * y;
+      const cell = rowFirstOrderFlat[index];
+      let finalIndex = index - side;
+      // The final column needs to start from the beginning
+      if (x === rowLength - 1) {
+        finalIndex = y * rowLength;
+      }
+      if (cell === '#' || y % height === 0) {
+        currentWord++;
+      }
+      if (cell !== '#') {
+        words[currentWord] = (words[currentWord] ?? '').concat(cell.value);
+        wordSequences[currentWord] = (wordSequences[currentWord] ?? []).concat(
+          finalIndex - y * puzzleData.length, // subtract the extra columns
+        );
+
+        if (wordSequencesBySide[side] == null) {
+          wordSequencesBySide[side] = {
+            across: [],
+            down: [],
+          };
+        }
+        wordSequencesBySide[side].down[currentWord] =
+          wordSequences[currentWord];
+      }
+
+      solution[finalIndex] = {
+        ...solution[finalIndex],
+        mapping:
+          cell === '#'
+            ? undefined
+            : {
+                ...solution[finalIndex]?.mapping,
+                [side]: {
+                  ...solution[finalIndex]?.mapping?.[side],
+                  wordDownIndex: currentWord,
+                  downSequenceIndex: currentWord,
+                },
+              },
+      };
+    }
+  }
+
+  const solutionArray = Object.values(solution);
+
+  // Set x coordinates
+  // This is so much easier after creating the final solution
+  for (let x = 0; x < solutionArray.length; x++) {
+    solutionArray[x].x = x % (width - 1);
+  }
+
+  return {
+    words,
+    wordSequences,
+    wordSequencesBySide,
+    solution: solutionArray,
     clues: {
-      across: Clue[];
-      down: Clue[];
-    };
-  }>(
-    (value, { solution, dimensions, clues }, index) => {
-      const { width } = dimensions;
-      const flattened = solution.flatMap((s) => s);
-      if (Array.isArray(hiddenColumns[index]) === false) {
-        hiddenColumns[index] = [];
-      }
-      let highest: number = 0;
-
-      value.clues.across = value.clues.across.concat(
-        clues.Across.map((clue) => ({
-          ...clue,
-          number: clue.number + runningTotal,
-        })),
-      );
-
-      value.clues.down = value.clues.down.concat(
-        clues.Down.map((clue) => ({
-          ...clue,
-          number: clue.number + runningTotal,
-        })),
-      );
-
-      for (let x = 0; x < flattened.length; x++) {
-        const currentCell = flattened[x];
-        const isCell = isCellWithNumber(currentCell);
-
-        if (x % width === 0) {
-          // first column
-          // we skip the first column since the last column
-          // in the following grid is the same
-          value.solution.push('#');
-          hiddenColumns[index].push(
-            isCell
-              ? {
-                  // @ts-ignore
-                  cell: currentCell.cell + runningTotal,
-                  value: currentCell.value,
-                }
-              : '#',
-          );
-        } else {
-          if (isCell) {
-            value.solution.push({
-              // @ts-ignore
-              cell: currentCell.cell + runningTotal,
-              value: currentCell.value,
-            });
-          } else {
-            value.solution.push(currentCell);
-          }
-        }
-        if (isCell) {
-          // @ts-ignore
-          highest = currentCell.cell > highest ? currentCell.cell : highest;
-        }
-      }
-      runningTotal = runningTotal + highest;
-      return value;
+      across,
+      down,
     },
-    {
-      solution: [],
-      clues: {
-        across: [],
-        down: [],
-      },
-    },
-  );
-
-  let index = 0;
-  const width = puzzleData[0].dimensions.width;
-  const totalPerSide = puzzleData[0].dimensions.height * width;
-
-  // Make the first element the last to match the solution
-  const firstColumn = hiddenColumns.shift();
-  if (firstColumn != null) {
-    hiddenColumns.push(firstColumn);
-  }
-
-  for (let j = width; j <= data.solution.length; j += width) {
-    const side = Math.ceil(j / totalPerSide) - 1;
-    data.solution[j - 1] = hiddenColumns[side][index % width];
-    index++;
-  }
-
-  return data;
+  };
 };
 
 /**
@@ -239,7 +370,9 @@ export const getProgressFromSolution = (
     return 3; // Solved
   }
 
-  const puzzleSize = puzzle.record.solution.filter((v) => v !== '#').length;
+  const puzzleSize = puzzle.record.solution.filter(
+    ({ value }) => value !== '#',
+  ).length;
   const completedSize =
     Object.values(characterPositions).filter((v) => v > -1).length / 2;
   const percentage = completedSize / puzzleSize;
