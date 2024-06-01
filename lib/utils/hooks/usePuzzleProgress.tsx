@@ -1,7 +1,7 @@
 'use client';
 
 import { PuzzleType } from 'app/page';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { SolutionCell } from 'types/types';
 import { PuzzleProps } from 'components/pages/PuzzlePage';
 import {
@@ -131,6 +131,18 @@ export const usePuzzleProgress = (
             token,
           },
           connect: token != null,
+          maxBackoffTime: 30000,
+        },
+      );
+      ypartyProvider.on(
+        'connection-error',
+        (_e: any, provider: YPartyKitProvider) => {
+          if (provider.wsUnsuccessfulReconnects > 5) {
+            // We need to do this so we refresh the token
+            // This could lead to a memory leak, so check that in the future
+            provider.destroy();
+            initialize();
+          }
         },
       );
       ypartyProvider.once('synced', () => {
