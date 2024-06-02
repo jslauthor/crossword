@@ -24,6 +24,10 @@ export default function RootLayout({
       <html lang="en">
         <head>
           <link rel="stylesheet" href="https://use.typekit.net/nhh2njv.css" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="white" />
+          <meta name="apple-mobile-web-app-title" content="Crosscube" />
+          <link rel="apple-touch-icon" href="ccapp.png" />
         </head>
         <body className="dark">
           <Providers>{children}</Providers>
@@ -51,6 +55,7 @@ export const metadata: Metadata = {
         url: 'https://crosscube.app/og.png',
         width: 800,
         height: 600,
+        alt: 'Crosscube: A crossword puzzle in three dimensions',
       },
       {
         url: 'https://crosscube.app/og-alt.png',
