@@ -569,9 +569,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       } else {
         // Move to the next side!
         const nextSide = constrain(0, puzzle.data.length - 1, selectedSide + 1);
-        const range = wordSequencesBySide[nextSide][direction].find(
-          (i) => i != null,
-        );
+        const range = wordSequencesBySide[nextSide][direction].find((i) => {
+          if (i == null) return false;
+          return !isVerticalOrientation || solution[i[0]].x !== 0;
+        });
         if (range != null) {
           setSelected(range[0]);
           turnRight();
@@ -616,9 +617,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       } else {
         // Move to the previous side!
         const nextSide = constrain(0, puzzle.data.length - 1, selectedSide - 1);
-        const range = wordSequencesBySide[nextSide][direction].findLast(
-          (i) => i != null,
-        );
+        const range = wordSequencesBySide[nextSide][direction].findLast((i) => {
+          if (i == null) return false;
+          return !isVerticalOrientation || solution[i[0]].x !== 0;
+        });
         if (range != null) {
           setSelected(range[startFromBeginning ? 0 : range.length - 1]);
           turnLeft();
