@@ -35,8 +35,21 @@ export const applyScaleAnimation = ({
   const rotation: Quaternion = new Quaternion();
   const scale: Vector3 = new Vector3();
   matrix.decompose(position, rotation, scale);
+
+  // Validate the quaternion before applying it
+  if (
+    isNaN(rotation.x) ||
+    isNaN(rotation.y) ||
+    isNaN(rotation.z) ||
+    isNaN(rotation.w)
+  ) {
+    // Cannot apply a NaN quaternion -- likely from an
+    // object with a scale of 0 (the blank squares)
+    return;
+  }
+
   tempObject.position.copy(position);
-  tempObject.rotation.copy(new Euler().setFromQuaternion(rotation));
+  tempObject.quaternion.copy(rotation); // Directly copy the quaternion
   tempObject.scale.set(value, value, value);
   tempObject.updateMatrix();
   mesh.setMatrixAt(index, tempObject.matrix);
