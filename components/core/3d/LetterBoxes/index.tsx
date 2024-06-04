@@ -69,6 +69,8 @@ const fragmentShader = `
   uniform float errorWidth;
   uniform vec4 errorColor;
   uniform vec4 correctColor;
+  uniform vec4 fontColor;
+  uniform vec4 fontDraftColor;
   
   varying vec2 vUv;
   varying vec2 vCellValidation;
@@ -78,18 +80,8 @@ const fragmentShader = `
   varying vec3 vCellColor;
   flat varying ivec2 vCubeSideDisplay;
 
-  vec4 desaturateAndDarken(vec4 color, float desaturationFactor, float darkenFactor) {
-    // Calculate the luminance of the original color
-    float luminance = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-    vec3 gray = vec3(luminance); // Create a grayscale color from the luminance
-
-    // Mix the original color with the grayscale color based on the desaturation factor
-    vec3 desaturated = mix(color.rgb, gray, desaturationFactor);
-
-    // Darken the desaturated color by multiplying it with the darken factor
-    vec3 darkened = desaturated * darkenFactor;
-
-    return vec4(darkened, color.a); // Return the modified color with the original alpha
+  vec4 applyColorChange(vec4 color, vec4 newColor) {
+    return vec4(newColor.rgb, color.a); // Change white to the target color
   }
 
   void main(void)
@@ -108,6 +100,9 @@ const fragmentShader = `
         vec2 coord = position + size * fract(vUv);
         vec4 Ca = texture2D(characterTexture, coord);
 
+        // Apply color change to the texture color
+        Ca = applyColorChange(Ca, fontColor);
+
         if (vCellValidation.x == 2.0) {
           // Draw the mark for an correct letter
           if (vUv.y > (1.0 - vUv.x + 0.75)) {
@@ -115,8 +110,8 @@ const fragmentShader = `
           } 
         } else {
           if (vCellDraftMode.x > 0.0) {
-            // Draw a light grey color for a draft mode letter
-            Ca = desaturateAndDarken(Ca, 0.5, 0.1);
+            // Draw font draft color
+            Ca = applyColorChange(Ca, fontDraftColor);
           }
           // 1.0 means we have an incorrect letter
           if (vCellValidation.x > 0.0 && vCellValidation.x < 2.0) {
@@ -147,6 +142,10 @@ const fragmentShader = `
         vec2 size = vec2(1.0 / 31.0, 1.0 / 31.0);
         vec2 coord = position + size * fract(vUv);
         vec4 Cb = texture2D(numberTexture, coord);
+
+        // Apply color change to the cell number texture
+        Cb = applyColorChange(Cb, fontColor);
+
         c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a);  // blending equation
       }
     } else {
@@ -224,6 +223,8 @@ const cubeUniformConfig = {
       1.0,
     ),
   },
+  fontColor: { value: new Vector4(1, 1, 1, 1) },
+  fontDraftColor: { value: new Vector4(0.1, 0.1, 0.1, 1) },
 };
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
