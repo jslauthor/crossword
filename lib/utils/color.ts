@@ -1,6 +1,8 @@
 import memoizeOne from 'memoize-one';
 import tinycolor from 'tinycolor2';
 
+export const DEFAULT_FONT_COLOR = 0xffffff;
+export const DEFAULT_FONT_DRAFT_COLOR = 0x222222;
 export const DEFAULT_COLOR = 0x708d91;
 export const DEFAULT_SELECTED_COLOR = 0xd31996;
 export const DEFAULT_SELECTED_ADJACENT_COLOR = 0x1cad60;

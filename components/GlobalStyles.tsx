@@ -189,13 +189,20 @@ export default createGlobalStyle`
     --grey900: #20231F;
 
     --yellow500: #F2C94C;
+
+    --red400: #ce1af3;
     --red500: #EB5757;
 
+    --mint-green400: #1cad60;
+
     --max-app-width: 500px;
+
+    --light-grey-blue300: #708d91;
+    --magenta500: #d31996;
   }
 
   // Theme variables
-  .dark {
+  [data-theme='dark'] {
     --primary-text: var(--white);
     --primary-bg: var(--black);
     --primary-app-width: var(--max-app-width);
