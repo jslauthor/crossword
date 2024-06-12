@@ -235,7 +235,9 @@ const saveElementToDisk = async (
     ],
   });
 
-  const pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
+  const pngBuffer = await sharp(Buffer.from(svg))
+    .png({ quality: 5 })
+    .toBuffer();
   fs.writeFileSync(publicDir + filename, pngBuffer);
 };
 
