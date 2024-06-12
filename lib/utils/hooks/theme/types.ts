@@ -4,6 +4,8 @@ interface ValueObject {
   [themeName: string]: string;
 }
 
+type ColorType = number;
+
 export interface UseThemeProps {
   /** List of all available theme names */
   themes: string[];
@@ -17,6 +19,14 @@ export interface UseThemeProps {
   resolvedTheme?: string | undefined;
   /** If enableSystem is true, returns the System theme preference ("dark" or "light"), regardless what the active theme is */
   systemTheme?: 'dark' | 'light' | undefined;
+  // Puzzle colors
+  colors: {
+    font: ColorType;
+    fontDraft: ColorType;
+    default: ColorType;
+    selected: ColorType;
+    selectedAdjacent: ColorType;
+  };
 }
 
 export type Attribute = `data-${string}` | 'class';

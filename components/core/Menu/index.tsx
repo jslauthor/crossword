@@ -16,6 +16,7 @@ import TurnArrow from 'components/svg/TurnArrow';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClose } from '@fortawesome/free-solid-svg-icons';
 import ExampleCube from 'components/svg/ExampleCube';
+import { useTheme } from 'lib/utils/hooks/theme';
 
 const Container = styled.div`
   position: relative;
@@ -222,6 +223,8 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   onAutocheckChanged,
   onDraftModeChanged,
 }) => {
+  const { theme, setTheme } = useTheme();
+
   const { isSignedIn, user } = useUser();
   const headerRef = useRef<HTMLDivElement>(null);
   const { height = 0 } = useResizeObserver({
@@ -242,6 +245,11 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
     setIsMenuOpen(false);
   }, []);
   useOnClickOutside(menuRef, handleClickOutside);
+
+  const handleThemePressed = useCallback(() => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
+    setIsMenuOpen(false);
+  }, [setTheme, theme]);
 
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
@@ -304,6 +312,13 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                     onValueChange={handleAutoNextTogglePressed}
                   >
                     Jump to next word
+                  </Switch>
+                  <Switch
+                    color="default"
+                    isSelected={theme === 'dark'}
+                    onValueChange={handleThemePressed}
+                  >
+                    Mode
                   </Switch>
                   <HRule />
                   <Link color="foreground" href="/">

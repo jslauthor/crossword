@@ -4,6 +4,10 @@ import satori, { init } from 'satori';
 import Yoga from 'yoga-wasm-web';
 import sharp from 'sharp';
 
+const TEXTURE_MAP_SIZE = 4096;
+const NUMBER_OF_NUMBERS_PER_LINE = 6;
+const NUMBER_OF_CELLS_PER_LINE = 31;
+
 const characterItems: string[] = [];
 for (let x = 0; x < 10; x++) {
   characterItems.push(x.toString(10));
@@ -17,7 +21,10 @@ for (let x = 0; x <= 1000; x++) {
   numberItems.push(x.toString(10));
 }
 
-export const generateTextureRecord = (items = characterItems, size = 6) => {
+export const generateTextureRecord = (
+  items = characterItems,
+  size = NUMBER_OF_NUMBERS_PER_LINE,
+) => {
   // It's a 6x6 grid that contains A-Z and 0-9 (36 total items)
   let position = 0;
   const grid: Record<string, [number, number]> = {};
@@ -36,18 +43,18 @@ const TEXTURE_RECORD_ITEMS = Object.keys(TEXTURE_RECORD).map((item: string) => (
   <div
     style={{
       display: 'flex',
-      width: '341.33px',
-      height: '341.33px',
+      width: `${TEXTURE_MAP_SIZE / NUMBER_OF_NUMBERS_PER_LINE}px`,
+      height: `${TEXTURE_MAP_SIZE / NUMBER_OF_NUMBERS_PER_LINE}px`,
       aspectRatio: '1 / 1',
       justifyContent: 'center',
       alignItems: 'center',
       fontFamily: 'Franklin Gothic',
-      fontSize: '225px',
+      fontSize: '500px',
       color: 'white',
     }}
     key={item}
   >
-    <div style={{ marginTop: '100px' }}>{item}</div>
+    <div style={{ marginTop: '175px' }}>{item}</div>
   </div>
 ));
 
@@ -59,7 +66,7 @@ export const TextureAtlas: React.FC = () => (
       position: 'absolute',
       top: 0,
       left: 0,
-      width: '2048px', // 2k texture map
+      width: `${TEXTURE_MAP_SIZE}px`, // 2k texture map
     }}
   >
     <div
@@ -115,41 +122,48 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
   </div>
 );
 
-export const NUMBER_RECORD = generateTextureRecord(numberItems, 31);
-const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) => (
-  <div
-    key={item}
-    style={{
-      display: 'flex',
-      padding: '2px',
-      width: '66.06px',
-      height: '66.06px',
-    }}
-  >
+export const NUMBER_RECORD = generateTextureRecord(
+  numberItems,
+  NUMBER_OF_CELLS_PER_LINE,
+);
+const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) =>
+  item == null ? null : (
     <div
+      key={item}
       style={{
-        position: 'relative',
         display: 'flex',
-        width: '100%',
-        height: '100%',
-        aspectRatio: '1 / 1',
-        fontFamily: 'Franklin Gothic',
-        fontSize: '14px',
-        color: 'white',
+        padding: '2px',
+        width: `${TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE}px`, // TEXTURE MAP SIZE (4096) / number of items per line (31)
+        height: `${TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE}px`,
       }}
     >
       <div
         style={{
-          position: 'absolute',
-          top: 5,
-          left: 5,
+          position: 'relative',
+          display: 'flex',
+          width: '100%',
+          height: '100%',
+          aspectRatio: '1 / 1',
+          fontFamily: 'Franklin Gothic',
+          fontSize: '22px',
+          fontWeight: 500,
+          lineHeight: '1px',
+          color: 'white',
         }}
       >
-        {item}
+        <div
+          style={{
+            position: 'absolute',
+            top: 18,
+            left: 13,
+          }}
+        >
+          {item}
+        </div>
       </div>
     </div>
-  </div>
-));
+  ),
+);
 
 export const NumberAtlas: React.FC = () => (
   <div
@@ -161,7 +175,7 @@ export const NumberAtlas: React.FC = () => (
       left: 0,
       bottom: 0,
       right: 0,
-      width: '2048px', // 2k texture map
+      width: `${TEXTURE_MAP_SIZE}px`, // 2k texture map
     }}
   >
     <div
@@ -182,10 +196,13 @@ const publicDir = path.join(process.cwd(), 'public');
 const saveElementToDisk = async (
   element: JSX.Element,
   filename: string,
-  size: number = 2048,
+  size: number = TEXTURE_MAP_SIZE,
 ) => {
   const font = fs.readFileSync(
     path.join(process.cwd(), 'public', 'franklin_gothic_regular.ttf'),
+  );
+  const fontMedium = fs.readFileSync(
+    path.join(process.cwd(), 'public', 'franklin_gothic_medium.otf'),
   );
   const wasm = fs.readFileSync(
     path.join(
@@ -207,6 +224,12 @@ const saveElementToDisk = async (
         name: 'Franklin Gothic',
         data: font as ArrayBuffer | Buffer,
         weight: 400,
+        style: 'normal',
+      },
+      {
+        name: 'Franklin Gothic',
+        data: fontMedium as ArrayBuffer | Buffer,
+        weight: 500,
         style: 'normal',
       },
     ],

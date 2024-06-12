@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { ThreeEvent, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
@@ -16,7 +16,12 @@ import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { PuzzleType } from 'app/page';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
-import { borderColor, correctColor, errorColor } from 'lib/utils/color';
+import {
+  borderColor,
+  correctColor,
+  errorColor,
+  hexToVector,
+} from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';
 
 export enum CubeSidesEnum {
@@ -95,6 +100,7 @@ const fragmentShader = `
       // Draw the letter
       // A coord of -1, -1 means do not paint
       if (vCharacterPosition.x >= 0.0 && vCharacterPosition.y >= 0.0) {
+        // 6.0 is the number of items per line on the texture map
         vec2 position = vec2(vCharacterPosition.x/6.0, -(vCharacterPosition.y/6.0 + 1.0/6.0));
         vec2 size = vec2(1.0 / 6.0, 1.0 / 6.0);
         vec2 coord = position + size * fract(vUv);
@@ -138,6 +144,7 @@ const fragmentShader = `
       // Draw the cell number
       // A coord of -1, -1 means do not paint
       if (vCellNumberPosition.x >= 0.0 && vCellNumberPosition.y >= 0.0) {
+        // 31.0 is the number of items per line on the texture map
         vec2 position = vec2(vCellNumberPosition.x/31.0, -(vCellNumberPosition.y/31.0 + 1.0/31.0));
         vec2 size = vec2(1.0 / 31.0, 1.0 / 31.0);
         vec2 coord = position + size * fract(vUv);
@@ -168,6 +175,8 @@ export type LetterBoxesProps = {
   cellNumberTextureAtlasLookup: Record<string, [number, number]>;
   currentKey?: string | undefined;
   selectedSide: number;
+  fontColor: number;
+  fontDraftColor: number;
   defaultColor: number;
   selectedColor: number;
   adjacentColor: number;
@@ -193,7 +202,9 @@ export type LetterBoxesProps = {
   turnRight: () => void;
   setOnNextWord?: (callback: (selected: number) => void) => void;
   setOnPrevWord?: (callback: (selected: number) => void) => void;
+  theme?: string;
 };
+
 const tempObject = new Object3D();
 const tempColor = new Color();
 const cubeUniformConfig = {
@@ -223,8 +234,6 @@ const cubeUniformConfig = {
       1.0,
     ),
   },
-  fontColor: { value: new Vector4(1, 1, 1, 1) },
-  fontDraftColor: { value: new Vector4(0.1, 0.1, 0.1, 1) },
 };
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
@@ -241,6 +250,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   characterPositionArray,
   onLetterInput,
   onSelectClue,
+  fontColor,
+  fontDraftColor,
   defaultColor,
   selectedColor,
   adjacentColor,
@@ -252,6 +263,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   turnRight,
   setOnPrevWord,
   setOnNextWord,
+  theme,
 }) => {
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   // const [isVerticalOrientation, setVerticalOrientation] =
@@ -265,13 +277,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   >();
   const [hovered, setHovered] = useState<InstancedMesh['id']>();
   const [prevHover, setPrevHovered] = useState<InstancedMesh['id']>();
+  const [prevTheme, setPrevTheme] = useState<string>();
   const [prevSelected, setPrevSelected] = useState<InstancedMesh['id']>();
   const [prevSelectedSide, setPrevSelectedSide] =
     useState<LetterBoxesProps['selectedSide']>();
-  const [lastCurrentKey, setLastCurrentKey] = useState<string | undefined>();
-  const [cellMapping, setCellMapping] = useState<Record<number, number>>({});
-  // const [initialRotations, setInitialRotations] = useState<Euler[]>([]);
-  // const [isInitialized, setIsInitialized] = useState<boolean>(false);
+
+  const convertedFontColor = useMemo(() => hexToVector(fontColor), [fontColor]);
+  const convertedFontDraftColor = useMemo(
+    () => hexToVector(fontDraftColor),
+    [fontDraftColor],
+  );
 
   useEffect(() => {
     if (setInstancedMesh) {
@@ -461,8 +476,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         rotations[j] = new Euler().copy(tempObject.rotation);
       }
 
-      setCellMapping(tempCellMapping);
-
       ref.geometry.attributes.characterPosition.needsUpdate = true;
       ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
       ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
@@ -493,14 +506,20 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         prevHover !== hovered ||
         prevSelected !== selected ||
         prevOrientation !== isVerticalOrientation ||
-        prevSelectedSide !== selectedSide
+        prevSelectedSide !== selectedSide ||
+        prevTheme !== theme
       ) {
+        if (prevTheme !== theme) {
+          showRippleAnimation();
+        }
+
         // Store the prev so we can avoid this calculation next time
         setPrevHovered(hovered);
         setPrevSelected(selected);
         setPrevSelectedSide(selectedSide);
         setPrevOrientation(isVerticalOrientation);
         setSelectedWordCell(undefined);
+        setPrevTheme(theme);
 
         (id === hovered || id === selected
           ? tempColor.set(selectedColor)
@@ -662,8 +681,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         const y =
           coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[1];
 
-        setLastCurrentKey(key);
-
         if (updateCharacterPosition(selectedIndex, key, x, y) === true) {
           showScaleAnimation(selectedIndex);
         }
@@ -768,91 +785,145 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     () =>
       new CustomShaderMaterial({
         baseMaterial: MeshPhysicalMaterial,
+        toneMapped: false,
+        fog: false,
         vertexShader,
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.one },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          fontColor: { value: convertedFontColor },
+          fontDraftColor: { value: convertedFontDraftColor },
           ...cubeUniformConfig,
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas],
+    [
+      characterTextureAtlas,
+      convertedFontColor,
+      convertedFontDraftColor,
+      numberTextureAtlas,
+    ],
   );
   const side1 = useMemo(
     () =>
       new CustomShaderMaterial({
         baseMaterial: MeshPhysicalMaterial,
+        toneMapped: false,
+        fog: false,
         vertexShader,
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.two },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          fontColor: { value: convertedFontColor },
+          fontDraftColor: { value: convertedFontDraftColor },
           ...cubeUniformConfig,
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas],
+    [
+      characterTextureAtlas,
+      convertedFontColor,
+      convertedFontDraftColor,
+      numberTextureAtlas,
+    ],
   );
   const side2 = useMemo(
     () =>
       new CustomShaderMaterial({
         baseMaterial: MeshPhysicalMaterial,
+        toneMapped: false,
+        fog: false,
         vertexShader,
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.three },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          fontColor: { value: convertedFontColor },
+          fontDraftColor: { value: convertedFontDraftColor },
           ...cubeUniformConfig,
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas],
+    [
+      characterTextureAtlas,
+      convertedFontColor,
+      convertedFontDraftColor,
+      numberTextureAtlas,
+    ],
   );
   const side3 = useMemo(
     () =>
       new CustomShaderMaterial({
         baseMaterial: MeshPhysicalMaterial,
+        toneMapped: false,
+        fog: false,
         vertexShader,
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.four },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          fontColor: { value: convertedFontColor },
+          fontDraftColor: { value: convertedFontDraftColor },
           ...cubeUniformConfig,
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas],
+    [
+      characterTextureAtlas,
+      convertedFontColor,
+      convertedFontDraftColor,
+      numberTextureAtlas,
+    ],
   );
   const side4 = useMemo(
     () =>
       new CustomShaderMaterial({
         baseMaterial: MeshPhysicalMaterial,
+        toneMapped: false,
+        fog: false,
         vertexShader,
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.five },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          fontColor: { value: convertedFontColor },
+          fontDraftColor: { value: convertedFontDraftColor },
           ...cubeUniformConfig,
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas],
+    [
+      characterTextureAtlas,
+      convertedFontColor,
+      convertedFontDraftColor,
+      numberTextureAtlas,
+    ],
   );
   const side5 = useMemo(
     () =>
       new CustomShaderMaterial({
         baseMaterial: MeshPhysicalMaterial,
+        toneMapped: false,
+        fog: false,
         vertexShader,
         fragmentShader,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.six },
           numberTexture: { value: numberTextureAtlas },
           characterTexture: { value: characterTextureAtlas },
+          fontColor: { value: convertedFontColor },
+          fontDraftColor: { value: convertedFontDraftColor },
           ...cubeUniformConfig,
         },
       }),
-    [characterTextureAtlas, numberTextureAtlas],
+    [
+      characterTextureAtlas,
+      convertedFontColor,
+      convertedFontDraftColor,
+      numberTextureAtlas,
+    ],
   );
 
   const onPointerMove = useCallback(

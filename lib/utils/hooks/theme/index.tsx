@@ -11,12 +11,35 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import type { Attribute, ThemeProviderProps, UseThemeProps } from './types';
+import {
+  DEFAULT_COLOR,
+  DEFAULT_COLOR_CSS_VARIABLE,
+  DEFAULT_FONT_COLOR,
+  DEFAULT_FONT_COLOR_CSS_VARIABLE,
+  DEFAULT_FONT_DRAFT_COLOR,
+  DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE,
+  DEFAULT_SELECTED_ADJACENT_COLOR,
+  DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE,
+  DEFAULT_SELECTED_COLOR,
+  DEFAULT_SELECTED_COLOR_CSS_VARIABLE,
+  getStyleForCSSVariable,
+} from 'lib/utils/color';
 
 const colorSchemes = ['light', 'dark'];
 const MEDIA = '(prefers-color-scheme: dark)';
 const isServer = typeof window === 'undefined';
 const ThemeContext = createContext<UseThemeProps | undefined>(undefined);
-const defaultContext: UseThemeProps = { setTheme: (_) => {}, themes: [] };
+const defaultContext: UseThemeProps = {
+  setTheme: (_) => {},
+  themes: [],
+  colors: {
+    font: DEFAULT_FONT_COLOR,
+    fontDraft: DEFAULT_FONT_DRAFT_COLOR,
+    default: DEFAULT_COLOR,
+    selected: DEFAULT_SELECTED_COLOR,
+    selectedAdjacent: DEFAULT_SELECTED_ADJACENT_COLOR,
+  },
+};
 
 export const Script = (
   attribute: string,
@@ -98,6 +121,10 @@ const Theme = ({
   children,
   nonce,
 }: ThemeProviderProps) => {
+  const [colors, setColors] = useState<UseThemeProps['colors']>(
+    defaultContext.colors,
+  );
+
   const [theme, setThemeState] = useState(() =>
     getTheme(storageKey, defaultTheme),
   );
@@ -146,6 +173,19 @@ const Theme = ({
         // @ts-ignore
         d.style.colorScheme = colorScheme;
       }
+
+      // Set colors
+      setColors({
+        font: getStyleForCSSVariable(DEFAULT_FONT_COLOR_CSS_VARIABLE),
+        fontDraft: getStyleForCSSVariable(
+          DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE,
+        ),
+        default: getStyleForCSSVariable(DEFAULT_COLOR_CSS_VARIABLE),
+        selected: getStyleForCSSVariable(DEFAULT_SELECTED_COLOR_CSS_VARIABLE),
+        selectedAdjacent: getStyleForCSSVariable(
+          DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE,
+        ),
+      });
 
       enable?.();
     },
@@ -221,6 +261,7 @@ const Theme = ({
   const providerValue = useMemo<UseThemeProps>(
     () => ({
       theme,
+      colors,
       setTheme,
       forcedTheme,
       resolvedTheme: theme === 'system' ? resolvedTheme : theme,
@@ -230,7 +271,7 @@ const Theme = ({
         | 'dark'
         | undefined,
     }),
-    [theme, setTheme, forcedTheme, resolvedTheme, enableSystem, themes],
+    [theme, colors, setTheme, forcedTheme, resolvedTheme, enableSystem, themes],
   );
 
   return (

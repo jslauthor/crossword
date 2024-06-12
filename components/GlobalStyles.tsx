@@ -1,5 +1,12 @@
 'use client';
 
+import {
+  DEFAULT_COLOR_CSS_VARIABLE,
+  DEFAULT_FONT_COLOR_CSS_VARIABLE,
+  DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE,
+  DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE,
+  DEFAULT_SELECTED_COLOR_CSS_VARIABLE,
+} from 'lib/utils/color';
 import { createGlobalStyle } from 'styled-components';
 
 export default createGlobalStyle`
@@ -177,6 +184,9 @@ export default createGlobalStyle`
   :root {
     --white: #F4F8F0;
     --black: #131414;
+    
+    --true-white: #FFFFFF;
+    --true-black: #000000;
 
     --cool-grey700: #829b9e;
 
@@ -189,6 +199,7 @@ export default createGlobalStyle`
     --grey900: #20231F;
 
     --yellow500: #F2C94C;
+    --yellow400: #F8DB4A;
 
     --red400: #ce1af3;
     --red500: #EB5757;
@@ -198,6 +209,9 @@ export default createGlobalStyle`
     --max-app-width: 500px;
 
     --light-grey-blue300: #708d91;
+    --light-grey-blue400: #B1D7FB;
+    --light-grey-blue700: #43617d;
+
     --magenta500: #d31996;
   }
 
@@ -218,8 +232,44 @@ export default createGlobalStyle`
     --medium-difficulty-text: var(--yellow500);
     --hard-difficulty-text: var(--red500);
 
+    // Puzzle specific theme vars
+    ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--white);
+    ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--black);
+    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--light-grey-blue300);
+    ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--magenta500);
+    ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--mint-green400);
+
     background-color: var(--primary-bg);
     color: var(--primary-text);
+    scrollbar-color: hsl(from var(--primary-bg) h s 30) hsl(from var(--primary-bg) h s 10);
+  }
+
+  [data-theme='light'] {
+    --primary-text: var(--black);
+    --primary-bg: var(--white);
+    --primary-app-width: var(--max-app-width);
+    --secondary-bg: var(--grey);
+    --terciary-bg: var(--grey900);
+
+    --primary-cell-bg: var(--grey550);
+
+    --ai-bg: var(--grey600);
+    --menu-border: var(--grey100);
+    --preview-hover-bg: var(--grey800);
+
+    --medium-difficulty-text: var(--yellow500);
+    --hard-difficulty-text: var(--red500);
+
+    // Puzzle specific theme vars
+    ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--true-black);
+    ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--light-grey-blue700);    
+    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--true-white);
+    ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--yellow400);
+    ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--light-grey-blue400);
+
+    background-color: var(--primary-bg);
+    color: var(--primary-text);
+    scrollbar-color: hsl(from var(--primary-bg) h s 30) hsl(from var(--primary-bg) h s 10);
   }
 
   .dim {

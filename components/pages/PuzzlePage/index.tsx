@@ -45,11 +45,6 @@ import { RotatingBoxProps } from 'components/core/3d/Box';
 import { PuzzleType } from 'app/page';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
-import {
-  DEFAULT_COLOR,
-  DEFAULT_SELECTED_ADJACENT_COLOR,
-  DEFAULT_SELECTED_COLOR,
-} from 'lib/utils/color';
 import { createInitialState } from 'lib/utils/puzzle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -58,6 +53,7 @@ import {
   faChevronLeft,
   faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
+import { useTheme } from 'lib/utils/hooks/theme';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -225,6 +221,8 @@ export default function Puzzle({
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
+  const { theme } = useTheme();
+
   const [groupRef, setGroup] = useState<Object3D | null>();
   const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
@@ -391,9 +389,15 @@ export default function Puzzle({
   );
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
 
-  const defaultColor = useMemo(() => DEFAULT_COLOR, []);
-  const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
-  const adjacentColor = useMemo(() => DEFAULT_SELECTED_ADJACENT_COLOR, []);
+  const {
+    colors: {
+      font: fontColor,
+      fontDraft: fontDraftColor,
+      default: defaultColor,
+      selected: selectedColor,
+      selectedAdjacent: adjacentColor,
+    },
+  } = useTheme();
 
   // Intro spinny animation
   const [rotation, setRotation] = useState(0);
@@ -546,7 +550,7 @@ export default function Puzzle({
             makeDefault
             position={[0, 0, 0]}
           />
-          <ambientLight intensity={5} />
+          <ambientLight intensity={3} />
           <pointLight position={[0, 0, -2]} intensity={2} />
           <SwipeControls
             global
@@ -567,6 +571,8 @@ export default function Puzzle({
                 updateCharacterPosition={updateCharacterPosition}
                 onLetterInput={onLetterInput}
                 onSelectClue={handleClueChange}
+                fontColor={fontColor}
+                fontDraftColor={fontDraftColor}
                 defaultColor={defaultColor}
                 selectedColor={selectedColor}
                 adjacentColor={adjacentColor}
@@ -584,6 +590,7 @@ export default function Puzzle({
                 turnRight={turnRight}
                 setOnNextWord={setOnNextWord}
                 setOnPrevWord={setOnPrevWord}
+                theme={theme}
               />
             </group>
           </SwipeControls>
@@ -598,14 +605,6 @@ export default function Puzzle({
               <Particles count={2500} mouse={mouse} />
             </>
           )}
-          <EffectComposer>
-            <ChromaticAberration
-              radialModulation={false}
-              modulationOffset={0}
-              blendFunction={BlendFunction.NORMAL} // blend mode
-              offset={abberationOffset} // color offset
-            />
-          </EffectComposer>
         </Suspense>
       </Canvas>
       <InfoBar>

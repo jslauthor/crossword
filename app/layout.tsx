@@ -29,7 +29,7 @@ export default function RootLayout({
           <meta name="apple-mobile-web-app-title" content="Crosscube" />
           <link rel="apple-touch-icon" href="ccapp.png" />
         </head>
-        <body className="dark">
+        <body>
           <Providers>{children}</Providers>
           <Analytics />
           <SpeedInsights />
