@@ -245,8 +245,8 @@ export default createGlobalStyle`
   }
 
   [data-theme='light'] {
-    --primary-text: var(--black);
-    --primary-bg: var(--white);
+    --primary-text: var(--white);
+    --primary-bg: var(--black);
     --primary-app-width: var(--max-app-width);
     --secondary-bg: var(--grey);
     --terciary-bg: var(--grey900);

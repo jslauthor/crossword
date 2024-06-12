@@ -551,7 +551,7 @@ export default function Puzzle({
             position={[0, 0, 0]}
           />
           <ambientLight intensity={3} />
-          <pointLight position={[0, 0, -2]} intensity={2} />
+          {/* <pointLight position={[0, 0, -2]} intensity={2} /> */}
           <SwipeControls
             global
             dragEnabled={false}

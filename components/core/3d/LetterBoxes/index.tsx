@@ -1,5 +1,5 @@
 import React, { use, useCallback, useEffect, useMemo, useState } from 'react';
-import { ThreeEvent, useFrame, useLoader } from '@react-three/fiber';
+import { ThreeEvent, extend, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
   RepeatWrapping,
@@ -23,6 +23,8 @@ import {
   hexToVector,
 } from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';
+import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
+extend({ RoundedBoxGeometry });
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -89,6 +91,13 @@ const fragmentShader = `
     return vec4(newColor.rgb, color.a); // Change white to the target color
   }
 
+  float borderSDF(vec2 uv, vec2 size, float radius, float width) {
+    uv = uv * 2.0 - 1.0;
+    vec2 d = abs(uv) - size + vec2(radius);
+    float dist = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
+    return smoothstep(width, width + fwidth(dist), dist);
+  }
+
   void main(void)
   {
     vec3 c = vCellColor.rgb;
@@ -133,13 +142,9 @@ const fragmentShader = `
         c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
       }
 
-      // Draw the border
-      float maxSize = 1.0 - borderWidth;
-      float minSize = borderWidth;
-      if (!(vUv.x < maxSize && vUv.x > minSize &&
-        vUv.y < maxSize && vUv.y > minSize)) {
-          c = borderColor.rgb * borderColor.a + c.rgb * (1.0 - borderColor.a);  // blending equation
-      }
+      // Draw the border with rounded corners
+      float sdf = borderSDF(vUv, vec2(0.95 - borderWidth), 0.06, borderWidth);
+      c = mix(c, borderColor.rgb, sdf * borderColor.a);
 
       // Draw the cell number
       // A coord of -1, -1 means do not paint
@@ -216,7 +221,7 @@ const cubeUniformConfig = {
       1.0,
     ),
   },
-  borderWidth: { value: 0.01 },
+  borderWidth: { value: 0.05 },
   errorColor: {
     value: new Vector4(
       errorColor.r / 255,
@@ -974,7 +979,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       onPointerDown={onPointerDown}
       material={[side0, side1, side2, side3, side4, side5]}
     >
-      <boxGeometry args={[1, 1, 1]}>
+      <roundedBoxGeometry args={[1.05, 1.05, 1.05, 2, 0.08]}>
         <instancedBufferAttribute
           attach="attributes-characterPosition"
           count={characterPositionArray.length}
@@ -1011,7 +1016,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           itemSize={2}
           array={cellDraftModeArray}
         />
-      </boxGeometry>
+      </roundedBoxGeometry>
     </instancedMesh>
   );
 };
