@@ -9,6 +9,9 @@ export const DEFAULT_COLOR_CSS_VARIABLE = '--default-color';
 export const DEFAULT_SELECTED_COLOR_CSS_VARIABLE = '--selected-color';
 export const DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE =
   '--selected-adjacent-color';
+export const DEFAULT_CORRECT_COLOR_CSS_VARIABLE = '--correct-color';
+export const DEFAULT_ERROR_COLOR_CSS_VARIABLE = '--error-color';
+export const DEFAULT_BORDER_COLOR_CSS_VARIABLE = '--border-color';
 
 export const DEFAULT_FONT_COLOR = 0xffffff;
 export const DEFAULT_FONT_DRAFT_COLOR = 0x222222;

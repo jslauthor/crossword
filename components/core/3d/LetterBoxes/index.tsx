@@ -6,7 +6,6 @@ import {
   Vector3,
   Object3D,
   Color,
-  Vector4,
   Euler,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
@@ -16,12 +15,7 @@ import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { PuzzleType } from 'app/page';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
-import {
-  borderColor,
-  correctColor,
-  errorColor,
-  hexToVector,
-} from 'lib/utils/color';
+import { hexToVector } from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
 extend({ RoundedBoxGeometry });
@@ -185,6 +179,9 @@ export type LetterBoxesProps = {
   defaultColor: number;
   selectedColor: number;
   adjacentColor: number;
+  errorColor: number;
+  borderColor: number;
+  correctColor: number;
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
   characterPositionArray: Float32Array;
@@ -212,33 +209,9 @@ export type LetterBoxesProps = {
 
 const tempObject = new Object3D();
 const tempColor = new Color();
-const cubeUniformConfig = {
-  borderColor: {
-    value: new Vector4(
-      borderColor.r / 255,
-      borderColor.g / 255,
-      borderColor.b / 255,
-      1.0,
-    ),
-  },
+const uniformDefaults = {
   borderWidth: { value: 0.05 },
-  errorColor: {
-    value: new Vector4(
-      errorColor.r / 255,
-      errorColor.g / 255,
-      errorColor.b / 255,
-      1.0,
-    ),
-  },
-  errorWidth: { value: 0.025 },
-  correctColor: {
-    value: new Vector4(
-      correctColor.r / 255,
-      correctColor.g / 255,
-      correctColor.b / 255,
-      1.0,
-    ),
-  },
+  errorWidth: { value: 0.035 },
 };
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
@@ -260,6 +233,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   defaultColor,
   selectedColor,
   adjacentColor,
+  errorColor,
+  borderColor,
+  correctColor,
   onInitialize,
   cellValidationArray,
   cellDraftModeArray,
@@ -270,6 +246,18 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   setOnNextWord,
   theme,
 }) => {
+  const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
+  useEffect(() => {
+    characterTextureAtlas.wrapS = RepeatWrapping;
+    characterTextureAtlas.wrapT = RepeatWrapping;
+  }, [characterTextureAtlas]);
+
+  const numberTextureAtlas = useLoader(TextureLoader, '/number_atlas.png');
+  useEffect(() => {
+    numberTextureAtlas.wrapS = RepeatWrapping;
+    numberTextureAtlas.wrapT = RepeatWrapping;
+  }, [numberTextureAtlas]);
+
   const [ref, setRef] = useState<InstancedMesh | null>(null);
   // const [isVerticalOrientation, setVerticalOrientation] =
   //   useState<boolean>(false);
@@ -291,6 +279,51 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const convertedFontDraftColor = useMemo(
     () => hexToVector(fontDraftColor),
     [fontDraftColor],
+  );
+  const convertedErrorColor = useMemo(
+    () => hexToVector(errorColor),
+    [errorColor],
+  );
+  const convertedBorderColor = useMemo(
+    () => hexToVector(borderColor),
+    [borderColor],
+  );
+  const convertedCorrectColor = useMemo(
+    () => hexToVector(correctColor),
+    [correctColor],
+  );
+
+  const uniforms = useMemo(
+    () => ({
+      numberTexture: { value: numberTextureAtlas },
+      characterTexture: { value: characterTextureAtlas },
+      fontColor: { value: convertedFontColor },
+      fontDraftColor: { value: convertedFontDraftColor },
+      errorColor: { value: convertedErrorColor },
+      borderColor: { value: convertedBorderColor },
+      correctColor: { value: convertedCorrectColor },
+      ...uniformDefaults,
+    }),
+    [
+      characterTextureAtlas,
+      convertedBorderColor,
+      convertedCorrectColor,
+      convertedErrorColor,
+      convertedFontColor,
+      convertedFontDraftColor,
+      numberTextureAtlas,
+    ],
+  );
+
+  const materialConfig = useMemo(
+    () => ({
+      baseMaterial: MeshPhysicalMaterial,
+      toneMapped: false,
+      fog: false,
+      vertexShader,
+      fragmentShader,
+    }),
+    [],
   );
 
   useEffect(() => {
@@ -361,11 +394,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           .flatMap(() => tempColor.set(defaultColor).toArray()),
       ),
     [defaultColor, size],
-  );
-
-  const getInterval = useCallback(
-    () => (isVerticalOrientation ? height : 1),
-    [height, isVerticalOrientation],
   );
 
   const isVisibleSide = useCallback(
@@ -773,162 +801,72 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey]);
 
-  const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
-  useEffect(() => {
-    characterTextureAtlas.wrapS = RepeatWrapping;
-    characterTextureAtlas.wrapT = RepeatWrapping;
-  }, [characterTextureAtlas]);
-
-  const numberTextureAtlas = useLoader(TextureLoader, '/number_atlas.png');
-  useEffect(() => {
-    numberTextureAtlas.wrapS = RepeatWrapping;
-    numberTextureAtlas.wrapT = RepeatWrapping;
-  }, [numberTextureAtlas]);
-
   // Material setup
   const side0 = useMemo(
     () =>
       new CustomShaderMaterial({
-        baseMaterial: MeshPhysicalMaterial,
-        toneMapped: false,
-        fog: false,
-        vertexShader,
-        fragmentShader,
+        ...materialConfig,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.one },
-          numberTexture: { value: numberTextureAtlas },
-          characterTexture: { value: characterTextureAtlas },
-          fontColor: { value: convertedFontColor },
-          fontDraftColor: { value: convertedFontDraftColor },
-          ...cubeUniformConfig,
+          ...uniforms,
         },
       }),
-    [
-      characterTextureAtlas,
-      convertedFontColor,
-      convertedFontDraftColor,
-      numberTextureAtlas,
-    ],
+    [materialConfig, uniforms],
   );
   const side1 = useMemo(
     () =>
       new CustomShaderMaterial({
-        baseMaterial: MeshPhysicalMaterial,
-        toneMapped: false,
-        fog: false,
-        vertexShader,
-        fragmentShader,
+        ...materialConfig,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.two },
-          numberTexture: { value: numberTextureAtlas },
-          characterTexture: { value: characterTextureAtlas },
-          fontColor: { value: convertedFontColor },
-          fontDraftColor: { value: convertedFontDraftColor },
-          ...cubeUniformConfig,
+          ...uniforms,
         },
       }),
-    [
-      characterTextureAtlas,
-      convertedFontColor,
-      convertedFontDraftColor,
-      numberTextureAtlas,
-    ],
+    [materialConfig, uniforms],
   );
   const side2 = useMemo(
     () =>
       new CustomShaderMaterial({
-        baseMaterial: MeshPhysicalMaterial,
-        toneMapped: false,
-        fog: false,
-        vertexShader,
-        fragmentShader,
+        ...materialConfig,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.three },
-          numberTexture: { value: numberTextureAtlas },
-          characterTexture: { value: characterTextureAtlas },
-          fontColor: { value: convertedFontColor },
-          fontDraftColor: { value: convertedFontDraftColor },
-          ...cubeUniformConfig,
+          ...uniforms,
         },
       }),
-    [
-      characterTextureAtlas,
-      convertedFontColor,
-      convertedFontDraftColor,
-      numberTextureAtlas,
-    ],
+    [materialConfig, uniforms],
   );
   const side3 = useMemo(
     () =>
       new CustomShaderMaterial({
-        baseMaterial: MeshPhysicalMaterial,
-        toneMapped: false,
-        fog: false,
-        vertexShader,
-        fragmentShader,
+        ...materialConfig,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.four },
-          numberTexture: { value: numberTextureAtlas },
-          characterTexture: { value: characterTextureAtlas },
-          fontColor: { value: convertedFontColor },
-          fontDraftColor: { value: convertedFontDraftColor },
-          ...cubeUniformConfig,
+          ...uniforms,
         },
       }),
-    [
-      characterTextureAtlas,
-      convertedFontColor,
-      convertedFontDraftColor,
-      numberTextureAtlas,
-    ],
+    [materialConfig, uniforms],
   );
   const side4 = useMemo(
     () =>
       new CustomShaderMaterial({
-        baseMaterial: MeshPhysicalMaterial,
-        toneMapped: false,
-        fog: false,
-        vertexShader,
-        fragmentShader,
+        ...materialConfig,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.five },
-          numberTexture: { value: numberTextureAtlas },
-          characterTexture: { value: characterTextureAtlas },
-          fontColor: { value: convertedFontColor },
-          fontDraftColor: { value: convertedFontDraftColor },
-          ...cubeUniformConfig,
+          ...uniforms,
         },
       }),
-    [
-      characterTextureAtlas,
-      convertedFontColor,
-      convertedFontDraftColor,
-      numberTextureAtlas,
-    ],
+    [materialConfig, uniforms],
   );
   const side5 = useMemo(
     () =>
       new CustomShaderMaterial({
-        baseMaterial: MeshPhysicalMaterial,
-        toneMapped: false,
-        fog: false,
-        vertexShader,
-        fragmentShader,
+        ...materialConfig,
         uniforms: {
           sideIndex: { value: CubeSidesEnum.six },
-          numberTexture: { value: numberTextureAtlas },
-          characterTexture: { value: characterTextureAtlas },
-          fontColor: { value: convertedFontColor },
-          fontDraftColor: { value: convertedFontDraftColor },
-          ...cubeUniformConfig,
+          ...uniforms,
         },
       }),
-    [
-      characterTextureAtlas,
-      convertedFontColor,
-      convertedFontDraftColor,
-      numberTextureAtlas,
-    ],
+    [materialConfig, uniforms],
   );
 
   const onPointerMove = useCallback(

@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  memo,
   useCallback,
   useState,
   useEffect,
@@ -12,8 +11,14 @@ import {
 import type { ReactNode } from 'react';
 import type { Attribute, ThemeProviderProps, UseThemeProps } from './types';
 import {
+  DEFAULT_BORDER_COLOR,
+  DEFAULT_BORDER_COLOR_CSS_VARIABLE,
   DEFAULT_COLOR,
   DEFAULT_COLOR_CSS_VARIABLE,
+  DEFAULT_CORRECT_COLOR,
+  DEFAULT_CORRECT_COLOR_CSS_VARIABLE,
+  DEFAULT_ERROR_COLOR,
+  DEFAULT_ERROR_COLOR_CSS_VARIABLE,
   DEFAULT_FONT_COLOR,
   DEFAULT_FONT_COLOR_CSS_VARIABLE,
   DEFAULT_FONT_DRAFT_COLOR,
@@ -38,6 +43,9 @@ const defaultContext: UseThemeProps = {
     default: DEFAULT_COLOR,
     selected: DEFAULT_SELECTED_COLOR,
     selectedAdjacent: DEFAULT_SELECTED_ADJACENT_COLOR,
+    correct: DEFAULT_CORRECT_COLOR,
+    error: DEFAULT_ERROR_COLOR,
+    border: DEFAULT_BORDER_COLOR,
   },
 };
 
@@ -174,7 +182,7 @@ const Theme = ({
         d.style.colorScheme = colorScheme;
       }
 
-      // Set colors
+      // Set colors for threejs from CSS variables
       setColors({
         font: getStyleForCSSVariable(DEFAULT_FONT_COLOR_CSS_VARIABLE),
         fontDraft: getStyleForCSSVariable(
@@ -185,6 +193,9 @@ const Theme = ({
         selectedAdjacent: getStyleForCSSVariable(
           DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE,
         ),
+        correct: getStyleForCSSVariable(DEFAULT_CORRECT_COLOR_CSS_VARIABLE),
+        error: getStyleForCSSVariable(DEFAULT_ERROR_COLOR_CSS_VARIABLE),
+        border: getStyleForCSSVariable(DEFAULT_BORDER_COLOR_CSS_VARIABLE),
       });
 
       enable?.();

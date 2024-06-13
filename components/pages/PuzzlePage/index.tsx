@@ -3,11 +3,6 @@
 import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
-import {
-  EffectComposer,
-  ChromaticAberration,
-} from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
 import { Stats, PerspectiveCamera, Html } from '@react-three/drei';
 import LetterBoxes, { SelectClueFn } from 'components/core/3d/LetterBoxes';
 import {
@@ -396,6 +391,9 @@ export default function Puzzle({
       default: defaultColor,
       selected: selectedColor,
       selectedAdjacent: adjacentColor,
+      correct: correctColor,
+      error: errorColor,
+      border: borderColor,
     },
   } = useTheme();
 
@@ -576,6 +574,9 @@ export default function Puzzle({
                 defaultColor={defaultColor}
                 selectedColor={selectedColor}
                 adjacentColor={adjacentColor}
+                errorColor={errorColor}
+                correctColor={correctColor}
+                borderColor={borderColor}
                 onInitialize={onInitialize}
                 isVerticalOrientation={isVerticalOrientation}
                 onVerticalOrientationChange={setVerticalOrientation}

@@ -1,7 +1,10 @@
 'use client';
 
 import {
+  DEFAULT_BORDER_COLOR_CSS_VARIABLE,
   DEFAULT_COLOR_CSS_VARIABLE,
+  DEFAULT_CORRECT_COLOR_CSS_VARIABLE,
+  DEFAULT_ERROR_COLOR_CSS_VARIABLE,
   DEFAULT_FONT_COLOR_CSS_VARIABLE,
   DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE,
   DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE,
@@ -203,6 +206,11 @@ export default createGlobalStyle`
 
     --red400: #ce1af3;
     --red500: #EB5757;
+    --red600: #db3232;
+
+    --blue500: #0081fa;
+
+    --teal500: #00dcff;
 
     --mint-green400: #1cad60;
 
@@ -238,6 +246,9 @@ export default createGlobalStyle`
     ${DEFAULT_COLOR_CSS_VARIABLE}: var(--light-grey-blue300);
     ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--magenta500);
     ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--mint-green400);
+    ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--teal500);
+    ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red400);
+    ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
 
     background-color: var(--primary-bg);
     color: var(--primary-text);
@@ -266,6 +277,9 @@ export default createGlobalStyle`
     ${DEFAULT_COLOR_CSS_VARIABLE}: var(--true-white);
     ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--yellow400);
     ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--light-grey-blue400);
+    ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--blue500);
+    ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red600);
+    ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
 
     background-color: var(--primary-bg);
     color: var(--primary-text);

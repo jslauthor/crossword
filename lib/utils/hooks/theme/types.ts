@@ -26,6 +26,9 @@ export interface UseThemeProps {
     default: ColorType;
     selected: ColorType;
     selectedAdjacent: ColorType;
+    error: ColorType;
+    correct: ColorType;
+    border: ColorType;
   };
 }
 
