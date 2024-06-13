@@ -65,7 +65,7 @@ const fragmentShader = `
   uniform sampler2D numberTexture;
   uniform sampler2D characterTexture;
   uniform uint sideIndex;
-  uniform float borderWidth;
+  uniform float borderRadius;
   uniform vec4 borderColor;
   uniform float errorWidth;
   uniform vec4 errorColor;
@@ -137,7 +137,7 @@ const fragmentShader = `
       }
 
       // Draw the border with rounded corners
-      float sdf = borderSDF(vUv, vec2(0.95 - borderWidth), 0.06, borderWidth);
+      float sdf = borderSDF(vUv, vec2(0.94 - borderRadius), 0.06, borderRadius);
       c = mix(c, borderColor.rgb, sdf * borderColor.a);
 
       // Draw the cell number
@@ -210,7 +210,7 @@ export type LetterBoxesProps = {
 const tempObject = new Object3D();
 const tempColor = new Color();
 const uniformDefaults = {
-  borderWidth: { value: 0.05 },
+  borderRadius: { value: 0.05 },
   errorWidth: { value: 0.035 },
 };
 
