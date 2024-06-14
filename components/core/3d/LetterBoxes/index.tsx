@@ -146,13 +146,24 @@ const fragmentShader = `
         // 31.0 is the number of items per line on the texture map
         vec2 position = vec2(vCellNumberPosition.x/31.0, -(vCellNumberPosition.y/31.0 + 1.0/31.0));
         vec2 size = vec2(1.0 / 31.0, 1.0 / 31.0);
-        vec2 coord = position + size * fract(vUv);
-        vec4 Cb = texture2D(numberTexture, coord);
 
-        // Apply color change to the cell number texture
-        Cb = applyColorChange(Cb, fontColor);
+        // Adjust UV coordinates to map the texture to the upper-left corner
+        vec2 scaledUV = vUv * 2.0 - vec2(0.2, 0.85); // Scale UV and shift to upper-left
+        vec2 offset = vec2(0.0, 0.0); // No additional offset needed for upper-left
+        vec2 coord = position + size * (scaledUV + offset);
 
-        c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a);  // blending equation
+        // // Clamp the coordinates to prevent wrapping
+        // coord = clamp(coord, position, position + size);
+
+        // Check if the UV coordinates are within the [0, 1] bounds
+        if (scaledUV.x >= 0.0 && scaledUV.x <= 1.0 && scaledUV.y >= 0.0 && scaledUV.y <= 1.0) {
+            vec4 Cb = texture2D(numberTexture, coord);
+
+            // Apply color change to the cell number texture
+            Cb = applyColorChange(Cb, fontColor);
+
+            c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a); // blending equation
+        }
       }
     } else {
       c = vec3(0.07, 0.07, 0.07) * c.rgb;  // blending equation

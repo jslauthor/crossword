@@ -4,7 +4,7 @@ import satori, { init } from 'satori';
 import Yoga from 'yoga-wasm-web';
 import sharp from 'sharp';
 
-const TEXTURE_MAP_SIZE = 4096;
+const TEXTURE_MAP_SIZE = 2048;
 const NUMBER_OF_NUMBERS_PER_LINE = 6;
 const NUMBER_OF_CELLS_PER_LINE = 31;
 
@@ -49,12 +49,12 @@ const TEXTURE_RECORD_ITEMS = Object.keys(TEXTURE_RECORD).map((item: string) => (
       justifyContent: 'center',
       alignItems: 'center',
       fontFamily: 'Franklin Gothic',
-      fontSize: '500px',
+      fontSize: '250px',
       color: 'white',
     }}
     key={item}
   >
-    <div style={{ marginTop: '175px' }}>{item}</div>
+    <div style={{ marginTop: '100px' }}>{item}</div>
   </div>
 ));
 
@@ -132,35 +132,16 @@ const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) =>
       key={item}
       style={{
         display: 'flex',
-        padding: '2px',
-        width: `${TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE}px`, // TEXTURE MAP SIZE (4096) / number of items per line (31)
+        width: `${TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE}px`,
         height: `${TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE}px`,
+        fontFamily: 'Franklin Gothic',
+        fontSize: '30px',
+        fontWeight: 500,
+        lineHeight: '1px',
+        color: 'white',
       }}
     >
-      <div
-        style={{
-          position: 'relative',
-          display: 'flex',
-          width: '100%',
-          height: '100%',
-          aspectRatio: '1 / 1',
-          fontFamily: 'Franklin Gothic',
-          fontSize: '22px',
-          fontWeight: 500,
-          lineHeight: '1px',
-          color: 'white',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: 18,
-            left: 13,
-          }}
-        >
-          {item}
-        </div>
-      </div>
+      {item}
     </div>
   ),
 );
@@ -171,10 +152,8 @@ export const NumberAtlas: React.FC = () => (
       display: 'flex',
       aspectRatio: '1 / 1',
       position: 'absolute',
-      top: 0,
+      top: 8,
       left: 0,
-      bottom: 0,
-      right: 0,
       width: `${TEXTURE_MAP_SIZE}px`, // 2k texture map
     }}
   >
