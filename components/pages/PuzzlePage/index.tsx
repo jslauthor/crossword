@@ -219,7 +219,6 @@ export default function Puzzle({
   const { theme } = useTheme();
 
   const [groupRef, setGroup] = useState<Object3D | null>();
-  const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
   const [sideOffset, setSideOffset] = useState(0);
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
@@ -397,9 +396,18 @@ export default function Puzzle({
     },
   } = useTheme();
 
+  // Track rotation so we can update the shader in letterboxes
+  const [isSpinning, setIsSpinning] = useState(false);
+  const updateRotationProgress = useCallback((progress: number) => {
+    // So, this is kind of weird
+    // We only want isSpinning to be true in a more limited range because we want to hide the
+    // side faces when the animation is mostly complete (not fully) to prevent flickering
+    setIsSpinning(progress <= 0.98);
+  }, []);
+
   // Intro spinny animation
   const [rotation, setRotation] = useState(0);
-  const { rotation: rotationAnimation } = useSpring({
+  const { rotation: introAnimation } = useSpring({
     rotation: 1,
     config: {
       duration: 500,
@@ -407,14 +415,14 @@ export default function Puzzle({
     },
   });
   useEffect(() => {
-    rotationAnimation.start({
+    introAnimation.start({
       from: 0,
       to: 1,
       onChange: (props, spring) => {
         setRotation(spring.get());
       },
     });
-  }, [rotationAnimation]);
+  }, [introAnimation]);
 
   const mouse = useRef([0, 0]);
   const toHex = useCallback(
@@ -429,7 +437,6 @@ export default function Puzzle({
     ],
     [adjacentColor, defaultColor, selectedColor, toHex],
   );
-  const abberationOffset = useMemo(() => new Vector2(0.0005, 0.0005), []);
 
   const onClueClick = useCallback(() => {
     setVerticalOrientation(!isVerticalOrientation);
@@ -556,10 +563,10 @@ export default function Puzzle({
             onSwipeLeft={turnLeft}
             onSwipeRight={turnRight}
             rotation={[0, rotation * (Math.PI + Math.PI * (sideOffset / 2)), 0]}
+            onRotationYProgress={updateRotationProgress}
           >
             <group ref={setGroup} position={groupRefPosition}>
               <LetterBoxes
-                setInstancedMesh={setInstancedMesh}
                 puzzle={puzzle}
                 characterTextureAtlasLookup={characterTextureAtlasLookup}
                 cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
@@ -592,6 +599,7 @@ export default function Puzzle({
                 setOnNextWord={setOnNextWord}
                 setOnPrevWord={setOnPrevWord}
                 theme={theme}
+                isSpinning={isSpinning}
               />
             </group>
           </SwipeControls>

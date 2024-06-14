@@ -205,6 +205,7 @@ export type LetterBoxesProps = {
   setOnNextWord?: (callback: (selected: number) => void) => void;
   setOnPrevWord?: (callback: (selected: number) => void) => void;
   theme?: string;
+  isSpinning?: boolean;
 };
 
 const tempObject = new Object3D();
@@ -212,6 +213,18 @@ const tempColor = new Color();
 const uniformDefaults = {
   borderRadius: { value: 0.05 },
   errorWidth: { value: 0.035 },
+};
+
+// THIS MUTATES THE ARRAY -- BE FOREWARNED
+const updateCubeSideDisplay = (
+  cubeSideDisplayArray: Int32Array,
+  id: number,
+  x: number,
+) => {
+  // Sides three and four are the top and bottom (respectively)
+  // 1, 2, 5, 6 are the camera facing sides
+  cubeSideDisplayArray[id * 2] =
+    CubeSidesEnum.six | (x === 0 ? CubeSidesEnum.one : 0);
 };
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
@@ -245,6 +258,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   setOnPrevWord,
   setOnNextWord,
   theme,
+  isSpinning,
 }) => {
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
   useEffect(() => {
@@ -396,17 +410,27 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [defaultColor, size],
   );
 
+  const cellBelongsOnSide = useCallback(
+    (id?: number, side?: number) => {
+      if (id == null || side == null) {
+        return false;
+      }
+      return Object.keys(record.solution[id].mapping ?? []).includes(
+        side.toString(),
+      );
+    },
+    [record.solution],
+  );
+
   const isVisibleSide = useCallback(
     (selected?: number) => {
       if (selected == null) {
         return false;
       }
 
-      return Object.keys(record.solution[selected].mapping ?? []).includes(
-        selectedSide.toString(),
-      );
+      return cellBelongsOnSide(selected, selectedSide);
     },
-    [record.solution, selectedSide],
+    [cellBelongsOnSide, selectedSide],
   );
 
   // const showIntroAnimation = useIntroAnimation(
@@ -445,11 +469,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         tempObject.scale.set(1, 1, 1);
         const side = Math.floor((j % rowLength) / (width - 1));
 
-        // Sides three and four are the top and bottom (respectively)
-        // 1, 2, 5, 6 are the camera facing sides
-
-        cubeSideDisplayArray[j * 2] =
-          CubeSidesEnum.six | (x === 0 ? CubeSidesEnum.one : 0);
+        updateCubeSideDisplay(cubeSideDisplayArray, j, x);
 
         if (isCellWithNumber(cell)) {
           // select first cell
@@ -535,6 +555,20 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   useFrame((state) => {
     if (ref == null) return;
     for (let id = 0; id < record.solution.length; id++) {
+      // We want to show the next sides as the cube is animating
+      const { x } = record.solution[id];
+      if (
+        isSpinning === true ||
+        cellBelongsOnSide(id, selectedSide) ||
+        cellBelongsOnSide(id, prevSelectedSide)
+      ) {
+        updateCubeSideDisplay(cubeSideDisplayArray, id, x);
+      } else {
+        // Zero means don't show a cube face
+        cubeSideDisplayArray[id * 2] = 0;
+      }
+      ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
+
       if (
         prevHover !== hovered ||
         prevSelected !== selected ||
