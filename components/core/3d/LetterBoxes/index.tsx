@@ -162,7 +162,9 @@ const fragmentShader = `
             // Apply color change to the cell number texture
             Cb = applyColorChange(Cb, fontColor);
 
-            c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a); // blending equation
+            if (Cb.a > 0.2) { // gets rid of a nasty white border
+              c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a); // blending equation
+            }
         }
       }
     } else {
