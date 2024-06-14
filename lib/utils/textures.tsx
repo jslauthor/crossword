@@ -6,7 +6,7 @@ import sharp from 'sharp';
 
 const TEXTURE_MAP_SIZE = 2048;
 const NUMBER_OF_NUMBERS_PER_LINE = 6;
-const NUMBER_OF_CELLS_PER_LINE = 31;
+const NUMBER_OF_CELLS_PER_LINE = 17; // 22 is the number of cells in the 3D grid - 1
 
 const characterItems: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -17,7 +17,7 @@ for (let x = 0; x <= 25; x++) {
 }
 
 const numberItems: string[] = [];
-for (let x = 0; x <= 1000; x++) {
+for (let x = 0; x <= NUMBER_OF_CELLS_PER_LINE ** 2; x++) {
   numberItems.push(x.toString(10));
 }
 
@@ -132,13 +132,15 @@ const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) =>
       key={item}
       style={{
         display: 'flex',
-        width: `${TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE}px`,
-        height: `${TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE}px`,
+        width: `${Math.floor(TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE)}px`,
+        height: `${Math.floor(TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE)}px`,
         fontFamily: 'Franklin Gothic',
-        fontSize: '30px',
+        fontSize: '55px',
         fontWeight: 500,
         lineHeight: '1px',
         color: 'white',
+        paddingTop: 15,
+        paddingLeft: 5,
       }}
     >
       {item}
@@ -150,23 +152,15 @@ export const NumberAtlas: React.FC = () => (
   <div
     style={{
       display: 'flex',
+      flexWrap: 'wrap',
       aspectRatio: '1 / 1',
-      position: 'absolute',
-      top: 8,
-      left: 0,
       width: `${TEXTURE_MAP_SIZE}px`, // 2k texture map
+      height: `${TEXTURE_MAP_SIZE}px`, // 2k texture map
+      padding: 0,
+      margin: 0,
     }}
   >
-    <div
-      style={{
-        display: 'flex',
-        width: '100%',
-        height: '100%',
-        flexWrap: 'wrap',
-      }}
-    >
-      {NUMBER_RECORD_ITEMS}
-    </div>
+    {NUMBER_RECORD_ITEMS}
   </div>
 );
 

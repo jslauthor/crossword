@@ -143,9 +143,9 @@ const fragmentShader = `
       // Draw the cell number
       // A coord of -1, -1 means do not paint
       if (vCellNumberPosition.x >= 0.0 && vCellNumberPosition.y >= 0.0) {
-        // 31.0 is the number of items per line on the texture map
-        vec2 position = vec2(vCellNumberPosition.x/31.0, -(vCellNumberPosition.y/31.0 + 1.0/31.0));
-        vec2 size = vec2(1.0 / 31.0, 1.0 / 31.0);
+        // 17.0 is the number of items per line on the texture map
+        vec2 position = vec2(vCellNumberPosition.x/17.0, -(vCellNumberPosition.y/17.0 + 1.0/17.0));
+        vec2 size = vec2(1.0 / 17.0, 1.0 / 17.0);
 
         // Adjust UV coordinates to map the texture to the upper-left corner
         vec2 scaledUV = vUv * 2.0 - vec2(0.2, 0.85); // Scale UV and shift to upper-left
@@ -155,7 +155,7 @@ const fragmentShader = `
         // // Clamp the coordinates to prevent wrapping
         // coord = clamp(coord, position, position + size);
 
-        // Check if the UV coordinates are within the [0, 1] bounds
+        // Check if the UV coordinates are within the [0, 1] bounds to avoid texture wrapping
         if (scaledUV.x >= 0.0 && scaledUV.x <= 1.0 && scaledUV.y >= 0.0 && scaledUV.y <= 1.0) {
             vec4 Cb = texture2D(numberTexture, coord);
 
