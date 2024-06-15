@@ -240,6 +240,8 @@ export default createGlobalStyle`
     --medium-difficulty-text: var(--yellow500);
     --hard-difficulty-text: var(--red500);
 
+    --clue-text-color: var(--white);
+
     // Puzzle specific theme vars
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--white);
     ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--black);
@@ -270,6 +272,8 @@ export default createGlobalStyle`
 
     --medium-difficulty-text: var(--yellow500);
     --hard-difficulty-text: var(--red500);
+
+    --clue-text-color: var(--true-black);
 
     // Puzzle specific theme vars
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--true-black);

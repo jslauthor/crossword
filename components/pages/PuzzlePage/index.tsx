@@ -139,6 +139,7 @@ const ClueContainer = styled.div<{ $backgroundColor: string }>`
   width: 100%;
   min-height: 54px;
   overflow: hidden;
+  color: var(--clue-text-color);
   ${({ $backgroundColor }) =>
     `background-color: #${tinycolor($backgroundColor).darken(5).toHex()}`}
 `;
