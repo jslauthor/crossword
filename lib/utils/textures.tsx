@@ -49,12 +49,14 @@ const TEXTURE_RECORD_ITEMS = Object.keys(TEXTURE_RECORD).map((item: string) => (
       justifyContent: 'center',
       alignItems: 'center',
       fontFamily: 'Franklin Gothic',
-      fontSize: '250px',
+      lineHeight: '1px',
+      fontWeight: 500,
+      fontSize: '210px',
       color: 'white',
     }}
     key={item}
   >
-    <div style={{ marginTop: '100px' }}>{item}</div>
+    <div style={{ marginTop: '-30px' }}>{item}</div>
   </div>
 ));
 
