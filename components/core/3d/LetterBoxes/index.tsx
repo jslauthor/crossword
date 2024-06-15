@@ -7,6 +7,8 @@ import {
   Object3D,
   Color,
   Euler,
+  Texture,
+  Vector4,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
@@ -228,6 +230,44 @@ const uniformDefaults = {
   errorWidth: { value: 0.035 },
 };
 
+type Uniforms = Record<string, { value: Texture | Vector4 | number }>;
+const materialConfig = {
+  baseMaterial: MeshPhysicalMaterial,
+  toneMapped: false,
+  fog: false,
+  vertexShader,
+  fragmentShader,
+};
+const materialMap: Map<CubeSidesEnum, CustomShaderMaterial> = new Map();
+const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
+  let material = materialMap.get(sideEnum);
+  if (material != null) {
+    // Update uniforms
+    Object.keys(uniforms).forEach((key) => {
+      if (material != null) {
+        if (material.uniforms[key]) {
+          material.uniforms[key].value = uniforms[key].value;
+        } else {
+          material.uniforms[key] = uniforms[key];
+        }
+      }
+    });
+    material.uniforms.sideIndex = { value: sideEnum };
+    material.needsUpdate = true;
+    return material;
+  } else {
+    material = new CustomShaderMaterial({
+      ...materialConfig,
+      uniforms: {
+        sideIndex: { value: sideEnum },
+        ...uniforms,
+      },
+    });
+    materialMap.set(sideEnum, material);
+    return material;
+  }
+};
+
 // THIS MUTATES THE ARRAY -- BE FOREWARNED
 const updateCubeSideDisplay = (
   cubeSideDisplayArray: Int32Array,
@@ -340,17 +380,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       convertedFontDraftColor,
       numberTextureAtlas,
     ],
-  );
-
-  const materialConfig = useMemo(
-    () => ({
-      baseMaterial: MeshPhysicalMaterial,
-      toneMapped: false,
-      fog: false,
-      vertexShader,
-      fragmentShader,
-    }),
-    [],
   );
 
   useEffect(() => {
@@ -850,70 +879,28 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   // Material setup
   const side0 = useMemo(
-    () =>
-      new CustomShaderMaterial({
-        ...materialConfig,
-        uniforms: {
-          sideIndex: { value: CubeSidesEnum.one },
-          ...uniforms,
-        },
-      }),
-    [materialConfig, uniforms],
+    () => createMaterial(uniforms, CubeSidesEnum.one),
+    [uniforms],
   );
   const side1 = useMemo(
-    () =>
-      new CustomShaderMaterial({
-        ...materialConfig,
-        uniforms: {
-          sideIndex: { value: CubeSidesEnum.two },
-          ...uniforms,
-        },
-      }),
-    [materialConfig, uniforms],
+    () => createMaterial(uniforms, CubeSidesEnum.two),
+    [uniforms],
   );
   const side2 = useMemo(
-    () =>
-      new CustomShaderMaterial({
-        ...materialConfig,
-        uniforms: {
-          sideIndex: { value: CubeSidesEnum.three },
-          ...uniforms,
-        },
-      }),
-    [materialConfig, uniforms],
+    () => createMaterial(uniforms, CubeSidesEnum.three),
+    [uniforms],
   );
   const side3 = useMemo(
-    () =>
-      new CustomShaderMaterial({
-        ...materialConfig,
-        uniforms: {
-          sideIndex: { value: CubeSidesEnum.four },
-          ...uniforms,
-        },
-      }),
-    [materialConfig, uniforms],
+    () => createMaterial(uniforms, CubeSidesEnum.four),
+    [uniforms],
   );
   const side4 = useMemo(
-    () =>
-      new CustomShaderMaterial({
-        ...materialConfig,
-        uniforms: {
-          sideIndex: { value: CubeSidesEnum.five },
-          ...uniforms,
-        },
-      }),
-    [materialConfig, uniforms],
+    () => createMaterial(uniforms, CubeSidesEnum.five),
+    [uniforms],
   );
   const side5 = useMemo(
-    () =>
-      new CustomShaderMaterial({
-        ...materialConfig,
-        uniforms: {
-          sideIndex: { value: CubeSidesEnum.six },
-          ...uniforms,
-        },
-      }),
-    [materialConfig, uniforms],
+    () => createMaterial(uniforms, CubeSidesEnum.six),
+    [uniforms],
   );
 
   const onPointerMove = useCallback(
