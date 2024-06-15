@@ -102,23 +102,25 @@ const SolvedTime = styled.h3`
   font-size: 2rem;
 `;
 
-const TurnButton = styled.div<{ $borderColor: string }>`
-  padding: 0.5rem;
+const TurnButton = styled.div<{ $side: 'left' | 'right'; $color: string }>`
+  padding: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.25rem;
-  border-style: solid;
-  border-width: 1px;
-  ${({ $borderColor }) =>
-    `border-color: #${tinycolor($borderColor).darken(5).toHex()};`}
+  ${({ $color }) => `border: 0.5px solid ${$color};`}
+  ${({ $side }) => {
+    if ($side === 'left') {
+      return 'border-right: none; border-radius: 0.25rem 0 0 0.25rem;';
+    } else {
+      return 'border-left: none; border-radius: 0 0.25rem 0.25rem 0;';
+    }
+  }}
 `;
 
 const InfoBar = styled.div`
   position: relative;
   display: grid;
   grid-template-columns: min-content 1fr min-content;
-  grid-column-gap: 0.5rem;
   max-width: var(--primary-app-width);
   width: 100%;
   height: min-content;
@@ -132,7 +134,6 @@ const ClueContainer = styled.div<{ $backgroundColor: string }>`
   grid-template-columns: 1fr 0.15fr;
   grid-column-gap: 0.5rem;
   align-items: center;
-  border-radius: 0.25rem;
   padding: 0 0.5rem;
   box-sizing: border-box;
   height: 100%;
@@ -152,7 +153,7 @@ const ClueLabel = styled.span<{ celebrate?: boolean }>`
     celebrate && 'text-align: center; font-size: 1.5rem; font-weight: 600;'}
 `;
 
-const ForwardNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
+const BackNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
   position: relative;
   display: flex;
   right: -0.5rem;
@@ -163,8 +164,6 @@ const ForwardNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
   justify-content: center;
   padding: 0 0.5rem;
   cursor: pointer;
-  ${({ $backgroundColor }) =>
-    `background-color: #${tinycolor($backgroundColor).darken(10).toHex()}`}
 `;
 
 const SelectedInfo = styled.span<{ $backgroundColor: string }>`
@@ -184,10 +183,10 @@ const SelectedInfo = styled.span<{ $backgroundColor: string }>`
 `;
 
 const VRule = styled.div`
-  width: 1px;
-  background: var(--primary-text);
-  opacity: 0.1;
-  height: 100%;
+  width: 2px;
+  background: var(--clue-text-color);
+  opacity: 0.2;
+  height: 80%;
 `;
 
 const IconContainer = styled.div`
@@ -394,6 +393,7 @@ export default function Puzzle({
       correct: correctColor,
       error: errorColor,
       border: borderColor,
+      turnArrow: turnArrowColor,
     },
   } = useTheme();
 
@@ -618,8 +618,12 @@ export default function Puzzle({
         </Suspense>
       </Canvas>
       <InfoBar>
-        <TurnButton onClick={turnLeft} $borderColor={toHex(defaultColor)}>
-          <TurnArrow width={20} height={20} color={toHex(defaultColor)} />
+        <TurnButton
+          onClick={turnLeft}
+          $side="left"
+          $color={toHex(adjacentColor)}
+        >
+          <TurnArrow width={20} height={20} color={toHex(turnArrowColor)} />
         </TurnButton>
         <ClueContainer
           $backgroundColor={toHex(adjacentColor)}
@@ -641,7 +645,7 @@ export default function Puzzle({
               dangerouslySetInnerHTML={{ __html: animatedClueText }}
             />{' '}
           </div>
-          <ForwardNextButtonsContainer $backgroundColor={toHex(adjacentColor)}>
+          <BackNextButtonsContainer $backgroundColor={toHex(adjacentColor)}>
             <IconContainer onClick={handlePrevWord(selected)}>
               <FontAwesomeIcon icon={faChevronLeft} width={20} />
             </IconContainer>
@@ -649,14 +653,18 @@ export default function Puzzle({
             <IconContainer onClick={handleNextWord(selected)}>
               <FontAwesomeIcon icon={faChevronRight} width={20} />
             </IconContainer>
-          </ForwardNextButtonsContainer>
+          </BackNextButtonsContainer>
         </ClueContainer>
-        <TurnButton onClick={turnRight} $borderColor={toHex(defaultColor)}>
+        <TurnButton
+          onClick={turnRight}
+          $side="right"
+          $color={toHex(adjacentColor)}
+        >
           <TurnArrow
             width={20}
             height={20}
             flipped
-            color={toHex(defaultColor)}
+            color={toHex(turnArrowColor)}
           />
         </TurnButton>
       </InfoBar>

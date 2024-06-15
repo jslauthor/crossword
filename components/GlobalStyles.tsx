@@ -9,6 +9,7 @@ import {
   DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE,
   DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE,
   DEFAULT_SELECTED_COLOR_CSS_VARIABLE,
+  DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE,
 } from 'lib/utils/color';
 import { createGlobalStyle } from 'styled-components';
 
@@ -212,15 +213,15 @@ export default createGlobalStyle`
 
     --teal500: #00dcff;
 
-    --mint-green400: #1cad60;
+    --mint-green400: #1ed473;
 
     --max-app-width: 500px;
 
-    --light-grey-blue300: #708d91;
+    --light-grey-blue300: #7faab0;
     --light-grey-blue400: #B1D7FB;
     --light-grey-blue700: #43617d;
 
-    --magenta500: #d31996;
+    --magenta500: #f70ca9;
   }
 
   .text-foreground, .text-default-foreground {
@@ -229,7 +230,6 @@ export default createGlobalStyle`
 
   // Theme variables
   [data-theme='dark'] {
-    color: var(--white);
     --primary-text: var(--white);
     --primary-bg: var(--black);
     --primary-app-width: var(--max-app-width);
@@ -256,6 +256,7 @@ export default createGlobalStyle`
     ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--teal500);
     ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red400);
     ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
+    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--clue-text-color);
 
     background-color: var(--primary-bg);
     color: var(--primary-text);
@@ -263,7 +264,6 @@ export default createGlobalStyle`
   }
 
   [data-theme='light'] {
-    color: var(--white);
     --primary-text: var(--white);
     --primary-bg: var(--black);
     --primary-app-width: var(--max-app-width);
@@ -290,6 +290,7 @@ export default createGlobalStyle`
     ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--blue500);
     ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red600);
     ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
+    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(${DEFAULT_COLOR_CSS_VARIABLE});
 
     background-color: var(--primary-bg);
     color: var(--primary-text);

@@ -29,6 +29,7 @@ export interface UseThemeProps {
     error: ColorType;
     correct: ColorType;
     border: ColorType;
+    turnArrow: ColorType;
   };
 }
 

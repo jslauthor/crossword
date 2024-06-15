@@ -27,6 +27,8 @@ import {
   DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE,
   DEFAULT_SELECTED_COLOR,
   DEFAULT_SELECTED_COLOR_CSS_VARIABLE,
+  DEFAULT_TURN_ARROW_COLOR,
+  DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE,
   getStyleForCSSVariable,
 } from 'lib/utils/color';
 
@@ -46,6 +48,7 @@ const defaultContext: UseThemeProps = {
     correct: DEFAULT_CORRECT_COLOR,
     error: DEFAULT_ERROR_COLOR,
     border: DEFAULT_BORDER_COLOR,
+    turnArrow: DEFAULT_TURN_ARROW_COLOR,
   },
 };
 
@@ -196,6 +199,9 @@ const Theme = ({
         correct: getStyleForCSSVariable(DEFAULT_CORRECT_COLOR_CSS_VARIABLE),
         error: getStyleForCSSVariable(DEFAULT_ERROR_COLOR_CSS_VARIABLE),
         border: getStyleForCSSVariable(DEFAULT_BORDER_COLOR_CSS_VARIABLE),
+        turnArrow: getStyleForCSSVariable(
+          DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE,
+        ),
       });
 
       enable?.();

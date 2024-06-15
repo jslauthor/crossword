@@ -12,6 +12,7 @@ export const DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE =
 export const DEFAULT_CORRECT_COLOR_CSS_VARIABLE = '--correct-color';
 export const DEFAULT_ERROR_COLOR_CSS_VARIABLE = '--error-color';
 export const DEFAULT_BORDER_COLOR_CSS_VARIABLE = '--border-color';
+export const DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE = '--turn-arrow-color';
 
 export const DEFAULT_FONT_COLOR = 0xffffff;
 export const DEFAULT_FONT_DRAFT_COLOR = 0x222222;
@@ -21,6 +22,7 @@ export const DEFAULT_SELECTED_ADJACENT_COLOR = 0x1cad60;
 export const DEFAULT_CORRECT_COLOR = 0x00dcff;
 export const DEFAULT_ERROR_COLOR = 0xce1af3;
 export const DEFAULT_BORDER_COLOR = 0x000000;
+export const DEFAULT_TURN_ARROW_COLOR = DEFAULT_FONT_COLOR;
 
 export const getColorHex = memoizeOne(
   (color: number) => `#${color.toString(16).padStart(6, '0')}`,
