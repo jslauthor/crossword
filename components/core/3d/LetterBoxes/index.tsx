@@ -150,7 +150,7 @@ const fragmentShader = `
         vec2 size = vec2(1.0 / 17.0, 1.0 / 17.0);
 
         // Adjust UV coordinates to map the texture to the upper-left corner
-        vec2 scaledUV = vUv * 2.0 - vec2(0.2, 0.85); // Scale UV and shift to upper-left
+        vec2 scaledUV = vUv * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
         vec2 offset = vec2(0.0, 0.0); // No additional offset needed for upper-left
         vec2 coord = position + size * (scaledUV + offset);
 
