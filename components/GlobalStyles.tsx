@@ -223,8 +223,13 @@ export default createGlobalStyle`
     --magenta500: #d31996;
   }
 
+  .text-foreground, .text-default-foreground {
+    color: inherit;
+  }
+
   // Theme variables
   [data-theme='dark'] {
+    color: var(--white);
     --primary-text: var(--white);
     --primary-bg: var(--black);
     --primary-app-width: var(--max-app-width);
@@ -258,6 +263,7 @@ export default createGlobalStyle`
   }
 
   [data-theme='light'] {
+    color: var(--white);
     --primary-text: var(--white);
     --primary-bg: var(--black);
     --primary-app-width: var(--max-app-width);
