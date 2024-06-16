@@ -157,7 +157,7 @@ const ClueLabel = styled.span<{ celebrate?: boolean }>`
 const ClueTextContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.15rem;
 `;
 
 const BackNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
