@@ -17,36 +17,21 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClose } from '@fortawesome/free-solid-svg-icons';
 import ExampleCube from 'components/svg/ExampleCube';
 import { useTheme } from 'lib/utils/hooks/theme';
+import IconX from 'components/svg/IconX';
 
-const Container = styled.div`
+const Main = styled.div`
   position: relative;
-  width: 100vw;
-  height: 100%;
-  overflow-y: scroll;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-`;
-
-const ChildrenContainer = styled.div`
-  position: relative;
-  width: 100%;
+  width: 100svw;
   height: 100svh;
-  display: flex;
-  flex-direction: column;
-  justify-items: stretch;
-  max-width: var(--primary-app-width);
 `;
 
 const HeaderContainer = styled.div`
-  position: sticky;
+  width: 100%;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  z-index: 9999;
+  z-index: 9998;
   background: linear-gradient(var(--primary-bg), #00000000);
   padding: 0.75rem;
 `;
@@ -55,20 +40,40 @@ const HeaderStyled = styled(Header)`
   width: 100%;
 `;
 
-const ClipContainer = styled.div<{ $headerHeight: number }>`
-  position: fixed;
-  width: var(--primary-app-width);
-  overflow: hidden;
-  margin-left: -0.5rem;
+const Container = styled.div`
+  position: relative;
+  width: 100vw;
+  height: 100%;
+  overflow-y: auto;
+  min-height: 100svh;
   display: flex;
-  justify-content: stretch;
-  ${({ $headerHeight }) => `
-    top: ${$headerHeight}px; 
-    height: calc(100svh - ${$headerHeight}px);
-  `}
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
 `;
 
-const MenuContainer = styled(motion.nav)`
+const ChildrenContainer = styled.div<{ $headerHeight: number }>`
+  position: relative;
+  width: 100svw;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-items: stretch;
+  max-width: var(--primary-app-width);
+  ${({ $headerHeight }) => `padding-top: ${$headerHeight}px;`}
+`;
+
+const ClipContainer = styled.div`
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: stretch;
+  z-index: 9999;
+`;
+
+const MenuContainer = styled(motion.nav)<{ $headerHeight: number }>`
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -77,9 +82,7 @@ const MenuContainer = styled(motion.nav)`
   max-width: 300px;
   width: 100%;
   height: 100%;
-  padding: 0.5rem 0.75rem;
-  padding-left: 1.15rem;
-  border: 1px solid var(--menu-border);
+  padding: 0.75rem;
   box-shadow: 10px 0px 10px 10px rgba(10, 10, 10, 0.25);
 `;
 
@@ -187,7 +190,7 @@ const CloseModalContainer = styled.div`
 
 const BlurLayer = styled.div`
   position: absolute;
-  inset: -5px; // do not clip the blur
+  inset: 0px;
   top: 0px;
   bottom: 0px;
   background: rgba(0, 0, 0, 0.1);
@@ -276,36 +279,41 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   }, [showHelpModal]);
 
   return (
-    <Container>
-      <ChildrenContainer>
-        <HeaderContainer ref={headerRef}>
-          <HeaderStyled
-            onMenuPressed={handleMenuPressed}
-            showCloseButton={isMenuOpen}
-            centerLabel={centerLabel}
-            rotatingBoxProps={rotatingBoxProps}
-            autocheckEnabled={autocheckEnabled}
-            onAutocheckChanged={onAutocheckChanged}
-            draftModeEnabled={draftModeEnabled}
-            onDraftModeChanged={onDraftModeChanged}
-          />
-        </HeaderContainer>
-        {children}
+    <Main>
+      <HeaderContainer ref={headerRef}>
+        <HeaderStyled
+          onMenuPressed={handleMenuPressed}
+          showCloseButton={isMenuOpen}
+          centerLabel={centerLabel}
+          rotatingBoxProps={rotatingBoxProps}
+          autocheckEnabled={autocheckEnabled}
+          onAutocheckChanged={onAutocheckChanged}
+          draftModeEnabled={draftModeEnabled}
+          onDraftModeChanged={onDraftModeChanged}
+        />
+      </HeaderContainer>
+      <Container>
+        <ChildrenContainer $headerHeight={height}>{children}</ChildrenContainer>
         {isMenuOpen && <BlurLayer />}
         <AnimatePresence>
           {isMenuOpen && (
-            <ClipContainer $headerHeight={height}>
+            <ClipContainer>
               <MenuContainer
                 ref={menuRef}
                 initial={{ x: '-100%' }}
                 animate={{ x: '0%' }}
-                exit={{ x: '-110%' }}
+                exit={{ x: '-100%' }}
                 transition={{
                   ease: 'easeInOut',
                   duration: 0.1,
                 }}
+                $headerHeight={height}
               >
                 <MenuItemsContainer>
+                  <MenuItemFlex onClick={handleMenuPressed}>
+                    <IconX width={20} height={25} />
+                    <div>Close</div>
+                  </MenuItemFlex>
                   <Switch
                     color="default"
                     isSelected={autoNextEnabled}
@@ -391,43 +399,43 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
             </ClipContainer>
           )}
         </AnimatePresence>
-      </ChildrenContainer>
-      {/** Modal content below */}
-      {showHelpModal && (
-        <ModalContainer onClick={toggleModal}>
-          <ModalContent>
-            <CloseModalContainer>
-              <FontAwesomeIcon icon={faClose} size="xl" />
-            </CloseModalContainer>
-            <h1>How to play Crosscube</h1>
-            <h2>A crossword puzzle in 3 dimensions</h2>
-            <Center>
-              <ExampleCube height={125} width={225} />
-            </Center>
-            <UlStyled>
-              <li>There are four sides.</li>
-              <li>
-                <CornerLabel>Corners</CornerLabel> share the same letter.
-              </li>
-              <li>
-                Change sides with the{' '}
-                <TurnArrowContainer>
-                  <TurnArrowStyled
-                    color="#999999"
-                    flipped
-                    height={25}
-                    width={25}
-                  />{' '}
-                </TurnArrowContainer>
-                keys.
-                <SwipeLabel>(or swipe)</SwipeLabel>
-              </li>
-              <li>Solve all of the clues to win!</li>
-            </UlStyled>
-          </ModalContent>
-        </ModalContainer>
-      )}
-    </Container>
+        {/** Modal content below */}
+        {showHelpModal && (
+          <ModalContainer onClick={toggleModal}>
+            <ModalContent>
+              <CloseModalContainer>
+                <FontAwesomeIcon icon={faClose} size="xl" />
+              </CloseModalContainer>
+              <h1>How to play Crosscube</h1>
+              <h2>A crossword puzzle in 3 dimensions</h2>
+              <Center>
+                <ExampleCube height={125} width={225} />
+              </Center>
+              <UlStyled>
+                <li>There are four sides.</li>
+                <li>
+                  <CornerLabel>Corners</CornerLabel> share the same letter.
+                </li>
+                <li>
+                  Change sides with the{' '}
+                  <TurnArrowContainer>
+                    <TurnArrowStyled
+                      color="#999999"
+                      flipped
+                      height={25}
+                      width={25}
+                    />{' '}
+                  </TurnArrowContainer>
+                  keys.
+                  <SwipeLabel>(or swipe)</SwipeLabel>
+                </li>
+                <li>Solve all of the clues to win!</li>
+              </UlStyled>
+            </ModalContent>
+          </ModalContainer>
+        )}
+      </Container>
+    </Main>
   );
 };
 
