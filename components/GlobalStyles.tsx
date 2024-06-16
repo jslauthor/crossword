@@ -186,7 +186,7 @@ export default createGlobalStyle`
   }
 
   :root {
-    --white: #F4F8F0;
+    --white: #ededed;
     --black: #131414;
     
     --true-white: #FFFFFF;
@@ -274,8 +274,8 @@ export default createGlobalStyle`
   }
 
   [data-theme='light'] {
-    --primary-text: var(--white);
-    --primary-bg: var(--black);
+    --primary-text: var(--black);
+    --primary-bg: var(--white);
     --primary-app-width: var(--max-app-width);
     --secondary-bg: var(--grey);
     --terciary-bg: var(--grey900);
@@ -292,7 +292,7 @@ export default createGlobalStyle`
     --clue-text-color: var(--true-black);
 
     --keyboard-bg: var(--light-grey100);
-    --keyboard-button-bg: var(--white);
+    --keyboard-button-bg: var(--true-white);
     --keyboard-button-color: var(--black);
     --keyboard-function-bg: var(--light-grey500);
     --keyboard-padding: 0 .25rem;
