@@ -99,6 +99,7 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
   >
     <div
       style={{
+        position: 'relative',
         display: 'flex',
         width: '100%',
         height: '100%',
@@ -114,8 +115,12 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
           justifyContent: 'center',
           alignItems: 'center',
           fontFamily: 'Franklin Gothic',
+          lineHeight: '1px',
+          fontWeight: 500,
           fontSize: '150px',
           color: 'white',
+          position: 'absolute',
+          top: '-30px',
         }}
       >
         {character}
