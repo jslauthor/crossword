@@ -107,7 +107,8 @@ const TurnButton = styled.div<{ $side: 'left' | 'right'; $color: string }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  ${({ $color }) => `border: 0.5px solid ${$color};`}
+  ${({ $color }) =>
+    `background-color: #${tinycolor($color).darken(15).toHex()};`}
   ${({ $side }) => {
     if ($side === 'left') {
       return 'border-right: none; border-radius: 0.25rem 0 0 0.25rem;';

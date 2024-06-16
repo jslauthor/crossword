@@ -218,6 +218,7 @@ export default createGlobalStyle`
 
     --teal500: #00dcff;
 
+    --mint-green200: #9dfac9;
     --mint-green400: #1ed473;
 
     --max-app-width: 500px;
@@ -271,7 +272,7 @@ export default createGlobalStyle`
     ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--teal500);
     ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red400);
     ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
-    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--clue-text-color);
+    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--mint-green200);
 
     background-color: var(--primary-bg);
     color: var(--primary-text);
@@ -311,7 +312,7 @@ export default createGlobalStyle`
     ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--blue500);
     ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red600);
     ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
-    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(${DEFAULT_COLOR_CSS_VARIABLE});
+    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--grey600);
 
     background-color: var(--primary-bg);
     color: var(--primary-text);
