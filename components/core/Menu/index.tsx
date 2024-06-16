@@ -210,6 +210,7 @@ export type MenuWrapperProps = {
   onSignUpPressed?: () => void;
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
+  onSettingsPressed?: () => void;
 };
 
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
@@ -225,6 +226,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   onAutoNextChanged,
   onAutocheckChanged,
   onDraftModeChanged,
+  onSettingsPressed,
 }) => {
   const { theme, setTheme } = useTheme();
 
@@ -290,6 +292,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
           onAutocheckChanged={onAutocheckChanged}
           draftModeEnabled={draftModeEnabled}
           onDraftModeChanged={onDraftModeChanged}
+          onSettingsPressed={onSettingsPressed}
         />
       </HeaderContainer>
       <Container>

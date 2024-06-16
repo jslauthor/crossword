@@ -21,7 +21,7 @@ const Pencil: FunctionComponent<PencilProps> = ({
       className={className}
       width={width}
       height={height}
-      viewBox="0 0 98 122.5"
+      viewBox="0 0 98 98"
       fill={fill}
       xmlns="http://www.w3.org/2000/svg"
     >

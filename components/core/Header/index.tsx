@@ -1,5 +1,4 @@
 import IconHamburger from 'components/svg/IconHamburger';
-import IconQuestion from 'components/svg/IconQuestion';
 import IconX from 'components/svg/IconX';
 import IconMainLogo from 'components/svg/MainLogo';
 import { useCallback, useMemo } from 'react';
@@ -10,6 +9,7 @@ import { Button } from '@nextui-org/react';
 import LightBulb from 'components/svg/LightBulb';
 import Pencil from 'components/svg/Pencil';
 import { DEFAULT_CORRECT_COLOR, getColorHex } from 'lib/utils/color';
+import Gear from 'components/svg/Gear';
 
 const Container = styled.nav<{ $hasCenterLabel: boolean }>`
   display: grid;
@@ -40,18 +40,11 @@ const RightContentContainer = styled.div`
   gap: 1rem;
 `;
 
-const HeaderButton = styled(Button)`
-  height: 25px;
-  width: 25px;
-  min-width: 25px;
-  border-radius: 0.25rem;
-  padding-top: 0.2rem;
-`;
-
 interface HeaderProps {
   showCloseButton: boolean;
   centerLabel?: string;
   onMenuPressed: () => void;
+  onSettingsPressed?: () => void;
   rotatingBoxProps?: RotatingBoxProps;
   autocheckEnabled?: boolean;
   draftModeEnabled?: boolean;
@@ -68,6 +61,7 @@ const Header: React.FC<HeaderProps> = ({
   onAutocheckChanged,
   onDraftModeChanged,
   draftModeEnabled,
+  onSettingsPressed,
 }) => {
   const hasCenterLabel = useMemo(
     () => centerLabel != null && centerLabel.length > 0,
@@ -85,6 +79,12 @@ const Header: React.FC<HeaderProps> = ({
       onDraftModeChanged(!draftModeEnabled);
     }
   }, [draftModeEnabled, onDraftModeChanged]);
+
+  const draftColor = useMemo(() => {
+    return draftModeEnabled
+      ? getColorHex(DEFAULT_CORRECT_COLOR)
+      : 'var(--primary-text)';
+  }, [draftModeEnabled]);
 
   const correctColor = useMemo(() => {
     return autocheckEnabled
@@ -112,29 +112,35 @@ const Header: React.FC<HeaderProps> = ({
       <RightContentContainer>
         {rotatingBoxProps && (
           <>
-            <HeaderButton
+            <Button
               onClick={handleDraftModeChanged}
               color="default"
               variant={draftModeEnabled ? 'solid' : 'light'}
               isIconOnly
+              size="sm"
+              radius="sm"
             >
-              <Pencil
-                width={draftModeEnabled ? 22 : 26}
-                height={draftModeEnabled ? 18 : 22}
-              />
-            </HeaderButton>
-            <HeaderButton
+              <Pencil fill={draftColor} width={18} height={18} />
+            </Button>
+            <Button
               onClick={handleAutocheckChanged}
               color="default"
               variant={autocheckEnabled ? 'solid' : 'light'}
               isIconOnly
+              size="sm"
+              radius="sm"
             >
-              <LightBulb
-                fill={correctColor}
-                width={autocheckEnabled ? 14 : 18}
-                height={autocheckEnabled ? 18 : 22}
-              />
-            </HeaderButton>
+              <LightBulb fill={correctColor} width={18} height={18} />
+            </Button>
+            <Button
+              onClick={onSettingsPressed}
+              color="default"
+              variant="light"
+              isIconOnly
+              size="sm"
+            >
+              <Gear width={18} height={18} />
+            </Button>
             <RotatingBox
               side={rotatingBoxProps.side}
               color={rotatingBoxProps.color}

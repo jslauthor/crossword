@@ -49,6 +49,7 @@ import {
   faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 import { useTheme } from 'lib/utils/hooks/theme';
+import Overlay from 'components/core/Overlay';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -540,6 +541,14 @@ export default function Puzzle({
     return createInitialState(puzzle);
   }, [puzzle]);
 
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const handleSettingsPressed = useCallback(() => {
+    setIsSettingsOpen(!isSettingsOpen);
+  }, [isSettingsOpen]);
+  const handleSettingsClose = useCallback(() => {
+    setIsSettingsOpen(false);
+  }, []);
+
   return (
     <Menu
       centerLabel={formattedElapsedTime}
@@ -550,6 +559,7 @@ export default function Puzzle({
       draftModeEnabled={draftModeEnabled}
       onAutocheckChanged={handleAutocheckChanged}
       onDraftModeChanged={handleDraftModeChanged}
+      onSettingsPressed={handleSettingsPressed}
     >
       <Canvas
         gl={{ antialias: false }}
@@ -733,6 +743,13 @@ export default function Puzzle({
         </>
       )}
       {/* <Stats /> */}
+      <Overlay
+        title="Puzzle Settings"
+        onClose={handleSettingsClose}
+        isOpen={isSettingsOpen}
+      >
+        Hi
+      </Overlay>
     </Menu>
   );
 }
