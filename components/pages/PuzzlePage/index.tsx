@@ -707,6 +707,10 @@ export default function Puzzle({
               class: 'turn-right-button',
               buttons: '{tr}',
             },
+            {
+              class: 'backspace-button',
+              buttons: '{bksp}',
+            },
           ]}
           layout={{
             default: [

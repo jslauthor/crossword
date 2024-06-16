@@ -217,6 +217,10 @@ export default createGlobalStyle`
 
     --max-app-width: 500px;
 
+    --light-grey100: #D0D3D9;
+    --light-grey500: #999EAb;
+    --light-grey900: #53565e;
+
     --light-grey-blue300: #7faab0;
     --light-grey-blue400: #B1D7FB;
     --light-grey-blue700: #43617d;
@@ -246,6 +250,11 @@ export default createGlobalStyle`
     --hard-difficulty-text: var(--red500);
 
     --clue-text-color: var(--white);
+
+    --keyboard-bg: transparent;
+    --keyboard-button-bg: var(--secondary-bg);
+    --keyboard-button-color: var(--primary-text);
+    --keyboard-function-bg: var(--light-grey900);
 
     // Puzzle specific theme vars
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--white);
@@ -280,6 +289,11 @@ export default createGlobalStyle`
     --hard-difficulty-text: var(--red500);
 
     --clue-text-color: var(--true-black);
+
+    --keyboard-bg: var(--light-grey100);
+    --keyboard-button-bg: var(--white);
+    --keyboard-button-color: var(--black);
+    --keyboard-function-bg: var(--light-grey500);
 
     // Puzzle specific theme vars
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--true-black);
@@ -362,10 +376,10 @@ export default createGlobalStyle`
     Theme: keyboardTheme
   */
   .simple-keyboard.keyboardTheme {
-    background-color: transparent;
-    border-radius: 0;
-    border-bottom-right-radius: 5px;
-    border-bottom-left-radius: 5px;
+    background-color: var(--keyboard-bg);
+    border-radius: 5px;
+    // border-bottom-right-radius: 5px;
+    // border-bottom-left-radius: 5px;
   }
 
   .simple-keyboard.keyboardTheme .hg-button {
@@ -375,10 +389,14 @@ export default createGlobalStyle`
     display: flex;
     justify-content: center;
     align-items: center;
-    background: var(--secondary-bg);
-    color: white;
+    background: var(--keyboard-button-bg);
+    color: var(--keyboard-button-color);
     border: none;
     flex-grow: unset;
+  }
+
+  .simple-keyboard.keyboardTheme .hg-button.backspace-button {
+    background-color: var(--keyboard-function-bg);
   }
 
   .hg-theme-default .hg-button span {
@@ -400,9 +418,5 @@ export default createGlobalStyle`
     margin: 0.25rem;
     margin-left: 0;
     margin-right: 0;
-  }
-
-  #root .simple-keyboard.keyboardTheme + .simple-keyboard-preview {
-    background: #1c4995;
   }
 `;
