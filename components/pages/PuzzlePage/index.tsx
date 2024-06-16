@@ -154,6 +154,12 @@ const ClueLabel = styled.span<{ celebrate?: boolean }>`
     celebrate && 'text-align: center; font-size: 1.5rem; font-weight: 600;'}
 `;
 
+const ClueTextContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
 const BackNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
   position: relative;
   display: flex;
@@ -633,7 +639,7 @@ export default function Puzzle({
               $backgroundColor={toHex(adjacentColor)}
               onClick={onClueClick}
             >
-              <div>
+              <ClueTextContainer>
                 {cellNumber != null && (
                   <SelectedInfo $backgroundColor={toHex(selectedColor)}>
                     {`${cellNumber}`}
@@ -648,7 +654,7 @@ export default function Puzzle({
                 <ClueLabel
                   dangerouslySetInnerHTML={{ __html: animatedClueText }}
                 />{' '}
-              </div>
+              </ClueTextContainer>
               <BackNextButtonsContainer $backgroundColor={toHex(adjacentColor)}>
                 <IconContainer onClick={handlePrevWord(selected)}>
                   <FontAwesomeIcon icon={faChevronLeft} width={20} />
