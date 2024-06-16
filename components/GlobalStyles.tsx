@@ -255,6 +255,7 @@ export default createGlobalStyle`
     --keyboard-button-bg: var(--secondary-bg);
     --keyboard-button-color: var(--primary-text);
     --keyboard-function-bg: var(--light-grey900);
+    --keyboard-padding: 0;
 
     // Puzzle specific theme vars
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--white);
@@ -294,6 +295,7 @@ export default createGlobalStyle`
     --keyboard-button-bg: var(--white);
     --keyboard-button-color: var(--black);
     --keyboard-function-bg: var(--light-grey500);
+    --keyboard-padding: 0 .25rem;
 
     // Puzzle specific theme vars
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--true-black);
@@ -377,9 +379,8 @@ export default createGlobalStyle`
   */
   .simple-keyboard.keyboardTheme {
     background-color: var(--keyboard-bg);
-    border-radius: 5px;
-    // border-bottom-right-radius: 5px;
-    // border-bottom-left-radius: 5px;
+    border-radius: .5rem;
+    padding: var(--keyboard-padding);
   }
 
   .simple-keyboard.keyboardTheme .hg-button {
