@@ -618,109 +618,113 @@ export default function Puzzle({
           )}
         </Suspense>
       </Canvas>
-      <InfoBar>
-        <TurnButton
-          onClick={turnLeft}
-          $side="left"
-          $color={toHex(adjacentColor)}
-        >
-          <TurnArrow width={20} height={20} color={toHex(turnArrowColor)} />
-        </TurnButton>
-        <ClueContainer
-          $backgroundColor={toHex(adjacentColor)}
-          onClick={onClueClick}
-        >
-          <div>
-            {cellNumber != null && (
-              <SelectedInfo $backgroundColor={toHex(selectedColor)}>
-                {`${cellNumber}`}
-                {isVerticalOrientation ? (
-                  <FontAwesomeIcon icon={faChevronCircleDown} width={10} />
-                ) : (
-                  <FontAwesomeIcon icon={faChevronCircleRight} width={10} />
+      {isInitialized === true && (
+        <>
+          <InfoBar>
+            <TurnButton
+              onClick={turnLeft}
+              $side="left"
+              $color={toHex(adjacentColor)}
+            >
+              <TurnArrow width={20} height={20} color={toHex(turnArrowColor)} />
+            </TurnButton>
+            <ClueContainer
+              $backgroundColor={toHex(adjacentColor)}
+              onClick={onClueClick}
+            >
+              <div>
+                {cellNumber != null && (
+                  <SelectedInfo $backgroundColor={toHex(selectedColor)}>
+                    {`${cellNumber}`}
+                    {isVerticalOrientation ? (
+                      <FontAwesomeIcon icon={faChevronCircleDown} width={10} />
+                    ) : (
+                      <FontAwesomeIcon icon={faChevronCircleRight} width={10} />
+                    )}
+                  </SelectedInfo>
                 )}
-              </SelectedInfo>
+                &nbsp;
+                <ClueLabel
+                  dangerouslySetInnerHTML={{ __html: animatedClueText }}
+                />{' '}
+              </div>
+              <BackNextButtonsContainer $backgroundColor={toHex(adjacentColor)}>
+                <IconContainer onClick={handlePrevWord(selected)}>
+                  <FontAwesomeIcon icon={faChevronLeft} width={20} />
+                </IconContainer>
+                <VRule />
+                <IconContainer onClick={handleNextWord(selected)}>
+                  <FontAwesomeIcon icon={faChevronRight} width={20} />
+                </IconContainer>
+              </BackNextButtonsContainer>
+            </ClueContainer>
+            <TurnButton
+              onClick={turnRight}
+              $side="right"
+              $color={toHex(adjacentColor)}
+            >
+              <TurnArrow
+                width={20}
+                height={20}
+                flipped
+                color={toHex(turnArrowColor)}
+              />
+            </TurnButton>
+          </InfoBar>
+          <KeyboardContainer>
+            {isPuzzleSolved && (
+              <SolvedContainer>
+                <div>🏆 YOU DID IT! 🏆</div>
+                <SolvedText>You finished the puzzle in</SolvedText>
+                <SolvedTime>
+                  <HeaderItem>{formattedElapsedTime}</HeaderItem>
+                </SolvedTime>
+              </SolvedContainer>
             )}
-            &nbsp;
-            <ClueLabel
-              dangerouslySetInnerHTML={{ __html: animatedClueText }}
-            />{' '}
-          </div>
-          <BackNextButtonsContainer $backgroundColor={toHex(adjacentColor)}>
-            <IconContainer onClick={handlePrevWord(selected)}>
-              <FontAwesomeIcon icon={faChevronLeft} width={20} />
-            </IconContainer>
-            <VRule />
-            <IconContainer onClick={handleNextWord(selected)}>
-              <FontAwesomeIcon icon={faChevronRight} width={20} />
-            </IconContainer>
-          </BackNextButtonsContainer>
-        </ClueContainer>
-        <TurnButton
-          onClick={turnRight}
-          $side="right"
-          $color={toHex(adjacentColor)}
-        >
-          <TurnArrow
-            width={20}
-            height={20}
-            flipped
-            color={toHex(turnArrowColor)}
-          />
-        </TurnButton>
-      </InfoBar>
-      <KeyboardContainer>
-        {isPuzzleSolved && (
-          <SolvedContainer>
-            <div>🏆 YOU DID IT! 🏆</div>
-            <SolvedText>You finished the puzzle in</SolvedText>
-            <SolvedTime>
-              <HeaderItem>{formattedElapsedTime}</HeaderItem>
-            </SolvedTime>
-          </SolvedContainer>
-        )}
-        <Keyboard
-          layoutName="default"
-          theme="hg-theme-default keyboardTheme"
-          onKeyPress={onKeyPress}
-          mergeDisplay
-          display={{
-            '{bksp}': '⌫',
-            '{sp}': ' ',
-            '{tl}': '<<<',
-            '{tr}': '>>>',
-          }}
-          buttonTheme={[
-            {
-              class: 'more-button',
-              buttons: 'MORE',
-            },
-            {
-              class: 'spacer-button',
-              buttons: '{sp}',
-            },
-            {
-              class: 'turn-left-button',
-              buttons: '{tl}',
-            },
-            {
-              class: 'turn-right-button',
-              buttons: '{tr}',
-            },
-            {
-              class: 'backspace-button',
-              buttons: '{bksp}',
-            },
-          ]}
-          layout={{
-            default: [
-              'Q W E R T Y U I O P',
-              '{sp} A S D F G H J K L {sp}',
-              'MORE Z X C V B N M {bksp}',
-            ],
-          }}
-        />
-      </KeyboardContainer>
+            <Keyboard
+              layoutName="default"
+              theme="hg-theme-default keyboardTheme"
+              onKeyPress={onKeyPress}
+              mergeDisplay
+              display={{
+                '{bksp}': '⌫',
+                '{sp}': ' ',
+                '{tl}': '<<<',
+                '{tr}': '>>>',
+              }}
+              buttonTheme={[
+                {
+                  class: 'more-button',
+                  buttons: 'MORE',
+                },
+                {
+                  class: 'spacer-button',
+                  buttons: '{sp}',
+                },
+                {
+                  class: 'turn-left-button',
+                  buttons: '{tl}',
+                },
+                {
+                  class: 'turn-right-button',
+                  buttons: '{tr}',
+                },
+                {
+                  class: 'backspace-button',
+                  buttons: '{bksp}',
+                },
+              ]}
+              layout={{
+                default: [
+                  'Q W E R T Y U I O P',
+                  '{sp} A S D F G H J K L {sp}',
+                  'MORE Z X C V B N M {bksp}',
+                ],
+              }}
+            />
+          </KeyboardContainer>
+        </>
+      )}
       {/* <Stats /> */}
     </Menu>
   );
