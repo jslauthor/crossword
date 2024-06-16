@@ -1,7 +1,6 @@
 // tailwind.config.js
 import { nextui, semanticColors } from '@nextui-org/react';
 
-console.log(semanticColors.dark);
 /** @type {import('tailwindcss').Config} */
 const config = {
   content: [

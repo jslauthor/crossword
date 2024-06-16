@@ -476,10 +476,11 @@ export default function Puzzle({
 
   const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
     return {
-      defaultColor,
+      color: defaultColor,
+      textColor: fontColor,
       side: sideOffset,
     };
-  }, [defaultColor, sideOffset]);
+  }, [defaultColor, fontColor, sideOffset]);
 
   const handleAutocheckChanged = useCallback(
     (autocheckEnabled: boolean) => {

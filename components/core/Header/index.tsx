@@ -137,7 +137,8 @@ const Header: React.FC<HeaderProps> = ({
             </HeaderButton>
             <RotatingBox
               side={rotatingBoxProps.side}
-              defaultColor={rotatingBoxProps.defaultColor}
+              color={rotatingBoxProps.color}
+              textColor={rotatingBoxProps.textColor}
             />
           </>
         )}
