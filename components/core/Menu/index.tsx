@@ -16,8 +16,8 @@ import TurnArrow from 'components/svg/TurnArrow';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClose } from '@fortawesome/free-solid-svg-icons';
 import ExampleCube from 'components/svg/ExampleCube';
-import { useTheme } from 'lib/utils/hooks/theme';
 import IconX from 'components/svg/IconX';
+import { HRule } from '../Dividers';
 
 const Main = styled.div`
   position: relative;
@@ -175,13 +175,6 @@ const UlStyled = styled.ul`
   padding-left: 0.75rem;
 `;
 
-const HRule = styled.div`
-  height: 1px;
-  background: var(--primary-text);
-  opacity: 0.25;
-  width: 100%;
-`;
-
 const CloseModalContainer = styled.div`
   position: absolute;
   top: 1rem;
@@ -200,11 +193,9 @@ const BlurLayer = styled.div`
 export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
-  autoNextEnabled?: boolean;
   autocheckEnabled?: boolean;
   draftModeEnabled?: boolean;
   rotatingBoxProps?: RotatingBoxProps;
-  onAutoNextChanged?: (autoNextEnabled: boolean) => void;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
   onSignUpPressed?: () => void;
@@ -216,20 +207,16 @@ export type MenuWrapperProps = {
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
   children,
   centerLabel,
-  autoNextEnabled,
   autocheckEnabled,
   draftModeEnabled,
   rotatingBoxProps,
   onSignUpPressed,
   onSignOutPressed,
   onSignInPressed,
-  onAutoNextChanged,
   onAutocheckChanged,
   onDraftModeChanged,
   onSettingsPressed,
 }) => {
-  const { theme, setTheme } = useTheme();
-
   const { isSignedIn, user } = useUser();
   const headerRef = useRef<HTMLDivElement>(null);
   const { height = 0 } = useResizeObserver({
@@ -241,20 +228,11 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   const handleMenuPressed = useCallback(() => {
     setIsMenuOpen(!isMenuOpen);
   }, [isMenuOpen]);
-  const handleAutoNextTogglePressed = useCallback(() => {
-    if (onAutoNextChanged) {
-      onAutoNextChanged(!autoNextEnabled);
-    }
-  }, [autoNextEnabled, onAutoNextChanged]);
+
   const handleClickOutside = useCallback(() => {
     setIsMenuOpen(false);
   }, []);
   useOnClickOutside(menuRef, handleClickOutside);
-
-  const handleThemePressed = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-    setIsMenuOpen(false);
-  }, [setTheme, theme]);
 
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
 
@@ -317,20 +295,6 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                     <IconX width={20} height={25} />
                     <div>Close</div>
                   </MenuItemFlex>
-                  <Switch
-                    color="default"
-                    isSelected={autoNextEnabled}
-                    onValueChange={handleAutoNextTogglePressed}
-                  >
-                    Jump to next word
-                  </Switch>
-                  <Switch
-                    color="default"
-                    isSelected={theme === 'dark'}
-                    onValueChange={handleThemePressed}
-                  >
-                    Mode
-                  </Switch>
                   <HRule />
                   <Link color="foreground" href="/">
                     Home

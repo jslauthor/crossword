@@ -5,6 +5,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import styled from 'styled-components';
 import { AnimatePresence, motion } from 'framer-motion';
+import { HRule } from '../Dividers';
 
 const ModalContainer = styled(motion.div)`
   position: fixed;
@@ -42,14 +43,7 @@ const Text = styled(Link)`
   justify-self: end;
 `;
 
-const HRule = styled.div`
-  height: 1px;
-  background: var(--primary-text);
-  opacity: 0.25;
-  width: 100%;
-`;
-
-interface OverlayProps {
+export interface OverlayProps {
   title: string;
   isOpen: boolean;
   onClose: () => void;
@@ -62,7 +56,8 @@ const Overlay: React.FC<OverlayProps> = ({
   isOpen,
   children,
 }) => {
-  console.log(isOpen);
+  if (typeof window === 'undefined') return null;
+
   return createPortal(
     <AnimatePresence>
       {isOpen && (
