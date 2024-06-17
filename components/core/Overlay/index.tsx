@@ -4,19 +4,50 @@ import { Link } from '@nextui-org/react';
 import React from 'react';
 import { createPortal } from 'react-dom';
 import styled from 'styled-components';
+import { AnimatePresence, motion } from 'framer-motion';
 
-const ModalContainer = styled.div`
+const ModalContainer = styled(motion.div)`
   position: fixed;
   inset: 0;
   z-index: 9999;
   width: 100svw;
   height: 100svh;
   background-color: var(--primary-bg);
+  display: flex;
+  justify-content: center;
 `;
 
-const ModalContent = styled.div``;
+const ModalContent = styled.div`
+  width: 100%;
+  height: 100%;
+  max-width: var(--primary-app-width);
+`;
 
-const ModalHeader = styled.div``;
+const ModalHeader = styled.div`
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  text-align: center;
+  padding: 1rem;
+`;
+
+const H2 = styled.h2`
+  grid-column: 2;
+  font-weight: 500;
+`;
+
+const Text = styled(Link)`
+  grid-column: 3;
+  justify-self: end;
+`;
+
+const HRule = styled.div`
+  height: 1px;
+  background: var(--primary-text);
+  opacity: 0.25;
+  width: 100%;
+`;
 
 interface OverlayProps {
   title: string;
@@ -32,20 +63,30 @@ const Overlay: React.FC<OverlayProps> = ({
   children,
 }) => {
   console.log(isOpen);
-  return (
-    isOpen === true &&
-    createPortal(
-      <ModalContainer>
-        <ModalContent>
-          <ModalHeader>
-            <h2>{title}</h2>
-            <Link onClick={onClose}>Done</Link>
-          </ModalHeader>
-          {children}
-        </ModalContent>
-      </ModalContainer>,
-      document.body,
-    )
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <ModalContainer
+          initial={{ top: '100%' }}
+          animate={{ top: '0%' }}
+          exit={{ top: '100%' }}
+          transition={{
+            ease: 'easeInOut',
+            duration: 0.2,
+          }}
+        >
+          <ModalContent>
+            <ModalHeader>
+              <H2>{title}</H2>
+              <Text onClick={onClose}>Done</Text>
+            </ModalHeader>
+            <HRule />
+            {children}
+          </ModalContent>
+        </ModalContainer>
+      )}
+    </AnimatePresence>,
+    document.body,
   );
 };
 
