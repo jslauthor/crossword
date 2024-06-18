@@ -3,11 +3,6 @@
 import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
-import {
-  EffectComposer,
-  ChromaticAberration,
-} from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
 import { Stats, PerspectiveCamera, Html } from '@react-three/drei';
 import LetterBoxes, { SelectClueFn } from 'components/core/3d/LetterBoxes';
 import {
@@ -22,7 +17,6 @@ import {
   PerspectiveCamera as PerspectiveCameraType,
   InstancedMesh as InstancedMeshType,
   Vector3,
-  Vector2,
   Object3D,
 } from 'three';
 import Keyboard from 'react-simple-keyboard';
@@ -40,16 +34,10 @@ import Particles from 'components/core/3d/Particles';
 import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
 import Menu from 'components/containers/Menu';
-import { Spinner } from '@nextui-org/react';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { PuzzleType } from 'app/page';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
-import {
-  DEFAULT_COLOR,
-  DEFAULT_SELECTED_ADJACENT_COLOR,
-  DEFAULT_SELECTED_COLOR,
-} from 'lib/utils/color';
 import { createInitialState } from 'lib/utils/puzzle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -58,6 +46,10 @@ import {
   faChevronLeft,
   faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
+import { useTheme } from 'lib/utils/hooks/theme';
+import { VRule } from 'components/core/Dividers';
+import PuzzleSettings from 'components/composed/PuzzleSettings';
+import { Spinner } from 'components/core/ui/spinner';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -91,10 +83,10 @@ const SolvedContainer = styled.div`
   align-items: center;
   justify-content: center;
   inset: 0;
-  background: radial-gradient(rgb(0, 0, 0, 0.7), rgb(0, 0, 0, 0));
+  background: radial-gradient(hsl(var(--background)), rgb(0, 0, 0, 0));
   font-weight: 600;
   font-size: 1.5rem;
-  color: var(--primary-text);
+  color: hsl(var(--foreground));
   max-width: var(--primary-app-width);
   margin: 0 auto;
 `;
@@ -111,23 +103,26 @@ const SolvedTime = styled.h3`
   font-size: 2rem;
 `;
 
-const TurnButton = styled.div<{ $borderColor: string }>`
-  padding: 0.5rem;
+const TurnButton = styled.div<{ $side: 'left' | 'right'; $color: string }>`
+  padding: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.25rem;
-  border-style: solid;
-  border-width: 1px;
-  ${({ $borderColor }) =>
-    `border-color: #${tinycolor($borderColor).darken(5).toHex()};`}
+  ${({ $color }) =>
+    `background-color: #${tinycolor($color).darken(15).toHex()};`}
+  ${({ $side }) => {
+    if ($side === 'left') {
+      return 'border-right: none; border-radius: 0.25rem 0 0 0.25rem;';
+    } else {
+      return 'border-left: none; border-radius: 0 0.25rem 0.25rem 0;';
+    }
+  }}
 `;
 
 const InfoBar = styled.div`
   position: relative;
   display: grid;
   grid-template-columns: min-content 1fr min-content;
-  grid-column-gap: 0.5rem;
   max-width: var(--primary-app-width);
   width: 100%;
   height: min-content;
@@ -141,13 +136,13 @@ const ClueContainer = styled.div<{ $backgroundColor: string }>`
   grid-template-columns: 1fr 0.15fr;
   grid-column-gap: 0.5rem;
   align-items: center;
-  border-radius: 0.25rem;
   padding: 0 0.5rem;
   box-sizing: border-box;
   height: 100%;
   width: 100%;
   min-height: 54px;
   overflow: hidden;
+  color: hsl(var(--foreground));
   ${({ $backgroundColor }) =>
     `background-color: #${tinycolor($backgroundColor).darken(5).toHex()}`}
 `;
@@ -160,7 +155,13 @@ const ClueLabel = styled.span<{ celebrate?: boolean }>`
     celebrate && 'text-align: center; font-size: 1.5rem; font-weight: 600;'}
 `;
 
-const ForwardNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
+const ClueTextContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+`;
+
+const BackNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
   position: relative;
   display: flex;
   right: -0.5rem;
@@ -171,8 +172,6 @@ const ForwardNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
   justify-content: center;
   padding: 0 0.5rem;
   cursor: pointer;
-  ${({ $backgroundColor }) =>
-    `background-color: #${tinycolor($backgroundColor).darken(10).toHex()}`}
 `;
 
 const SelectedInfo = styled.span<{ $backgroundColor: string }>`
@@ -191,13 +190,6 @@ const SelectedInfo = styled.span<{ $backgroundColor: string }>`
     `background-color: #${tinycolor($backgroundColor).toHex()}`}
 `;
 
-const VRule = styled.div`
-  width: 1px;
-  background: var(--primary-text);
-  opacity: 0.1;
-  height: 100%;
-`;
-
 const IconContainer = styled.div`
   display: flex;
   justify-content: center;
@@ -209,7 +201,7 @@ const IconContainer = styled.div`
 function Loader() {
   return (
     <Html center>
-      <Spinner color="default" />
+      <Spinner show />
     </Html>
   );
 }
@@ -225,8 +217,9 @@ export default function Puzzle({
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
+  const { theme } = useTheme();
+
   const [groupRef, setGroup] = useState<Object3D | null>();
-  const [instancedRef, setInstancedMesh] = useState<InstancedMeshType | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
   const [sideOffset, setSideOffset] = useState(0);
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
@@ -391,13 +384,32 @@ export default function Puzzle({
   );
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
 
-  const defaultColor = useMemo(() => DEFAULT_COLOR, []);
-  const selectedColor = useMemo(() => DEFAULT_SELECTED_COLOR, []);
-  const adjacentColor = useMemo(() => DEFAULT_SELECTED_ADJACENT_COLOR, []);
+  const {
+    colors: {
+      font: fontColor,
+      fontDraft: fontDraftColor,
+      default: defaultColor,
+      selected: selectedColor,
+      selectedAdjacent: adjacentColor,
+      correct: correctColor,
+      error: errorColor,
+      border: borderColor,
+      turnArrow: turnArrowColor,
+    },
+  } = useTheme();
+
+  // Track rotation so we can update the shader in letterboxes
+  const [isSpinning, setIsSpinning] = useState(false);
+  const updateRotationProgress = useCallback((progress: number) => {
+    // So, this is kind of weird
+    // We only want isSpinning to be true in a more limited range because we want to hide the
+    // side faces when the animation is mostly complete (not fully) to prevent flickering
+    setIsSpinning(progress <= 0.98);
+  }, []);
 
   // Intro spinny animation
   const [rotation, setRotation] = useState(0);
-  const { rotation: rotationAnimation } = useSpring({
+  const { rotation: introAnimation } = useSpring({
     rotation: 1,
     config: {
       duration: 500,
@@ -405,14 +417,14 @@ export default function Puzzle({
     },
   });
   useEffect(() => {
-    rotationAnimation.start({
+    introAnimation.start({
       from: 0,
       to: 1,
       onChange: (props, spring) => {
         setRotation(spring.get());
       },
     });
-  }, [rotationAnimation]);
+  }, [introAnimation]);
 
   const mouse = useRef([0, 0]);
   const toHex = useCallback(
@@ -427,7 +439,6 @@ export default function Puzzle({
     ],
     [adjacentColor, defaultColor, selectedColor, toHex],
   );
-  const abberationOffset = useMemo(() => new Vector2(0.0005, 0.0005), []);
 
   const onClueClick = useCallback(() => {
     setVerticalOrientation(!isVerticalOrientation);
@@ -466,10 +477,11 @@ export default function Puzzle({
 
   const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
     return {
-      defaultColor,
+      color: selectedColor,
+      textColor: fontColor,
       side: sideOffset,
     };
-  }, [defaultColor, sideOffset]);
+  }, [fontColor, selectedColor, sideOffset]);
 
   const handleAutocheckChanged = useCallback(
     (autocheckEnabled: boolean) => {
@@ -522,184 +534,230 @@ export default function Puzzle({
     return createInitialState(puzzle);
   }, [puzzle]);
 
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const handleSettingsPressed = useCallback(() => {
+    setIsSettingsOpen(!isSettingsOpen);
+  }, [isSettingsOpen]);
+  const handleSettingsClose = useCallback(() => {
+    setIsSettingsOpen(false);
+  }, []);
+
   return (
-    <Menu
-      centerLabel={formattedElapsedTime}
-      rotatingBoxProps={rotatingBoxProps}
-      autoNextEnabled={autoNextEnabled}
-      onAutoNextChanged={addAutoNextEnabled}
-      autocheckEnabled={autocheckEnabled}
-      draftModeEnabled={draftModeEnabled}
-      onAutocheckChanged={handleAutocheckChanged}
-      onDraftModeChanged={handleDraftModeChanged}
-    >
-      <Canvas
-        gl={{ antialias: false }}
-        style={{
-          touchAction: 'none',
-        }}
-        ref={containerRef}
+    <>
+      <Menu
+        centerLabel={formattedElapsedTime}
+        rotatingBoxProps={rotatingBoxProps}
+        autocheckEnabled={autocheckEnabled}
+        draftModeEnabled={draftModeEnabled}
+        onAutocheckChanged={handleAutocheckChanged}
+        onDraftModeChanged={handleDraftModeChanged}
+        onSettingsPressed={handleSettingsPressed}
       >
-        <Suspense fallback={<Loader />}>
-          <PerspectiveCamera
-            ref={setCameraRef}
-            makeDefault
-            position={[0, 0, 0]}
-          />
-          <ambientLight intensity={5} />
-          <pointLight position={[0, 0, -2]} intensity={2} />
-          <SwipeControls
-            global
-            dragEnabled={false}
-            onSwipeLeft={turnLeft}
-            onSwipeRight={turnRight}
-            rotation={[0, rotation * (Math.PI + Math.PI * (sideOffset / 2)), 0]}
-          >
-            <group ref={setGroup} position={groupRefPosition}>
-              <LetterBoxes
-                setInstancedMesh={setInstancedMesh}
-                puzzle={puzzle}
-                characterTextureAtlasLookup={characterTextureAtlasLookup}
-                cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
-                selectedSide={selectedSide}
-                keyAndIndexOverride={keyAndIndexOverride}
-                currentKey={selectedCharacter}
-                updateCharacterPosition={updateCharacterPosition}
-                onLetterInput={onLetterInput}
-                onSelectClue={handleClueChange}
-                defaultColor={defaultColor}
-                selectedColor={selectedColor}
-                adjacentColor={adjacentColor}
-                onInitialize={onInitialize}
-                isVerticalOrientation={isVerticalOrientation}
-                onVerticalOrientationChange={setVerticalOrientation}
-                autocheckEnabled={autocheckEnabled}
-                characterPositionArray={
-                  characterPositions ?? defaultCharacterPositions
-                }
-                cellValidationArray={validations ?? defaultValidations}
-                cellDraftModeArray={draftModes ?? defaultDraftModes}
-                autoNextEnabled={autoNextEnabled}
-                turnLeft={turnLeft}
-                turnRight={turnRight}
-                setOnNextWord={setOnNextWord}
-                setOnPrevWord={setOnPrevWord}
-              />
-            </group>
-          </SwipeControls>
-          {isPuzzleSolved === true && (
-            <>
-              <Sparks
-                count={12}
-                mouse={mouse}
-                radius={1.5}
-                colors={sparkColors}
-              />
-              <Particles count={2500} mouse={mouse} />
-            </>
-          )}
-          <EffectComposer>
-            <ChromaticAberration
-              radialModulation={false}
-              modulationOffset={0}
-              blendFunction={BlendFunction.NORMAL} // blend mode
-              offset={abberationOffset} // color offset
-            />
-          </EffectComposer>
-        </Suspense>
-      </Canvas>
-      <InfoBar>
-        <TurnButton onClick={turnLeft} $borderColor={toHex(defaultColor)}>
-          <TurnArrow width={20} height={20} color={toHex(defaultColor)} />
-        </TurnButton>
-        <ClueContainer
-          $backgroundColor={toHex(adjacentColor)}
-          onClick={onClueClick}
+        <Canvas
+          gl={{ antialias: false }}
+          style={{
+            touchAction: 'none',
+          }}
+          ref={containerRef}
         >
-          <div>
-            {cellNumber != null && (
-              <SelectedInfo $backgroundColor={toHex(selectedColor)}>
-                {`${cellNumber}`}
-                {isVerticalOrientation ? (
-                  <FontAwesomeIcon icon={faChevronCircleDown} width={10} />
-                ) : (
-                  <FontAwesomeIcon icon={faChevronCircleRight} width={10} />
-                )}
-              </SelectedInfo>
+          <Suspense fallback={<Loader />}>
+            <PerspectiveCamera
+              ref={setCameraRef}
+              makeDefault
+              position={[0, 0, 0]}
+            />
+            <ambientLight intensity={3} />
+            {/* <pointLight position={[0, 0, -2]} intensity={2} /> */}
+            <SwipeControls
+              global
+              dragEnabled={false}
+              onSwipeLeft={turnLeft}
+              onSwipeRight={turnRight}
+              rotation={[
+                0,
+                rotation * (Math.PI + Math.PI * (sideOffset / 2)),
+                0,
+              ]}
+              onRotationYProgress={updateRotationProgress}
+            >
+              <group ref={setGroup} position={groupRefPosition}>
+                <LetterBoxes
+                  puzzle={puzzle}
+                  characterTextureAtlasLookup={characterTextureAtlasLookup}
+                  cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
+                  selectedSide={selectedSide}
+                  keyAndIndexOverride={keyAndIndexOverride}
+                  currentKey={selectedCharacter}
+                  updateCharacterPosition={updateCharacterPosition}
+                  onLetterInput={onLetterInput}
+                  onSelectClue={handleClueChange}
+                  fontColor={fontColor}
+                  fontDraftColor={fontDraftColor}
+                  defaultColor={defaultColor}
+                  selectedColor={selectedColor}
+                  adjacentColor={adjacentColor}
+                  errorColor={errorColor}
+                  correctColor={correctColor}
+                  borderColor={borderColor}
+                  onInitialize={onInitialize}
+                  isVerticalOrientation={isVerticalOrientation}
+                  onVerticalOrientationChange={setVerticalOrientation}
+                  autocheckEnabled={autocheckEnabled}
+                  characterPositionArray={
+                    characterPositions ?? defaultCharacterPositions
+                  }
+                  cellValidationArray={validations ?? defaultValidations}
+                  cellDraftModeArray={draftModes ?? defaultDraftModes}
+                  autoNextEnabled={autoNextEnabled}
+                  turnLeft={turnLeft}
+                  turnRight={turnRight}
+                  setOnNextWord={setOnNextWord}
+                  setOnPrevWord={setOnPrevWord}
+                  theme={theme}
+                  isSpinning={isSpinning}
+                />
+              </group>
+            </SwipeControls>
+            {isPuzzleSolved === true && (
+              <>
+                <Sparks
+                  count={12}
+                  mouse={mouse}
+                  radius={1.5}
+                  colors={sparkColors}
+                />
+                <Particles count={2500} mouse={mouse} />
+              </>
             )}
-            &nbsp;
-            <ClueLabel
-              dangerouslySetInnerHTML={{ __html: animatedClueText }}
-            />{' '}
-          </div>
-          <ForwardNextButtonsContainer $backgroundColor={toHex(adjacentColor)}>
-            <IconContainer onClick={handlePrevWord(selected)}>
-              <FontAwesomeIcon icon={faChevronLeft} width={20} />
-            </IconContainer>
-            <VRule />
-            <IconContainer onClick={handleNextWord(selected)}>
-              <FontAwesomeIcon icon={faChevronRight} width={20} />
-            </IconContainer>
-          </ForwardNextButtonsContainer>
-        </ClueContainer>
-        <TurnButton onClick={turnRight} $borderColor={toHex(defaultColor)}>
-          <TurnArrow
-            width={20}
-            height={20}
-            flipped
-            color={toHex(defaultColor)}
-          />
-        </TurnButton>
-      </InfoBar>
-      <KeyboardContainer>
-        {isPuzzleSolved && (
-          <SolvedContainer>
-            <div>🏆 YOU DID IT! 🏆</div>
-            <SolvedText>You finished the puzzle in</SolvedText>
-            <SolvedTime>
-              <HeaderItem>{formattedElapsedTime}</HeaderItem>
-            </SolvedTime>
-          </SolvedContainer>
+          </Suspense>
+        </Canvas>
+        {isInitialized === true && (
+          <>
+            <InfoBar>
+              <TurnButton
+                onClick={turnLeft}
+                $side="left"
+                $color={toHex(adjacentColor)}
+              >
+                <TurnArrow
+                  width={20}
+                  height={20}
+                  color={toHex(turnArrowColor)}
+                />
+              </TurnButton>
+              <ClueContainer
+                $backgroundColor={toHex(adjacentColor)}
+                onClick={onClueClick}
+              >
+                <ClueTextContainer>
+                  {cellNumber != null && (
+                    <SelectedInfo $backgroundColor={toHex(selectedColor)}>
+                      {`${cellNumber}`}
+                      {isVerticalOrientation ? (
+                        <FontAwesomeIcon
+                          icon={faChevronCircleDown}
+                          width={10}
+                        />
+                      ) : (
+                        <FontAwesomeIcon
+                          icon={faChevronCircleRight}
+                          width={10}
+                        />
+                      )}
+                    </SelectedInfo>
+                  )}
+                  &nbsp;
+                  <ClueLabel
+                    dangerouslySetInnerHTML={{ __html: animatedClueText }}
+                  />{' '}
+                </ClueTextContainer>
+                <BackNextButtonsContainer
+                  $backgroundColor={toHex(adjacentColor)}
+                >
+                  <IconContainer onClick={handlePrevWord(selected)}>
+                    <FontAwesomeIcon icon={faChevronLeft} width={20} />
+                  </IconContainer>
+                  <VRule />
+                  <IconContainer onClick={handleNextWord(selected)}>
+                    <FontAwesomeIcon icon={faChevronRight} width={20} />
+                  </IconContainer>
+                </BackNextButtonsContainer>
+              </ClueContainer>
+              <TurnButton
+                onClick={turnRight}
+                $side="right"
+                $color={toHex(adjacentColor)}
+              >
+                <TurnArrow
+                  width={20}
+                  height={20}
+                  flipped
+                  color={toHex(turnArrowColor)}
+                />
+              </TurnButton>
+            </InfoBar>
+            <KeyboardContainer>
+              {isPuzzleSolved && (
+                <SolvedContainer>
+                  <div>🏆 YOU DID IT! 🏆</div>
+                  <SolvedText>You finished the puzzle in</SolvedText>
+                  <SolvedTime>
+                    <HeaderItem>{formattedElapsedTime}</HeaderItem>
+                  </SolvedTime>
+                </SolvedContainer>
+              )}
+              <Keyboard
+                layoutName="default"
+                theme="hg-theme-default keyboardTheme"
+                onKeyPress={onKeyPress}
+                mergeDisplay
+                display={{
+                  '{bksp}': '⌫',
+                  '{sp}': ' ',
+                  '{tl}': '<<<',
+                  '{tr}': '>>>',
+                }}
+                buttonTheme={[
+                  {
+                    class: 'more-button',
+                    buttons: 'MORE',
+                  },
+                  {
+                    class: 'spacer-button',
+                    buttons: '{sp}',
+                  },
+                  {
+                    class: 'turn-left-button',
+                    buttons: '{tl}',
+                  },
+                  {
+                    class: 'turn-right-button',
+                    buttons: '{tr}',
+                  },
+                  {
+                    class: 'backspace-button',
+                    buttons: '{bksp}',
+                  },
+                ]}
+                layout={{
+                  default: [
+                    'Q W E R T Y U I O P',
+                    '{sp} A S D F G H J K L {sp}',
+                    'MORE Z X C V B N M {bksp}',
+                  ],
+                }}
+              />
+            </KeyboardContainer>
+          </>
         )}
-        <Keyboard
-          layoutName="default"
-          theme="hg-theme-default keyboardTheme"
-          onKeyPress={onKeyPress}
-          mergeDisplay
-          display={{
-            '{bksp}': '⌫',
-            '{sp}': ' ',
-            '{tl}': '<<<',
-            '{tr}': '>>>',
-          }}
-          buttonTheme={[
-            {
-              class: 'more-button',
-              buttons: 'MORE',
-            },
-            {
-              class: 'spacer-button',
-              buttons: '{sp}',
-            },
-            {
-              class: 'turn-left-button',
-              buttons: '{tl}',
-            },
-            {
-              class: 'turn-right-button',
-              buttons: '{tr}',
-            },
-          ]}
-          layout={{
-            default: [
-              'Q W E R T Y U I O P',
-              '{sp} A S D F G H J K L {sp}',
-              'MORE Z X C V B N M {bksp}',
-            ],
-          }}
-        />
-      </KeyboardContainer>
-      {/* <Stats /> */}
-    </Menu>
+        {/* <Stats /> */}
+      </Menu>
+      <PuzzleSettings
+        isOpen={isSettingsOpen}
+        onClose={handleSettingsClose}
+        autoNextEnabled={autoNextEnabled}
+        onAutoNextChanged={addAutoNextEnabled}
+      />
+    </>
   );
 }

@@ -6,7 +6,7 @@ const NAME = 'icon-question';
 const IconQuestion: React.FC<SvgProps> = ({
   width = 18,
   height = 16,
-  color = 'var(--primary-text)',
+  color = 'hsl(var(--foreground))',
 }) => {
   return (
     <svg

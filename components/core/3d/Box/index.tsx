@@ -1,14 +1,19 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   PerspectiveCamera,
   PresentationControls,
   useTexture,
 } from '@react-three/drei';
-import { RepeatWrapping, Shader, ShaderChunk } from 'three';
-import { Canvas } from '@react-three/fiber';
+import { MeshPhysicalMaterial, RepeatWrapping, Texture, Vector4 } from 'three';
+import { Canvas, extend } from '@react-three/fiber';
 import styled from 'styled-components';
+import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
+import { CubeSidesEnum } from '../LetterBoxes';
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
+import { hexToVector } from 'lib/utils/color';
+extend({ RoundedBoxGeometry });
 
 const CanvasContainer = styled.div`
   width: 25px;
@@ -16,10 +21,88 @@ const CanvasContainer = styled.div`
 `;
 
 interface BoxProps {
-  defaultColor: number;
+  color: number;
+  textColor: number;
 }
 
-const Box: React.FC<BoxProps> = ({ defaultColor }) => {
+const vertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+  }
+`;
+
+const fragmentShader = `
+  #ifdef GL_ES
+  precision highp float;
+  #endif
+
+  uniform sampler2D numberTexture;
+  uniform uint sideIndex;
+  uniform vec4 color;
+  uniform vec4 textColor;
+  
+  varying vec2 vUv;
+
+  vec4 applyColorChange(vec4 color, vec4 newColor) {
+    return vec4(newColor.rgb, color.a); // Change white to the target color
+  }
+
+  void main(void)
+  {
+    vec3 c = color.rgb;
+    vec4 Cb = texture2D(numberTexture, vUv);
+    Cb = applyColorChange(Cb, textColor);
+    c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a);  // blending equation
+    csm_DiffuseColor = vec4(c, 1.0);
+    csm_FragColor = vec4(c, 1.0);
+  }
+`;
+
+type Uniforms = Record<string, { value: Texture | Vector4 | number }>;
+const materialConfig = {
+  baseMaterial: MeshPhysicalMaterial,
+  toneMapped: false,
+  fog: false,
+  vertexShader,
+  fragmentShader,
+};
+const materialMap: Map<CubeSidesEnum, CustomShaderMaterial> = new Map();
+const createMaterial = (
+  uniforms: Uniforms,
+  texture: Texture,
+  sideEnum: CubeSidesEnum,
+) => {
+  let material = materialMap.get(sideEnum);
+  if (material != null) {
+    Object.keys(uniforms).forEach((key) => {
+      if (material != null) {
+        if (material.uniforms[key]) {
+          material.uniforms[key].value = uniforms[key].value;
+        } else {
+          material.uniforms[key] = uniforms[key];
+        }
+      }
+    });
+    material.uniforms.numberTexture = { value: texture };
+    material.uniforms.sideIndex = { value: sideEnum };
+    material.needsUpdate = true;
+    return material;
+  } else {
+    material = new CustomShaderMaterial({
+      ...materialConfig,
+      uniforms: {
+        numberTexture: { value: texture },
+        sideIndex: { value: sideEnum },
+        ...uniforms,
+      },
+    });
+    materialMap.set(sideEnum, material);
+    return material;
+  }
+};
+
+const Box: React.FC<BoxProps> = ({ color, textColor }) => {
   const [texture1, texture2, texture3, texture4] = useTexture([
     '/1.png',
     '/2.png',
@@ -38,73 +121,65 @@ const Box: React.FC<BoxProps> = ({ defaultColor }) => {
     texture4.wrapT = RepeatWrapping;
   }, [texture1, texture2, texture3, texture4]);
 
-  const onShader = useCallback((shader: Shader) => {
-    const custom_map_fragment = ShaderChunk.map_fragment.replace(
-      `diffuseColor *= texture2D( map, vMapUv );`,
-      `vec4 textSample = texture2D(map, vMapUv);
-       diffuseColor = vec4( mix( diffuse, textSample.rgb, textSample.a ), opacity );`,
-    );
-    shader.fragmentShader = shader.fragmentShader.replace(
-      '#include <map_fragment>',
-      custom_map_fragment,
-    );
-  }, []);
+  const uniforms = useMemo(() => {
+    return {
+      color: { value: hexToVector(color) },
+      textColor: { value: hexToVector(textColor) },
+    };
+  }, [color, textColor]);
+
+  // Material setup
+  const side0 = useMemo(
+    () => createMaterial(uniforms, texture4, CubeSidesEnum.one),
+    [texture4, uniforms],
+  );
+  const side1 = useMemo(
+    () => createMaterial(uniforms, texture2, CubeSidesEnum.two),
+    [texture2, uniforms],
+  );
+  const side2 = useMemo(
+    () => createMaterial(uniforms, texture3, CubeSidesEnum.three),
+    [texture3, uniforms],
+  );
+  const side3 = useMemo(
+    () => createMaterial(uniforms, texture3, CubeSidesEnum.four),
+    [texture3, uniforms],
+  );
+  const side4 = useMemo(
+    () => createMaterial(uniforms, texture3, CubeSidesEnum.five),
+    [texture3, uniforms],
+  );
+  const side5 = useMemo(
+    () => createMaterial(uniforms, texture1, CubeSidesEnum.six),
+    [texture1, uniforms],
+  );
 
   return (
-    <mesh>
-      <boxGeometry args={[5.5, 5.5, 5.5]} />
-      <meshPhysicalMaterial
-        attach="material-0"
-        color={defaultColor}
-        map={texture4}
-        onBeforeCompile={onShader}
-      />
-      <meshPhysicalMaterial
-        attach="material-1"
-        color={defaultColor}
-        map={texture2}
-        onBeforeCompile={onShader}
-      />
-      <meshPhysicalMaterial attach="material-2" color={defaultColor} />
-      <meshPhysicalMaterial attach="material-3" color={defaultColor} />
-      <meshPhysicalMaterial
-        attach="material-4"
-        color={defaultColor}
-        map={texture3}
-        onBeforeCompile={onShader}
-      />
-      <meshPhysicalMaterial
-        attach="material-5"
-        color={defaultColor}
-        map={texture1}
-        onBeforeCompile={onShader}
-      />
+    <mesh material={[side0, side1, side2, side3, side4, side5]}>
+      <roundedBoxGeometry args={[5.5, 5.5, 5.5, 4, 0.75]} />
     </mesh>
   );
 };
 
-export interface RotatingBoxProps {
+export interface RotatingBoxProps extends BoxProps {
   side: number;
-  defaultColor: number;
 }
 
-const RotatingBox: React.FC<RotatingBoxProps> = ({ side, defaultColor }) => {
+const RotatingBox: React.FC<RotatingBoxProps> = ({
+  side,
+  color,
+  textColor,
+}) => {
   return (
     <CanvasContainer>
       <Canvas>
-        <ambientLight intensity={3.5} />
-        <pointLight
-          position={[0, 0, 9]}
-          intensity={5000}
-          color={defaultColor}
-        />
         <PerspectiveCamera makeDefault position={[0, 0, 15]} fov={30} />
         <PresentationControls
           global
           enabled={false}
-          rotation={[Math.PI * 0.09, Math.PI + Math.PI * (side / 2), 0]}
+          rotation={[0, Math.PI + Math.PI * (side / 2), 0]}
         >
-          <Box defaultColor={defaultColor} />
+          <Box color={color} textColor={textColor} />
         </PresentationControls>
       </Canvas>
     </CanvasContainer>

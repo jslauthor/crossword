@@ -4,49 +4,34 @@ import React, { ReactNode, useEffect, useRef } from 'react';
 import md5 from 'md5';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
-import { Button, Switch } from '@nextui-org/react';
 import { useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useOnClickOutside, useResizeObserver } from 'usehooks-ts';
 import UserInfo from 'components/composed/UserInfo';
-import { Link } from '@nextui-org/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { RotatingBoxProps } from '../3d/Box';
 import TurnArrow from 'components/svg/TurnArrow';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClose } from '@fortawesome/free-solid-svg-icons';
-import ExampleCube from 'components/svg/ExampleCube';
+import IconX from 'components/svg/IconX';
+import { HRule } from '../Dividers';
+import { Button } from '../ui/button';
+import { useTheme } from 'lib/utils/hooks/theme';
+import { getColorHex } from 'lib/utils/color';
 
-const Container = styled.div`
+const Main = styled.div`
   position: relative;
-  width: 100vw;
-  height: 100%;
-  overflow-y: scroll;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-`;
-
-const ChildrenContainer = styled.div`
-  position: relative;
-  width: 100%;
+  width: 100svw;
   height: 100svh;
-  display: flex;
-  flex-direction: column;
-  justify-items: stretch;
-  max-width: var(--primary-app-width);
 `;
 
 const HeaderContainer = styled.div`
-  position: sticky;
+  width: 100%;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
-  z-index: 9999;
-  background: linear-gradient(var(--primary-bg), #00000000);
+  background: linear-gradient(hsl(var(--background)), #00000000);
   padding: 0.75rem;
 `;
 
@@ -54,31 +39,47 @@ const HeaderStyled = styled(Header)`
   width: 100%;
 `;
 
-const ClipContainer = styled.div<{ $headerHeight: number }>`
-  position: fixed;
-  width: var(--primary-app-width);
-  overflow: hidden;
-  margin-left: -0.5rem;
+const Container = styled.div`
+  position: relative;
+  width: 100vw;
+  height: 100%;
+  overflow-y: auto;
+  min-height: 100svh;
   display: flex;
-  justify-content: stretch;
-  ${({ $headerHeight }) => `
-    top: ${$headerHeight}px; 
-    height: calc(100svh - ${$headerHeight}px);
-  `}
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
 `;
 
-const MenuContainer = styled(motion.nav)`
+const ChildrenContainer = styled.div<{ $headerHeight: number }>`
+  position: relative;
+  width: 100svw;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-items: stretch;
+  max-width: var(--primary-app-width);
+  ${({ $headerHeight }) => `padding-top: ${$headerHeight}px;`}
+`;
+
+const ClipContainer = styled.div`
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: stretch;
+`;
+
+const MenuContainer = styled(motion.nav)<{ $headerHeight: number }>`
   position: absolute;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background-color: var(--primary-bg);
+  background-color: hsl(var(--background));
   max-width: 300px;
   width: 100%;
   height: 100%;
-  padding: 0.5rem 0.75rem;
-  padding-left: 1.15rem;
-  border: 1px solid var(--menu-border);
+  padding: 0.75rem;
   box-shadow: 10px 0px 10px 10px rgba(10, 10, 10, 0.25);
 `;
 
@@ -90,12 +91,6 @@ const MenuItemFlex = styled(MenuItem)`
   display: flex;
   gap: 0.5rem;
   align-items: center;
-`;
-
-const Divider = styled.div`
-  height: 1px;
-  width: 100%;
-  background-color: var(--secondary-bg);
 `;
 
 const UserInfoStyled = styled(UserInfo)`
@@ -126,12 +121,11 @@ const ModalContainer = styled.div`
   background: rgb(0, 0, 0, 0.3);
 `;
 
-const Center = styled.div`
-  padding-top: 1rem;
-  width: 100%;
+const ModalHeader = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
+  width: 100%;
 `;
 
 const ModalContent = styled.div`
@@ -141,15 +135,15 @@ const ModalContent = styled.div`
   gap: 0.75rem;
   margin: 1rem;
   padding: 1rem;
-  padding-top: 3rem;
-  background: var(--secondary-bg);
+  padding-top: 1rem;
+  background: hsl(var(--card));
   border-radius: 0.5rem;
   max-width: var(--primary-app-width);
   width: 100%;
 `;
 
 const CornerLabel = styled.span`
-  color: #7dc69c;
+  color: hsl(var(--primary));
   font-weight: 500;
 `;
 
@@ -171,57 +165,46 @@ const UlStyled = styled.ul`
   padding-left: 0.75rem;
 `;
 
-const HRule = styled.div`
-  height: 1px;
-  background: var(--primary-text);
-  opacity: 0.25;
-  width: 100%;
-`;
-
-const CloseModalContainer = styled.div`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-`;
-
 const BlurLayer = styled.div`
   position: absolute;
-  inset: -5px; // do not clip the blur
+  inset: 0px;
   top: 0px;
   bottom: 0px;
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5px);
 `;
 
+const Link = styled.a<{ color: string }>``;
+
 export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string;
-  autoNextEnabled?: boolean;
   autocheckEnabled?: boolean;
   draftModeEnabled?: boolean;
   rotatingBoxProps?: RotatingBoxProps;
-  onAutoNextChanged?: (autoNextEnabled: boolean) => void;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
   onSignUpPressed?: () => void;
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
+  onSettingsPressed?: () => void;
 };
 
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
   children,
   centerLabel,
-  autoNextEnabled,
   autocheckEnabled,
   draftModeEnabled,
   rotatingBoxProps,
   onSignUpPressed,
   onSignOutPressed,
   onSignInPressed,
-  onAutoNextChanged,
   onAutocheckChanged,
   onDraftModeChanged,
+  onSettingsPressed,
 }) => {
+  const { colors } = useTheme();
+
   const { isSignedIn, user } = useUser();
   const headerRef = useRef<HTMLDivElement>(null);
   const { height = 0 } = useResizeObserver({
@@ -233,11 +216,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   const handleMenuPressed = useCallback(() => {
     setIsMenuOpen(!isMenuOpen);
   }, [isMenuOpen]);
-  const handleAutoNextTogglePressed = useCallback(() => {
-    if (onAutoNextChanged) {
-      onAutoNextChanged(!autoNextEnabled);
-    }
-  }, [autoNextEnabled, onAutoNextChanged]);
+
   const handleClickOutside = useCallback(() => {
     setIsMenuOpen(false);
   }, []);
@@ -268,8 +247,14 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   }, [showHelpModal]);
 
   return (
-    <Container>
-      <ChildrenContainer>
+    <Main>
+      <Container>
+        {height > 0 && (
+          <ChildrenContainer $headerHeight={height}>
+            {children}
+          </ChildrenContainer>
+        )}
+        {(isMenuOpen || showHelpModal) && <BlurLayer />}
         <HeaderContainer ref={headerRef}>
           <HeaderStyled
             onMenuPressed={handleMenuPressed}
@@ -280,31 +265,28 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
             onAutocheckChanged={onAutocheckChanged}
             draftModeEnabled={draftModeEnabled}
             onDraftModeChanged={onDraftModeChanged}
+            onSettingsPressed={onSettingsPressed}
           />
         </HeaderContainer>
-        {children}
-        {isMenuOpen && <BlurLayer />}
         <AnimatePresence>
           {isMenuOpen && (
-            <ClipContainer $headerHeight={height}>
+            <ClipContainer>
               <MenuContainer
                 ref={menuRef}
                 initial={{ x: '-100%' }}
                 animate={{ x: '0%' }}
-                exit={{ x: '-110%' }}
+                exit={{ x: '-100%' }}
                 transition={{
                   ease: 'easeInOut',
                   duration: 0.1,
                 }}
+                $headerHeight={height}
               >
                 <MenuItemsContainer>
-                  <Switch
-                    color="default"
-                    isSelected={autoNextEnabled}
-                    onValueChange={handleAutoNextTogglePressed}
-                  >
-                    Jump to next word
-                  </Switch>
+                  <MenuItemFlex onClick={handleMenuPressed}>
+                    <IconX width={20} height={25} />
+                    <div>Close</div>
+                  </MenuItemFlex>
                   <HRule />
                   <Link color="foreground" href="/">
                     Home
@@ -354,7 +336,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                 <div>
                   {isSignedIn === true && (
                     <>
-                      <Divider />
+                      <HRule />
                       <SignInContainer>
                         <UserInfoStyled
                           name={user.fullName ?? ''}
@@ -363,7 +345,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         />
                         <Button
                           size="sm"
-                          variant="bordered"
+                          variant="default"
                           onClick={onSignOutPressed}
                         >
                           Log Out
@@ -376,43 +358,40 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
             </ClipContainer>
           )}
         </AnimatePresence>
-      </ChildrenContainer>
-      {/** Modal content below */}
-      {showHelpModal && (
-        <ModalContainer onClick={toggleModal}>
-          <ModalContent>
-            <CloseModalContainer>
-              <FontAwesomeIcon icon={faClose} size="xl" />
-            </CloseModalContainer>
-            <h1>How to play Crosscube</h1>
-            <h2>A crossword puzzle in 3 dimensions</h2>
-            <Center>
-              <ExampleCube height={125} width={225} />
-            </Center>
-            <UlStyled>
-              <li>There are four sides.</li>
-              <li>
-                <CornerLabel>Corners</CornerLabel> share the same letter.
-              </li>
-              <li>
-                Change sides with the{' '}
-                <TurnArrowContainer>
-                  <TurnArrowStyled
-                    color="#999999"
-                    flipped
-                    height={25}
-                    width={25}
-                  />{' '}
-                </TurnArrowContainer>
-                keys.
-                <SwipeLabel>(or swipe)</SwipeLabel>
-              </li>
-              <li>Solve all of the clues to win!</li>
-            </UlStyled>
-          </ModalContent>
-        </ModalContainer>
-      )}
-    </Container>
+        {/** Modal content below */}
+        {showHelpModal && (
+          <ModalContainer onClick={toggleModal}>
+            <ModalContent>
+              <ModalHeader>
+                <h1>How to play Crosscube</h1>
+                <FontAwesomeIcon icon={faClose} size="xl" />
+              </ModalHeader>
+              <h2>A crossword puzzle in 3 dimensions</h2>
+              <UlStyled>
+                <li>There are four sides.</li>
+                <li>
+                  <CornerLabel>Corners</CornerLabel> share the same letter.
+                </li>
+                <li>
+                  Change sides with the{' '}
+                  <TurnArrowContainer>
+                    <TurnArrowStyled
+                      color={getColorHex(colors.selectedAdjacent)}
+                      flipped
+                      height={25}
+                      width={25}
+                    />{' '}
+                  </TurnArrowContainer>
+                  keys.
+                  <SwipeLabel>(or swipe)</SwipeLabel>
+                </li>
+                <li>Solve all of the clues to win!</li>
+              </UlStyled>
+            </ModalContent>
+          </ModalContainer>
+        )}
+      </Container>
+    </Main>
   );
 };
 

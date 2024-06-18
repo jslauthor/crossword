@@ -4,6 +4,10 @@ import satori, { init } from 'satori';
 import Yoga from 'yoga-wasm-web';
 import sharp from 'sharp';
 
+const TEXTURE_MAP_SIZE = 2048;
+const NUMBER_OF_NUMBERS_PER_LINE = 6;
+const NUMBER_OF_CELLS_PER_LINE = 17; // 22 is the number of cells in the 3D grid - 1
+
 const characterItems: string[] = [];
 for (let x = 0; x < 10; x++) {
   characterItems.push(x.toString(10));
@@ -13,11 +17,14 @@ for (let x = 0; x <= 25; x++) {
 }
 
 const numberItems: string[] = [];
-for (let x = 0; x <= 1000; x++) {
+for (let x = 0; x <= NUMBER_OF_CELLS_PER_LINE ** 2; x++) {
   numberItems.push(x.toString(10));
 }
 
-export const generateTextureRecord = (items = characterItems, size = 6) => {
+export const generateTextureRecord = (
+  items = characterItems,
+  size = NUMBER_OF_NUMBERS_PER_LINE,
+) => {
   // It's a 6x6 grid that contains A-Z and 0-9 (36 total items)
   let position = 0;
   const grid: Record<string, [number, number]> = {};
@@ -36,18 +43,20 @@ const TEXTURE_RECORD_ITEMS = Object.keys(TEXTURE_RECORD).map((item: string) => (
   <div
     style={{
       display: 'flex',
-      width: '341.33px',
-      height: '341.33px',
+      width: `${TEXTURE_MAP_SIZE / NUMBER_OF_NUMBERS_PER_LINE}px`,
+      height: `${TEXTURE_MAP_SIZE / NUMBER_OF_NUMBERS_PER_LINE}px`,
       aspectRatio: '1 / 1',
       justifyContent: 'center',
       alignItems: 'center',
       fontFamily: 'Franklin Gothic',
-      fontSize: '225px',
+      lineHeight: '1px',
+      fontWeight: 500,
+      fontSize: '210px',
       color: 'white',
     }}
     key={item}
   >
-    <div style={{ marginTop: '100px' }}>{item}</div>
+    <div style={{ marginTop: '-30px' }}>{item}</div>
   </div>
 ));
 
@@ -59,7 +68,7 @@ export const TextureAtlas: React.FC = () => (
       position: 'absolute',
       top: 0,
       left: 0,
-      width: '2048px', // 2k texture map
+      width: `${TEXTURE_MAP_SIZE}px`, // 2k texture map
     }}
   >
     <div
@@ -86,14 +95,19 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
       top: 0,
       left: 0,
       width: '256px',
+      height: '256px',
+      justifyContent: 'center',
+      alignItems: 'center',
     }}
   >
     <div
       style={{
+        position: 'relative',
         display: 'flex',
         width: '100%',
         height: '100%',
-        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       <div
@@ -105,8 +119,13 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
           justifyContent: 'center',
           alignItems: 'center',
           fontFamily: 'Franklin Gothic',
+          lineHeight: '1px',
+          left: '-5px',
+          top: '-32px',
+          fontWeight: 500,
           fontSize: '150px',
           color: 'white',
+          position: 'absolute',
         }}
       >
         {character}
@@ -115,65 +134,45 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
   </div>
 );
 
-export const NUMBER_RECORD = generateTextureRecord(numberItems, 31);
-const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) => (
-  <div
-    key={item}
-    style={{
-      display: 'flex',
-      padding: '2px',
-      width: '66.06px',
-      height: '66.06px',
-    }}
-  >
+export const NUMBER_RECORD = generateTextureRecord(
+  numberItems,
+  NUMBER_OF_CELLS_PER_LINE,
+);
+const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) =>
+  item == null ? null : (
     <div
+      key={item}
       style={{
-        position: 'relative',
         display: 'flex',
-        width: '100%',
-        height: '100%',
-        aspectRatio: '1 / 1',
+        width: `${Math.floor(TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE)}px`,
+        height: `${Math.floor(TEXTURE_MAP_SIZE / NUMBER_OF_CELLS_PER_LINE)}px`,
         fontFamily: 'Franklin Gothic',
-        fontSize: '14px',
+        fontSize: '55px',
+        fontWeight: 500,
+        lineHeight: '1px',
         color: 'white',
+        paddingTop: 15,
+        paddingLeft: 5,
       }}
     >
-      <div
-        style={{
-          position: 'absolute',
-          top: 5,
-          left: 5,
-        }}
-      >
-        {item}
-      </div>
+      {item}
     </div>
-  </div>
-));
+  ),
+);
 
 export const NumberAtlas: React.FC = () => (
   <div
     style={{
       display: 'flex',
+      flexWrap: 'wrap',
       aspectRatio: '1 / 1',
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      bottom: 0,
-      right: 0,
-      width: '2048px', // 2k texture map
+      width: `${TEXTURE_MAP_SIZE}px`, // 2k texture map
+      height: `${TEXTURE_MAP_SIZE}px`, // 2k texture map
+      padding: 0,
+      margin: 0,
     }}
   >
-    <div
-      style={{
-        display: 'flex',
-        width: '100%',
-        height: '100%',
-        flexWrap: 'wrap',
-      }}
-    >
-      {NUMBER_RECORD_ITEMS}
-    </div>
+    {NUMBER_RECORD_ITEMS}
   </div>
 );
 
@@ -182,10 +181,13 @@ const publicDir = path.join(process.cwd(), 'public');
 const saveElementToDisk = async (
   element: JSX.Element,
   filename: string,
-  size: number = 2048,
+  size: number = TEXTURE_MAP_SIZE,
 ) => {
   const font = fs.readFileSync(
     path.join(process.cwd(), 'public', 'franklin_gothic_regular.ttf'),
+  );
+  const fontMedium = fs.readFileSync(
+    path.join(process.cwd(), 'public', 'franklin_gothic_medium.otf'),
   );
   const wasm = fs.readFileSync(
     path.join(
@@ -209,10 +211,18 @@ const saveElementToDisk = async (
         weight: 400,
         style: 'normal',
       },
+      {
+        name: 'Franklin Gothic',
+        data: fontMedium as ArrayBuffer | Buffer,
+        weight: 500,
+        style: 'normal',
+      },
     ],
   });
 
-  const pngBuffer = await sharp(Buffer.from(svg)).png().toBuffer();
+  const pngBuffer = await sharp(Buffer.from(svg))
+    .png({ quality: 5 })
+    .toBuffer();
   fs.writeFileSync(publicDir + filename, pngBuffer);
 };
 

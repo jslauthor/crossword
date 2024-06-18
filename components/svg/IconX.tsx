@@ -4,7 +4,7 @@ import { SvgProps } from 'types/types';
 const IconX: React.FC<SvgProps> = ({
   width = 16,
   height = 16,
-  color = 'var(--primary-text)',
+  color = 'hsl(var(--foreground))',
 }) => {
   return (
     <svg

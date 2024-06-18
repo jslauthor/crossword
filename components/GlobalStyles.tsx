@@ -1,8 +1,19 @@
 'use client';
 
+import {
+  DEFAULT_BORDER_COLOR_CSS_VARIABLE,
+  DEFAULT_COLOR_CSS_VARIABLE,
+  DEFAULT_CORRECT_COLOR_CSS_VARIABLE,
+  DEFAULT_ERROR_COLOR_CSS_VARIABLE,
+  DEFAULT_FONT_COLOR_CSS_VARIABLE,
+  DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE,
+  DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE,
+  DEFAULT_SELECTED_COLOR_CSS_VARIABLE,
+  DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE,
+} from 'lib/utils/color';
 import { createGlobalStyle } from 'styled-components';
 
-export default createGlobalStyle`
+export default createGlobalStyle/*css*/ `
   html,
   body,
   div,
@@ -134,6 +145,11 @@ export default createGlobalStyle`
     font-weight: 400;
     font-style: normal;
     user-select: none;
+    -webkit-user-select: none;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
   }
 
   h1 {
@@ -175,44 +191,197 @@ export default createGlobalStyle`
   }
 
   :root {
-    --white: #F4F8F0;
+    --radius: 0.3rem;
+
+    // Colors
+    --white: #ededed;
+    --white-hsl: 0 0% 93%;
+
     --black: #131414;
+    --black-hsl: 0 0% 8%;
+    --black100-hsl: 0 0% 20%;
+
+    --true-white: #FFFFFF;
+    --true-white-hsl: 0 0% 100%;
+
+    --true-black: #000000;
+    --true-black-hsl: 0 0% 0%;
 
     --cool-grey700: #829b9e;
+    --cool-grey700-hsl: 185 11% 56%;
 
     --grey: #333333;
+    --grey-hsl: 0 0% 20%;
+
     --grey100: #1d1d1d;
+    --grey100-hsl: 0 0% 11%;
+
     --grey500: #b9b9b9;
+    --grey500-hsl: 0 0% 73%;
+
     --grey550: #727F6C;
+    --grey550-hsl: 92 7% 47%;
+
     --grey600: #41483E;
+    --grey600-hsl: 90 7% 25%;
+
     --grey800: #2C2F2A;
+    --grey800-hsl: 85 7% 18%;
+
     --grey900: #20231F;
+    --grey900-hsl: 100 7% 13%;
 
     --yellow500: #F2C94C;
-    --red500: #EB5757;
+    --yellow500-hsl: 47 86% 63%;
 
+    --yellow400: #F8DB4A;
+    --yellow400-hsl: 51 92% 64%;
+
+    --red400: #ce1af3;
+    --red400-hsl: 292 87% 54%;
+
+    --red500: #EB5757;
+    --red500-hsl: 0 80% 63%;
+
+    --red600: #db3232;
+    --red600-hsl: 0 72% 54%;
+
+    --blue500: #0081fa;
+    --blue500-hsl: 211 100% 49%;
+
+    --teal500: #00dcff;
+    --teal500-hsl: 190 100% 50%;
+
+    --mint-green200: #9dfac9;
+    --mint-green200-hsl: 143 93% 80%;
+
+    --mint-green400: #1ed473;
+    --mint-green400-hsl: 145 83% 47%;
+
+    --light-grey100: #D0D3D9;
+    --light-grey100-hsl: 223 14% 83%;
+
+    --light-grey500: #999EAb;
+    --light-grey500-hsl: 222 8% 63%;
+
+    --light-grey900: #53565e;
+    --light-grey900-hsl: 225 5% 35%;
+
+    --light-grey-blue300: #7faab0;
+    --light-grey-blue300-hsl: 190 25% 58%;
+
+    --light-grey-blue400: #B1D7FB;
+    --light-grey-blue400-hsl: 204 86% 86%;
+
+    --light-grey-blue700: #43617d;
+    --light-grey-blue700-hsl: 207 32% 37%;
+
+    --magenta500: #f70ca9;
+    --magenta500-hsl: 322 94% 53%;
+
+    
     --max-app-width: 500px;
   }
 
+  .text-foreground, .text-default-foreground {
+    color: inherit;
+  }
+
   // Theme variables
-  .dark {
-    --primary-text: var(--white);
-    --primary-bg: var(--black);
-    --primary-app-width: var(--max-app-width);
-    --secondary-bg: var(--grey);
-    --terciary-bg: var(--grey900);
-
-    --primary-cell-bg: var(--grey550);
-
-    --ai-bg: var(--grey600);
-    --menu-border: var(--grey100);
-    --preview-hover-bg: var(--grey800);
+  [data-theme='dark'] {
+    --background: 20 14.3% 4.1%;
+    --foreground: 0 0% 95%;
+    --card: 24 9.8% 10%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 95%;
+    --primary: var(--mint-green400-hsl);
+    --primary-foreground: 144.9 80.4% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 142.4 71.8% 29.2%;
 
     --medium-difficulty-text: var(--yellow500);
     --hard-difficulty-text: var(--red500);
 
-    background-color: var(--primary-bg);
-    color: var(--primary-text);
+    --keyboard-bg: transparent;
+    --keyboard-button-bg: hsl(var(--grey800-hsl));
+    --keyboard-button-color: hsl(var(--foreground));
+    --keyboard-function-bg: var(--light-grey900);
+    --keyboard-padding: 0;
+
+    // Puzzle specific theme vars
+    ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--white);
+    ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--black);
+    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--light-grey-blue300);
+    ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--magenta500);
+    ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--mint-green400);
+    ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--teal500);
+    ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red400);
+    ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
+    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--mint-green200);
+
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    scrollbar-color: hsl(--black-hsl) hsl(--black100-hsl);
+    --primary-app-width: var(--max-app-width);
+  }
+
+  [data-theme='light'] {
+    --background: var(--white-hsl);
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: var(--blue500-hsl);
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.3rem;
+
+    --medium-difficulty-text: var(--yellow500);
+    --hard-difficulty-text: var(--red500);
+
+    --keyboard-bg: var(--light-grey100);
+    --keyboard-button-bg: hsl(var(--true-white-hsl));
+    --keyboard-button-color: hsl(--foreground);
+    --keyboard-function-bg: var(--light-grey500);
+    --keyboard-padding: 0 .25rem;
+
+    // Puzzle specific theme vars
+    // ONLY USE HEX COLORS HERE
+    ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--true-black);
+    ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--light-grey-blue700);    
+    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--true-white);
+    ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--yellow400);
+    ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--light-grey-blue400);
+    ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--blue500);
+    ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red600);
+    ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
+    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--grey600);
+
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    scrollbar-color: hsl(--grey100-hsl) hsl(--grey800-hsl);
+    --primary-app-width: var(--max-app-width);
   }
 
   .dim {
@@ -256,7 +425,7 @@ export default createGlobalStyle`
   .turn-left-button,
   .turn-right-button {
     background: transparent !important;
-    border: 1px solid var(--secondary-bg) !important;
+    border: 1px solid hsl(var(--primary)) !important;
     /* Hide the text. */
     text-indent: -9999px;
     white-space: nowrap;
@@ -280,10 +449,9 @@ export default createGlobalStyle`
     Theme: keyboardTheme
   */
   .simple-keyboard.keyboardTheme {
-    background-color: transparent;
-    border-radius: 0;
-    border-bottom-right-radius: 5px;
-    border-bottom-left-radius: 5px;
+    background-color: var(--keyboard-bg);
+    border-radius: .5rem;
+    padding: var(--keyboard-padding);
   }
 
   .simple-keyboard.keyboardTheme .hg-button {
@@ -293,10 +461,14 @@ export default createGlobalStyle`
     display: flex;
     justify-content: center;
     align-items: center;
-    background: var(--secondary-bg);
-    color: white;
+    background: var(--keyboard-button-bg);
+    color: var(--keyboard-button-color);
     border: none;
     flex-grow: unset;
+  }
+
+  .simple-keyboard.keyboardTheme .hg-button.backspace-button {
+    background-color: var(--keyboard-function-bg);
   }
 
   .hg-theme-default .hg-button span {
@@ -318,9 +490,5 @@ export default createGlobalStyle`
     margin: 0.25rem;
     margin-left: 0;
     margin-right: 0;
-  }
-
-  #root .simple-keyboard.keyboardTheme + .simple-keyboard-preview {
-    background: #1c4995;
   }
 `;

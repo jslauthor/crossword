@@ -8,13 +8,12 @@ interface MenuProps extends MenuWrapperProps {}
 const Menu: React.FC<MenuProps> = ({
   centerLabel,
   autocheckEnabled,
-  autoNextEnabled,
-  onAutoNextChanged,
   onAutocheckChanged,
   draftModeEnabled,
   onDraftModeChanged,
   rotatingBoxProps,
   children,
+  onSettingsPressed,
 }) => {
   const router = useRouter();
   const { signOut } = useClerk();
@@ -33,8 +32,6 @@ const Menu: React.FC<MenuProps> = ({
   return (
     <MenuWrapper
       centerLabel={centerLabel}
-      autoNextEnabled={autoNextEnabled}
-      onAutoNextChanged={onAutoNextChanged}
       autocheckEnabled={autocheckEnabled}
       onAutocheckChanged={onAutocheckChanged}
       onSignOutPressed={onSignOut}
@@ -43,6 +40,7 @@ const Menu: React.FC<MenuProps> = ({
       rotatingBoxProps={rotatingBoxProps}
       draftModeEnabled={draftModeEnabled}
       onDraftModeChanged={onDraftModeChanged}
+      onSettingsPressed={onSettingsPressed}
     >
       {children}
     </MenuWrapper>

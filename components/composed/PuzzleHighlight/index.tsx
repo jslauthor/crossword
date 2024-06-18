@@ -19,15 +19,15 @@ const Container = styled.div`
   flex-direction: column;
   align-items: center;
   padding: 0.5rem;
-  background-color: var(--terciary-bg);
+  background-color: hsl(var(--secondary));
   border-radius: 0.25rem;
-  border: 5px solid var(--grey800);
+  border: 5px solid hsl(var(--card));
   user-select: none;
   min-height: 12rem;
 
   &:hover {
     transition: background-color 0.15s ease-in-out;
-    background-color: var(--preview-hover-bg);
+    background-color: hsl(var(--background));
   }
 
   @media (max-width: 400px) {
@@ -69,7 +69,7 @@ const InfoContainer = styled.footer`
 `;
 
 const AiContainer = styled.div`
-  background-color: var(--ai-bg);
+  background-color: hsl(var(--accent));
   border-radius: 0.25rem;
   padding: 0.05rem 0.25rem;
   margin-top: 0.33rem;

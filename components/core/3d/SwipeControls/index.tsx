@@ -7,6 +7,16 @@ import { a, useSpring } from '@react-spring/three';
 import { useGesture } from '@use-gesture/react';
 import { SpringConfig } from '@react-spring/core';
 
+function getProgress(from: number, to: number, current: number): number {
+  // If the target value (to) is equal to the starting value (from), return 1 if current equals to, else return 0.
+  if (from === to) {
+    return current === to ? 1 : 0;
+  }
+
+  // Calculate the progress.
+  return (current - from) / (to - from);
+}
+
 export type SwipeControlProps = {
   snap?: Boolean | SpringConfig;
   global?: boolean;
@@ -22,6 +32,7 @@ export type SwipeControlProps = {
   domElement?: HTMLElement;
   onSwipeLeft?: () => void;
   onSwipeRight?: () => void;
+  onRotationYProgress?: (progress: number) => void;
 };
 
 export function SwipeControls({
@@ -39,6 +50,7 @@ export function SwipeControls({
   config = { mass: 1, tension: 170, friction: 26 },
   onSwipeLeft,
   onSwipeRight,
+  onRotationYProgress,
 }: SwipeControlProps) {
   const events = useThree((state) => state.events);
   const gl = useThree((state) => state.gl);
@@ -48,12 +60,12 @@ export function SwipeControls({
   const rPolar = React.useMemo(
     () => [rotation[0] + polar[0], rotation[0] + polar[1]],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rotation[0], polar[0], polar[1]]
+    [rotation[0], polar[0], polar[1]],
   ) as [number, number];
   const rAzimuth = React.useMemo(
     () => [rotation[1] + azimuth[0], rotation[1] + azimuth[1]],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rotation[1], azimuth[0], azimuth[1]]
+    [rotation[1], azimuth[0], azimuth[1]],
   ) as [number, number];
   const rInitial = React.useMemo(
     () => [
@@ -62,17 +74,23 @@ export function SwipeControls({
       rotation[2],
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rotation[0], rotation[1], rotation[2], rPolar, rAzimuth]
+    [rotation[0], rotation[1], rotation[2], rPolar, rAzimuth],
   );
   const [spring, api] = useSpring(() => ({
     scale: 1,
     rotation: rInitial,
     config,
+    onChange: ({ value }) => {
+      const from = spring.rotation.animation.fromValues[1];
+      const to = spring.rotation.animation.toValues?.[1];
+      if (to == null) return;
+      onRotationYProgress?.(getProgress(from, to, value.rotation[1]));
+    },
   }));
   React.useEffect(
     () => void api.start({ scale: 1, rotation: rInitial, config }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rInitial]
+    [rInitial],
   );
   React.useEffect(() => {
     if (global && cursor && dragEnabled) {
@@ -105,11 +123,11 @@ export function SwipeControls({
         if (cursor) explDomElement.style.cursor = down ? 'grabbing' : 'grab';
         x = MathUtils.clamp(
           oldX + (x / size.width) * Math.PI * speed,
-          ...rAzimuth
+          ...rAzimuth,
         );
         y = MathUtils.clamp(
           oldY + (y / size.height) * Math.PI * speed,
-          ...rPolar
+          ...rPolar,
         );
         const sConfig =
           snap && !down && typeof snap !== 'boolean' ? snap : config;
@@ -124,7 +142,7 @@ export function SwipeControls({
         return [y, x];
       },
     },
-    { target: global ? explDomElement : undefined }
+    { target: global ? explDomElement : undefined },
   );
   return (
     <a.group {...bind?.()} {...(spring as any)}>
