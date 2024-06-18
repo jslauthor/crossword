@@ -17,6 +17,8 @@ import ExampleCube from 'components/svg/ExampleCube';
 import IconX from 'components/svg/IconX';
 import { HRule } from '../Dividers';
 import { Button } from '../ui/button';
+import { useTheme } from 'lib/utils/hooks/theme';
+import { getColorHex } from 'lib/utils/color';
 
 const Main = styled.div`
   position: relative;
@@ -120,12 +122,11 @@ const ModalContainer = styled.div`
   background: rgb(0, 0, 0, 0.3);
 `;
 
-const Center = styled.div`
-  padding-top: 1rem;
-  width: 100%;
+const ModalHeader = styled.div`
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
+  width: 100%;
 `;
 
 const ModalContent = styled.div`
@@ -135,15 +136,15 @@ const ModalContent = styled.div`
   gap: 0.75rem;
   margin: 1rem;
   padding: 1rem;
-  padding-top: 3rem;
-  background: hsl(var(--primary));
+  padding-top: 1rem;
+  background: hsl(var(--card));
   border-radius: 0.5rem;
   max-width: var(--primary-app-width);
   width: 100%;
 `;
 
 const CornerLabel = styled.span`
-  color: #7dc69c;
+  color: hsl(var(--primary));
   font-weight: 500;
 `;
 
@@ -163,12 +164,6 @@ const TurnArrowStyled = styled(TurnArrow)`
 const UlStyled = styled.ul`
   list-style: disc;
   padding-left: 0.75rem;
-`;
-
-const CloseModalContainer = styled.div`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
 `;
 
 const BlurLayer = styled.div`
@@ -209,6 +204,8 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   onDraftModeChanged,
   onSettingsPressed,
 }) => {
+  const { colors } = useTheme();
+
   const { isSignedIn, user } = useUser();
   const headerRef = useRef<HTMLDivElement>(null);
   const { height = 0 } = useResizeObserver({
@@ -254,7 +251,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
     <Main>
       <Container>
         <ChildrenContainer $headerHeight={height}>{children}</ChildrenContainer>
-        {isMenuOpen && <BlurLayer />}
+        {(isMenuOpen || showHelpModal) && <BlurLayer />}
         <HeaderContainer ref={headerRef}>
           <HeaderStyled
             onMenuPressed={handleMenuPressed}
@@ -362,14 +359,11 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
         {showHelpModal && (
           <ModalContainer onClick={toggleModal}>
             <ModalContent>
-              <CloseModalContainer>
+              <ModalHeader>
+                <h1>How to play Crosscube</h1>
                 <FontAwesomeIcon icon={faClose} size="xl" />
-              </CloseModalContainer>
-              <h1>How to play Crosscube</h1>
+              </ModalHeader>
               <h2>A crossword puzzle in 3 dimensions</h2>
-              <Center>
-                <ExampleCube height={125} width={225} />
-              </Center>
               <UlStyled>
                 <li>There are four sides.</li>
                 <li>
@@ -379,7 +373,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                   Change sides with the{' '}
                   <TurnArrowContainer>
                     <TurnArrowStyled
-                      color="#999999"
+                      color={getColorHex(colors.selectedAdjacent)}
                       flipped
                       height={25}
                       width={25}

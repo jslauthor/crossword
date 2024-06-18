@@ -35,7 +35,7 @@ const TurnArrow: FunctionComponent<TurnArrowProps> = ({
       <path
         transform={flipped ? `scale(-1, 1) translate(-12, 0)` : ''}
         d="M8.28475 9.74023C6.96961 9.76873 5.66186 9.56186 4.05329 9.00983C1.80298 8.14539 1.53489 6.90835 1.53489 6.90835L0.639832 4.33084C2.66637 6.40171 6.96856 6.23917 8.41775 6.26767L8.4473 4.45011L11.3235 7.83296L8.25414 11.1704L8.2837 9.74023H8.28475Z"
-        fill={tinycolor(`${color}`).lighten(5).toHexString()}
+        fill={tinycolor(`${color}`).darken(5).toHexString()}
       />
     </svg>
   );
