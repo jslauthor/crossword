@@ -5,11 +5,12 @@ import { useCallback, useMemo } from 'react';
 import { styled } from 'styled-components';
 import RotatingBox, { RotatingBoxProps } from '../3d/Box';
 import Link from 'next/link';
-import { Button } from '@nextui-org/react';
 import LightBulb from 'components/svg/LightBulb';
 import Pencil from 'components/svg/Pencil';
 import { DEFAULT_CORRECT_COLOR, getColorHex } from 'lib/utils/color';
 import Gear from 'components/svg/Gear';
+import { Button } from '../ui/button';
+import { useTheme } from 'lib/utils/hooks/theme';
 
 const Container = styled.nav<{ $hasCenterLabel: boolean }>`
   display: grid;
@@ -63,6 +64,8 @@ const Header: React.FC<HeaderProps> = ({
   draftModeEnabled,
   onSettingsPressed,
 }) => {
+  const { colors } = useTheme();
+
   const hasCenterLabel = useMemo(
     () => centerLabel != null && centerLabel.length > 0,
     [centerLabel],
@@ -81,16 +84,12 @@ const Header: React.FC<HeaderProps> = ({
   }, [draftModeEnabled, onDraftModeChanged]);
 
   const draftColor = useMemo(() => {
-    return draftModeEnabled
-      ? getColorHex(DEFAULT_CORRECT_COLOR)
-      : 'var(--primary-text)';
-  }, [draftModeEnabled]);
+    return draftModeEnabled ? getColorHex(colors.correct) : undefined;
+  }, [colors.correct, draftModeEnabled]);
 
   const correctColor = useMemo(() => {
-    return autocheckEnabled
-      ? getColorHex(DEFAULT_CORRECT_COLOR)
-      : 'var(--primary-text)';
-  }, [autocheckEnabled]);
+    return autocheckEnabled ? getColorHex(colors.correct) : undefined;
+  }, [autocheckEnabled, colors.correct]);
 
   return (
     <Container $hasCenterLabel={hasCenterLabel}>
@@ -114,31 +113,19 @@ const Header: React.FC<HeaderProps> = ({
           <>
             <Button
               onClick={handleDraftModeChanged}
-              color="default"
-              variant={draftModeEnabled ? 'solid' : 'light'}
-              isIconOnly
-              size="sm"
-              radius="sm"
+              variant={draftModeEnabled ? 'outline' : 'ghost'}
+              size="icon"
             >
               <Pencil fill={draftColor} width={18} height={18} />
             </Button>
             <Button
               onClick={handleAutocheckChanged}
-              color="default"
-              variant={autocheckEnabled ? 'solid' : 'light'}
-              isIconOnly
-              size="sm"
-              radius="sm"
+              variant={autocheckEnabled ? 'outline' : 'ghost'}
+              size="icon"
             >
               <LightBulb fill={correctColor} width={18} height={18} />
             </Button>
-            <Button
-              onClick={onSettingsPressed}
-              color="default"
-              variant="light"
-              isIconOnly
-              size="sm"
-            >
+            <Button onClick={onSettingsPressed} variant="ghost" size="icon">
               <Gear width={18} height={18} />
             </Button>
             <RotatingBox

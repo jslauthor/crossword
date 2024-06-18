@@ -6,7 +6,7 @@ const NAME = 'icon-hamburger';
 const IconHamburger: FunctionComponent<SvgProps> = ({
   width = 18,
   height = 16,
-  color = 'var(--primary-text)',
+  color = 'hsl(var(--foreground))',
 }) => {
   return (
     <svg

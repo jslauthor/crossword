@@ -34,7 +34,6 @@ import Particles from 'components/core/3d/Particles';
 import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
 import Menu from 'components/containers/Menu';
-import { Spinner } from '@nextui-org/react';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { PuzzleType } from 'app/page';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
@@ -50,6 +49,7 @@ import {
 import { useTheme } from 'lib/utils/hooks/theme';
 import { VRule } from 'components/core/Dividers';
 import PuzzleSettings from 'components/composed/PuzzleSettings';
+import { Spinner } from 'components/core/ui/spinner';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -86,7 +86,7 @@ const SolvedContainer = styled.div`
   background: radial-gradient(rgb(0, 0, 0, 0.7), rgb(0, 0, 0, 0));
   font-weight: 600;
   font-size: 1.5rem;
-  color: var(--primary-text);
+  color: hsl(var(--foreground));
   max-width: var(--primary-app-width);
   margin: 0 auto;
 `;
@@ -142,7 +142,7 @@ const ClueContainer = styled.div<{ $backgroundColor: string }>`
   width: 100%;
   min-height: 54px;
   overflow: hidden;
-  color: var(--clue-text-color);
+  color: hsl(var(--foreground));
   ${({ $backgroundColor }) =>
     `background-color: #${tinycolor($backgroundColor).darken(5).toHex()}`}
 `;
@@ -201,7 +201,7 @@ const IconContainer = styled.div`
 function Loader() {
   return (
     <Html center>
-      <Spinner color="default" />
+      <Spinner show />
     </Html>
   );
 }

@@ -1,13 +1,21 @@
 'use client';
 
-import { Select, SelectItem, Switch } from '@nextui-org/react';
 import { HRule } from 'components/core/Dividers';
 import Overlay, { OverlayProps } from 'components/core/Overlay';
 import React, { useCallback } from 'react';
 import styled from 'styled-components';
 import { useTheme } from 'lib/utils/hooks/theme';
+import { Switch } from 'components/core/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from 'components/core/ui/select';
 
 const SettingsContainer = styled.div`
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -54,8 +62,8 @@ const PuzzleSettings: React.FC<PuzzleSettingsProps> = ({
   const { theme, setTheme, colors, themes } = useTheme();
 
   const handleThemePressed = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setTheme(e.target.value);
+    (value: string) => {
+      setTheme(value);
     },
     [setTheme],
   );
@@ -73,9 +81,8 @@ const PuzzleSettings: React.FC<PuzzleSettingsProps> = ({
           <SettingsItem>
             <div>Jump to the next clue</div>
             <Switch
-              color="primary"
-              isSelected={autoNextEnabled}
-              onValueChange={handleAutoNextTogglePressed}
+              checked={autoNextEnabled}
+              onCheckedChange={handleAutoNextTogglePressed}
             />
           </SettingsItem>
           <HRule />
@@ -85,21 +92,17 @@ const PuzzleSettings: React.FC<PuzzleSettingsProps> = ({
           <HRule />
           <SettingsItem>
             <div>Color Theme</div>
-            <Select
-              variant="underlined"
-              placeholder="Select a theme..."
-              className="max-w-44"
-              value={theme}
-              onChange={handleThemePressed}
-              classNames={{
-                trigger: 'border-none shadow-transparent',
-                innerWrapper: 'text-inherit',
-                value: 'text-inherit',
-              }}
-            >
-              {themes.map((theme) => (
-                <SelectItem key={theme}>{theme}</SelectItem>
-              ))}
+            <Select value={theme} onValueChange={handleThemePressed}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Theme" />
+              </SelectTrigger>
+              <SelectContent>
+                {themes.map((theme) => (
+                  <SelectItem key={theme} value={theme}>
+                    {theme}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </SettingsItem>
           <HRule />

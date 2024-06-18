@@ -4,12 +4,10 @@ import React, { ReactNode, useEffect, useRef } from 'react';
 import md5 from 'md5';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
-import { Button, Switch } from '@nextui-org/react';
 import { useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useOnClickOutside, useResizeObserver } from 'usehooks-ts';
 import UserInfo from 'components/composed/UserInfo';
-import { Link } from '@nextui-org/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { RotatingBoxProps } from '../3d/Box';
 import TurnArrow from 'components/svg/TurnArrow';
@@ -18,6 +16,7 @@ import { faClose } from '@fortawesome/free-solid-svg-icons';
 import ExampleCube from 'components/svg/ExampleCube';
 import IconX from 'components/svg/IconX';
 import { HRule } from '../Dividers';
+import { Button } from '../ui/button';
 
 const Main = styled.div`
   position: relative;
@@ -31,8 +30,7 @@ const HeaderContainer = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  z-index: 9998;
-  background: linear-gradient(var(--primary-bg), #00000000);
+  background: linear-gradient(hsl(var(--background)), #00000000);
   padding: 0.75rem;
 `;
 
@@ -65,12 +63,10 @@ const ChildrenContainer = styled.div<{ $headerHeight: number }>`
 
 const ClipContainer = styled.div`
   position: fixed;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   overflow: hidden;
   display: flex;
   justify-content: stretch;
-  z-index: 9999;
 `;
 
 const MenuContainer = styled(motion.nav)<{ $headerHeight: number }>`
@@ -78,7 +74,7 @@ const MenuContainer = styled(motion.nav)<{ $headerHeight: number }>`
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background-color: var(--primary-bg);
+  background-color: hsl(var(--background));
   max-width: 300px;
   width: 100%;
   height: 100%;
@@ -99,7 +95,7 @@ const MenuItemFlex = styled(MenuItem)`
 const Divider = styled.div`
   height: 1px;
   width: 100%;
-  background-color: var(--secondary-bg);
+  background-color: hsl(var(--primary));
 `;
 
 const UserInfoStyled = styled(UserInfo)`
@@ -146,7 +142,7 @@ const ModalContent = styled.div`
   margin: 1rem;
   padding: 1rem;
   padding-top: 3rem;
-  background: var(--secondary-bg);
+  background: hsl(var(--primary));
   border-radius: 0.5rem;
   max-width: var(--primary-app-width);
   width: 100%;
@@ -189,6 +185,8 @@ const BlurLayer = styled.div`
   background: rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(5px);
 `;
+
+const Link = styled.a<{ color: string }>``;
 
 export type MenuWrapperProps = {
   children?: ReactNode;
@@ -260,22 +258,22 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
 
   return (
     <Main>
-      <HeaderContainer ref={headerRef}>
-        <HeaderStyled
-          onMenuPressed={handleMenuPressed}
-          showCloseButton={isMenuOpen}
-          centerLabel={centerLabel}
-          rotatingBoxProps={rotatingBoxProps}
-          autocheckEnabled={autocheckEnabled}
-          onAutocheckChanged={onAutocheckChanged}
-          draftModeEnabled={draftModeEnabled}
-          onDraftModeChanged={onDraftModeChanged}
-          onSettingsPressed={onSettingsPressed}
-        />
-      </HeaderContainer>
       <Container>
         <ChildrenContainer $headerHeight={height}>{children}</ChildrenContainer>
         {isMenuOpen && <BlurLayer />}
+        <HeaderContainer ref={headerRef}>
+          <HeaderStyled
+            onMenuPressed={handleMenuPressed}
+            showCloseButton={isMenuOpen}
+            centerLabel={centerLabel}
+            rotatingBoxProps={rotatingBoxProps}
+            autocheckEnabled={autocheckEnabled}
+            onAutocheckChanged={onAutocheckChanged}
+            draftModeEnabled={draftModeEnabled}
+            onDraftModeChanged={onDraftModeChanged}
+            onSettingsPressed={onSettingsPressed}
+          />
+        </HeaderContainer>
         <AnimatePresence>
           {isMenuOpen && (
             <ClipContainer>
@@ -353,7 +351,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         />
                         <Button
                           size="sm"
-                          variant="bordered"
+                          variant="outline"
                           onClick={onSignOutPressed}
                         >
                           Log Out

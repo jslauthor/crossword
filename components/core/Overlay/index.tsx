@@ -1,6 +1,5 @@
 'use client';
 
-import { Link } from '@nextui-org/react';
 import React from 'react';
 import { createPortal } from 'react-dom';
 import styled from 'styled-components';
@@ -10,10 +9,9 @@ import { HRule } from '../Dividers';
 const ModalContainer = styled(motion.div)`
   position: fixed;
   inset: 0;
-  z-index: 9999;
   width: 100svw;
   height: 100svh;
-  background-color: var(--primary-bg);
+  background-color: hsl(var(--background));
   display: flex;
   justify-content: center;
 `;
@@ -38,7 +36,7 @@ const H2 = styled.h2`
   font-weight: 500;
 `;
 
-const Text = styled(Link)`
+const Text = styled.a`
   grid-column: 3;
   justify-self: end;
 `;

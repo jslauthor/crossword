@@ -6,7 +6,6 @@ import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { PuzzleType } from 'app/page';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Link as StyledLink } from '@nextui-org/react';
 import PuzzleHighlight from 'components/composed/PuzzleHighlight';
 import { PuzzleProps } from '../PuzzlePage';
 
@@ -17,7 +16,7 @@ const Container = styled.div`
   width: 100%;
   max-width: var(--primary-app-width);
   padding: 0.75rem;
-  background: var(--primary-bg);
+  background: hsl(var(--background));
 `;
 
 const PuzzlesContainer = styled.div`
@@ -50,10 +49,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
             <h2>
               No puzzles found! Something must have gone terribly wrong with the
               server. Please{' '}
-              <StyledLink color="warning" href="mailto:info@crosscube.com">
-                contact support
-              </StyledLink>
-              .
+              <a href="mailto:info@crosscube.com">contact support</a>.
             </h2>
           </ErrorContainer>
         </Container>

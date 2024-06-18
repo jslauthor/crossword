@@ -1,5 +1,5 @@
+import { Avatar, AvatarFallback, AvatarImage } from 'components/core/ui/avatar';
 import React, { useMemo } from 'react';
-import { Avatar } from '@nextui-org/react';
 import { styled } from 'styled-components';
 
 const UserInfoContainer = styled.div`
@@ -36,12 +36,10 @@ const UserInfo: React.FC<UserInfoProps> = ({ name, email, src, className }) => {
 
   return (
     <UserInfoContainer className={className}>
-      <Avatar
-        size="md"
-        name={avatarName}
-        src={src}
-        showFallback={avatarName.length < 1}
-      />
+      <Avatar>
+        <AvatarImage src={src} alt={avatarName} />
+        <AvatarFallback>{avatarName}</AvatarFallback>
+      </Avatar>
       <InfoContainer>
         <p className="font-bold leading-none">{name}</p>
         <p>{email}</p>
