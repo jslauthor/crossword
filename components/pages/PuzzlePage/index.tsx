@@ -382,7 +382,6 @@ export default function Puzzle({
     },
     [isPuzzleSolved],
   );
-  useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
 
   const {
     colors: {
@@ -509,7 +508,7 @@ export default function Puzzle({
   }, []);
 
   const handlePrevWord = useCallback(
-    (selected?: number) => (event: MouseEvent) => {
+    (selected?: number) => (event?: MouseEvent) => {
       if (event) event.stopPropagation();
       if (onPrevWord.current == null || selected == null) return;
       onPrevWord.current(selected, true);
@@ -518,7 +517,7 @@ export default function Puzzle({
   );
 
   const handleNextWord = useCallback(
-    (selected?: number) => (event: MouseEvent) => {
+    (selected?: number) => (event?: MouseEvent) => {
       if (event) event.stopPropagation();
       if (onNextWord.current == null || selected == null) return;
       onNextWord.current(selected);
@@ -541,6 +540,23 @@ export default function Puzzle({
   const handleSettingsClose = useCallback(() => {
     setIsSettingsOpen(false);
   }, []);
+
+  const handleNext = useCallback(
+    () => handleNextWord(selected)(undefined),
+    [handleNextWord, selected],
+  );
+  const handlePrev = useCallback(
+    () => handlePrevWord(selected)(undefined),
+    [handlePrevWord, selected],
+  );
+
+  // Keyboard shortcuts
+  useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
+  useKeyDown(handlePrev, ['ARROWLEFT']);
+  useKeyDown(handleNext, ['ARROWRIGHT']);
+  useKeyDown(turnRight, ['ARROWUP']);
+  useKeyDown(turnLeft, ['ARROWDOWN']);
+  useKeyDown(onClueClick, [' ']);
 
   return (
     <>

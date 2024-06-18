@@ -1,25 +1,30 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 
 export const useKeyDown = (
   callBack: (pressedKey: string) => any,
   key: string | string[],
   caseInsensitive: boolean = true,
-  disabled?: boolean
+  disabled?: boolean,
 ) => {
-  const handleKeyDown = ({ key: pressedKey }: KeyboardEvent) => {
-    if (key instanceof Array) {
-      if (
-        !key.includes(
-          caseInsensitive === true ? pressedKey.toUpperCase() : pressedKey
+  const handleKeyDown = useCallback(
+    ({ key: pressedKey }: KeyboardEvent) => {
+      if (key instanceof Array) {
+        if (
+          !key.includes(
+            caseInsensitive === true ? pressedKey.toUpperCase() : pressedKey,
+          )
         )
-      )
-        return;
-    } else {
-      if (key !== '_all' && key !== pressedKey) return;
-    }
+          return;
+      } else {
+        if (key !== '_all' && key !== pressedKey) return;
+      }
 
-    callBack(caseInsensitive === true ? pressedKey.toUpperCase() : pressedKey);
-  };
+      callBack(
+        caseInsensitive === true ? pressedKey.toUpperCase() : pressedKey,
+      );
+    },
+    [callBack, caseInsensitive, key],
+  );
 
   useEffect(() => {
     if (disabled) return;
