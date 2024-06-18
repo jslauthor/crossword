@@ -83,7 +83,7 @@ const SolvedContainer = styled.div`
   align-items: center;
   justify-content: center;
   inset: 0;
-  background: radial-gradient(rgb(0, 0, 0, 0.7), rgb(0, 0, 0, 0));
+  background: radial-gradient(hsl(var(--background)), rgb(0, 0, 0, 0));
   font-weight: 600;
   font-size: 1.5rem;
   color: hsl(var(--foreground));
