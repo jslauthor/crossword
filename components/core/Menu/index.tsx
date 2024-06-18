@@ -92,12 +92,6 @@ const MenuItemFlex = styled(MenuItem)`
   align-items: center;
 `;
 
-const Divider = styled.div`
-  height: 1px;
-  width: 100%;
-  background-color: hsl(var(--primary));
-`;
-
 const UserInfoStyled = styled(UserInfo)`
   margin: 0.5rem;
 `;
@@ -342,7 +336,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                 <div>
                   {isSignedIn === true && (
                     <>
-                      <Divider />
+                      <HRule />
                       <SignInContainer>
                         <UserInfoStyled
                           name={user.fullName ?? ''}
@@ -351,7 +345,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         />
                         <Button
                           size="sm"
-                          variant="outline"
+                          variant="default"
                           onClick={onSignOutPressed}
                         >
                           Log Out
