@@ -13,7 +13,6 @@ import { RotatingBoxProps } from '../3d/Box';
 import TurnArrow from 'components/svg/TurnArrow';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClose } from '@fortawesome/free-solid-svg-icons';
-import ExampleCube from 'components/svg/ExampleCube';
 import IconX from 'components/svg/IconX';
 import { HRule } from '../Dividers';
 import { Button } from '../ui/button';

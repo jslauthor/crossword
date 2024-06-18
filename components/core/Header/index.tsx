@@ -116,17 +116,17 @@ const Header: React.FC<HeaderProps> = ({
               variant={draftModeEnabled ? 'outline' : 'ghost'}
               size="icon"
             >
-              <Pencil fill={draftColor} width={18} height={18} />
+              <Pencil fill={draftColor} width={16} height={16} />
             </Button>
             <Button
               onClick={handleAutocheckChanged}
               variant={autocheckEnabled ? 'outline' : 'ghost'}
               size="icon"
             >
-              <LightBulb fill={correctColor} width={18} height={18} />
+              <LightBulb fill={correctColor} width={16} height={16} />
             </Button>
             <Button onClick={onSettingsPressed} variant="ghost" size="icon">
-              <Gear width={18} height={18} />
+              <Gear width={16} height={16} />
             </Button>
             <RotatingBox
               side={rotatingBoxProps.side}
