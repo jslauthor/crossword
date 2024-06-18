@@ -24,7 +24,7 @@ const CellsContainer = styled.div<{ $dimensions: Props['dimensions'] }>`
 const Cell = styled.div`
   width: 1px;
   height: 1px;
-  background-color: hsl(var(--muted));
+  background-color: hsl(var(--muted-foreground));
 
   @media (max-width: 400px) {
     width: 2px;
@@ -41,7 +41,7 @@ const Container = styled.div`
 `;
 
 const CellLabel = styled.div`
-  color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
   width: 100%;
   height: 100%;
   text-align: center;

@@ -21,7 +21,7 @@ const Container = styled.div`
   padding: 0.5rem;
   background-color: hsl(var(--secondary));
   border-radius: 0.25rem;
-  border: 5px solid var(--grey800);
+  border: 5px solid hsl(var(--card));
   user-select: none;
   min-height: 12rem;
 
