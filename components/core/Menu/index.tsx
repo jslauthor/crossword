@@ -250,7 +250,11 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   return (
     <Main>
       <Container>
-        <ChildrenContainer $headerHeight={height}>{children}</ChildrenContainer>
+        {height > 0 && (
+          <ChildrenContainer $headerHeight={height}>
+            {children}
+          </ChildrenContainer>
+        )}
         {(isMenuOpen || showHelpModal) && <BlurLayer />}
         <HeaderContainer ref={headerRef}>
           <HeaderStyled
