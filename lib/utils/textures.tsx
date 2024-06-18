@@ -95,6 +95,7 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
       top: 0,
       left: 0,
       width: '256px',
+      height: '256px',
       justifyContent: 'center',
       alignItems: 'center',
     }}
@@ -119,11 +120,12 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
           alignItems: 'center',
           fontFamily: 'Franklin Gothic',
           lineHeight: '1px',
+          left: '-5px',
+          top: '-32px',
           fontWeight: 500,
           fontSize: '150px',
           color: 'white',
           position: 'absolute',
-          top: '-30px',
         }}
       >
         {character}
