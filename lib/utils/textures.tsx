@@ -95,6 +95,8 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
       top: 0,
       left: 0,
       width: '256px',
+      justifyContent: 'center',
+      alignItems: 'center',
     }}
   >
     <div
@@ -103,7 +105,8 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
         display: 'flex',
         width: '100%',
         height: '100%',
-        flexWrap: 'wrap',
+        justifyContent: 'center',
+        alignItems: 'center',
       }}
     >
       <div
