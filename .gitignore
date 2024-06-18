@@ -38,3 +38,4 @@ next-env.d.ts
 temp.babelrc
 
 .partykit
+test.css*

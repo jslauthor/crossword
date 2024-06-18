@@ -28,6 +28,7 @@ const SettingsTitle = styled.h3`
   font-weight: 400;
   margin: 0;
   opacity: 0.5;
+  padding: 0 1rem;
 `;
 
 const SettingsSection = styled.div`
@@ -42,6 +43,7 @@ const SettingsItem = styled.div`
   justify-content: space-between;
   align-items: center;
   font-size: 1.125rem;
+  padding: 0 1rem;
 `;
 
 interface PuzzleSettingsProps extends Partial<OverlayProps> {
@@ -93,7 +95,7 @@ const PuzzleSettings: React.FC<PuzzleSettingsProps> = ({
           <SettingsItem>
             <div>Color Theme</div>
             <Select value={theme} onValueChange={handleThemePressed}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="Theme" />
               </SelectTrigger>
               <SelectContent>

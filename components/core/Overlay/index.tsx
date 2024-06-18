@@ -71,7 +71,9 @@ const Overlay: React.FC<OverlayProps> = ({
           <ModalContent>
             <ModalHeader>
               <H2>{title}</H2>
-              <Text onClick={onClose}>Done</Text>
+              <Text onClick={onClose} className="text-primary">
+                Done
+              </Text>
             </ModalHeader>
             <HRule />
             {children}
