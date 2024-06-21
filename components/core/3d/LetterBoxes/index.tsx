@@ -13,7 +13,12 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
+import {
+  SequenceKeys,
+  getCharacterRecord,
+  isCellWithNumber,
+  resequenceSolutionAndClues,
+} from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { PuzzleType } from 'app/page';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
@@ -139,7 +144,7 @@ const fragmentShader = `
       }
 
       // Draw the border with rounded corners
-      float sdf = borderSDF(vUv, vec2(0.94 - borderRadius), 0.06, borderRadius);
+      float sdf = borderSDF(vUv, vec2(0.94 - borderRadius), 0.02, borderRadius);
       c = mix(c, borderColor.rgb, sdf * borderColor.a);
 
       // Draw the cell number
@@ -503,6 +508,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
       const rotations: Euler[] = [];
       const tempCellMapping: Record<number, number> = {};
+
+      console.log(getCharacterRecord(puzzle.data));
 
       for (let j = 0; j < record.solution.length; j++) {
         const { x, y, value: cell } = record.solution[j];
