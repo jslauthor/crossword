@@ -509,8 +509,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       const rotations: Euler[] = [];
       const tempCellMapping: Record<number, number> = {};
 
-      console.log(getCharacterRecord(puzzle.data));
-
       for (let j = 0; j < record.solution.length; j++) {
         const { x, y, value: cell } = record.solution[j];
 
