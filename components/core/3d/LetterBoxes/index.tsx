@@ -318,13 +318,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   theme,
   isSpinning,
 }) => {
-  const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
+  const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
     characterTextureAtlas.wrapS = RepeatWrapping;
     characterTextureAtlas.wrapT = RepeatWrapping;
   }, [characterTextureAtlas]);
 
-  const numberTextureAtlas = useLoader(TextureLoader, '/number_atlas.png');
+  const numberTextureAtlas = useLoader(TextureLoader, '/number_atlas.webp');
   useEffect(() => {
     numberTextureAtlas.wrapS = RepeatWrapping;
     numberTextureAtlas.wrapT = RepeatWrapping;
