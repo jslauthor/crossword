@@ -265,12 +265,12 @@ const saveElementToDisk = async (
 };
 
 // This must include the noto folder with pngs
-// /noto-emoji/png/512/
+// /noto-emoji/png/512/ -> public/noto/png
 const generateEmojis = async () => {
   const EMOJI_ITEMS = Object.keys(emojis).map((value: string) => {
     // load the svg from disk
     const item = fs.readFileSync(
-      path.join(process.cwd(), 'public', 'noto', `emoji_${value}.png`),
+      path.join(process.cwd(), 'public', 'noto', 'png', `emoji_${value}.png`),
     );
     return (
       <img
