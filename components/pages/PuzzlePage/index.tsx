@@ -50,6 +50,7 @@ import PuzzleSettings from 'components/composed/PuzzleSettings';
 import { Spinner } from 'components/core/ui/spinner';
 import useSvgAtlas from 'lib/utils/hooks/useSvgAtlas';
 import { PuzzleProps } from 'app/puzzle/[slug]/page';
+import Timer from 'components/composed/Timer';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -665,7 +666,7 @@ export default function Puzzle({
   return (
     <>
       <Menu
-        centerLabel={formattedElapsedTime}
+        centerLabel={<Timer elapsedTime={elapsedTime ?? 0} />}
         rotatingBoxProps={rotatingBoxProps}
         autocheckEnabled={autocheckEnabled}
         draftModeEnabled={draftModeEnabled}

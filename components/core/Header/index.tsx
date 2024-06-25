@@ -1,7 +1,7 @@
 import IconHamburger from 'components/svg/IconHamburger';
 import IconX from 'components/svg/IconX';
 import IconMainLogo from 'components/svg/MainLogo';
-import { useCallback, useMemo } from 'react';
+import { ReactNode, useCallback, useMemo } from 'react';
 import { styled } from 'styled-components';
 import RotatingBox, { RotatingBoxProps } from '../3d/Box';
 import Link from 'next/link';
@@ -43,7 +43,7 @@ const RightContentContainer = styled.div`
 
 interface HeaderProps {
   showCloseButton: boolean;
-  centerLabel?: string;
+  centerLabel?: string | ReactNode;
   onMenuPressed: () => void;
   onSettingsPressed?: () => void;
   rotatingBoxProps?: RotatingBoxProps;
@@ -67,7 +67,10 @@ const Header: React.FC<HeaderProps> = ({
   const { colors } = useTheme();
 
   const hasCenterLabel = useMemo(
-    () => centerLabel != null && centerLabel.length > 0,
+    () =>
+      centerLabel != null &&
+      ((typeof centerLabel === 'string' && centerLabel.length > 0) ||
+        typeof centerLabel !== 'string'),
     [centerLabel],
   );
 

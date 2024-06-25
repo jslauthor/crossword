@@ -178,7 +178,7 @@ const Link = styled.a<{ color: string }>``;
 
 export type MenuWrapperProps = {
   children?: ReactNode;
-  centerLabel?: string;
+  centerLabel?: string | ReactNode;
   autocheckEnabled?: boolean;
   draftModeEnabled?: boolean;
   rotatingBoxProps?: RotatingBoxProps;
