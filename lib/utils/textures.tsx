@@ -7,9 +7,9 @@ import Yoga from 'yoga-wasm-web';
 import sharp from 'sharp';
 import emojis from 'public/emojis.json';
 
-const TEXTURE_MAP_SIZE = 2048;
-const NUMBER_OF_NUMBERS_PER_LINE = 6;
-const NUMBER_OF_CELLS_PER_LINE = 17; // 22 is the number of cells in the 3D grid - 1
+export const TEXTURE_MAP_SIZE = 2048;
+export const NUMBER_OF_NUMBERS_PER_LINE = 6;
+export const NUMBER_OF_CELLS_PER_LINE = 17; // 22 is the number of cells in the 3D grid - 1
 
 const characterItems: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -24,10 +24,12 @@ for (let x = 0; x <= NUMBER_OF_CELLS_PER_LINE ** 2; x++) {
   numberItems.push(x.toString(10));
 }
 
+export type AtlasType = Record<string, [number, number]>;
+
 export const generateTextureRecord = (
   items = characterItems,
   size = NUMBER_OF_NUMBERS_PER_LINE,
-) => {
+): AtlasType => {
   // It's a 6x6 grid that contains A-Z and 0-9 (36 total items)
   let position = 0;
   const grid: Record<string, [number, number]> = {};

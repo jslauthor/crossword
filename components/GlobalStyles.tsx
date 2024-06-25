@@ -406,14 +406,11 @@ export default createGlobalStyle/*css*/ `
   }
 
   .more-button {
-    font-size: 0.75rem;
+    span {
+      font-size: .75rem !important;
+    }
     padding-left: 5px !important;
     padding-right: 5px !important;
-
-    /* Hide the text. */
-    text-indent: -9999px;
-    white-space: nowrap;
-    overflow: hidden;
   }
 
   .spacer-button {

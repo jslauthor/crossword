@@ -37,6 +37,7 @@ export const getPuzzles = async (
             isAiAssisted
             slug
             title
+            svgsegments
             _status
             _firstPublishedAt
           }
@@ -91,6 +92,7 @@ export const getPuzzleBySlug = async (
             isAiAssisted
             slug
             title
+            svgsegments
             _status
             _firstPublishedAt
           }
@@ -134,6 +136,7 @@ export const getPuzzleById = async (id: string): Promise<PuzzleType | null> => {
           isAiAssisted
           slug
           title
+          svgsegments
           _status
           _firstPublishedAt
         }

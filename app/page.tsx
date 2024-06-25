@@ -9,6 +9,7 @@ export type PuzzleType = PuzzlePreviewProps & {
   slug: string;
   id: string;
   data: PuzzleData[];
+  svgsegments?: string[];
   record: CharacterRecord;
   previewState: number;
 };
