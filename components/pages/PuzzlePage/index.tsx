@@ -460,8 +460,9 @@ export default function Puzzle({
   );
 
   const onClueClick = useCallback(() => {
+    if (svgTextureAtlasLookup != null) return;
     setVerticalOrientation(!isVerticalOrientation);
-  }, [isVerticalOrientation]);
+  }, [isVerticalOrientation, svgTextureAtlasLookup]);
 
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
 
@@ -777,17 +778,19 @@ export default function Puzzle({
                   {cellNumber != null && (
                     <SelectedInfo $backgroundColor={toHex(selectedColor)}>
                       {`${cellNumber}`}
-                      {isVerticalOrientation ? (
-                        <FontAwesomeIcon
-                          icon={faChevronCircleDown}
-                          width={10}
-                        />
-                      ) : (
-                        <FontAwesomeIcon
-                          icon={faChevronCircleRight}
-                          width={10}
-                        />
-                      )}
+                      {svgTextureAtlasLookup == null ? (
+                        isVerticalOrientation ? (
+                          <FontAwesomeIcon
+                            icon={faChevronCircleDown}
+                            width={10}
+                          />
+                        ) : (
+                          <FontAwesomeIcon
+                            icon={faChevronCircleRight}
+                            width={10}
+                          />
+                        )
+                      ) : null}
                     </SelectedInfo>
                   )}
                   &nbsp;
