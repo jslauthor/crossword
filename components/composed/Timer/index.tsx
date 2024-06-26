@@ -11,7 +11,7 @@ const Timer: React.FC<TimerProps> = ({ elapsedTime }) => {
 
   return (
     <Badge variant="secondary">
-      <Clock className="h-4 w-4 text-primary" />
+      <Clock className="h-4 w-4 mr-0.5 text-primary" />
       {formattedTime}
     </Badge>
   );
