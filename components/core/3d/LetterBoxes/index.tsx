@@ -825,11 +825,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       const coord = (svgTextureAtlasLookup ?? characterTextureAtlasLookup)[
         key.toUpperCase()
       ];
-      if (selectedIndex != null && ref != null) {
-        const x =
-          coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[0];
-        const y =
-          coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[1];
+      if (
+        selectedIndex != null &&
+        ref != null &&
+        (coord != null || key === '' || key === 'BACKSPACE')
+      ) {
+        const x = key === '' || key === 'BACKSPACE' ? -1 : coord[0];
+        const y = key === '' || key === 'BACKSPACE' ? -1 : coord[1];
 
         if (updateCharacterPosition(selectedIndex, key, x, y) === true) {
           showScaleAnimation(selectedIndex);
