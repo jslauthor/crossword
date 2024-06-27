@@ -15,7 +15,6 @@ import {
 } from 'react';
 import {
   PerspectiveCamera as PerspectiveCameraType,
-  InstancedMesh as InstancedMeshType,
   Vector3,
   Object3D,
 } from 'three';
@@ -35,7 +34,6 @@ import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
 import Menu from 'components/containers/Menu';
 import { RotatingBoxProps } from 'components/core/3d/Box';
-import { PuzzleType } from 'app/page';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
 import { createInitialState } from 'lib/utils/puzzle';
@@ -50,6 +48,9 @@ import { useTheme } from 'lib/utils/hooks/theme';
 import { VRule } from 'components/core/Dividers';
 import PuzzleSettings from 'components/composed/PuzzleSettings';
 import { Spinner } from 'components/core/ui/spinner';
+import useSvgAtlas from 'lib/utils/hooks/useSvgAtlas';
+import { PuzzleProps } from 'app/puzzle/[slug]/page';
+import Timer from 'components/composed/Timer';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -63,6 +64,9 @@ for (let x = 0; x <= 1000; x++) {
 }
 SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 
+type KeyboardLayoutType = Record<'default' | 'emoji', string[]>;
+type CssMapType = Record<string, [string, string]>;
+
 const HeaderItem = styled.div`
   display: grid;
   grid-auto-flow: column;
@@ -70,10 +74,32 @@ const HeaderItem = styled.div`
   align-items: center;
 `;
 
-const KeyboardContainer = styled.div`
+const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
   width: 100%;
   height: max-content;
   position: relative;
+
+  ${({ $svgCssMap }) => {
+    if ($svgCssMap) {
+      return Object.entries($svgCssMap).map(([key, [, data]]) => {
+        return `
+
+          .${key} {
+            span {
+              font-size: 0;
+            }
+            &::before {
+              content: url('${data}');
+              display: block;
+              width: 30px;
+              height: 30px;
+            }
+          }
+
+        `;
+      });
+    }
+  }}
 `;
 
 const SolvedContainer = styled.div`
@@ -206,18 +232,25 @@ function Loader() {
   );
 }
 
-export type PuzzleProps = {
-  puzzle: PuzzleType;
-  characterTextureAtlasLookup: Record<string, [number, number]>;
-  cellNumberTextureAtlasLookup: Record<string, [number, number]>;
-};
-
 export default function Puzzle({
   puzzle,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
   const { theme } = useTheme();
+  const layout = useMemo<keyof KeyboardLayoutType>(
+    () => (puzzle.svgsegments != null ? 'emoji' : 'default'),
+    [puzzle.svgsegments],
+  );
+  const [svgCssMap, setSvgCssMap] = useState<CssMapType>({});
+
+  const {
+    svgTextureAtlas,
+    svgTextureAtlasLookup,
+    svgGridSize,
+    progress,
+    svgContentMap,
+  } = useSvgAtlas(puzzle.svgsegments);
 
   const [groupRef, setGroup] = useState<Object3D | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
@@ -235,10 +268,14 @@ export default function Puzzle({
     height: canvasHeight,
     width: canvasWidth,
   } = useDimensions<HTMLCanvasElement>();
-  const [isInitialized, setIsInitialized] = useState(false);
+
+  const [isPuzzleReady, setPuzzleReady] = useState(false);
   const onInitialize = useCallback(() => {
-    setIsInitialized(true);
+    setPuzzleReady(true);
   }, []);
+  const isInitialized = useMemo(() => {
+    return isPuzzleReady && progress >= 1;
+  }, [isPuzzleReady, progress]);
 
   const onPrevWord =
     useRef<
@@ -311,7 +348,7 @@ export default function Puzzle({
     hasRetrievedState,
   } = usePuzzleProgress(
     puzzle,
-    characterTextureAtlasLookup,
+    svgTextureAtlasLookup ?? characterTextureAtlasLookup,
     isInitialized === true,
   );
   const turnLeft = useCallback(
@@ -345,27 +382,6 @@ export default function Puzzle({
       }
     }
   }, [puzzle]);
-
-  const onKeyPress = useCallback(
-    (button: string) => {
-      switch (button) {
-        case '{tl}':
-          turnLeft();
-          break;
-        case '{tr}':
-          turnRight();
-          break;
-        case 'MORE':
-          finishPuzzle();
-          break;
-        default:
-          if (button !== 'MORE' && isPuzzleSolved === false) {
-            setSelectedCharacter(button === '{bksp}' ? '' : button);
-          }
-      }
-    },
-    [finishPuzzle, isPuzzleSolved, turnLeft, turnRight],
-  );
 
   // When the letter changes inside of the LetterBoxes
   // we want to reset the selected character so that
@@ -440,8 +456,10 @@ export default function Puzzle({
   );
 
   const onClueClick = useCallback(() => {
+    // Only enable orientation if using the regular (non-emoji) keyboard
+    if (svgTextureAtlasLookup != null) return;
     setVerticalOrientation(!isVerticalOrientation);
-  }, [isVerticalOrientation]);
+  }, [isVerticalOrientation, svgTextureAtlasLookup]);
 
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
 
@@ -557,11 +575,96 @@ export default function Puzzle({
   useKeyDown(turnRight, ['ARROWUP']);
   useKeyDown(turnLeft, ['ARROWDOWN']);
   useKeyDown(onClueClick, [' ']);
+  useKeyDown(finishPuzzle, ['`']);
+
+  const onKeyPress = useCallback(
+    (button: string) => {
+      switch (button) {
+        case '{tl}':
+          turnLeft();
+          break;
+        case '{tr}':
+          turnRight();
+          break;
+        default:
+          if (button !== 'MORE' && isPuzzleSolved === false) {
+            setSelectedCharacter(button === '{bksp}' ? '' : button);
+          }
+      }
+    },
+    [isPuzzleSolved, turnLeft, turnRight],
+  );
+
+  // Keyboard mappings
+  const displayKeyMap = useMemo(() => {
+    return {
+      '{bksp}': '⌫',
+      '{sp}': ' ',
+      '{tl}': '<<<',
+      '{tr}': '>>>',
+      MORE: ' ',
+    };
+  }, []);
+
+  const buttonTheme = useMemo(() => {
+    const cssMap = Object.keys(svgContentMap).reduce((acc, key, index) => {
+      const svgBase64 = svgContentMap[key];
+      if (svgBase64 == null) {
+        return acc;
+      } else {
+        acc[`svg-${index}`] = [key, svgBase64];
+      }
+      return acc;
+    }, {} as CssMapType);
+    setSvgCssMap(cssMap);
+    return [
+      {
+        class: 'more-button',
+        buttons: 'MORE',
+      },
+      {
+        class: 'spacer-button',
+        buttons: '{sp}',
+      },
+      {
+        class: 'turn-left-button',
+        buttons: '{tl}',
+      },
+      {
+        class: 'turn-right-button',
+        buttons: '{tr}',
+      },
+      {
+        class: 'backspace-button',
+        buttons: '{bksp}',
+      },
+      ...Object.entries(cssMap).map(([key, value]) => ({
+        class: key,
+        buttons: value[0],
+      })),
+    ];
+  }, [svgContentMap]);
+
+  const keyLayout: KeyboardLayoutType = useMemo(() => {
+    const emojiKeys = Object.keys(svgContentMap);
+    return {
+      default: [
+        'Q W E R T Y U I O P',
+        '{sp} A S D F G H J K L {sp}',
+        'MORE Z X C V B N M {bksp}',
+      ],
+      emoji: [
+        `${emojiKeys.slice(0, 10).join(' ')}`,
+        `{sp} ${emojiKeys.slice(9, 18).join(' ')} {sp}`,
+        `MORE ${emojiKeys.slice(17, 24).join(' ')} {bksp}`,
+      ],
+    };
+  }, [svgContentMap]);
 
   return (
     <>
       <Menu
-        centerLabel={formattedElapsedTime}
+        centerLabel={<Timer elapsedTime={elapsedTime ?? 0} />}
         rotatingBoxProps={rotatingBoxProps}
         autocheckEnabled={autocheckEnabled}
         draftModeEnabled={draftModeEnabled}
@@ -599,6 +702,9 @@ export default function Puzzle({
               <group ref={setGroup} position={groupRefPosition}>
                 <LetterBoxes
                   puzzle={puzzle}
+                  svgTextureAtlas={svgTextureAtlas}
+                  svgTextureAtlasLookup={svgTextureAtlasLookup}
+                  svgGridSize={svgGridSize}
                   characterTextureAtlasLookup={characterTextureAtlasLookup}
                   cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
                   selectedSide={selectedSide}
@@ -669,17 +775,19 @@ export default function Puzzle({
                   {cellNumber != null && (
                     <SelectedInfo $backgroundColor={toHex(selectedColor)}>
                       {`${cellNumber}`}
-                      {isVerticalOrientation ? (
-                        <FontAwesomeIcon
-                          icon={faChevronCircleDown}
-                          width={10}
-                        />
-                      ) : (
-                        <FontAwesomeIcon
-                          icon={faChevronCircleRight}
-                          width={10}
-                        />
-                      )}
+                      {svgTextureAtlasLookup == null ? (
+                        isVerticalOrientation ? (
+                          <FontAwesomeIcon
+                            icon={faChevronCircleDown}
+                            width={10}
+                          />
+                        ) : (
+                          <FontAwesomeIcon
+                            icon={faChevronCircleRight}
+                            width={10}
+                          />
+                        )
+                      ) : null}
                     </SelectedInfo>
                   )}
                   &nbsp;
@@ -712,7 +820,7 @@ export default function Puzzle({
                 />
               </TurnButton>
             </InfoBar>
-            <KeyboardContainer>
+            <KeyboardContainer $svgCssMap={svgCssMap}>
               {isPuzzleSolved && (
                 <SolvedContainer>
                   <div>🏆 YOU DID IT! 🏆</div>
@@ -723,45 +831,13 @@ export default function Puzzle({
                 </SolvedContainer>
               )}
               <Keyboard
-                layoutName="default"
+                layoutName={layout}
                 theme="hg-theme-default keyboardTheme"
                 onKeyPress={onKeyPress}
                 mergeDisplay
-                display={{
-                  '{bksp}': '⌫',
-                  '{sp}': ' ',
-                  '{tl}': '<<<',
-                  '{tr}': '>>>',
-                }}
-                buttonTheme={[
-                  {
-                    class: 'more-button',
-                    buttons: 'MORE',
-                  },
-                  {
-                    class: 'spacer-button',
-                    buttons: '{sp}',
-                  },
-                  {
-                    class: 'turn-left-button',
-                    buttons: '{tl}',
-                  },
-                  {
-                    class: 'turn-right-button',
-                    buttons: '{tr}',
-                  },
-                  {
-                    class: 'backspace-button',
-                    buttons: '{bksp}',
-                  },
-                ]}
-                layout={{
-                  default: [
-                    'Q W E R T Y U I O P',
-                    '{sp} A S D F G H J K L {sp}',
-                    'MORE Z X C V B N M {bksp}',
-                  ],
-                }}
+                display={displayKeyMap}
+                buttonTheme={buttonTheme}
+                layout={keyLayout}
               />
             </KeyboardContainer>
           </>

@@ -7,7 +7,7 @@ import { PuzzleType } from 'app/page';
 import Link from 'next/link';
 import { useState } from 'react';
 import PuzzleHighlight from 'components/composed/PuzzleHighlight';
-import { PuzzleProps } from '../PuzzlePage';
+import { AtlasType } from 'lib/utils/textures';
 
 const Container = styled.div`
   position: relative;
@@ -35,7 +35,7 @@ const ErrorContainer = styled.div`
 
 export interface HomePageProps {
   puzzles: PuzzleType[];
-  atlas: PuzzleProps['characterTextureAtlasLookup'];
+  atlas: AtlasType;
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles }) => {

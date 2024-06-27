@@ -406,14 +406,9 @@ export default createGlobalStyle/*css*/ `
   }
 
   .more-button {
-    font-size: 0.75rem;
-    padding-left: 5px !important;
-    padding-right: 5px !important;
-
-    /* Hide the text. */
-    text-indent: -9999px;
-    white-space: nowrap;
-    overflow: hidden;
+    span {
+      font-size: 0;
+    }
   }
 
   .spacer-button {
@@ -465,6 +460,7 @@ export default createGlobalStyle/*css*/ `
     color: var(--keyboard-button-color);
     border: none;
     flex-grow: unset;
+    padding: 0px;
   }
 
   .simple-keyboard.keyboardTheme .hg-button.backspace-button {

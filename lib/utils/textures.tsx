@@ -1,12 +1,15 @@
+/* eslint-disable jsx-a11y/alt-text */
+/* eslint-disable @next/next/no-img-element */
 import fs from 'fs';
 import path from 'path';
 import satori, { init } from 'satori';
 import Yoga from 'yoga-wasm-web';
 import sharp from 'sharp';
+import emojis from 'public/emojis.json';
 
-const TEXTURE_MAP_SIZE = 2048;
-const NUMBER_OF_NUMBERS_PER_LINE = 6;
-const NUMBER_OF_CELLS_PER_LINE = 17; // 22 is the number of cells in the 3D grid - 1
+export const TEXTURE_MAP_SIZE = 2048;
+export const NUMBER_OF_NUMBERS_PER_LINE = 6;
+export const NUMBER_OF_CELLS_PER_LINE = 17; // 22 is the number of cells in the 3D grid - 1
 
 const characterItems: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -21,10 +24,12 @@ for (let x = 0; x <= NUMBER_OF_CELLS_PER_LINE ** 2; x++) {
   numberItems.push(x.toString(10));
 }
 
+export type AtlasType = Record<string, [number, number]>;
+
 export const generateTextureRecord = (
   items = characterItems,
   size = NUMBER_OF_NUMBERS_PER_LINE,
-) => {
+): AtlasType => {
   // It's a 6x6 grid that contains A-Z and 0-9 (36 total items)
   let position = 0;
   const grid: Record<string, [number, number]> = {};
@@ -175,6 +180,41 @@ export const NumberAtlas: React.FC = () => (
     {NUMBER_RECORD_ITEMS}
   </div>
 );
+const EMOJI_MAP_SIZE = 2048;
+const EMOJI_SIZE = EMOJI_MAP_SIZE / 10.05;
+export const EmojiAtlas: React.FC<{
+  range: [number, number];
+  items: JSX.Element[];
+}> = ({ range, items }) => {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        aspectRatio: '1 / 1',
+        width: `${EMOJI_MAP_SIZE}px`, // 2k texture map
+        height: `${EMOJI_MAP_SIZE}px`, // 2k texture map
+        padding: 0,
+        margin: 0,
+      }}
+    >
+      {items.slice(range[0], range[1]).map((i, index) => (
+        <div
+          key={index}
+          style={{
+            width: `${EMOJI_SIZE}px`,
+            height: `${EMOJI_SIZE}px`,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          {i}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const publicDir = path.join(process.cwd(), 'public');
 
@@ -221,32 +261,78 @@ const saveElementToDisk = async (
   });
 
   const pngBuffer = await sharp(Buffer.from(svg))
-    .png({ quality: 5 })
+    .webp({ quality: 30, effort: 6, alphaQuality: 30, preset: 'icon' })
     .toBuffer();
   fs.writeFileSync(publicDir + filename, pngBuffer);
 };
 
+// This must include the noto folder with pngs
+// /noto-emoji/png/512/ -> public/noto/png
+const generateEmojis = async () => {
+  const EMOJI_ITEMS = Object.keys(emojis).map((value: string) => {
+    // load the svg from disk
+    const item = fs.readFileSync(
+      path.join(process.cwd(), 'public', 'noto', 'png', `emoji_${value}.png`),
+    );
+    return (
+      <img
+        key={value}
+        style={{
+          width: `${EMOJI_SIZE * 0.95}px`,
+          height: `${EMOJI_SIZE * 0.95}px`,
+        }}
+        src={`data:image/png;base64,${item.toString('base64')}`}
+      />
+    );
+  });
+  await saveElementToDisk(
+    <EmojiAtlas range={[0, 100]} items={EMOJI_ITEMS} />,
+    '/emoji_atlas1.webp',
+    EMOJI_MAP_SIZE,
+  );
+  await saveElementToDisk(
+    <EmojiAtlas range={[100, 200]} items={EMOJI_ITEMS} />,
+    '/emoji_atlas2.webp',
+    EMOJI_MAP_SIZE,
+  );
+  await saveElementToDisk(
+    <EmojiAtlas range={[200, 300]} items={EMOJI_ITEMS} />,
+    '/emoji_atlas3.webp',
+    EMOJI_MAP_SIZE,
+  );
+  await saveElementToDisk(
+    <EmojiAtlas range={[300, 400]} items={EMOJI_ITEMS} />,
+    '/emoji_atlas4.webp',
+    EMOJI_MAP_SIZE,
+  );
+  await saveElementToDisk(
+    <EmojiAtlas range={[400, 500]} items={EMOJI_ITEMS} />,
+    '/emoji_atlas5.webp',
+    EMOJI_MAP_SIZE,
+  );
+};
+
 export const generateTextures = async () => {
-  await saveElementToDisk(<TextureAtlas />, '/texture_atlas.png');
-  await saveElementToDisk(<NumberAtlas />, '/number_atlas.png');
+  await saveElementToDisk(<TextureAtlas />, '/texture_atlas.webp');
+  await saveElementToDisk(<NumberAtlas />, '/number_atlas.webp');
   await saveElementToDisk(
     <SingleCharacterTexture character="1" />,
-    '/1.png',
+    '/1.webp',
     256,
   );
   await saveElementToDisk(
     <SingleCharacterTexture character="2" />,
-    '/2.png',
+    '/2.webp',
     256,
   );
   await saveElementToDisk(
     <SingleCharacterTexture character="3" />,
-    '/3.png',
+    '/3.webp',
     256,
   );
   await saveElementToDisk(
     <SingleCharacterTexture character="4" />,
-    '/4.png',
+    '/4.webp',
     256,
   );
 };

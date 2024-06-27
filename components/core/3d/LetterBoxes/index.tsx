@@ -1,4 +1,4 @@
-import React, { use, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ThreeEvent, extend, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
@@ -20,6 +20,7 @@ import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation'
 import { hexToVector } from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
+import { AtlasType } from 'lib/utils/textures';
 extend({ RoundedBoxGeometry });
 
 export enum CubeSidesEnum {
@@ -64,9 +65,13 @@ const fragmentShader = `
   precision highp float;
   #endif
 
+  uniform uint sideIndex;
   uniform sampler2D numberTexture;
   uniform sampler2D characterTexture;
-  uniform uint sideIndex;
+  uniform sampler2D svgTexture;
+  uniform bool useSvgTexture;
+  uniform float charactersGridSize;
+  uniform float svgGridSize;
   uniform float borderRadius;
   uniform vec4 borderColor;
   uniform float errorWidth;
@@ -102,27 +107,42 @@ const fragmentShader = `
 
     // Show character when bitflag is on for the side
     if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
-      // Draw the letter
+      // Draw the letter or emoji
       // A coord of -1, -1 means do not paint
       if (vCharacterPosition.x >= 0.0 && vCharacterPosition.y >= 0.0) {
-        // 6.0 is the number of items per line on the texture map
-        vec2 position = vec2(vCharacterPosition.x/6.0, -(vCharacterPosition.y/6.0 + 1.0/6.0));
-        vec2 size = vec2(1.0 / 6.0, 1.0 / 6.0);
-        vec2 coord = position + size * fract(vUv);
-        vec4 Ca = texture2D(characterTexture, coord);
-
-        // Apply color change to the texture color
-        Ca = applyColorChange(Ca, fontColor);
+        vec2 position, size, coord;
+        vec4 Ca;
+        if (useSvgTexture == true) {
+          // CanvasTexture uses a flipped coordinate system
+          position = vec2(vCharacterPosition.x/svgGridSize, 1.0 - (vCharacterPosition.y/svgGridSize + 1.0/svgGridSize));
+          size = vec2(1.0 / svgGridSize, 1.0 / svgGridSize);
+          coord = position + size * fract(vUv);
+          Ca = texture2D(svgTexture, coord);
+        } else {
+          position = vec2(vCharacterPosition.x/charactersGridSize, -(vCharacterPosition.y/charactersGridSize + 1.0/charactersGridSize));
+          size = vec2(1.0 / charactersGridSize, 1.0 / charactersGridSize);
+          coord = position + size * fract(vUv);
+          Ca = texture2D(characterTexture, coord);
+          // Apply color change to the texture color
+          Ca = applyColorChange(Ca, fontColor);
+        }
 
         if (vCellValidation.x == 2.0) {
-          // Draw the mark for an correct letter
+          // Draw the mark for a correct letter
           if (vUv.y > (1.0 - vUv.x + 0.75)) {
             c = correctColor.rgb;
           } 
         } else {
           if (vCellDraftMode.x > 0.0) {
-            // Draw font draft color
-            Ca = applyColorChange(Ca, fontDraftColor);
+            if (useSvgTexture == true) {
+              // Blend the SVG texture with the fontDraftColor
+              vec3 tintedColor = Ca.rgb * fontDraftColor.rgb;
+              Ca.rgb = mix(Ca.rgb, tintedColor, 0.75);
+              Ca.a = Ca.a * 0.75;
+            } else {
+              // Draw font draft color
+              Ca = applyColorChange(Ca, fontDraftColor);
+            }
           }
           // 1.0 means we have an incorrect letter
           if (vCellValidation.x > 0.0 && vCellValidation.x < 2.0) {
@@ -139,7 +159,7 @@ const fragmentShader = `
       }
 
       // Draw the border with rounded corners
-      float sdf = borderSDF(vUv, vec2(0.94 - borderRadius), 0.06, borderRadius);
+      float sdf = borderSDF(vUv, vec2(0.94 - borderRadius), 0.02, borderRadius);
       c = mix(c, borderColor.rgb, sdf * borderColor.a);
 
       // Draw the cell number
@@ -185,8 +205,11 @@ export type SelectClueFn = (
 
 export type LetterBoxesProps = {
   puzzle: PuzzleType;
-  characterTextureAtlasLookup: Record<string, [number, number]>;
-  cellNumberTextureAtlasLookup: Record<string, [number, number]>;
+  characterTextureAtlasLookup: AtlasType;
+  cellNumberTextureAtlasLookup: AtlasType;
+  svgTextureAtlasLookup?: AtlasType;
+  svgTextureAtlas?: Texture;
+  svgGridSize?: number;
   currentKey?: string | undefined;
   selectedSide: number;
   fontColor: number;
@@ -230,7 +253,10 @@ const uniformDefaults = {
   errorWidth: { value: 0.035 },
 };
 
-type Uniforms = Record<string, { value: Texture | Vector4 | number }>;
+type Uniforms = Record<
+  string,
+  { value: Texture | Vector4 | number | boolean | undefined }
+>;
 const materialConfig = {
   baseMaterial: MeshPhysicalMaterial,
   toneMapped: false,
@@ -253,6 +279,9 @@ const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
       }
     });
     material.uniforms.sideIndex = { value: sideEnum };
+    material.uniforms.charactersGridSize = {
+      value: 6.0,
+    };
     material.needsUpdate = true;
     return material;
   } else {
@@ -260,6 +289,7 @@ const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
       ...materialConfig,
       uniforms: {
         sideIndex: { value: sideEnum },
+        charactersGridSize: { value: 6.0 },
         ...uniforms,
       },
     });
@@ -282,6 +312,9 @@ const updateCubeSideDisplay = (
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzle,
+  svgTextureAtlasLookup,
+  svgTextureAtlas,
+  svgGridSize,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
   isVerticalOrientation = false,
@@ -313,13 +346,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   theme,
   isSpinning,
 }) => {
-  const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.png');
+  const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
     characterTextureAtlas.wrapS = RepeatWrapping;
     characterTextureAtlas.wrapT = RepeatWrapping;
   }, [characterTextureAtlas]);
 
-  const numberTextureAtlas = useLoader(TextureLoader, '/number_atlas.png');
+  const numberTextureAtlas = useLoader(TextureLoader, '/number_atlas.webp');
   useEffect(() => {
     numberTextureAtlas.wrapS = RepeatWrapping;
     numberTextureAtlas.wrapT = RepeatWrapping;
@@ -360,8 +393,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [correctColor],
   );
 
-  const uniforms = useMemo(
+  const uniforms: Uniforms = useMemo(
     () => ({
+      svgTexture: { value: svgTextureAtlas },
+      svgGridSize: { value: svgGridSize },
+      useSvgTexture: { value: svgTextureAtlasLookup != null },
       numberTexture: { value: numberTextureAtlas },
       characterTexture: { value: characterTextureAtlas },
       fontColor: { value: convertedFontColor },
@@ -379,6 +415,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       convertedFontColor,
       convertedFontDraftColor,
       numberTextureAtlas,
+      svgGridSize,
+      svgTextureAtlas,
+      svgTextureAtlasLookup,
     ],
   );
 
@@ -783,12 +822,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         return;
       }
 
-      const coord = characterTextureAtlasLookup[key.toUpperCase()];
-      if (selectedIndex != null && ref != null) {
-        const x =
-          coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[0];
-        const y =
-          coord == null || key === '' || key === 'BACKSPACE' ? -1 : coord[1];
+      const coord = (svgTextureAtlasLookup ?? characterTextureAtlasLookup)[
+        key.toUpperCase()
+      ];
+      if (
+        selectedIndex != null &&
+        ref != null &&
+        (coord != null || key === '' || key === 'BACKSPACE')
+      ) {
+        const x = key === '' || key === 'BACKSPACE' ? -1 : coord[0];
+        const y = key === '' || key === 'BACKSPACE' ? -1 : coord[1];
 
         if (updateCharacterPosition(selectedIndex, key, x, y) === true) {
           showScaleAnimation(selectedIndex);
@@ -842,6 +885,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       onLetterInput,
       selected,
       isVisibleSide,
+      svgTextureAtlasLookup,
       characterTextureAtlasLookup,
       ref,
       updateCharacterPosition,

@@ -77,6 +77,7 @@
     "yoga-wasm-web": "^0.3.3"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^14.2.4",
     "@types/animejs": "^3.1.12",
     "@types/md5": "^2.3.5",
     "@types/next-tick": "^1.0.2",

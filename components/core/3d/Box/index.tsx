@@ -104,10 +104,10 @@ const createMaterial = (
 
 const Box: React.FC<BoxProps> = ({ color, textColor }) => {
   const [texture1, texture2, texture3, texture4] = useTexture([
-    '/1.png',
-    '/2.png',
-    '/3.png',
-    '/4.png',
+    '/1.webp',
+    '/2.webp',
+    '/3.webp',
+    '/4.webp',
   ]);
 
   useEffect(() => {

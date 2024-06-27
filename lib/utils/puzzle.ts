@@ -141,10 +141,10 @@ export const updateAnswerIndex = (
   }
 };
 
-const resequenceSolutionAndClues = (
+export const resequenceSolutionAndClues = (
   puzzleData: PuzzleData[],
 ): {
-  solution: SolutionCell[];
+  solution: SolutionCell[][];
   across: Clue[];
   down: Clue[];
 } => {
@@ -156,53 +156,60 @@ const resequenceSolutionAndClues = (
   const acrossClues = puzzleData.map((p) => p.clues.Across);
   const downClues = puzzleData.map((p) => p.clues.Down);
 
+  // Here we concatenate all of the rows into one array per row
+  const originalRowFirst: { cell: SolutionCell; side: number }[][] = [];
+  for (let x = 0; x < height; x++) {
+    for (let y = 0; y < solution.length; y++) {
+      originalRowFirst[x] = (originalRowFirst[x] ?? []).concat(
+        solution[y][x]
+          .slice(0, solution[y][x].length - 1)
+          .map((c: SolutionCell) => ({
+            cell: c,
+            side: y,
+          })),
+      );
+    }
+    // Nice debug output showing all of the rows
+    // console.log(
+    //   originalRowFirst[x]
+    //     .map((i) => i.cell)
+    //     .map((i) => (i !== '#' ? i.value : i)),
+    // );
+  }
+
+  let ascending = 1;
   const across: Clue[] = [];
   const down: Clue[] = [];
 
-  // Loop through and reassign cell numbers and map the clues
-  let ascending = 1;
-  for (let x = 0; x < original.length; x++) {
-    for (let y = 0; y < width; y++) {
-      for (let z = 0; z < height; z++) {
-        const current = original[x][y][z];
-        if (current != null && isCellWithNumber(current)) {
-          const acrossClue = acrossClues[x].find(
-            (c) => c.number === current.cell,
-          );
-          const downClue = downClues[x].find((c) => c.number === current.cell);
-          if (acrossClue != null) {
-            across.push({
-              ...acrossClue,
-              number: ascending,
-            });
-          }
-          if (downClue != null) {
-            down.push({
-              ...downClue,
-              number: ascending,
-            });
-          }
-          const cell = solution[x][y][z];
-          if (isCellWithNumber(cell)) {
-            cell.cell = ascending++;
-          }
+  for (let x = 0; x < originalRowFirst.length; x++) {
+    for (let y = 0; y < originalRowFirst[x].length; y++) {
+      const current = originalRowFirst[x][y];
+      if (current.cell != null && isCellWithNumber(current.cell)) {
+        const acrossClue = acrossClues[current.side].find(
+          (c) => current.cell !== '#' && c.number === current.cell.cell,
+        );
+        const downClue = downClues[current.side].find(
+          (c) => current.cell !== '#' && c.number === current.cell.cell,
+        );
+        if (acrossClue != null) {
+          across.push({
+            ...acrossClue,
+            number: ascending,
+          });
         }
+        if (downClue != null) {
+          down.push({
+            ...downClue,
+            number: ascending,
+          });
+        }
+        current.cell.cell = ascending++;
       }
     }
   }
 
-  const flattened = solution.flatMap((p) => p);
-  // We need reorder the rows so each row wraps the entire cube
-  const rowFirstOrder: SolutionCell[][] = [];
-  for (let x = 0; x < width; x++) {
-    for (let y = 0; y < puzzleData.length; y++) {
-      const current = flattened[x + width * y];
-      rowFirstOrder.push(current);
-    }
-  }
-
   return {
-    solution: rowFirstOrder.flatMap((i) => i),
+    solution: originalRowFirst.map((i) => i.map((i) => i.cell)),
     across,
     down,
   };
@@ -218,10 +225,30 @@ export const getCharacterRecord = (
   const solution: Record<number, SolutionType> = {};
 
   const {
-    solution: rowFirstOrderFlat,
+    solution: resequenced,
     across,
     down,
   } = resequenceSolutionAndClues(puzzleData);
+
+  // This take the resequenced solution and adds the extra columns so we can more
+  // easily determine the words and sequences
+  const rowFirstOrderFlat = resequenced
+    .map((i) =>
+      i.reduce((acc, value, index) => {
+        if (index === i.length - 1) {
+          acc.push(value);
+          acc.push(i[0]);
+        } else if (index !== 0 && index % (width - 1) === 0) {
+          acc.push(value);
+          acc.push(value);
+        } else {
+          acc.push(value);
+        }
+        return acc;
+      }, [] as SolutionCell[]),
+    )
+    .flatMap((i) => i);
+
   let currentWord = 0;
   // Build dictionary for words and word sequences [ACROSS]
   const rowLength = width * puzzleData.length;

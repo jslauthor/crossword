@@ -3,7 +3,6 @@
 import { PuzzleType } from 'app/page';
 import { useCallback, useEffect, useState } from 'react';
 import { SolutionCell } from 'types/types';
-import { PuzzleProps } from 'components/pages/PuzzlePage';
 import {
   CHARACTER_POSITIONS_KEY,
   DRAFT_MODES_KEY,
@@ -22,6 +21,7 @@ import { useUser, useAuth } from '@clerk/nextjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
+import { AtlasType } from '../textures';
 
 const AUTO_NEXT_KEY = 'auto-next';
 
@@ -40,7 +40,7 @@ const getLocalCacheId = async (puzzleId: string) => {
 
 export const usePuzzleProgress = (
   puzzle: PuzzleType,
-  atlas: PuzzleProps['characterTextureAtlasLookup'],
+  atlas?: AtlasType,
   isInitialized = true,
 ) => {
   const { user } = useUser();
@@ -51,7 +51,7 @@ export const usePuzzleProgress = (
   const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
 
   const initState = useCallback(
-    (doc: Y.Doc) => {
+    (doc: Y.Doc, atlas: AtlasType) => {
       // Set the initial state
       setElapsedTime(doc.getMap(GAME_STATE_KEY).get(TIME_KEY) as number);
       const positions = new Float32Array(
@@ -78,7 +78,7 @@ export const usePuzzleProgress = (
       setAnswerIndex(index);
       setHasRetrievedState(true);
     },
-    [atlas, puzzle.record.solution],
+    [puzzle.record.solution],
   );
 
   // Create local cache to store offline progress. This will always be anonymous
@@ -96,13 +96,13 @@ export const usePuzzleProgress = (
 
   // Setup indexdb yjs provider for local storage
   useEffect(() => {
-    if (anonCacheId != null) {
+    if (anonCacheId != null && atlas != null && Object.keys(atlas).length > 0) {
       const db = new IndexeddbPersistence(
         anonCacheId,
         createInitialYDoc(puzzle), // Always initialize the document with reasonable defaults
       );
       db.once('synced', () => {
-        initState(db.doc);
+        initState(db.doc, atlas);
         setIndexDb(db);
       });
 
@@ -110,11 +110,17 @@ export const usePuzzleProgress = (
         db.destroy();
       };
     }
-  }, [anonCacheId, puzzle, initState]);
+  }, [anonCacheId, puzzle, initState, atlas]);
 
   // Initialize the server after local cache is synced
   useEffect(() => {
-    if (user?.id == null || indexDb == null || isInitialized === false) return;
+    if (
+      user?.id == null ||
+      indexDb == null ||
+      isInitialized === false ||
+      atlas == null
+    )
+      return;
 
     let ypartyProvider: YPartyKitProvider | null = null;
 
@@ -146,7 +152,7 @@ export const usePuzzleProgress = (
         },
       );
       ypartyProvider.once('synced', () => {
-        initState(ypartyProvider.doc);
+        initState(ypartyProvider.doc, atlas);
         setPartykit(ypartyProvider);
       });
     };
@@ -156,7 +162,7 @@ export const usePuzzleProgress = (
     return () => {
       ypartyProvider?.disconnect();
     };
-  }, [getToken, indexDb, initState, isInitialized, puzzle.id, user?.id]);
+  }, [atlas, getToken, indexDb, initState, isInitialized, puzzle.id, user?.id]);
 
   useEffect(() => {
     // disconnect from server if the user is no longer logged in

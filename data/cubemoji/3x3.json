@@ -1,0 +1,394 @@
+[
+  {
+    "showenumerations": false,
+    "notes": "",
+    "puzzle": [
+      [1, "#", 2],
+      ["#", 3, "#"],
+      [4, "#", 5]
+    ],
+    "copyright": "",
+    "intro": "",
+    "version": "http://ipuz.org/v2",
+    "origin": "Crossword Compiler 11.26",
+    "title": "",
+    "kind": ["http://ipuz.org/crossword#1"],
+    "clues": {
+      "Across": [
+        {
+          "number": 1,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 2,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 3,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 4,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 5,
+          "clue": "[EMOJI]"
+        }
+      ],
+      "Down": [
+        {
+          "number": 1,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 2,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 3,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 4,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 5,
+          "clue": "[EMOJI]"
+        }
+      ]
+    },
+    "dimensions": {
+      "width": 3,
+      "height": 3
+    },
+    "author": "",
+    "solution": [
+      [
+        {
+          "value": "u1f3a0",
+          "cell": 1
+        },
+        "#",
+        {
+          "value": "u1f3a1",
+          "cell": 2
+        }
+      ],
+      [
+        "#",
+        {
+          "value": "u1f3a2",
+          "cell": 3
+        },
+        "#"
+      ],
+      [
+        {
+          "value": "u1f3a3",
+          "cell": 4
+        },
+        "#",
+        {
+          "value": "u1f3a4",
+          "cell": 5
+        }
+      ]
+    ]
+  },
+  {
+    "showenumerations": false,
+    "notes": "",
+    "puzzle": [
+      [1, "#", 2],
+      ["#", 3, "#"],
+      [4, "#", 5]
+    ],
+    "copyright": "",
+    "intro": "",
+    "version": "http://ipuz.org/v2",
+    "origin": "Crossword Compiler 11.26",
+    "title": "",
+    "kind": ["http://ipuz.org/crossword#1"],
+    "clues": {
+      "Across": [
+        {
+          "number": 1,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 2,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 3,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 4,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 5,
+          "clue": "[EMOJI]"
+        }
+      ],
+      "Down": [
+        {
+          "number": 1,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 2,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 3,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 4,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 5,
+          "clue": "[EMOJI]"
+        }
+      ]
+    },
+    "dimensions": {
+      "width": 3,
+      "height": 3
+    },
+    "author": "",
+    "solution": [
+      [
+        {
+          "value": "u1f3a1",
+          "cell": 1
+        },
+        "#",
+        {
+          "value": "u1f3a5",
+          "cell": 2
+        }
+      ],
+      [
+        "#",
+        {
+          "value": "u1f3a6",
+          "cell": 3
+        },
+        "#"
+      ],
+      [
+        {
+          "value": "u1f3a4",
+          "cell": 4
+        },
+        "#",
+        {
+          "value": "u1f3a7",
+          "cell": 5
+        }
+      ]
+    ]
+  },
+  {
+    "showenumerations": false,
+    "notes": "",
+    "puzzle": [
+      [1, "#", 2],
+      ["#", 3, "#"],
+      [4, "#", 5]
+    ],
+    "copyright": "",
+    "intro": "",
+    "version": "http://ipuz.org/v2",
+    "origin": "Crossword Compiler 11.26",
+    "title": "",
+    "kind": ["http://ipuz.org/crossword#1"],
+    "clues": {
+      "Across": [
+        {
+          "number": 1,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 2,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 3,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 4,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 5,
+          "clue": "[EMOJI]"
+        }
+      ],
+      "Down": [
+        {
+          "number": 1,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 2,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 3,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 4,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 5,
+          "clue": "[EMOJI]"
+        }
+      ]
+    },
+    "dimensions": {
+      "width": 3,
+      "height": 3
+    },
+    "author": "",
+    "solution": [
+      [
+        {
+          "value": "u1f3a5",
+          "cell": 1
+        },
+        "#",
+        {
+          "value": "u1f3a8",
+          "cell": 2
+        }
+      ],
+      [
+        "#",
+        {
+          "value": "u1f3a9",
+          "cell": 3
+        },
+        "#"
+      ],
+      [
+        {
+          "value": "u1f3a7",
+          "cell": 4
+        },
+        "#",
+        {
+          "value": "u1f3aa",
+          "cell": 5
+        }
+      ]
+    ]
+  },
+  {
+    "showenumerations": false,
+    "notes": "",
+    "puzzle": [
+      [1, "#", 2],
+      ["#", 3, "#"],
+      [4, "#", 5]
+    ],
+    "copyright": "",
+    "intro": "",
+    "version": "http://ipuz.org/v2",
+    "origin": "Crossword Compiler 11.26",
+    "title": "",
+    "kind": ["http://ipuz.org/crossword#1"],
+    "clues": {
+      "Across": [
+        {
+          "number": 1,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 2,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 3,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 4,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 5,
+          "clue": "[EMOJI]"
+        }
+      ],
+      "Down": [
+        {
+          "number": 1,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 2,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 3,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 4,
+          "clue": "[EMOJI]"
+        },
+        {
+          "number": 5,
+          "clue": "[EMOJI]"
+        }
+      ]
+    },
+    "dimensions": {
+      "width": 3,
+      "height": 3
+    },
+    "author": "",
+    "solution": [
+      [
+        {
+          "value": "u1f3a8",
+          "cell": 1
+        },
+        "#",
+        {
+          "value": "u1f3a0",
+          "cell": 2
+        }
+      ],
+      [
+        "#",
+        {
+          "value": "u1f3ab",
+          "cell": 3
+        },
+        "#"
+      ],
+      [
+        {
+          "value": "u1f3aa",
+          "cell": 4
+        },
+        "#",
+        {
+          "value": "u1f3a3",
+          "cell": 5
+        }
+      ]
+    ]
+  }
+]
