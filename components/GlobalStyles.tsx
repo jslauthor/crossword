@@ -475,8 +475,7 @@ export default createGlobalStyle/*css*/ `
   }
 
   .simple-keyboard.keyboardTheme .hg-button:active {
-    background: #1c4995;
-    color: white;
+    background: hsl(var(--secondary));
   }
 
   .simple-keyboard.keyboardTheme .hg-row {
