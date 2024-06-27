@@ -93,10 +93,6 @@ const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
               display: block;
               width: 30px;
               height: 30px;
-              @media (max-width: 400px) {
-                width: 20px;
-                height: 20px;
-              }
             }
           }
 
