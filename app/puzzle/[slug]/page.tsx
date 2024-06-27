@@ -4,7 +4,6 @@ import { queryDato } from 'lib/dato';
 import { getPuzzleBySlug } from 'lib/utils/reader';
 import {
   AtlasType,
-  NUMBER_OF_NUMBERS_PER_LINE,
   NUMBER_RECORD,
   TEXTURE_RECORD,
   generateTextures,

@@ -456,6 +456,7 @@ export default function Puzzle({
   );
 
   const onClueClick = useCallback(() => {
+    // Only enable orientation if using the regular (non-emoji) keyboard
     if (svgTextureAtlasLookup != null) return;
     setVerticalOrientation(!isVerticalOrientation);
   }, [isVerticalOrientation, svgTextureAtlasLookup]);

@@ -165,6 +165,7 @@ function useSvgAtlas(unicodeValues?: string[]) {
     [svgSize],
   );
 
+  // This means the puzzle doesn't have any emojis
   if (unicodeValues == null) {
     return {
       progress: 1,
