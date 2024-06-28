@@ -51,6 +51,8 @@ import { Spinner } from 'components/core/ui/spinner';
 import useSvgAtlas from 'lib/utils/hooks/useSvgAtlas';
 import { PuzzleProps } from 'app/puzzle/[slug]/page';
 import Timer from 'components/composed/Timer';
+import PuzzleShare from 'components/composed/PuzzleShare';
+import ShareButton from 'components/core/ShareButton';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -483,15 +485,6 @@ export default function Puzzle({
     }
   }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
-  // TODO: Convert into separate component
-  const formattedElapsedTime = useMemo(
-    () =>
-      (elapsedTime ?? 0) < 3600
-        ? new Date((elapsedTime ?? 0) * 1000).toISOString().slice(14, 19)
-        : new Date((elapsedTime ?? 0) * 1000).toISOString().slice(11, 19),
-    [elapsedTime],
-  );
-
   const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
     return {
       color: selectedColor,
@@ -552,11 +545,18 @@ export default function Puzzle({
   }, [puzzle]);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const handleSettingsPressed = useCallback(() => {
     setIsSettingsOpen(!isSettingsOpen);
   }, [isSettingsOpen]);
   const handleSettingsClose = useCallback(() => {
     setIsSettingsOpen(false);
+  }, []);
+  const handleSharePressed = useCallback(() => {
+    setIsShareOpen(true);
+  }, []);
+  const handleShareClose = useCallback(() => {
+    setIsShareOpen(false);
   }, []);
 
   const handleNext = useCallback(
@@ -660,6 +660,12 @@ export default function Puzzle({
       ],
     };
   }, [svgContentMap]);
+
+  useEffect(() => {
+    if (isPuzzleSolved === true) {
+      setIsShareOpen(true);
+    }
+  }, [isPuzzleSolved]);
 
   return (
     <>
@@ -823,11 +829,7 @@ export default function Puzzle({
             <KeyboardContainer $svgCssMap={svgCssMap}>
               {isPuzzleSolved && (
                 <SolvedContainer>
-                  <div>🏆 YOU DID IT! 🏆</div>
-                  <SolvedText>You finished the puzzle in</SolvedText>
-                  <SolvedTime>
-                    <HeaderItem>{formattedElapsedTime}</HeaderItem>
-                  </SolvedTime>
+                  <ShareButton onClick={handleSharePressed} />
                 </SolvedContainer>
               )}
               <Keyboard
@@ -849,6 +851,13 @@ export default function Puzzle({
         onClose={handleSettingsClose}
         autoNextEnabled={autoNextEnabled}
         onAutoNextChanged={addAutoNextEnabled}
+      />
+      <PuzzleShare
+        isOpen={isShareOpen}
+        onClose={handleShareClose}
+        time={elapsedTime ?? 0}
+        puzzleLabel="Crossmoji"
+        puzzleSubLabel="Puzzle #1"
       />
     </>
   );
