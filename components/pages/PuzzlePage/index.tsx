@@ -69,13 +69,6 @@ SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 type KeyboardLayoutType = Record<'default' | 'emoji', string[]>;
 type CssMapType = Record<string, [string, string]>;
 
-const HeaderItem = styled.div`
-  display: grid;
-  grid-auto-flow: column;
-  gap: 1rem;
-  align-items: center;
-`;
-
 const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
   width: 100%;
   height: max-content;
@@ -646,7 +639,7 @@ export default function Puzzle({
   }, [svgContentMap]);
 
   const keyLayout: KeyboardLayoutType = useMemo(() => {
-    const emojiKeys = Object.keys(svgContentMap);
+    const emojiKeys = Object.keys(svgContentMap).sort();
     return {
       default: [
         'Q W E R T Y U I O P',
@@ -655,8 +648,8 @@ export default function Puzzle({
       ],
       emoji: [
         `${emojiKeys.slice(0, 10).join(' ')}`,
-        `{sp} ${emojiKeys.slice(9, 18).join(' ')} {sp}`,
-        `MORE ${emojiKeys.slice(17, 24).join(' ')} {bksp}`,
+        `{sp} ${emojiKeys.slice(10, 19).join(' ')} {sp}`,
+        `MORE ${emojiKeys.slice(19, 26).join(' ')} {bksp}`,
       ],
     };
   }, [svgContentMap]);
