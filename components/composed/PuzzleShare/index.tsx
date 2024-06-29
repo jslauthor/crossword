@@ -18,8 +18,8 @@ const SettingsContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding-top: 2.5rem;
   padding: 1rem;
+  padding-top: 2rem;
   justify-content: center;
   align-items: center;
 `;
@@ -28,8 +28,7 @@ const SettingsTitle = styled.h3`
   font-size: 2.25rem;
   font-weight: 600;
   font-style: italic;
-  margin: 1.5rem 0;
-  padding: 0 1rem;
+  margin: 1rem 0;
 `;
 
 const SettingsItem = styled.div`
