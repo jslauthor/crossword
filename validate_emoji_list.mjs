@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 
 import { program } from 'commander';
-import fs from 'fs/promises';
 
 program.parse(process.argv);
-const options = program.opts();
 
 function isValidEmojiList(unicodes) {
   const validEmojis =
@@ -13,6 +11,13 @@ function isValidEmojiList(unicodes) {
   let isValid = true;
 
   if (unicodes.length !== 26) {
+    console.log('length');
+    isValid = false;
+  }
+
+  const uniqueSet = new Set(unicodes);
+  if (unicodes.length !== uniqueSet.size) {
+    console.log('size');
     isValid = false;
   }
 
@@ -44,9 +49,11 @@ function isValidEmojiList(unicodes) {
 
       // Check if the emoji is in the list of valid emojis
       if (!validEmojis.includes(emoji)) {
+        console.log(emoji);
         isValid = false;
       }
-    } catch {
+    } catch (e) {
+      // console.log(unicodeString, e);
       isValid = false;
     }
   }
@@ -57,32 +64,32 @@ function isValidEmojiList(unicodes) {
 async function main() {
   console.log(
     isValidEmojiList([
-      'u1F995',
-      'u1F1EE_1F1F3',
-      'u1F1E7_1F1F7',
-      'u1F1F7_1F1FA',
-      'u1F1EF_1F1F5',
-      'u1F1F0_1F1F7',
-      'u1F1E6_1F1FA',
-      'u1F1E8_1F1E6',
-      'u1F1F2_1F1FD',
-      'u1F1FF_1F1E6',
-      'u1F1EB_1F1F7',
-      'u1F1E9_1F1EA',
-      'u1F1EE_1F1F9',
-      'u1F1EA_1F1F8',
-      'u1F1EC_1F1E7',
-      'u1F1FA_1F1F8',
-      'u1F1E6_1F1F7',
-      'u1F1EA_1F1EC',
-      'u1F1F9_1F1F7',
-      'u1F1F8_1F1E6',
-      'u1F1EE_1F1E9',
-      'u1F1F3_1F1F1',
-      'u1F1E8_1F1ED',
-      'u1F1F8_1F1EA',
-      // 'u1F1F3_u1F1F4',
-      // 'sdafasdf',
+      'u1f3f0',
+      'u1f5fd',
+      'u1f1e8_u1f1f3',
+      'u1f5fc',
+      'u1f3db',
+      'u1f1ef_u1f1f5',
+      'u1f5fb',
+      'u1f1ec_u1f1e7',
+      'u1f1eb_u1f1f7',
+      'u1f1ee_u1f1f3',
+      'u1f1ee_u1f1f9',
+      'u1f1e8_u1f1e6',
+      'u1f3ef',
+      'u1f1e6_u1f1fa',
+      'u1f1e7_u1f1f7',
+      'u1f1f7_u1f1fa',
+      'u1f1ea_u1f1f8',
+      'u1f1f2_u1f1fd',
+      'u1f1f3_u1f1f1',
+      'u1f1e8_u1f1ed',
+      'u1f1f8_u1f1ea',
+      'u1f1f8_u1f1ec',
+      'u1f1e6_u1f1ea',
+      'u1f1e7_u1f1ea',
+      'u1f1f3_u1f1f4',
+      'u1f1e9_u1f1f0',
     ]),
   );
 }
