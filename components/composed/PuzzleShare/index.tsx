@@ -2,11 +2,12 @@
 
 import Overlay, { OverlayProps } from 'components/core/Overlay';
 import ShareButton from 'components/core/ShareButton';
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useMemo } from 'react';
 import styled from 'styled-components';
 import { formatTime } from 'lib/utils/date';
 import { HRule } from 'components/core/Dividers';
 import Image from 'next/image';
+import { PuzzleStats } from 'lib/utils/puzzle';
 
 const StarsContainer = styled.div`
   font-size: 5rem;
@@ -72,6 +73,16 @@ const Star = ({ width = 90, height = 90, dim = false }) => (
   />
 );
 
+const Wrong = ({ width = 90, height = 90, dim = false }) => (
+  <OutlineImage
+    src="/noto/svg/emoji_u274c.svg"
+    alt="wrong"
+    width={width}
+    height={height}
+    dim={dim}
+  />
+);
+
 const ShareItem: React.FC<{
   icon: ReactNode;
   label: ReactNode;
@@ -88,7 +99,11 @@ const ShareItem: React.FC<{
         </div>
       </div>
       <OpacityContainer success={success}>
-        <Star width={20} height={20} />
+        {success ? (
+          <Star width={20} height={20} />
+        ) : (
+          <Wrong width={20} height={20} dim />
+        )}
       </OpacityContainer>
     </SettingsItem>
   );
@@ -97,7 +112,7 @@ const ShareItem: React.FC<{
 interface PuzzleShareProps extends Partial<OverlayProps> {
   puzzleLabel: string;
   puzzleSubLabel: string;
-  time: number;
+  puzzleStats: PuzzleStats;
 }
 
 const noop = () => {};
@@ -108,18 +123,40 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
   puzzleLabel,
   puzzleSubLabel,
   onClose = noop,
-  time,
+  puzzleStats,
 }) => {
+  const numStars = useMemo(() => {
+    const { timeSuccess, guessSuccess, hintSuccess } = puzzleStats;
+    return [timeSuccess, guessSuccess, hintSuccess].reduce((acc, val) => {
+      return acc + (val ? 1 : 0);
+    }, 0);
+  }, [puzzleStats]);
+
+  const stars = useMemo(() => {
+    const val: ReactNode[] = [];
+    for (let i = 0; i < numStars + 1; i++) {
+      val.push(<Star />);
+    }
+    return val;
+  }, [numStars]);
+
+  const message = useMemo(() => {
+    if (numStars === 3) {
+      return 'Excellent!';
+    } else if (numStars === 2) {
+      return 'Great!';
+    } else if (numStars === 1) {
+      return 'Good Work!';
+    } else {
+      return 'Finished!';
+    }
+  }, [numStars]);
+
   return (
     <Overlay title={title} onClose={onClose} isOpen={isOpen}>
       <SettingsContainer>
-        <StarsContainer>
-          <Star />
-          <Star />
-          <Star />
-          <Star dim />
-        </StarsContainer>
-        <SettingsTitle>good work!</SettingsTitle>
+        <StarsContainer>{stars}</StarsContainer>
+        <SettingsTitle>{message}</SettingsTitle>
         <ShareItem
           icon={
             <Image
@@ -129,7 +166,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
               height={25}
             />
           }
-          label="finished"
+          label="Finished"
           success={true}
         />
         <HRule />
@@ -142,9 +179,13 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
               height={25}
             />
           }
-          label={formatTime(time)}
-          subLabel="> 2:45"
-          success={false}
+          label={formatTime(puzzleStats.time)}
+          subLabel={
+            puzzleStats.timeSuccess
+              ? 'Perfect!'
+              : `> ${formatTime(puzzleStats.goalTime)}`
+          }
+          success={puzzleStats.timeSuccess === true}
         />
         <HRule />
         <ShareItem
@@ -156,9 +197,13 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
               height={25}
             />
           }
-          label="12 guesses"
-          subLabel="Perfect!"
-          success={true}
+          label={`${puzzleStats.guesses > 0 ? puzzleStats.guesses : 'No'} guesses`}
+          subLabel={
+            puzzleStats.guessSuccess
+              ? 'Perfect!'
+              : `> ${puzzleStats.goalGuesses}`
+          }
+          success={puzzleStats.guessSuccess === true}
         />
         <HRule />
         <ShareItem
@@ -170,9 +215,8 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
               height={25}
             />
           }
-          label="no hints"
-          subLabel="Perfect!"
-          success={true}
+          label={puzzleStats.hintSuccess ? 'No hints' : 'Autocheck used'}
+          success={puzzleStats.hintSuccess}
         />
         <HRule />
         <ShareButton onClick={noop} />

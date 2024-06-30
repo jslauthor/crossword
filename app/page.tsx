@@ -5,7 +5,7 @@ import { PuzzleData } from 'types/types';
 import { getPuzzles } from 'lib/utils/reader';
 import { TEXTURE_RECORD } from 'lib/utils/textures';
 
-export type PuzzleType = PuzzlePreviewProps & {
+export type PuzzleType = Omit<PuzzlePreviewProps, 'dimensions'> & {
   slug: string;
   id: string;
   data: PuzzleData[];

@@ -8,12 +8,13 @@ import {
   DRAFT_MODES_KEY,
   GAME_STATE_KEY,
   GUESSES_KEY,
+  PuzzleStats,
   TIME_KEY,
   VALIDATIONS_KEY,
   createInitialYDoc,
+  getPuzzleStats,
   initializeAnswerIndex,
   invertAtlas,
-  isCellWithNumber,
   updateAnswerIndex as mutateAnswerIndex,
   verifyAnswerIndex,
 } from '../puzzle';
@@ -51,7 +52,8 @@ export const usePuzzleProgress = (
   const numberOfCells = useMemo(
     () =>
       // Count the number of cells that are not blank ("#")
-      puzzle.record.solution.filter((cell) => typeof cell !== 'string').length,
+      puzzle.record.solution.filter((cell) => typeof cell.value !== 'string')
+        .length,
     [puzzle.record.solution],
   );
 
@@ -59,7 +61,7 @@ export const usePuzzleProgress = (
   const [indexDb, setIndexDb] = useState<IndexeddbPersistence | null>(null);
   const [partykit, setPartykit] = useState<YPartyKitProvider | null>(null);
   const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
-  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
+  const [puzzleStats, setPuzzleStats] = useState<PuzzleStats | null>(null);
   const [autoNextEnabled, setAutoNextEnabled] = useState<boolean>(true);
   const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
@@ -79,6 +81,8 @@ export const usePuzzleProgress = (
   // 0 = default
   // 1 = draft
   const [draftModes, setCellDraftModeArray] = useState<Int16Array>();
+
+  const isPuzzleSolved = useMemo(() => puzzleStats != null, [puzzleStats]);
 
   const initState = useCallback(
     (doc: Y.Doc, atlas: AtlasType) => {
@@ -243,9 +247,13 @@ export const usePuzzleProgress = (
     if (verifyAnswerIndex(answerIndex)) {
       setAutocheckEnabled(false);
       setDraftModeEnabled(false);
-      setIsPuzzleSolved(true);
+      if (elapsedTime != null && guesses != null && validations != null) {
+        setPuzzleStats(
+          getPuzzleStats(puzzle, elapsedTime, guesses, validations),
+        );
+      }
     }
-  }, [answerIndex]);
+  }, [answerIndex, elapsedTime, guesses, puzzle, validations]);
 
   const addCellValidation = useCallback(
     (validations: Int16Array) => {
@@ -423,7 +431,7 @@ export const usePuzzleProgress = (
         // We only want to increment guesses if the user has filled in all the cells at least once
         // If guesses is -1, then we haven't filled in all the cells yet
         // We only increment guesses if the user didn't use backspace
-        if (numEntries === numberOfCells && guesses === -1) {
+        if (numEntries >= numberOfCells && guesses === -1) {
           setGuesses(0);
         } else if (x > -1 && y > -1 && guesses != null && guesses > -1) {
           addGuesses(guesses + 1);
@@ -451,7 +459,6 @@ export const usePuzzleProgress = (
     addCharacterPosition,
     addTime,
     elapsedTime,
-    guesses,
     addCellValidation,
     addCellDraftMode,
     autoNextEnabled,
@@ -465,5 +472,6 @@ export const usePuzzleProgress = (
     draftModes,
     characterPositions,
     hasRetrievedState,
+    puzzleStats,
   };
 };

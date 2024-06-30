@@ -330,7 +330,7 @@ export default function Puzzle({
     isPuzzleSolved,
     addTime,
     elapsedTime,
-    guesses,
+    puzzleStats,
     updateCharacterPosition,
     characterPositions,
     validations,
@@ -846,13 +846,15 @@ export default function Puzzle({
         autoNextEnabled={autoNextEnabled}
         onAutoNextChanged={addAutoNextEnabled}
       />
-      <PuzzleShare
-        isOpen={isShareOpen}
-        onClose={handleShareClose}
-        time={elapsedTime ?? 0}
-        puzzleLabel="Crossmoji"
-        puzzleSubLabel="Puzzle #1"
-      />
+      {puzzleStats != null && (
+        <PuzzleShare
+          isOpen={isShareOpen}
+          onClose={handleShareClose}
+          puzzleStats={puzzleStats}
+          puzzleLabel="Crossmoji"
+          puzzleSubLabel="Puzzle #1"
+        />
+      )}
     </>
   );
 }
