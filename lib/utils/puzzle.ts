@@ -516,3 +516,18 @@ export const getPuzzleStats = (
     guesses,
   };
 };
+
+export const getPuzzleLabel = (puzzle: PuzzleType): string[] => {
+  const { width, height } = puzzle.data[0].dimensions;
+  const size = width * height;
+  switch (size) {
+    case 9:
+      return ['crossmoji'];
+    case 25:
+      return ['crosscube', 'mini'];
+    case 144:
+      return ['crosscube', 'mega'];
+    default:
+      return ['crusscube'];
+  }
+};

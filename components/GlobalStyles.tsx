@@ -185,11 +185,6 @@ export default createGlobalStyle/*css*/ `
     text-transform: uppercase;
   }
 
-  .text-sm {
-    font-size: .625rem;
-    line-height: 1.3;
-  }
-
   :root {
     --radius: 0.3rem;
 

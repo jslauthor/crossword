@@ -107,8 +107,15 @@ const ShareItem: React.FC<{
   );
 };
 
+const Title = styled.span<{ isFirst: boolean }>`
+  font-size: 1rem;
+  font-weight: ${({ isFirst }) => (isFirst ? '600' : '400')};
+  font-style: italic;
+  margin: 0;
+`;
+
 interface PuzzleShareProps extends Partial<OverlayProps> {
-  puzzleLabel: string;
+  puzzleLabel: string[];
   puzzleSubLabel: string;
   puzzleStats: PuzzleStats;
 }
@@ -150,9 +157,21 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
     }
   }, [numStars]);
 
+  const formattedLabel = useMemo(() => {
+    return puzzleLabel.map((label, index) => (
+      <Title isFirst={index === 0} key={index}>
+        {`${label}`}{' '}
+      </Title>
+    ));
+  }, [puzzleLabel]);
+
   return (
     <Overlay title={title} onClose={onClose} isOpen={isOpen}>
       <SettingsContainer>
+        <div className="flex flex-col gap-1 justify-center items-center">
+          <div>{formattedLabel}</div>
+          <div className="text-sm">&quot;{puzzleSubLabel}&quot;</div>
+        </div>
         <div className="flex flex-col justify-center items-center gap-4">
           <StarsContainer>{stars}</StarsContainer>
           <SettingsTitle>{message}</SettingsTitle>

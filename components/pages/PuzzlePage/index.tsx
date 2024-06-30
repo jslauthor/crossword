@@ -36,7 +36,7 @@ import Menu from 'components/containers/Menu';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
-import { createInitialState } from 'lib/utils/puzzle';
+import { createInitialState, getPuzzleLabel } from 'lib/utils/puzzle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronCircleDown,
@@ -110,18 +110,6 @@ const SolvedContainer = styled.div`
   color: hsl(var(--foreground));
   max-width: var(--primary-app-width);
   margin: 0 auto;
-`;
-
-const SolvedText = styled.div`
-  font-weight: 400;
-  font-size: 0.75rem;
-  font-style: italic;
-  margin-top: 0.5rem;
-`;
-
-const SolvedTime = styled.h3`
-  font-weight: 400;
-  font-size: 2rem;
 `;
 
 const TurnButton = styled.div<{ $side: 'left' | 'right'; $color: string }>`
@@ -851,8 +839,8 @@ export default function Puzzle({
           isOpen={isShareOpen}
           onClose={handleShareClose}
           puzzleStats={puzzleStats}
-          puzzleLabel="Crossmoji"
-          puzzleSubLabel="Puzzle #1"
+          puzzleLabel={getPuzzleLabel(puzzle)}
+          puzzleSubLabel={puzzle.title}
         />
       )}
     </>
