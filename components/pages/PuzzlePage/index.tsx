@@ -330,6 +330,7 @@ export default function Puzzle({
     isPuzzleSolved,
     addTime,
     elapsedTime,
+    guesses,
     updateCharacterPosition,
     characterPositions,
     validations,

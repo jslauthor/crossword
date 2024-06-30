@@ -11,7 +11,7 @@ export type GameState = {
   validations: Int16Array;
   draftModes: Int16Array;
   answerIndex: number[];
-  usedHint: boolean;
+  guesses: number; // anytime they input a letter, increment this. do not increment for backspace
 };
 
 export type BlankCell = '#';

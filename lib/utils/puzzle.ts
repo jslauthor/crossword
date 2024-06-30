@@ -16,6 +16,7 @@ export const CHARACTER_POSITIONS_KEY = 'characterPositions';
 export const VALIDATIONS_KEY = 'validations';
 export const DRAFT_MODES_KEY = 'draftModes';
 export const TIME_KEY = 'time';
+export const GUESSES_KEY = 'guesses';
 
 export function isSolutionCellValue(
   cell: SolutionCell,
@@ -423,11 +424,11 @@ export const createInitialArray = (puzzle: PuzzleType, fill: number = -1) =>
 
 export const createInitialState = (puzzle: PuzzleType): GameState => ({
   time: 0,
+  guesses: -1,
   characterPositions: createFloat32Array(puzzle),
   validations: createInt16Array(puzzle),
   draftModes: createInt16Array(puzzle),
   answerIndex: initializeAnswerIndex(puzzle.record.solution),
-  usedHint: false,
 });
 
 export const createInitialYDoc = (puzzle: PuzzleType): Y.Doc => {
@@ -446,6 +447,7 @@ export const createInitialYDoc = (puzzle: PuzzleType): Y.Doc => {
     .getMap(GAME_STATE_KEY)
     .set(DRAFT_MODES_KEY, Y.Array.from(Array.from(createInt16Array(puzzle))));
   doc.getMap(GAME_STATE_KEY).set(TIME_KEY, 0);
+  doc.getMap(GAME_STATE_KEY).set(GUESSES_KEY, -1);
 
   return doc;
 };
