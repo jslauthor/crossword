@@ -24,7 +24,7 @@ const buttonVariants = cva(
         sm: 'h-9 rounded-md px-3',
         lg: 'h-11 rounded-md px-8',
         icon: 'h-6 w-6',
-        share: 'rounded-full flex gap-1 py-3 px-14',
+        share: 'rounded-full flex gap-1 py-3 px-14 text-base',
       },
     },
     defaultVariants: {

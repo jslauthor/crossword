@@ -9,8 +9,10 @@ interface ShareButtonProps {
 const ShareButton: React.FC<ShareButtonProps> = ({ onClick }) => {
   return (
     <Button size="share" onClick={onClick}>
-      Share
-      <Share size={12} />
+      <div className="flex gap-2 justify-center items-center">
+        Share
+        <Share size={16} />
+      </div>
     </Button>
   );
 };
