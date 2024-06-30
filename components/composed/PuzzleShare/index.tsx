@@ -2,7 +2,13 @@
 
 import Overlay, { OverlayProps } from 'components/core/Overlay';
 import ShareButton from 'components/core/ShareButton';
-import React, { ReactNode, useMemo } from 'react';
+import React, {
+  ReactNode,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import styled from 'styled-components';
 import { formatTime } from 'lib/utils/date';
 import { HRule } from 'components/core/Dividers';
@@ -114,6 +120,35 @@ const Title = styled.span<{ isFirst: boolean }>`
   margin: 0;
 `;
 
+const titleCase = (str: string): string => {
+  return str.toLowerCase().replace(/(^|\s)\w/g, (match) => match.toUpperCase());
+};
+
+const copyToClipboard = async (text: string): Promise<void> => {
+  try {
+    await navigator.clipboard.writeText(text);
+    console.log('Text copied to clipboard');
+  } catch (err) {
+    console.error('Failed to copy text: ', err);
+  }
+};
+
+const shareContent = async (text: string, title: string): Promise<void> => {
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: title,
+        text: text,
+      });
+      console.log('Content shared successfully');
+    } catch (err) {
+      console.error('Error sharing: ', err);
+    }
+  } else {
+    await copyToClipboard(text);
+  }
+};
+
 interface PuzzleShareProps extends Partial<OverlayProps> {
   puzzleLabel: string[];
   puzzleSubLabel: string;
@@ -164,6 +199,16 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
       </Title>
     ));
   }, [puzzleLabel]);
+
+  const handleShare = useCallback(() => {
+    const share = async () => {
+      const { timeSuccess, guessSuccess, hintSuccess } = puzzleStats;
+      const result = `⭐️${timeSuccess ? '⭐️' : '❌'}${guessSuccess ? '⭐️' : '❌'}${hintSuccess ? '⭐️' : '❌'}`;
+      const content = `${puzzleLabel.map(titleCase).join(' ')}\n"${puzzleSubLabel}"\n${result}\n✅⏱️🟦🛟`;
+      await shareContent(content, 'Share Crosscube!');
+    };
+    share();
+  }, [puzzleLabel, puzzleStats, puzzleSubLabel]);
 
   return (
     <Overlay title={title} onClose={onClose} isOpen={isOpen}>
@@ -241,7 +286,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
           <HRule />
         </div>
 
-        <ShareButton onClick={noop} />
+        <ShareButton onClick={handleShare} />
       </SettingsContainer>
     </Overlay>
   );

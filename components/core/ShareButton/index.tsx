@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import { Share } from 'lucide-react';
 
@@ -7,10 +7,26 @@ interface ShareButtonProps {
 }
 
 const ShareButton: React.FC<ShareButtonProps> = ({ onClick }) => {
+  const timerRef = useRef<NodeJS.Timeout>();
+  const [shareLabel, setShareLabel] = useState('Share');
+
+  const handleClipboard = useCallback(() => {
+    if (onClick) {
+      onClick();
+    }
+    if (navigator.share == null) {
+      clearTimeout(timerRef.current);
+      setShareLabel('Copied!');
+      timerRef.current = setTimeout(() => {
+        setShareLabel('Share');
+      }, 2000);
+    }
+  }, [onClick]);
+
   return (
-    <Button size="share" onClick={onClick}>
+    <Button size="share" onClick={handleClipboard}>
       <div className="flex gap-2 justify-center items-center">
-        Share
+        {shareLabel}
         <Share size={16} />
       </div>
     </Button>
