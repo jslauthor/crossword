@@ -61,6 +61,7 @@ export const usePuzzleProgress = (
   const [indexDb, setIndexDb] = useState<IndexeddbPersistence | null>(null);
   const [partykit, setPartykit] = useState<YPartyKitProvider | null>(null);
   const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
+  const [isPuzzleSolved, setIsPuzzleSolved] = useState<boolean>(false);
   const [puzzleStats, setPuzzleStats] = useState<PuzzleStats | null>(null);
   const [autoNextEnabled, setAutoNextEnabled] = useState<boolean>(true);
   const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
@@ -81,8 +82,6 @@ export const usePuzzleProgress = (
   // 0 = default
   // 1 = draft
   const [draftModes, setCellDraftModeArray] = useState<Int16Array>();
-
-  const isPuzzleSolved = useMemo(() => puzzleStats != null, [puzzleStats]);
 
   const initState = useCallback(
     (doc: Y.Doc, atlas: AtlasType) => {
@@ -247,6 +246,7 @@ export const usePuzzleProgress = (
     if (verifyAnswerIndex(answerIndex)) {
       setAutocheckEnabled(false);
       setDraftModeEnabled(false);
+      setIsPuzzleSolved(true);
       if (elapsedTime != null && guesses != null && validations != null) {
         setPuzzleStats(
           getPuzzleStats(puzzle, elapsedTime, guesses, validations),
