@@ -459,6 +459,7 @@ export const usePuzzleProgress = (
     addCharacterPosition,
     addTime,
     elapsedTime,
+    guesses,
     addCellValidation,
     addCellDraftMode,
     autoNextEnabled,

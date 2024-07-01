@@ -50,7 +50,7 @@ import PuzzleSettings from 'components/composed/PuzzleSettings';
 import { Spinner } from 'components/core/ui/spinner';
 import useSvgAtlas from 'lib/utils/hooks/useSvgAtlas';
 import { PuzzleProps } from 'app/puzzle/[slug]/page';
-import Timer from 'components/composed/Timer';
+import TimerAndGuesses from 'components/composed/Timer';
 import PuzzleShare from 'components/composed/PuzzleShare';
 import ShareButton from 'components/core/ShareButton';
 
@@ -318,6 +318,7 @@ export default function Puzzle({
     isPuzzleSolved,
     addTime,
     elapsedTime,
+    guesses,
     puzzleStats,
     updateCharacterPosition,
     characterPositions,
@@ -652,7 +653,9 @@ export default function Puzzle({
   return (
     <>
       <Menu
-        centerLabel={<Timer elapsedTime={elapsedTime ?? 0} />}
+        centerLabel={
+          <TimerAndGuesses elapsedTime={elapsedTime ?? 0} guesses={guesses} />
+        }
         rotatingBoxProps={rotatingBoxProps}
         autocheckEnabled={autocheckEnabled}
         draftModeEnabled={draftModeEnabled}

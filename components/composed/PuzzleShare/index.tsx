@@ -239,7 +239,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
             icon={
               <Image
                 src="/noto/svg/emoji_u23f1.svg"
-                alt="check"
+                alt="clock"
                 width={24}
                 height={24}
               />
@@ -257,7 +257,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
             icon={
               <Image
                 src="/noto/svg/emoji_u1f7e6.svg"
-                alt="check"
+                alt="blue square"
                 width={24}
                 height={24}
               />
@@ -275,7 +275,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
             icon={
               <Image
                 src="/noto/svg/emoji_u1f6df.svg"
-                alt="check"
+                alt="buoy"
                 width={24}
                 height={24}
               />
