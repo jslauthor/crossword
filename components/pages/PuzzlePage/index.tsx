@@ -100,6 +100,7 @@ const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
 const SolvedContainer = styled.div`
   position: absolute;
   display: flex;
+  gap: 1rem;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -107,6 +108,7 @@ const SolvedContainer = styled.div`
   background: radial-gradient(hsl(var(--background)), rgb(0, 0, 0, 0));
   font-weight: 600;
   font-size: 1.5rem;
+  font-style: italic;
   color: hsl(var(--foreground));
   max-width: var(--primary-app-width);
   margin: 0 auto;
@@ -327,6 +329,7 @@ export default function Puzzle({
   }, [puzzleWidth]);
 
   const {
+    hasInteractedWithPuzzle,
     isPuzzleSolved,
     addTime,
     elapsedTime,
@@ -657,10 +660,10 @@ export default function Puzzle({
   }, [svgContentMap]);
 
   useEffect(() => {
-    if (isPuzzleSolved === true) {
+    if (isPuzzleSolved === true && hasInteractedWithPuzzle === true) {
       setIsShareOpen(true);
     }
-  }, [isPuzzleSolved]);
+  }, [isPuzzleSolved, hasInteractedWithPuzzle]);
 
   return (
     <>
@@ -827,6 +830,7 @@ export default function Puzzle({
             <KeyboardContainer $svgCssMap={svgCssMap}>
               {isPuzzleSolved && (
                 <SolvedContainer>
+                  You did it!
                   <ShareButton onClick={handleSharePressed} />
                 </SolvedContainer>
               )}

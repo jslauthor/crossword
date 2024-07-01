@@ -57,6 +57,7 @@ export const usePuzzleProgress = (
     [puzzle.record.solution],
   );
 
+  const [hasInteractedWithPuzzle, setHasInteractedWithPuzzle] = useState(false);
   const [anonCacheId, setAnonCacheId] = useState<string | null>(null);
   const [indexDb, setIndexDb] = useState<IndexeddbPersistence | null>(null);
   const [partykit, setPartykit] = useState<YPartyKitProvider | null>(null);
@@ -411,6 +412,9 @@ export const usePuzzleProgress = (
   const updateCharacterPosition = useCallback(
     (selectedIndex: number, key: string, x: number, y: number) => {
       if (validations == null || characterPositions == null) return false;
+      if (hasInteractedWithPuzzle === false) {
+        setHasInteractedWithPuzzle(true);
+      }
       if (validations[selectedIndex * 2] !== 2) {
         // do not allow updating a guess that's been successfully validated
         updateAnswerIndex(
@@ -443,6 +447,7 @@ export const usePuzzleProgress = (
       return false;
     },
     [
+      hasInteractedWithPuzzle,
       validations,
       characterPositions,
       updateAnswerIndex,
@@ -457,6 +462,7 @@ export const usePuzzleProgress = (
   return {
     isPuzzleSolved,
     addCharacterPosition,
+    hasInteractedWithPuzzle,
     addTime,
     elapsedTime,
     guesses,
