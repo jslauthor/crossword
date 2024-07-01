@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import styled from 'styled-components';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -42,7 +42,7 @@ const Text = styled.a`
 `;
 
 export interface OverlayProps {
-  title: string;
+  title: ReactNode;
   isOpen: boolean;
   onClose: () => void;
   children?: React.ReactNode;

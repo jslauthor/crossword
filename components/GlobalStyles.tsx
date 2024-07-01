@@ -185,11 +185,6 @@ export default createGlobalStyle/*css*/ `
     text-transform: uppercase;
   }
 
-  .text-sm {
-    font-size: .625rem;
-    line-height: 1.3;
-  }
-
   :root {
     --radius: 0.3rem;
 
@@ -303,7 +298,7 @@ export default createGlobalStyle/*css*/ `
     --muted-foreground: 240 5% 64.9%;
     --accent: 12 6.5% 15.1%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 15 100% 60%;
     --destructive-foreground: 0 85.7% 97.3%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
@@ -350,7 +345,7 @@ export default createGlobalStyle/*css*/ `
     --muted-foreground: 240 3.8% 46.1%;
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 15 100% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
@@ -475,8 +470,7 @@ export default createGlobalStyle/*css*/ `
   }
 
   .simple-keyboard.keyboardTheme .hg-button:active {
-    background: #1c4995;
-    color: white;
+    background: hsl(var(--secondary));
   }
 
   .simple-keyboard.keyboardTheme .hg-row {

@@ -36,7 +36,7 @@ import Menu from 'components/containers/Menu';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
-import { createInitialState } from 'lib/utils/puzzle';
+import { createInitialState, getPuzzleLabel } from 'lib/utils/puzzle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronCircleDown,
@@ -50,7 +50,9 @@ import PuzzleSettings from 'components/composed/PuzzleSettings';
 import { Spinner } from 'components/core/ui/spinner';
 import useSvgAtlas from 'lib/utils/hooks/useSvgAtlas';
 import { PuzzleProps } from 'app/puzzle/[slug]/page';
-import Timer from 'components/composed/Timer';
+import TimerAndGuesses from 'components/composed/Timer';
+import PuzzleShare from 'components/composed/PuzzleShare';
+import ShareButton from 'components/core/ShareButton';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -66,13 +68,6 @@ SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 
 type KeyboardLayoutType = Record<'default' | 'emoji', string[]>;
 type CssMapType = Record<string, [string, string]>;
-
-const HeaderItem = styled.div`
-  display: grid;
-  grid-auto-flow: column;
-  gap: 1rem;
-  align-items: center;
-`;
 
 const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
   width: 100%;
@@ -105,6 +100,7 @@ const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
 const SolvedContainer = styled.div`
   position: absolute;
   display: flex;
+  gap: 1rem;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -112,21 +108,10 @@ const SolvedContainer = styled.div`
   background: radial-gradient(hsl(var(--background)), rgb(0, 0, 0, 0));
   font-weight: 600;
   font-size: 1.5rem;
+  font-style: italic;
   color: hsl(var(--foreground));
   max-width: var(--primary-app-width);
   margin: 0 auto;
-`;
-
-const SolvedText = styled.div`
-  font-weight: 400;
-  font-size: 0.75rem;
-  font-style: italic;
-  margin-top: 0.5rem;
-`;
-
-const SolvedTime = styled.h3`
-  font-weight: 400;
-  font-size: 2rem;
 `;
 
 const TurnButton = styled.div<{ $side: 'left' | 'right'; $color: string }>`
@@ -252,6 +237,10 @@ export default function Puzzle({
     svgContentMap,
   } = useSvgAtlas(puzzle.svgsegments);
 
+  const disableOrientation = useMemo(
+    () => svgTextureAtlasLookup != null,
+    [svgTextureAtlasLookup],
+  );
   const [groupRef, setGroup] = useState<Object3D | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
   const [sideOffset, setSideOffset] = useState(0);
@@ -285,6 +274,14 @@ export default function Puzzle({
 
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
+
+  const handleSetOrientation = useCallback(
+    (orientation: boolean) => {
+      if (disableOrientation === true) return;
+      setVerticalOrientation(orientation);
+    },
+    [disableOrientation],
+  );
 
   const animatedClueText = useAnimatedText(clue, 60);
 
@@ -332,9 +329,12 @@ export default function Puzzle({
   }, [puzzleWidth]);
 
   const {
+    hasInteractedWithPuzzle,
     isPuzzleSolved,
     addTime,
     elapsedTime,
+    guesses,
+    puzzleStats,
     updateCharacterPosition,
     characterPositions,
     validations,
@@ -457,9 +457,9 @@ export default function Puzzle({
 
   const onClueClick = useCallback(() => {
     // Only enable orientation if using the regular (non-emoji) keyboard
-    if (svgTextureAtlasLookup != null) return;
+    if (disableOrientation === true) return;
     setVerticalOrientation(!isVerticalOrientation);
-  }, [isVerticalOrientation, svgTextureAtlasLookup]);
+  }, [isVerticalOrientation, disableOrientation]);
 
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
 
@@ -482,15 +482,6 @@ export default function Puzzle({
       setShouldStartTimer(true);
     }
   }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
-
-  // TODO: Convert into separate component
-  const formattedElapsedTime = useMemo(
-    () =>
-      (elapsedTime ?? 0) < 3600
-        ? new Date((elapsedTime ?? 0) * 1000).toISOString().slice(14, 19)
-        : new Date((elapsedTime ?? 0) * 1000).toISOString().slice(11, 19),
-    [elapsedTime],
-  );
 
   const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
     return {
@@ -552,11 +543,18 @@ export default function Puzzle({
   }, [puzzle]);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const handleSettingsPressed = useCallback(() => {
     setIsSettingsOpen(!isSettingsOpen);
   }, [isSettingsOpen]);
   const handleSettingsClose = useCallback(() => {
     setIsSettingsOpen(false);
+  }, []);
+  const handleSharePressed = useCallback(() => {
+    setIsShareOpen(true);
+  }, []);
+  const handleShareClose = useCallback(() => {
+    setIsShareOpen(false);
   }, []);
 
   const handleNext = useCallback(
@@ -646,7 +644,7 @@ export default function Puzzle({
   }, [svgContentMap]);
 
   const keyLayout: KeyboardLayoutType = useMemo(() => {
-    const emojiKeys = Object.keys(svgContentMap);
+    const emojiKeys = Object.keys(svgContentMap).sort();
     return {
       default: [
         'Q W E R T Y U I O P',
@@ -655,16 +653,24 @@ export default function Puzzle({
       ],
       emoji: [
         `${emojiKeys.slice(0, 10).join(' ')}`,
-        `{sp} ${emojiKeys.slice(9, 18).join(' ')} {sp}`,
-        `MORE ${emojiKeys.slice(17, 24).join(' ')} {bksp}`,
+        `{sp} ${emojiKeys.slice(10, 19).join(' ')} {sp}`,
+        `MORE ${emojiKeys.slice(19, 26).join(' ')} {bksp}`,
       ],
     };
   }, [svgContentMap]);
 
+  useEffect(() => {
+    if (isPuzzleSolved === true && hasInteractedWithPuzzle === true) {
+      setIsShareOpen(true);
+    }
+  }, [isPuzzleSolved, hasInteractedWithPuzzle]);
+
   return (
     <>
       <Menu
-        centerLabel={<Timer elapsedTime={elapsedTime ?? 0} />}
+        centerLabel={
+          <TimerAndGuesses elapsedTime={elapsedTime ?? 0} guesses={guesses} />
+        }
         rotatingBoxProps={rotatingBoxProps}
         autocheckEnabled={autocheckEnabled}
         draftModeEnabled={draftModeEnabled}
@@ -723,7 +729,8 @@ export default function Puzzle({
                   borderColor={borderColor}
                   onInitialize={onInitialize}
                   isVerticalOrientation={isVerticalOrientation}
-                  onVerticalOrientationChange={setVerticalOrientation}
+                  disableOrientation={disableOrientation}
+                  onVerticalOrientationChange={handleSetOrientation}
                   autocheckEnabled={autocheckEnabled}
                   characterPositionArray={
                     characterPositions ?? defaultCharacterPositions
@@ -775,7 +782,7 @@ export default function Puzzle({
                   {cellNumber != null && (
                     <SelectedInfo $backgroundColor={toHex(selectedColor)}>
                       {`${cellNumber}`}
-                      {svgTextureAtlasLookup == null ? (
+                      {disableOrientation == false ? (
                         isVerticalOrientation ? (
                           <FontAwesomeIcon
                             icon={faChevronCircleDown}
@@ -823,11 +830,8 @@ export default function Puzzle({
             <KeyboardContainer $svgCssMap={svgCssMap}>
               {isPuzzleSolved && (
                 <SolvedContainer>
-                  <div>🏆 YOU DID IT! 🏆</div>
-                  <SolvedText>You finished the puzzle in</SolvedText>
-                  <SolvedTime>
-                    <HeaderItem>{formattedElapsedTime}</HeaderItem>
-                  </SolvedTime>
+                  You did it!
+                  <ShareButton onClick={handleSharePressed} />
                 </SolvedContainer>
               )}
               <Keyboard
@@ -850,6 +854,15 @@ export default function Puzzle({
         autoNextEnabled={autoNextEnabled}
         onAutoNextChanged={addAutoNextEnabled}
       />
+      {puzzleStats != null && (
+        <PuzzleShare
+          isOpen={isShareOpen}
+          onClose={handleShareClose}
+          puzzleStats={puzzleStats}
+          puzzleLabel={getPuzzleLabel(puzzle)}
+          puzzleSubLabel={puzzle.title}
+        />
+      )}
     </>
   );
 }

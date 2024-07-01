@@ -16,6 +16,7 @@ export const CHARACTER_POSITIONS_KEY = 'characterPositions';
 export const VALIDATIONS_KEY = 'validations';
 export const DRAFT_MODES_KEY = 'draftModes';
 export const TIME_KEY = 'time';
+export const GUESSES_KEY = 'guesses';
 
 export function isSolutionCellValue(
   cell: SolutionCell,
@@ -423,11 +424,11 @@ export const createInitialArray = (puzzle: PuzzleType, fill: number = -1) =>
 
 export const createInitialState = (puzzle: PuzzleType): GameState => ({
   time: 0,
+  guesses: -1,
   characterPositions: createFloat32Array(puzzle),
   validations: createInt16Array(puzzle),
   draftModes: createInt16Array(puzzle),
   answerIndex: initializeAnswerIndex(puzzle.record.solution),
-  usedHint: false,
 });
 
 export const createInitialYDoc = (puzzle: PuzzleType): Y.Doc => {
@@ -446,6 +447,87 @@ export const createInitialYDoc = (puzzle: PuzzleType): Y.Doc => {
     .getMap(GAME_STATE_KEY)
     .set(DRAFT_MODES_KEY, Y.Array.from(Array.from(createInt16Array(puzzle))));
   doc.getMap(GAME_STATE_KEY).set(TIME_KEY, 0);
+  doc.getMap(GAME_STATE_KEY).set(GUESSES_KEY, -1);
 
   return doc;
+};
+
+function roundUpToNearestFive(num: number): number {
+  return Math.ceil(num / 5) * 5;
+}
+
+export type PuzzleStats = {
+  time: number;
+  timeSuccess: boolean;
+  goalTime: number;
+  guesses: number;
+  guessSuccess: boolean;
+  goalGuesses: number;
+  hintSuccess: boolean;
+};
+
+const baseLength = 3;
+
+export const getPuzzleStats = (
+  puzzle: PuzzleType,
+  time: number,
+  guesses: number,
+  validations: Int16Array,
+): PuzzleStats => {
+  const { width, height } = puzzle.data[0].dimensions;
+  const gridSize = width * height;
+  // Crossmoji has no down clues and is 3x3 (9)
+  const numberOfWords =
+    puzzle.record.clues.across.length +
+    (gridSize === 9 ? 0 : puzzle.record.clues.down.length);
+
+  let avgWordLength = 1; // crossmojis are always one long
+  if (gridSize > 9) {
+    const uniqueWords = new Set(puzzle.record.words);
+    avgWordLength =
+      uniqueWords.size > 0
+        ? Array.from(uniqueWords).reduce((acc, word) => {
+            return word != null ? word.length + acc : acc;
+          }, 0) / uniqueWords.size
+        : 1;
+  }
+  // For every word length over 3, we add 10% to the goal time
+  let scalingFactor = 1 + Math.max(0, (avgWordLength - baseLength) * 0.1);
+  // Base is 20 seconds per word times a scaling factor
+  const goalTime = roundUpToNearestFive(numberOfWords * 20 * scalingFactor);
+
+  const scalePerChar = 0.15; // 15% increase per character above base length
+  const guessScalingFactor =
+    1 + Math.max(0, (avgWordLength - baseLength) * scalePerChar);
+
+  const baseGuessesPerWord = 0.25;
+  const goalGuesses = Math.max(
+    1,
+    Math.ceil(numberOfWords * baseGuessesPerWord * guessScalingFactor),
+  );
+
+  return {
+    hintSuccess: !validations.some((v) => v !== 0),
+    timeSuccess: time <= goalTime,
+    goalTime,
+    guessSuccess: guesses <= goalGuesses,
+    goalGuesses,
+    time,
+    guesses,
+  };
+};
+
+export const getPuzzleLabel = (puzzle: PuzzleType): string[] => {
+  const { width, height } = puzzle.data[0].dimensions;
+  const size = width * height;
+  switch (size) {
+    case 9:
+      return ['crossmoji'];
+    case 25:
+      return ['crosscube', 'mini'];
+    case 144:
+      return ['crosscube', 'mega'];
+    default:
+      return ['crusscube'];
+  }
 };

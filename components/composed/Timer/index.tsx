@@ -1,34 +1,47 @@
 import React, { useMemo } from 'react';
 import { Badge } from 'components/core/ui/badge';
-import Clock from 'components/svg/Clock';
+import { formatTime } from 'lib/utils/date';
+import Image from 'next/image';
 
-interface TimerProps {
+interface Props {
   elapsedTime: number;
+  guesses?: number;
+  size?: 'large' | 'default';
 }
 
-const Timer: React.FC<TimerProps> = ({ elapsedTime }) => {
+const TimerAndGuesses: React.FC<Props> = ({
+  elapsedTime,
+  guesses,
+  size = 'default',
+}) => {
   const formattedTime = useMemo(() => formatTime(elapsedTime), [elapsedTime]);
 
   return (
-    <Badge variant="secondary">
-      <Clock className="h-4 w-4 mr-0.5 text-primary" />
-      {formattedTime}
+    <Badge variant="secondary" size={size}>
+      {guesses && guesses > 0 && (
+        <div className="flex flex-row items-center mr-2 max-w-11">
+          <Image
+            src="/noto/svg/emoji_u1f7e6.svg"
+            alt="blue square"
+            width={10}
+            height={10}
+            className="mr-1"
+          />
+          <span className="truncate">{guesses}</span>
+        </div>
+      )}
+      <div className="flex flex-row items-center">
+        <Image
+          src="/noto/svg/emoji_u23f1.svg"
+          alt="clock"
+          width={10}
+          height={10}
+          className="mr-1"
+        />
+        <div>{formattedTime}</div>
+      </div>
     </Badge>
   );
 };
 
-function formatTime(elapsedTime: number | null): string {
-  const seconds = Math.floor((elapsedTime ?? 0) % 60);
-  const minutes = Math.floor(((elapsedTime ?? 0) / 60) % 60);
-  const hours = Math.floor((elapsedTime ?? 0) / 3600);
-
-  const padZero = (num: number): string => num.toString().padStart(2, '0');
-
-  if (hours > 0) {
-    return `${padZero(hours)}:${padZero(minutes)}:${padZero(seconds)}`;
-  } else {
-    return `${padZero(minutes)}:${padZero(seconds)}`;
-  }
-}
-
-export default Timer;
+export default TimerAndGuesses;

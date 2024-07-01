@@ -1,15 +1,18 @@
 'use client';
 
 import { PuzzleType } from 'app/page';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SolutionCell } from 'types/types';
 import {
   CHARACTER_POSITIONS_KEY,
   DRAFT_MODES_KEY,
   GAME_STATE_KEY,
+  GUESSES_KEY,
+  PuzzleStats,
   TIME_KEY,
   VALIDATIONS_KEY,
   createInitialYDoc,
+  getPuzzleStats,
   initializeAnswerIndex,
   invertAtlas,
   updateAnswerIndex as mutateAnswerIndex,
@@ -45,15 +48,47 @@ export const usePuzzleProgress = (
 ) => {
   const { user } = useUser();
   const { getToken } = useAuth();
+
+  const numberOfCells = useMemo(
+    () =>
+      // Count the number of cells that are not blank ("#")
+      puzzle.record.solution.filter((cell) => typeof cell.value !== 'string')
+        .length,
+    [puzzle.record.solution],
+  );
+
+  const [hasInteractedWithPuzzle, setHasInteractedWithPuzzle] = useState(false);
   const [anonCacheId, setAnonCacheId] = useState<string | null>(null);
   const [indexDb, setIndexDb] = useState<IndexeddbPersistence | null>(null);
   const [partykit, setPartykit] = useState<YPartyKitProvider | null>(null);
   const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
+  const [isPuzzleSolved, setIsPuzzleSolved] = useState<boolean>(false);
+  const [puzzleStats, setPuzzleStats] = useState<PuzzleStats | null>(null);
+  const [autoNextEnabled, setAutoNextEnabled] = useState<boolean>(true);
+  const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
+  const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
+  const [elapsedTime, setElapsedTime] = useState<number>();
+  const [guesses, setGuesses] = useState<number>();
+  const [answerIndex, setAnswerIndex] = useState<number[]>([]);
+  const [characterPositions, setCharacterPositionArray] =
+    useState<Float32Array>();
+
+  // This can be one of three values:
+  // 0 = default
+  // 1 = error
+  // 2 = verified (cannot change letter later)
+  const [validations, setCellValidationArray] = useState<Int16Array>();
+
+  // Is the cell in draft mode or default?
+  // 0 = default
+  // 1 = draft
+  const [draftModes, setCellDraftModeArray] = useState<Int16Array>();
 
   const initState = useCallback(
     (doc: Y.Doc, atlas: AtlasType) => {
       // Set the initial state
       setElapsedTime(doc.getMap(GAME_STATE_KEY).get(TIME_KEY) as number);
+      setGuesses(doc.getMap(GAME_STATE_KEY).get(GUESSES_KEY) as number);
       const positions = new Float32Array(
         doc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) as number[],
       );
@@ -197,6 +232,9 @@ export const usePuzzleProgress = (
           case TIME_KEY:
             setElapsedTime(event.target.get(TIME_KEY) as number);
             break;
+          case GUESSES_KEY:
+            setGuesses(event.target.get(GUESSES_KEY) as number);
+            break;
           default:
             break;
         }
@@ -204,34 +242,19 @@ export const usePuzzleProgress = (
     });
   }, [indexDb?.doc]);
 
-  const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
-  const [autoNextEnabled, setAutoNextEnabled] = useState<boolean>(true);
-  const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
-  const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
-  const [elapsedTime, setElapsedTime] = useState<number>();
-  const [answerIndex, setAnswerIndex] = useState<number[]>([]);
-  const [characterPositions, setCharacterPositionArray] =
-    useState<Float32Array>();
-
-  // This can be one of three values:
-  // 0 = default
-  // 1 = error
-  // 2 = verified (cannot change letter later)
-  const [validations, setCellValidationArray] = useState<Int16Array>();
-
-  // Is the cell in draft mode or default?
-  // 0 = default
-  // 1 = draft
-  const [draftModes, setCellDraftModeArray] = useState<Int16Array>();
-
   // Check if the puzzle is solved when the answer index changes
   useEffect(() => {
     if (verifyAnswerIndex(answerIndex)) {
       setAutocheckEnabled(false);
       setDraftModeEnabled(false);
       setIsPuzzleSolved(true);
+      if (elapsedTime != null && guesses != null && validations != null) {
+        setPuzzleStats(
+          getPuzzleStats(puzzle, elapsedTime, guesses, validations),
+        );
+      }
     }
-  }, [answerIndex]);
+  }, [answerIndex, elapsedTime, guesses, puzzle, validations]);
 
   const addCellValidation = useCallback(
     (validations: Int16Array) => {
@@ -324,6 +347,18 @@ export const usePuzzleProgress = (
     [indexDb?.doc, elapsedTime],
   );
 
+  const addGuesses = useCallback(
+    (newGuesses: number) => {
+      if (guesses == null) return;
+      // Always take the larger of the two times since multiple
+      // clients can be filling in guesses faster
+      indexDb?.doc
+        ?.getMap(GAME_STATE_KEY)
+        .set(GUESSES_KEY, Math.max(newGuesses, guesses));
+    },
+    [guesses, indexDb?.doc],
+  );
+
   const updateAnswerIndex = useCallback(
     (cell: SolutionCell, index: number, letter: string) => {
       if (cell !== '#') {
@@ -377,7 +412,11 @@ export const usePuzzleProgress = (
   const updateCharacterPosition = useCallback(
     (selectedIndex: number, key: string, x: number, y: number) => {
       if (validations == null || characterPositions == null) return false;
+      if (hasInteractedWithPuzzle === false) {
+        setHasInteractedWithPuzzle(true);
+      }
       if (validations[selectedIndex * 2] !== 2) {
+        // do not allow updating a guess that's been successfully validated
         updateAnswerIndex(
           puzzle.record.solution[selectedIndex].value,
           selectedIndex,
@@ -387,25 +426,46 @@ export const usePuzzleProgress = (
         newArray[selectedIndex * 2] = x;
         newArray[selectedIndex * 2 + 1] = y;
         addCharacterPosition(newArray);
+
+        const numEntries =
+          newArray.reduce((acc, val) => {
+            return acc + (val > -1 ? 1 : 0);
+          }, 0) / 2;
+
+        // We only want to increment guesses if the user has filled in all the cells at least once
+        // If guesses is -1, then we haven't filled in all the cells yet
+        // We only increment guesses if the user didn't use backspace
+        if (numEntries >= numberOfCells && guesses === -1) {
+          setGuesses(0);
+        } else if (x > -1 && y > -1 && guesses != null && guesses > -1) {
+          addGuesses(guesses + 1);
+        }
+
         return true;
       }
 
       return false;
     },
     [
+      hasInteractedWithPuzzle,
       validations,
+      characterPositions,
       updateAnswerIndex,
       puzzle.record.solution,
-      characterPositions,
       addCharacterPosition,
+      numberOfCells,
+      guesses,
+      addGuesses,
     ],
   );
 
   return {
     isPuzzleSolved,
     addCharacterPosition,
+    hasInteractedWithPuzzle,
     addTime,
     elapsedTime,
+    guesses,
     addCellValidation,
     addCellDraftMode,
     autoNextEnabled,
@@ -419,5 +479,6 @@ export const usePuzzleProgress = (
     draftModes,
     characterPositions,
     hasRetrievedState,
+    puzzleStats,
   };
 };
