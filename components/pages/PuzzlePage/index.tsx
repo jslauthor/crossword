@@ -235,6 +235,10 @@ export default function Puzzle({
     svgContentMap,
   } = useSvgAtlas(puzzle.svgsegments);
 
+  const disableOrientation = useMemo(
+    () => svgTextureAtlasLookup != null,
+    [svgTextureAtlasLookup],
+  );
   const [groupRef, setGroup] = useState<Object3D | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
   const [sideOffset, setSideOffset] = useState(0);
@@ -268,6 +272,14 @@ export default function Puzzle({
 
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
+
+  const handleSetOrientation = useCallback(
+    (orientation: boolean) => {
+      if (disableOrientation === true) return;
+      setVerticalOrientation(orientation);
+    },
+    [disableOrientation],
+  );
 
   const animatedClueText = useAnimatedText(clue, 60);
 
@@ -442,9 +454,9 @@ export default function Puzzle({
 
   const onClueClick = useCallback(() => {
     // Only enable orientation if using the regular (non-emoji) keyboard
-    if (svgTextureAtlasLookup != null) return;
+    if (disableOrientation === true) return;
     setVerticalOrientation(!isVerticalOrientation);
-  }, [isVerticalOrientation, svgTextureAtlasLookup]);
+  }, [isVerticalOrientation, disableOrientation]);
 
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
 
@@ -714,7 +726,8 @@ export default function Puzzle({
                   borderColor={borderColor}
                   onInitialize={onInitialize}
                   isVerticalOrientation={isVerticalOrientation}
-                  onVerticalOrientationChange={setVerticalOrientation}
+                  disableOrientation={disableOrientation}
+                  onVerticalOrientationChange={handleSetOrientation}
                   autocheckEnabled={autocheckEnabled}
                   characterPositionArray={
                     characterPositions ?? defaultCharacterPositions
@@ -766,7 +779,7 @@ export default function Puzzle({
                   {cellNumber != null && (
                     <SelectedInfo $backgroundColor={toHex(selectedColor)}>
                       {`${cellNumber}`}
-                      {svgTextureAtlasLookup == null ? (
+                      {disableOrientation == false ? (
                         isVerticalOrientation ? (
                           <FontAwesomeIcon
                             icon={faChevronCircleDown}

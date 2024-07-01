@@ -222,6 +222,7 @@ export type LetterBoxesProps = {
   correctColor: number;
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
+  disableOrientation: boolean;
   characterPositionArray: Float32Array;
   cellValidationArray: Int16Array;
   cellDraftModeArray: Int16Array;
@@ -318,6 +319,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
   isVerticalOrientation = false,
+  disableOrientation,
   onVerticalOrientationChange,
   setInstancedMesh,
   selectedSide,
@@ -737,10 +739,27 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       } else {
         // Move to the next side!
         const nextSide = constrain(0, puzzle.data.length - 1, selectedSide + 1);
-        const range = wordSequencesBySide[nextSide][direction].find((i) => {
-          if (i == null) return false;
-          return !isVerticalOrientation || solution[i[0]].x !== 0;
-        });
+        let range = null;
+        if (disableOrientation === true) {
+          // in this case it's a crossmoji
+          // Pick the first blank cell otherwise pick the first cell
+          range = wordSequencesBySide[nextSide][direction].find((i) => {
+            if (i == null) return false;
+            return (
+              characterPositionArray[i[0] * 2] === -1 &&
+              characterPositionArray[i[0] * 2 + 1] === -1
+            );
+          });
+          range =
+            range ??
+            wordSequencesBySide[nextSide][direction].find((i) => i != null);
+        } else {
+          range = wordSequencesBySide[nextSide][direction].find((i) => {
+            if (i == null) return false;
+            return !isVerticalOrientation || solution[i[0]].x !== 0;
+          });
+        }
+
         if (range != null) {
           setSelected(range[0]);
           turnRight();
@@ -748,10 +767,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     },
     [
-      isVerticalOrientation,
-      puzzle.data.length,
       record,
+      isVerticalOrientation,
       selectedSide,
+      puzzle.data.length,
+      disableOrientation,
+      characterPositionArray,
       turnRight,
     ],
   );
@@ -785,17 +806,41 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       } else {
         // Move to the previous side!
         const nextSide = constrain(0, puzzle.data.length - 1, selectedSide - 1);
-        const range = wordSequencesBySide[nextSide][direction].findLast((i) => {
-          if (i == null) return false;
-          return !isVerticalOrientation || solution[i[0]].x !== 0;
-        });
+        let range = null;
+        // in this case it's a crossmoji
+        if (disableOrientation === true) {
+          // Pick the first blank cell otherwise pick the first cell
+          range = wordSequencesBySide[nextSide][direction].findLast((i) => {
+            if (i == null) return false;
+            return (
+              characterPositionArray[i[0] * 2] === -1 &&
+              characterPositionArray[i[0] * 2 + 1] === -1
+            );
+          });
+          range =
+            range ??
+            wordSequencesBySide[nextSide][direction].findLast((i) => i != null);
+        } else {
+          range = wordSequencesBySide[nextSide][direction].findLast((i) => {
+            if (i == null) return false;
+            return !isVerticalOrientation || solution[i[0]].x !== 0;
+          });
+        }
         if (range != null) {
           setSelected(range[startFromBeginning ? 0 : range.length - 1]);
           turnLeft();
         }
       }
     },
-    [isVerticalOrientation, puzzle.data.length, record, selectedSide, turnLeft],
+    [
+      characterPositionArray,
+      disableOrientation,
+      isVerticalOrientation,
+      puzzle.data.length,
+      record,
+      selectedSide,
+      turnLeft,
+    ],
   );
 
   useEffect(() => {
