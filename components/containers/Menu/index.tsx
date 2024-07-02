@@ -14,6 +14,7 @@ const Menu: React.FC<MenuProps> = ({
   rotatingBoxProps,
   children,
   onSettingsPressed,
+  onDisplayChange,
 }) => {
   const router = useRouter();
   const { signOut } = useClerk();
@@ -41,6 +42,7 @@ const Menu: React.FC<MenuProps> = ({
       draftModeEnabled={draftModeEnabled}
       onDraftModeChanged={onDraftModeChanged}
       onSettingsPressed={onSettingsPressed}
+      onDisplayChange={onDisplayChange}
     >
       {children}
     </MenuWrapper>

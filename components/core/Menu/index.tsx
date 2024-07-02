@@ -188,6 +188,7 @@ export type MenuWrapperProps = {
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
   onSettingsPressed?: () => void;
+  onDisplayChange?: (isMenuOpen: boolean) => void;
 };
 
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
@@ -202,6 +203,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   onAutocheckChanged,
   onDraftModeChanged,
   onSettingsPressed,
+  onDisplayChange,
 }) => {
   const { colors } = useTheme();
 
@@ -245,6 +247,12 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
     setShowHelpModal(!showHelpModal);
     setIsMenuOpen(false);
   }, [showHelpModal]);
+
+  useEffect(() => {
+    if (onDisplayChange) {
+      onDisplayChange(isMenuOpen || showHelpModal);
+    }
+  }, [onDisplayChange, isMenuOpen, showHelpModal]);
 
   return (
     <Main>

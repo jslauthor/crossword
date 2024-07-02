@@ -461,28 +461,6 @@ export default function Puzzle({
     setVerticalOrientation(!isVerticalOrientation);
   }, [isVerticalOrientation, disableOrientation]);
 
-  const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
-
-  const { reset } = useElapsedTime({
-    isPlaying:
-      shouldStartTimer === true &&
-      hasRetrievedState === true &&
-      (typeof window === 'undefined' ? false : !document.hidden) &&
-      (isPuzzleSolved || !isInitialized) === false,
-    updateInterval: 1,
-    onUpdate: (elapsedTime) => {
-      // console.log('Elapsed time:', elapsedTime);
-      addTime(elapsedTime);
-    },
-  });
-
-  useEffect(() => {
-    if (hasRetrievedState === true && shouldStartTimer === false) {
-      reset(Number(elapsedTime ?? 0));
-      setShouldStartTimer(true);
-    }
-  }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
-
   const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
     return {
       color: selectedColor,
@@ -565,6 +543,42 @@ export default function Puzzle({
     () => handlePrevWord(selected)(undefined),
     [handlePrevWord, selected],
   );
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
+  const puzzleIsActive = useMemo(
+    () =>
+      (typeof window === 'undefined' ? false : !document.hidden) &&
+      (isPuzzleSolved || !isInitialized) === false &&
+      shouldStartTimer === true &&
+      hasRetrievedState === true &&
+      isSettingsOpen === false &&
+      isMenuOpen === false,
+    [
+      hasRetrievedState,
+      isInitialized,
+      isMenuOpen,
+      isPuzzleSolved,
+      isSettingsOpen,
+      shouldStartTimer,
+    ],
+  );
+
+  const { reset } = useElapsedTime({
+    isPlaying: puzzleIsActive,
+    updateInterval: 1,
+    onUpdate: (elapsedTime) => {
+      // console.log('Elapsed time:', elapsedTime);
+      addTime(elapsedTime);
+    },
+  });
+
+  useEffect(() => {
+    if (hasRetrievedState === true && shouldStartTimer === false) {
+      reset(Number(elapsedTime ?? 0));
+      setShouldStartTimer(true);
+    }
+  }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
   // Keyboard shortcuts
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
@@ -677,6 +691,7 @@ export default function Puzzle({
         onAutocheckChanged={handleAutocheckChanged}
         onDraftModeChanged={handleDraftModeChanged}
         onSettingsPressed={handleSettingsPressed}
+        onDisplayChange={setIsMenuOpen}
       >
         <Canvas
           gl={{ antialias: false }}
