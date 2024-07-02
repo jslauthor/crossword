@@ -30,9 +30,11 @@ export default function RootLayout({
           <link rel="apple-touch-icon" href="ccapp.png" />
         </head>
         <body>
-          <Providers>{children}</Providers>
-          <Analytics />
-          <SpeedInsights />
+          <div vaul-drawer-wrapper="">
+            <Providers>{children}</Providers>
+            <Analytics />
+            <SpeedInsights />
+          </div>
         </body>
       </html>
     </ClerkProvider>

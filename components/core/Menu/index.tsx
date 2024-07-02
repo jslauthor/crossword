@@ -41,6 +41,7 @@ const HeaderStyled = styled(Header)`
 
 const Container = styled.div`
   position: relative;
+  background-color: hsl(var(--background));
   width: 100vw;
   height: 100%;
   overflow-y: auto;

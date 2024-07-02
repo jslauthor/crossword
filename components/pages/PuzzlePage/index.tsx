@@ -53,6 +53,7 @@ import { PuzzleProps } from 'app/puzzle/[slug]/page';
 import TimerAndGuesses from 'components/composed/Timer';
 import PuzzleShare from 'components/composed/PuzzleShare';
 import ShareButton from 'components/core/ShareButton';
+import PuzzlePrompt from 'components/composed/PuzzlePrompt';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -328,6 +329,7 @@ export default function Puzzle({
     return new Vector3(-multiplier, -multiplier, multiplier);
   }, [puzzleWidth]);
 
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
   const {
     hasInteractedWithPuzzle,
     isPuzzleSolved,
@@ -350,6 +352,7 @@ export default function Puzzle({
     puzzle,
     svgTextureAtlasLookup ?? characterTextureAtlasLookup,
     isInitialized === true,
+    setIsPromptOpen,
   );
   const turnLeft = useCallback(
     () => setSideOffset(sideOffset + 1),
@@ -553,7 +556,8 @@ export default function Puzzle({
       shouldStartTimer === true &&
       hasRetrievedState === true &&
       isSettingsOpen === false &&
-      isMenuOpen === false,
+      isMenuOpen === false &&
+      isPromptOpen === false,
     [
       hasRetrievedState,
       isInitialized,
@@ -561,6 +565,7 @@ export default function Puzzle({
       isPuzzleSolved,
       isSettingsOpen,
       shouldStartTimer,
+      isPromptOpen,
     ],
   );
 
@@ -678,6 +683,10 @@ export default function Puzzle({
       setIsShareOpen(true);
     }
   }, [isPuzzleSolved, hasInteractedWithPuzzle]);
+
+  const handleClosePrompt = useCallback(() => {
+    setIsPromptOpen(false);
+  }, []);
 
   return (
     <>
@@ -878,6 +887,7 @@ export default function Puzzle({
           puzzleSubLabel={puzzle.title}
         />
       )}
+      <PuzzlePrompt isOpen={isPromptOpen} onClose={handleClosePrompt} />
     </>
   );
 }
