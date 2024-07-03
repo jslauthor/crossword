@@ -18,7 +18,7 @@ const TimerAndGuesses: React.FC<Props> = ({
 
   return (
     <Badge variant="secondary" size={size}>
-      {guesses && guesses > 0 && (
+      {guesses != null && guesses > 0 && (
         <div className="flex flex-row items-center mr-2 max-w-11">
           <Image
             src="/noto/svg/emoji_u1f7e6.svg"
