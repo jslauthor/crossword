@@ -1,0 +1,112 @@
+import { Card, CardContent } from 'components/core/ui/card';
+import { PuzzleStats } from 'lib/utils/puzzle';
+import React, { useMemo } from 'react';
+import styled from 'styled-components';
+import TimerAndGuesses from '../Timer';
+import Image from 'next/image';
+import { Badge } from 'components/core/ui/badge';
+import { formatTime } from 'lib/utils/date';
+import { Button } from 'components/core/ui/button';
+
+const PuzzleType = styled.h1<{ $isFirst: boolean }>`
+  font-size: 2rem;
+  line-height: 1.5rem;
+  letter-spacing: -1.28px;
+  display: inline;
+  font-weight: ${({ $isFirst }) => ($isFirst ? '600' : '400')};
+  font-style: italic;
+  margin: 0;
+`;
+
+const Background = styled.div<{ type: PuzzleLatestProps['type'] }>`
+  ${({ type }) => {
+    switch (type) {
+      case 'moji':
+        return `background: var(--bg-${type});`;
+      default:
+        return `background: hsl(var(--bg-${type}));`;
+    }
+  }};
+`;
+
+interface PuzzleLatestProps {
+  type: 'moji' | 'mini' | 'cube' | 'mega';
+  title: string;
+  author: string;
+  date: string;
+  puzzleLabel: string[];
+  puzzleStats: PuzzleStats;
+}
+
+const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
+  type = 'moji',
+  title,
+  date,
+  author,
+  puzzleLabel,
+  puzzleStats,
+}) => {
+  const formattedLabel = useMemo(() => {
+    return puzzleLabel.map((label, index) => (
+      <PuzzleType $isFirst={index === 0} key={index}>
+        {`${label}`}{' '}
+      </PuzzleType>
+    ));
+  }, [puzzleLabel]);
+
+  return (
+    <Card className="relative rounded-xl overflow-hidden">
+      <Background type={type} className="absolute inset-0 w-full h-full" />
+      <div className="absolute inset-0 w-full h-full backdrop-blur-xl scale-95" />
+      <CardContent className="p-14 relative w-full h-full flex flex-col gap-6 justify-center items-center">
+        <Image
+          alt="puzzle ison"
+          src="/crossmoji_icon.jpg"
+          width={72}
+          height={72}
+          className="rounded-[8px]"
+        />
+        <div className="flex flex-col gap-4 items-center justify-center">
+          <div>{formattedLabel}</div>
+          <div className="text-lg">&ldquo;{title}&rdquo;</div>
+        </div>
+        <div className="flex flex-col items-center gap-0">
+          <span className="font-medium text-base">{date}</span>
+          <span className="capitalize text-base">by {author}</span>
+        </div>
+        <Button variant="inverted" size="share" className="w-40">
+          Play
+        </Button>
+        <Badge
+          size="large"
+          className="text-auto border-foreground/10 border-solid bg-foreground/[3%] hover:bg-foreground/20"
+        >
+          <div className="flex flex-row items-center mr-2">
+            <Image
+              src="/noto/svg/emoji_u23f1.svg"
+              alt="clock"
+              width={16}
+              height={16}
+              className="mr-1"
+            />
+            <div className="font-medium">
+              {formatTime(puzzleStats.goalTime)}
+            </div>
+          </div>
+          <div className="flex flex-row items-center">
+            <Image
+              src="/noto/svg/emoji_u1f7e6.svg"
+              alt="blue square"
+              width={16}
+              height={16}
+              className="mr-1"
+            />
+            <div className="font-medium">{puzzleStats.goalGuesses}</div>
+          </div>
+        </Badge>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default PuzzleLatest;

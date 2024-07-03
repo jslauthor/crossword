@@ -470,9 +470,9 @@ const baseLength = 3;
 
 export const getPuzzleStats = (
   puzzle: PuzzleType,
-  time: number,
-  guesses: number,
-  validations: Int16Array,
+  time?: number,
+  guesses?: number,
+  validations?: Int16Array,
 ): PuzzleStats => {
   const { width, height } = puzzle.data[0].dimensions;
   const gridSize = width * height;
@@ -507,13 +507,13 @@ export const getPuzzleStats = (
   );
 
   return {
-    hintSuccess: !validations.some((v) => v !== 0),
-    timeSuccess: time <= goalTime,
+    hintSuccess: !validations?.some((v) => v !== 0),
+    timeSuccess: (time ?? 0) <= goalTime,
     goalTime,
-    guessSuccess: guesses <= goalGuesses,
+    guessSuccess: (guesses ?? 0) <= goalGuesses,
     goalGuesses,
-    time,
-    guesses,
+    time: time ?? 0,
+    guesses: guesses ?? 0,
   };
 };
 

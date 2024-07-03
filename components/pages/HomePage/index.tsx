@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { useState } from 'react';
 import PuzzleHighlight from 'components/composed/PuzzleHighlight';
 import { AtlasType } from 'lib/utils/textures';
+import PuzzleLatest from 'components/composed/PuzzleLatest';
+import { getPuzzleLabel, getPuzzleStats } from 'lib/utils/puzzle';
 
 const Container = styled.div`
   position: relative;
@@ -61,7 +63,39 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
     <Menu>
       <Container>
         <Link href={`/puzzle/${puzzles[0].slug}`}>
-          <PuzzleHighlight
+          <PuzzleLatest
+            type="moji"
+            puzzleLabel={getPuzzleLabel(puzzles[0])}
+            puzzleStats={getPuzzleStats(puzzles[0])}
+            title={puzzles[0].title}
+            author={puzzles[0].author}
+            date={puzzles[0].date}
+          />
+          <PuzzleLatest
+            type="mini"
+            puzzleLabel={getPuzzleLabel(puzzles[0])}
+            puzzleStats={getPuzzleStats(puzzles[0])}
+            title={puzzles[0].title}
+            author={puzzles[0].author}
+            date={puzzles[0].date}
+          />
+          <PuzzleLatest
+            type="cube"
+            puzzleLabel={getPuzzleLabel(puzzles[0])}
+            puzzleStats={getPuzzleStats(puzzles[0])}
+            title={puzzles[0].title}
+            author={puzzles[0].author}
+            date={puzzles[0].date}
+          />
+          <PuzzleLatest
+            type="mega"
+            puzzleLabel={getPuzzleLabel(puzzles[0])}
+            puzzleStats={getPuzzleStats(puzzles[0])}
+            title={puzzles[0].title}
+            author={puzzles[0].author}
+            date={puzzles[0].date}
+          />
+          {/* <PuzzleHighlight
             title={puzzles[0].title}
             author={puzzles[0].author}
             date={puzzles[0].date}
@@ -72,7 +106,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
               puzzles[0].data[0].dimensions.width,
               puzzles[0].data[0].dimensions.height,
             ]}
-          />
+          /> */}
         </Link>
         <PuzzlesContainer>
           {otherPuzzles.map(
