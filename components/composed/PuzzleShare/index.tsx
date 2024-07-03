@@ -47,23 +47,23 @@ const SettingsItem = styled.div`
   width: 100%;
 `;
 
-const OpacityContainer = styled.div<{ success: boolean }>`
-  opacity: ${({ success }) => (success ? '100' : '50')}%;
+const OpacityContainer = styled.div<{ $success: boolean }>`
+  opacity: ${({ $success }) => ($success ? '100' : '50')}%;
 `;
 
 const ShareTitle = styled.h3``;
 
-const SubLabel = styled.div<{ success: boolean }>`
-  color: ${({ success }) =>
-    success ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'};
+const SubLabel = styled.div<{ $success: boolean }>`
+  color: ${({ $success }) =>
+    $success ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'};
   font-size: 0.875rem;
   font-weight: 500;
   font-style: italic;
   line-height: normal;
 `;
 
-const OutlineImage = styled(Image)<{ dim?: boolean }>`
-  opacity: ${({ dim }) => (dim ? '50' : '100')}%;
+const OutlineImage = styled(Image)<{ $dim?: boolean }>`
+  opacity: ${({ $dim }) => ($dim ? '50' : '100')}%;
   filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.5));
 `;
 
@@ -73,7 +73,7 @@ const Star = ({ width = 64, height = 64, dim = false }) => (
     alt="star"
     width={width}
     height={height}
-    dim={dim}
+    $dim={dim}
   />
 );
 
@@ -83,7 +83,7 @@ const Wrong = ({ width = 90, height = 90, dim = false }) => (
     alt="wrong"
     width={width}
     height={height}
-    dim={dim}
+    $dim={dim}
   />
 );
 
@@ -99,10 +99,10 @@ const ShareItem: React.FC<{
         {icon}
         <div className="flex flex-row gap-2 items-center justify-center">
           <ShareTitle>{label}</ShareTitle>
-          <SubLabel success={success}>{subLabel}</SubLabel>
+          <SubLabel $success={success}>{subLabel}</SubLabel>
         </div>
       </div>
-      <OpacityContainer success={success}>
+      <OpacityContainer $success={success}>
         {success ? (
           <Star width={24} height={24} />
         ) : (
@@ -113,9 +113,9 @@ const ShareItem: React.FC<{
   );
 };
 
-const Title = styled.span<{ isFirst: boolean }>`
+const Title = styled.span<{ $isFirst: boolean }>`
   font-size: 1rem;
-  font-weight: ${({ isFirst }) => (isFirst ? '600' : '400')};
+  font-weight: ${({ $isFirst }) => ($isFirst ? '600' : '400')};
   font-style: italic;
   margin: 0;
 `;
@@ -175,7 +175,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
   const stars = useMemo(() => {
     const val: ReactNode[] = [];
     for (let i = 0; i < numStars + 1; i++) {
-      val.push(<Star />);
+      val.push(<Star key={i} />);
     }
     return val;
   }, [numStars]);
@@ -194,7 +194,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
 
   const formattedLabel = useMemo(() => {
     return puzzleLabel.map((label, index) => (
-      <Title isFirst={index === 0} key={index}>
+      <Title $isFirst={index === 0} key={index}>
         {`${label}`}{' '}
       </Title>
     ));

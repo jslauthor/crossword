@@ -408,6 +408,7 @@ export const usePuzzleProgress = (
         }
 
         setAnswerIndex(newAnswerIndex);
+        return newAnswerIndex;
       }
     },
     [
@@ -429,7 +430,7 @@ export const usePuzzleProgress = (
       }
       if (validations[selectedIndex * 2] !== 2) {
         // do not allow updating a guess that's been successfully validated
-        updateAnswerIndex(
+        const newIndex = updateAnswerIndex(
           puzzle.record.solution[selectedIndex].value,
           selectedIndex,
           key.toUpperCase(),
@@ -439,25 +440,26 @@ export const usePuzzleProgress = (
         newArray[selectedIndex * 2 + 1] = y;
 
         const numEntries = getNumberOfEntries(newArray);
+        const newPositionIsNotBlank = x > -1 && y > -1;
         // We only want to increment guesses if the user has filled in all the cells at least once
         // If guesses is -1, then we haven't filled in all the cells yet
         // We only increment guesses if the user didn't use backspace
         if (numEntries >= numberOfCells) {
           if (guesses === -1) {
             setGuesses(0);
-          } else if (x > -1 && y > -1) {
+          } else if (newPositionIsNotBlank === true) {
             if (guesses != null) {
               addGuesses(guesses + 1);
             }
-
-            if (
-              openPrompt != null &&
-              characterPositions[selectedIndex * 2] == -1 && // check if the original cell was empty
-              characterPositions[selectedIndex * 2 + 1] == -1 && // check if the original cell was empty
-              verifyAnswerIndex(answerIndex) === false
-            ) {
-              openPrompt(true);
-            }
+          }
+          if (
+            newPositionIsNotBlank === true &&
+            openPrompt != null &&
+            characterPositions[selectedIndex * 2] == -1 && // check if the original cell was empty
+            characterPositions[selectedIndex * 2 + 1] == -1 && // check if the original cell was empty
+            verifyAnswerIndex(newIndex) === false
+          ) {
+            openPrompt(true);
           }
         }
 
@@ -477,7 +479,6 @@ export const usePuzzleProgress = (
       numberOfCells,
       guesses,
       openPrompt,
-      answerIndex,
       addGuesses,
     ],
   );
