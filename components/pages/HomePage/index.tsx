@@ -5,15 +5,17 @@ import Menu from 'components/containers/Menu';
 import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { PuzzleType } from 'app/page';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AtlasType } from 'lib/utils/textures';
 import PuzzleLatest from 'components/composed/PuzzleLatest';
 import {
+  CrosscubeType,
   getPuzzleLabel,
   getPuzzleStats,
   getTypeForSize,
 } from 'lib/utils/puzzle';
 import { HRule } from 'components/core/Dividers';
+import { get } from 'http';
 
 const Container = styled.div`
   position: relative;
@@ -39,13 +41,50 @@ const ErrorContainer = styled.div`
   padding: 1rem;
 `;
 
+const crosscubeTypes = ['cube', 'mega', 'mini', 'moji'] as const;
+type CheckAllUnions = {
+  [K in CrosscubeType]: K extends (typeof crosscubeTypes)[number]
+    ? true
+    : false;
+};
+type AllUnionsPresent = CheckAllUnions[CrosscubeType] extends true
+  ? true
+  : false;
+type ValidCrosscubeArray = AllUnionsPresent extends true
+  ? typeof crosscubeTypes
+  : never;
+
 export interface HomePageProps {
   puzzles: PuzzleType[];
   atlas: AtlasType;
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles }) => {
-  const [otherPuzzles] = useState(puzzles.slice(1));
+  const { latestPuzzles, otherPuzzles } = useMemo(
+    () =>
+      puzzles.reduce(
+        (acc, val) => {
+          if (acc.types.has(getTypeForSize(val))) {
+            acc.latestPuzzles.push(val);
+            acc.types.delete(getTypeForSize(val));
+          } else {
+            acc.otherPuzzles.push(val);
+          }
+          return acc;
+        },
+        {
+          latestPuzzles: [] as PuzzleType[],
+          otherPuzzles: [] as PuzzleType[],
+          types: new Set([
+            'cube',
+            'mega',
+            'mini',
+            'moji',
+          ] as ValidCrosscubeArray),
+        },
+      ),
+    [puzzles],
+  );
 
   if (puzzles.length === 0) {
     return (
@@ -68,54 +107,26 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
       <Container>
         <div className="flex flex-col gap-3">
           <h1 className="text-base">Latest Puzzles</h1>
-          <Link href={`/puzzle/${puzzles[0].slug}`}>
-            <PuzzleLatest
-              type="moji"
-              puzzleLabel={getPuzzleLabel(puzzles[0])}
-              puzzleStats={getPuzzleStats(puzzles[0])}
-              title={puzzles[0].title}
-              author={puzzles[0].author}
-              date={puzzles[0].date}
-            />
-          </Link>
-          <Link href={`/puzzle/${puzzles[0].slug}`}>
-            <PuzzleLatest
-              type="mini"
-              puzzleLabel={getPuzzleLabel(puzzles[0])}
-              puzzleStats={getPuzzleStats(puzzles[0])}
-              title={puzzles[0].title}
-              author={puzzles[0].author}
-              date={puzzles[0].date}
-            />
-          </Link>
-          <Link href={`/puzzle/${puzzles[0].slug}`}>
-            <PuzzleLatest
-              type="cube"
-              puzzleLabel={getPuzzleLabel(puzzles[0])}
-              puzzleStats={getPuzzleStats(puzzles[0])}
-              title={puzzles[0].title}
-              author={puzzles[0].author}
-              date={puzzles[0].date}
-            />
-          </Link>
-          <Link href={`/puzzle/${puzzles[0].slug}`}>
-            <PuzzleLatest
-              type="mega"
-              puzzleLabel={getPuzzleLabel(puzzles[0])}
-              puzzleStats={getPuzzleStats(puzzles[0])}
-              title={puzzles[0].title}
-              author={puzzles[0].author}
-              date={puzzles[0].date}
-            />
-          </Link>
+          {latestPuzzles.map((puzzle, index) => (
+            <Link key={puzzle.slug} href={`/puzzle/${puzzle.slug}`}>
+              <PuzzleLatest
+                type={getTypeForSize(puzzle)}
+                puzzleLabel={getPuzzleLabel(puzzle)}
+                puzzleStats={getPuzzleStats(puzzle)}
+                title={puzzle.title}
+                author={puzzle.author}
+                date={puzzle.date}
+              />
+            </Link>
+          ))}
         </div>
         <h1 className="text-base mt-4">Archive</h1>
         <PuzzlesContainer>
           {otherPuzzles.map((puzzle, index) => {
             const { author, title, date, previewState, slug } = puzzle;
             return (
-              <>
-                <Link key={slug} href={`/puzzle/${slug}`}>
+              <div className="flex flex-col gap-4" key={slug}>
+                <Link href={`/puzzle/${slug}`}>
                   <PuzzlePreview
                     title={title}
                     author={author}
@@ -126,7 +137,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
                   />
                 </Link>
                 {index !== otherPuzzles.length - 1 && <HRule />}
-              </>
+              </div>
             );
           })}
         </PuzzlesContainer>
