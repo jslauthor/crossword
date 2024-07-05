@@ -1,6 +1,5 @@
 import IconHamburger from 'components/svg/IconHamburger';
 import IconX from 'components/svg/IconX';
-import IconMainLogo from 'components/svg/MainLogo';
 import { ReactNode, useCallback, useMemo } from 'react';
 import { styled } from 'styled-components';
 import RotatingBox, { RotatingBoxProps } from '../3d/Box';

@@ -55,7 +55,7 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
   }, [puzzleLabel]);
 
   return (
-    <Card className="relative rounded-xl overflow-hidden">
+    <Card className="relative rounded-xl overflow-hidden md:min-h-[600px] flex flex-col justify-center items-center">
       <Background type={type} className="absolute inset-0 w-full h-full" />
       <div className="absolute inset-0 w-full h-full backdrop-blur-xl scale-95" />
       <CardContent className="p-14 relative w-full h-full flex flex-col gap-6 justify-center items-center">
