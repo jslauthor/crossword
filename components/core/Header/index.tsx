@@ -7,7 +7,7 @@ import RotatingBox, { RotatingBoxProps } from '../3d/Box';
 import Link from 'next/link';
 import LightBulb from 'components/svg/LightBulb';
 import Pencil from 'components/svg/Pencil';
-import { DEFAULT_CORRECT_COLOR, getColorHex } from 'lib/utils/color';
+import { getColorHex } from 'lib/utils/color';
 import Gear from 'components/svg/Gear';
 import { Button } from '../ui/button';
 import { useTheme } from 'lib/utils/hooks/theme';
@@ -27,7 +27,13 @@ const MenuIconContainer = styled.div`
   width: 18px;
 `;
 
-const LogoStyled = styled(IconMainLogo)``;
+const LogoStyled = styled.div`
+  letter-spacing: -1.28px;
+  font-weight: 600;
+  font-size: 1.5rem;
+  font-style: italic;
+  text-align: center;
+`;
 
 const CenterLabelContainer = styled.div``;
 
@@ -39,6 +45,7 @@ const RightContentContainer = styled.div`
   flex-direction: row;
   align-items: center;
   gap: 1rem;
+  min-width: 18px;
 `;
 
 interface HeaderProps {
@@ -105,7 +112,7 @@ const Header: React.FC<HeaderProps> = ({
       </MenuIconContainer>
       {hasCenterLabel === false && (
         <Link href="/">
-          <LogoStyled width={140} height={25} />
+          <LogoStyled>crosscube</LogoStyled>
         </Link>
       )}
       {hasCenterLabel === true && (
