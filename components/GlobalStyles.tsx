@@ -327,6 +327,11 @@ export default createGlobalStyle/*css*/ `
     --bg-cube: 113 57% 37%;
     --bg-mega: 11 76% 48%;
 
+    --text-moji: 266 100% 73%;
+    --text-mini: 209 100% 53%;
+    --text-cube: 134 47% 48%;
+    --text-mega: 7 100% 60%;
+
     // Puzzle specific theme vars
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--white);
     ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--black);
@@ -388,6 +393,11 @@ export default createGlobalStyle/*css*/ `
     --bg-mini: 205 100% 89%;
     --bg-cube: 133 100% 87%;
     --bg-mega: 18 100% 87%;
+
+    --text-moji: 266 100% 73%;
+    --text-mini: 209 100% 53%;
+    --text-cube: 134 47% 48%;
+    --text-mega: 7 100% 60%;
 
     // Puzzle specific theme vars
     // ONLY USE HEX COLORS HERE

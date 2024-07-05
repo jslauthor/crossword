@@ -1,5 +1,10 @@
 import { Card, CardContent } from 'components/core/ui/card';
-import { PuzzleStats } from 'lib/utils/puzzle';
+import {
+  CrosscubeType,
+  PuzzleStats,
+  getAltForType,
+  getIconForType,
+} from 'lib/utils/puzzle';
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import Image from 'next/image';
@@ -17,49 +22,19 @@ const PuzzleType = styled.h1<{ $isFirst: boolean }>`
   margin: 0;
 `;
 
-const Background = styled.div<{ type: PuzzleLatestProps['type'] }>`
-  ${({ type }) => {
-    switch (type) {
+const Background = styled.div<{ $type: PuzzleLatestProps['type'] }>`
+  ${({ $type }) => {
+    switch ($type) {
       case 'moji':
-        return `background: var(--bg-${type});`;
+        return `background: var(--bg-${$type});`;
       default:
-        return `background: hsl(var(--bg-${type}));`;
+        return `background: hsl(var(--bg-${$type}));`;
     }
   }};
 `;
 
-const getIconForType = (type: PuzzleLatestProps['type']) => {
-  switch (type) {
-    case 'moji':
-      return '/moji_icon.png';
-    case 'mini':
-      return '/mini_icon.png';
-    case 'cube':
-      return '/crosscube_icon.png';
-    case 'mega':
-      return '/mega_icon.png';
-    default:
-      return '/general_icon.png';
-  }
-};
-
-const getAltForType = (type: PuzzleLatestProps['type']) => {
-  switch (type) {
-    case 'moji':
-      return 'Answer a three-dimensioanl crossword puzzle with emojis. Ready?';
-    case 'mini':
-      return 'A quick 4-part puzzler in three dimensions. Ready?';
-    case 'cube':
-      return 'A challenging 8x8 crossword puzzle in three dimensions. Ready?';
-    case 'mega':
-      return 'A monster 12x12 crossword puzzle in three dimensions. Ready?';
-    default:
-      return 'A crossword puzzle in three dimensions. Ready?';
-  }
-};
-
 interface PuzzleLatestProps {
-  type: 'moji' | 'mini' | 'cube' | 'mega';
+  type: CrosscubeType;
   title: string;
   author: string;
   date: string;
@@ -85,7 +60,7 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
 
   return (
     <Card className="relative rounded-xl overflow-hidden md:min-h-[600px] flex flex-col justify-center items-center">
-      <Background type={type} className="absolute inset-0 w-full h-full" />
+      <Background $type={type} className="absolute inset-0 w-full h-full" />
       <div className="absolute inset-0 w-full h-full backdrop-blur-xl scale-95" />
       <CardContent className="p-14 relative w-full h-full flex flex-col gap-6 justify-center items-center">
         <Image

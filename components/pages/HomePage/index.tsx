@@ -8,7 +8,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { AtlasType } from 'lib/utils/textures';
 import PuzzleLatest from 'components/composed/PuzzleLatest';
-import { getPuzzleLabel, getPuzzleStats } from 'lib/utils/puzzle';
+import {
+  getPuzzleLabel,
+  getPuzzleStats,
+  getTypeForSize,
+} from 'lib/utils/puzzle';
+import { HRule } from 'components/core/Dividers';
 
 const Container = styled.div`
   position: relative;
@@ -23,7 +28,7 @@ const Container = styled.div`
 const PuzzlesContainer = styled.div`
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1rem;
   align-items: stretch;
   margin-top: 1rem;
@@ -62,6 +67,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
     <Menu>
       <Container>
         <div className="flex flex-col gap-3">
+          <h1 className="text-base">Latest Puzzles</h1>
           <Link href={`/puzzle/${puzzles[0].slug}`}>
             <PuzzleLatest
               type="moji"
@@ -103,34 +109,26 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
             />
           </Link>
         </div>
+        <h1 className="text-base mt-4">Archive</h1>
         <PuzzlesContainer>
-          {otherPuzzles.map(
-            ({
-              author,
-              title,
-              date,
-              difficulty,
-              isAiAssisted,
-              previewState,
-              slug,
-              data,
-            }) => (
-              <Link key={slug} href={`/puzzle/${slug}`}>
-                <PuzzlePreview
-                  title={title}
-                  author={author}
-                  date={date}
-                  isAiAssisted={isAiAssisted}
-                  difficulty={difficulty}
-                  previewState={previewState}
-                  dimensions={[
-                    data[0].dimensions.width,
-                    data[0].dimensions.height,
-                  ]}
-                />
-              </Link>
-            ),
-          )}
+          {otherPuzzles.map((puzzle, index) => {
+            const { author, title, date, previewState, slug } = puzzle;
+            return (
+              <>
+                <Link key={slug} href={`/puzzle/${slug}`}>
+                  <PuzzlePreview
+                    title={title}
+                    author={author}
+                    date={date}
+                    previewState={previewState}
+                    puzzleLabel={getPuzzleLabel(puzzle)}
+                    type={getTypeForSize(puzzle)}
+                  />
+                </Link>
+                {index !== otherPuzzles.length - 1 && <HRule />}
+              </>
+            );
+          })}
         </PuzzlesContainer>
       </Container>
     </Menu>
