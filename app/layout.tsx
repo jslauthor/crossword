@@ -59,15 +59,24 @@ export const metadata: Metadata = {
         height: 600,
         alt: 'Crosscube: A crossword puzzle in three dimensions',
       },
-      {
-        url: 'https://crosscube.app/og-alt.png',
-        width: 1800,
-        height: 1600,
-        alt: 'Crosscube: A crossword puzzle in three dimensions',
-      },
     ],
     locale: 'en_US',
     type: 'website',
+  },
+  twitter: {
+    title: 'Crosscube',
+    description: 'A crossword puzzle in three dimensions',
+    site: 'https://crosscube.app',
+    images: [
+      {
+        url: 'https://crosscube.app/og.png',
+        width: 800,
+        height: 600,
+        alt: 'Crosscube: A crossword puzzle in three dimensions',
+      },
+    ],
+    creator: '@jslauthor',
+    card: 'summary',
   },
 };
 
