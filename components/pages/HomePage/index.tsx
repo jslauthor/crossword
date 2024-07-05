@@ -6,7 +6,6 @@ import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { PuzzleType } from 'app/page';
 import Link from 'next/link';
 import { useState } from 'react';
-import PuzzleHighlight from 'components/composed/PuzzleHighlight';
 import { AtlasType } from 'lib/utils/textures';
 import PuzzleLatest from 'components/composed/PuzzleLatest';
 import { getPuzzleLabel, getPuzzleStats } from 'lib/utils/puzzle';
@@ -62,52 +61,48 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
   return (
     <Menu>
       <Container>
-        <Link href={`/puzzle/${puzzles[0].slug}`}>
-          <PuzzleLatest
-            type="moji"
-            puzzleLabel={getPuzzleLabel(puzzles[0])}
-            puzzleStats={getPuzzleStats(puzzles[0])}
-            title={puzzles[0].title}
-            author={puzzles[0].author}
-            date={puzzles[0].date}
-          />
-          <PuzzleLatest
-            type="mini"
-            puzzleLabel={getPuzzleLabel(puzzles[0])}
-            puzzleStats={getPuzzleStats(puzzles[0])}
-            title={puzzles[0].title}
-            author={puzzles[0].author}
-            date={puzzles[0].date}
-          />
-          <PuzzleLatest
-            type="cube"
-            puzzleLabel={getPuzzleLabel(puzzles[0])}
-            puzzleStats={getPuzzleStats(puzzles[0])}
-            title={puzzles[0].title}
-            author={puzzles[0].author}
-            date={puzzles[0].date}
-          />
-          <PuzzleLatest
-            type="mega"
-            puzzleLabel={getPuzzleLabel(puzzles[0])}
-            puzzleStats={getPuzzleStats(puzzles[0])}
-            title={puzzles[0].title}
-            author={puzzles[0].author}
-            date={puzzles[0].date}
-          />
-          {/* <PuzzleHighlight
-            title={puzzles[0].title}
-            author={puzzles[0].author}
-            date={puzzles[0].date}
-            isAiAssisted={puzzles[0].isAiAssisted}
-            difficulty={puzzles[0].difficulty}
-            previewState={puzzles[0].previewState}
-            dimensions={[
-              puzzles[0].data[0].dimensions.width,
-              puzzles[0].data[0].dimensions.height,
-            ]}
-          /> */}
-        </Link>
+        <div className="flex flex-col gap-3">
+          <Link href={`/puzzle/${puzzles[0].slug}`}>
+            <PuzzleLatest
+              type="moji"
+              puzzleLabel={getPuzzleLabel(puzzles[0])}
+              puzzleStats={getPuzzleStats(puzzles[0])}
+              title={puzzles[0].title}
+              author={puzzles[0].author}
+              date={puzzles[0].date}
+            />
+          </Link>
+          <Link href={`/puzzle/${puzzles[0].slug}`}>
+            <PuzzleLatest
+              type="mini"
+              puzzleLabel={getPuzzleLabel(puzzles[0])}
+              puzzleStats={getPuzzleStats(puzzles[0])}
+              title={puzzles[0].title}
+              author={puzzles[0].author}
+              date={puzzles[0].date}
+            />
+          </Link>
+          <Link href={`/puzzle/${puzzles[0].slug}`}>
+            <PuzzleLatest
+              type="cube"
+              puzzleLabel={getPuzzleLabel(puzzles[0])}
+              puzzleStats={getPuzzleStats(puzzles[0])}
+              title={puzzles[0].title}
+              author={puzzles[0].author}
+              date={puzzles[0].date}
+            />
+          </Link>
+          <Link href={`/puzzle/${puzzles[0].slug}`}>
+            <PuzzleLatest
+              type="mega"
+              puzzleLabel={getPuzzleLabel(puzzles[0])}
+              puzzleStats={getPuzzleStats(puzzles[0])}
+              title={puzzles[0].title}
+              author={puzzles[0].author}
+              date={puzzles[0].date}
+            />
+          </Link>
+        </div>
         <PuzzlesContainer>
           {otherPuzzles.map(
             ({

@@ -2,7 +2,6 @@ import { Card, CardContent } from 'components/core/ui/card';
 import { PuzzleStats } from 'lib/utils/puzzle';
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
-import TimerAndGuesses from '../Timer';
 import Image from 'next/image';
 import { Badge } from 'components/core/ui/badge';
 import { formatTime } from 'lib/utils/date';
@@ -28,6 +27,36 @@ const Background = styled.div<{ type: PuzzleLatestProps['type'] }>`
     }
   }};
 `;
+
+const getIconForType = (type: PuzzleLatestProps['type']) => {
+  switch (type) {
+    case 'moji':
+      return '/moji_icon.png';
+    case 'mini':
+      return '/mini_icon.png';
+    case 'cube':
+      return '/crosscube_icon.png';
+    case 'mega':
+      return '/mega_icon.png';
+    default:
+      return '/general_icon.png';
+  }
+};
+
+const getAltForType = (type: PuzzleLatestProps['type']) => {
+  switch (type) {
+    case 'moji':
+      return 'Answer a three-dimensioanl crossword puzzle with emojis. Ready?';
+    case 'mini':
+      return 'A quick 4-part puzzler in three dimensions. Ready?';
+    case 'cube':
+      return 'A challenging 8x8 crossword puzzle in three dimensions. Ready?';
+    case 'mega':
+      return 'A monster 12x12 crossword puzzle in three dimensions. Ready?';
+    default:
+      return 'A crossword puzzle in three dimensions. Ready?';
+  }
+};
 
 interface PuzzleLatestProps {
   type: 'moji' | 'mini' | 'cube' | 'mega';
@@ -60,8 +89,8 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
       <div className="absolute inset-0 w-full h-full backdrop-blur-xl scale-95" />
       <CardContent className="p-14 relative w-full h-full flex flex-col gap-6 justify-center items-center">
         <Image
-          alt="puzzle ison"
-          src="/crossmoji_icon.jpg"
+          alt={getAltForType(type)}
+          src={getIconForType(type)}
           width={72}
           height={72}
           className="rounded-[8px]"

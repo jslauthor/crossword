@@ -1,9 +1,9 @@
 import styled from 'styled-components';
 
-export const HRule = styled.div`
-  height: 1px;
+export const HRule = styled.div<{ $heavy?: boolean }>`
+  height: ${({ $heavy }) => ($heavy ? '2px' : '1px')};
   background: hsl(var(--foreground));
-  opacity: 0.1;
+  opacity: ${({ $heavy }) => ($heavy ? 1.0 : 0.1)};
   width: 100%;
 `;
 
