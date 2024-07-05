@@ -264,7 +264,11 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
           </ChildrenContainer>
         )}
         {(isMenuOpen || showHelpModal) && <BlurLayer />}
-        <HeaderContainer ref={headerRef}>
+
+        <HeaderContainer
+          ref={headerRef}
+          className="border-b border-solid border-foreground/10"
+        >
           <HeaderStyled
             onMenuPressed={handleMenuPressed}
             showCloseButton={isMenuOpen}
