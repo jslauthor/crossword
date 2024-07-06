@@ -57,6 +57,7 @@ interface HeaderProps {
   draftModeEnabled?: boolean;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
+  className?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -69,6 +70,7 @@ const Header: React.FC<HeaderProps> = ({
   onDraftModeChanged,
   draftModeEnabled,
   onSettingsPressed,
+  className,
 }) => {
   const { colors } = useTheme();
 
@@ -101,7 +103,7 @@ const Header: React.FC<HeaderProps> = ({
   }, [autocheckEnabled, colors.correct]);
 
   return (
-    <Container $hasCenterLabel={hasCenterLabel}>
+    <Container $hasCenterLabel={hasCenterLabel} className={className}>
       <MenuIconContainer onClick={onMenuPressed}>
         {showCloseButton ? (
           <IconX width={20} height={25} />

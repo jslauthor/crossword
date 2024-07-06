@@ -33,12 +33,7 @@ const HeaderContainer = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(hsl(var(--background)), #00000000);
   padding: 0.75rem;
-`;
-
-const HeaderStyled = styled(Header)`
-  width: 100%;
 `;
 
 const Container = styled.div`
@@ -210,7 +205,6 @@ export type MenuWrapperProps = {
   rotatingBoxProps?: RotatingBoxProps;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
-  onSignUpPressed?: () => void;
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
   onSettingsPressed?: () => void;
@@ -223,7 +217,6 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   autocheckEnabled,
   draftModeEnabled,
   rotatingBoxProps,
-  onSignUpPressed,
   onSignOutPressed,
   onSignInPressed,
   onAutocheckChanged,
@@ -292,9 +285,11 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
 
         <HeaderContainer
           ref={headerRef}
-          className="border-b border-solid border-foreground/10"
+          className="border-b border-solid border-foreground/10 relative"
         >
-          <HeaderStyled
+          <div className="absolute inset-0 bg-background z-0" />
+          <Header
+            className="z-10 w-full relative"
             onMenuPressed={handleMenuPressed}
             showCloseButton={isMenuOpen}
             centerLabel={centerLabel}

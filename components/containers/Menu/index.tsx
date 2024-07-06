@@ -26,17 +26,12 @@ const Menu: React.FC<MenuProps> = ({
     router.push(`/signin?redirect_url=${window.location.href}`);
   }, [router]);
 
-  const onSignUp = useCallback(() => {
-    router.push(`/signup?redirect_url=${window.location.href}`);
-  }, [router]);
-
   return (
     <MenuWrapper
       centerLabel={centerLabel}
       autocheckEnabled={autocheckEnabled}
       onAutocheckChanged={onAutocheckChanged}
       onSignOutPressed={onSignOut}
-      onSignUpPressed={onSignUp}
       onSignInPressed={onSignIn}
       rotatingBoxProps={rotatingBoxProps}
       draftModeEnabled={draftModeEnabled}
