@@ -315,13 +315,13 @@ export default createGlobalStyle/*css*/ `
 
     --bg-moji: conic-gradient(
       from 180deg at 50% 50%,
-      rgba(235, 87, 87, 0.6) 0deg,
-      rgba(242, 153, 74, 0.6) 54.00000214576721deg,
-      rgba(39, 174, 96, 0.6) 118.80000472068787deg,
-      rgba(47, 128, 237, 0.6) 180deg,
-      rgba(86, 204, 242, 0.6) 244.80000257492065deg,
-      rgba(187, 107, 217, 0.6) 306.00000858306885deg,
-      rgba(235, 87, 87, 0.6) 360deg
+      rgba(235, 87, 87, 1.0) 0deg,
+      rgba(242, 153, 74, 1.0) 54.00000214576721deg,
+      rgba(39, 174, 96, 1.0) 118.80000472068787deg,
+      rgba(47, 128, 237, 1.0) 180deg,
+      rgba(86, 204, 242, 1.0) 244.80000257492065deg,
+      rgba(187, 107, 217, 1.0) 306.00000858306885deg,
+      rgba(235, 87, 87, 1.0) 360deg
     );
     --bg-mini: 205 100% 39%;
     --bg-cube: 113 57% 37%;
@@ -331,6 +331,8 @@ export default createGlobalStyle/*css*/ `
     --text-mini: 209 100% 53%;
     --text-cube: 134 47% 48%;
     --text-mega: 7 100% 60%;
+
+    --bg-success: 49, 100%, 16%;
 
     // Puzzle specific theme vars
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--white);
@@ -382,13 +384,13 @@ export default createGlobalStyle/*css*/ `
 
     --bg-moji: conic-gradient(
       from 180deg at 50% 50%,
-      rgba(235, 87, 87, 0.6) 0deg,
-      rgba(242, 153, 74, 0.6) 54.00000214576721deg,
-      rgba(39, 174, 96, 0.6) 118.80000472068787deg,
-      rgba(47, 128, 237, 0.6) 180deg,
-      rgba(86, 204, 242, 0.6) 244.80000257492065deg,
-      rgba(187, 107, 217, 0.6) 306.00000858306885deg,
-      rgba(235, 87, 87, 0.6) 360deg
+      rgba(235, 87, 87, 1.0) 0deg,
+      rgba(242, 153, 74, 1.0) 54.00000214576721deg,
+      rgba(39, 174, 96, 1.0) 118.80000472068787deg,
+      rgba(47, 128, 237, 1.0) 180deg,
+      rgba(86, 204, 242, 1.0) 244.80000257492065deg,
+      rgba(187, 107, 217, 1.0) 306.00000858306885deg,
+      rgba(235, 87, 87, 1.0) 360deg
     );
     --bg-mini: 205 100% 89%;
     --bg-cube: 133 100% 87%;
@@ -398,6 +400,8 @@ export default createGlobalStyle/*css*/ `
     --text-mini: 209 100% 53%;
     --text-cube: 134 47% 48%;
     --text-mega: 7 100% 60%;
+
+    --bg-success: 49, 100%, 16%;
 
     // Puzzle specific theme vars
     // ONLY USE HEX COLORS HERE

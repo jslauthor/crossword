@@ -1,16 +1,13 @@
 import { Card, CardContent } from 'components/core/ui/card';
-import {
-  CrosscubeType,
-  PuzzleStats,
-  getAltForType,
-  getIconForType,
-} from 'lib/utils/puzzle';
+import { CrosscubeType, PuzzleStats } from 'lib/utils/puzzle';
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import Image from 'next/image';
 import { Badge } from 'components/core/ui/badge';
 import { formatTime } from 'lib/utils/date';
 import { Button } from 'components/core/ui/button';
+import { ProgressEnum } from 'components/svg/PreviewCube';
+import PuzzleIcon from 'components/composed/PuzzleIcon';
 
 const PuzzleType = styled.h1<{ $isFirst: boolean }>`
   font-size: 2rem;
@@ -26,7 +23,7 @@ const Background = styled.div<{ $type: PuzzleLatestProps['type'] }>`
   ${({ $type }) => {
     switch ($type) {
       case 'moji':
-        return `background: var(--bg-${$type});`;
+        return `background: var(--bg-${$type}); opacity: 0.6;`;
       default:
         return `background: hsl(var(--bg-${$type}));`;
     }
@@ -40,6 +37,7 @@ interface PuzzleLatestProps {
   date: string;
   puzzleLabel: string[];
   puzzleStats: PuzzleStats;
+  previewState: ProgressEnum;
 }
 
 const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
@@ -49,6 +47,7 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
   author,
   puzzleLabel,
   puzzleStats,
+  previewState = ProgressEnum.ZeroPercent,
 }) => {
   const formattedLabel = useMemo(() => {
     return puzzleLabel.map((label, index) => (
@@ -63,13 +62,7 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
       <Background $type={type} className="absolute inset-0 w-full h-full" />
       <div className="absolute inset-0 w-full h-full backdrop-blur-xl scale-95" />
       <CardContent className="p-14 relative w-full h-full flex flex-col gap-6 justify-center items-center">
-        <Image
-          alt={getAltForType(type)}
-          src={getIconForType(type)}
-          width={72}
-          height={72}
-          className="rounded-[8px]"
-        />
+        <PuzzleIcon type={type} previewState={previewState} />
         <div className="flex flex-col gap-4 items-center justify-center">
           <div>{formattedLabel}</div>
           <div className="text-lg">&ldquo;{title}&rdquo;</div>

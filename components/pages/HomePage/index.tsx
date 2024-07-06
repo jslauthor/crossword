@@ -116,6 +116,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
                 title={puzzle.title}
                 author={puzzle.author}
                 date={puzzle.date}
+                previewState={puzzle.previewState}
               />
             </Link>
           ))}

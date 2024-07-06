@@ -96,10 +96,6 @@ const MenuItemFlex = styled(MenuItem)`
   align-items: center;
 `;
 
-const UserInfoStyled = styled(UserInfo)`
-  margin: 0.5rem;
-`;
-
 const SignInContainer = styled.div`
   display: flex;
   padding: 1rem;
@@ -424,7 +420,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                     <>
                       <HRule $heavy />
                       <SignInContainer>
-                        <UserInfoStyled
+                        <UserInfo
                           name={user.fullName ?? ''}
                           email={user.primaryEmailAddress?.emailAddress ?? ''}
                           src={avatarUrl}

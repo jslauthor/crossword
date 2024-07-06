@@ -1,12 +1,12 @@
 'use client';
 
-import * as React from 'react';
+import { useMemo } from 'react';
 import { styled } from 'styled-components';
-import { CrosscubeType, getAltForType, getIconForType } from 'lib/utils/puzzle';
-import Image from 'next/image';
+import { CrosscubeType } from 'lib/utils/puzzle';
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import PuzzleIcon from 'components/composed/PuzzleIcon';
 
 const Container = styled.div`
   position: relative;
@@ -42,7 +42,7 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
   puzzleLabel,
   previewState = ProgressEnum.ZeroPercent,
 }) => {
-  const formattedLabel = React.useMemo(() => {
+  const formattedLabel = useMemo(() => {
     return puzzleLabel.map((label, index) => (
       <PuzzleType
         className="capitalize"
@@ -57,13 +57,7 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
 
   return (
     <Container>
-      <Image
-        alt={getAltForType(type)}
-        src={getIconForType(type)}
-        width={64}
-        height={64}
-        className="rounded-[8px]"
-      />
+      <PuzzleIcon type={type} previewState={previewState} />
       <div>
         <div>{formattedLabel}</div>
         <div className="font-semibold">{date}</div>
