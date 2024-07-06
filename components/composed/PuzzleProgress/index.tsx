@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { CrosscubeType } from 'lib/utils/puzzle';
 import styled from 'styled-components';
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import PieChart from 'components/core/PieChart';
 import Image from 'next/image';
+import { CrosscubeType } from 'types/types';
 
 const Background = styled.div<{ $type: CrosscubeType; $success: boolean }>`
   color: var(--white);

@@ -2,11 +2,11 @@
 
 import { useMemo } from 'react';
 import { styled } from 'styled-components';
-import { CrosscubeType } from 'lib/utils/puzzle';
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import PuzzleIcon from 'components/composed/PuzzleIcon';
+import { CrosscubeType } from 'types/types';
 
 const Container = styled.div`
   position: relative;

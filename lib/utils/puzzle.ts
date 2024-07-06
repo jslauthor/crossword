@@ -1,6 +1,7 @@
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import {
   Clue,
+  CrosscubeType,
   GameState,
   PuzzleData,
   SolutionCell,
@@ -8,7 +9,7 @@ import {
   SolutionCellValue,
 } from '../../types/types';
 import memoizeOne from 'memoize-one';
-import { PuzzleType } from 'app/page';
+import { PuzzleType } from 'types/types';
 import * as Y from 'yjs';
 
 export const GAME_STATE_KEY = 'GAME_STATE_KEY';
@@ -531,8 +532,6 @@ export const getPuzzleLabel = (puzzle: PuzzleType): string[] => {
       return ['crosscube'];
   }
 };
-
-export type CrosscubeType = 'moji' | 'mini' | 'cube' | 'mega';
 
 export const getIconForType = (type: CrosscubeType) => {
   switch (type) {

@@ -1,5 +1,5 @@
 import { Card, CardContent } from 'components/core/ui/card';
-import { CrosscubeType, PuzzleStats } from 'lib/utils/puzzle';
+import { PuzzleStats } from 'lib/utils/puzzle';
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import Image from 'next/image';
@@ -8,6 +8,7 @@ import { formatTime } from 'lib/utils/date';
 import { Button } from 'components/core/ui/button';
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import PuzzleIcon from 'components/composed/PuzzleIcon';
+import { CrosscubeType } from 'types/types';
 
 const PuzzleType = styled.h1<{ $isFirst: boolean }>`
   font-size: 2rem;

@@ -1,4 +1,4 @@
-import { PuzzleType } from 'app/page';
+import { PuzzleType } from 'types/types';
 import PuzzlePage from 'components/pages/PuzzlePage';
 import { queryDato } from 'lib/dato';
 import { getPuzzleBySlug } from 'lib/utils/reader';

@@ -1,5 +1,5 @@
 import { currentUser } from '@clerk/nextjs';
-import { PuzzleType } from 'app/page';
+import { CrosscubeType, PuzzleType } from 'types/types';
 import { queryDato } from 'lib/dato';
 import { getPuzzlesProgressForUser, getUserForClerkId } from 'lib/db';
 import {
@@ -15,6 +15,7 @@ import { TEXTURE_RECORD } from './textures';
 import * as Y from 'yjs';
 
 export const getPuzzles = async (
+  types: CrosscubeType[] = ['cube', 'mega', 'mini', 'moji'],
   first: number = 100,
   skip: number = 0,
 ): Promise<PuzzleType[]> => {

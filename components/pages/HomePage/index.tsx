@@ -3,19 +3,17 @@
 import styled from 'styled-components';
 import Menu from 'components/containers/Menu';
 import PuzzlePreview from 'components/composed/PuzzlePreview';
-import { PuzzleType } from 'app/page';
+import { PuzzleType, ValidCrosscubeArray } from 'types/types';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { AtlasType } from 'lib/utils/textures';
 import PuzzleLatest from 'components/composed/PuzzleLatest';
 import {
-  CrosscubeType,
   getPuzzleLabel,
   getPuzzleStats,
   getTypeForSize,
 } from 'lib/utils/puzzle';
 import { HRule } from 'components/core/Dividers';
-import { get } from 'http';
 
 const Container = styled.div`
   position: relative;
@@ -40,19 +38,6 @@ const PuzzlesContainer = styled.div`
 const ErrorContainer = styled.div`
   padding: 1rem;
 `;
-
-const crosscubeTypes = ['cube', 'mega', 'mini', 'moji'] as const;
-type CheckAllUnions = {
-  [K in CrosscubeType]: K extends (typeof crosscubeTypes)[number]
-    ? true
-    : false;
-};
-type AllUnionsPresent = CheckAllUnions[CrosscubeType] extends true
-  ? true
-  : false;
-type ValidCrosscubeArray = AllUnionsPresent extends true
-  ? typeof crosscubeTypes
-  : never;
 
 export interface HomePageProps {
   puzzles: PuzzleType[];

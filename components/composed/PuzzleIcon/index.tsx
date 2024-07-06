@@ -1,9 +1,10 @@
 import { ProgressEnum } from 'components/svg/PreviewCube';
-import { CrosscubeType, getAltForType, getIconForType } from 'lib/utils/puzzle';
+import { getAltForType, getIconForType } from 'lib/utils/puzzle';
 import Image from 'next/image';
 import React from 'react';
 import PuzzleProgress from 'components/composed/PuzzleProgress';
 import styled from 'styled-components';
+import { CrosscubeType } from 'types/types';
 
 const ProgressContainer = styled.div`
   position: absolute;

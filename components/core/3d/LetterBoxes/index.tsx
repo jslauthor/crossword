@@ -15,7 +15,7 @@ import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
-import { PuzzleType } from 'app/page';
+import { PuzzleType } from 'types/types';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
 import { hexToVector } from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';

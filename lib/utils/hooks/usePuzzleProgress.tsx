@@ -1,6 +1,6 @@
 'use client';
 
-import { PuzzleType } from 'app/page';
+import { PuzzleType } from 'types/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SolutionCell } from 'types/types';
 import {
