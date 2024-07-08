@@ -11,7 +11,7 @@ import {
 } from './puzzle';
 import { TEXTURE_RECORD } from './textures';
 import * as Y from 'yjs';
-import { readOnlyClient } from 'lib/hygraph';
+import { getReadOnlyClient } from 'lib/hygraph';
 import { gql } from '@apollo/client';
 
 const createWhereForType = (types: CrosscubeType[]) => {
@@ -37,7 +37,7 @@ export const getPuzzles = async (
   types: CrosscubeType[] = ['cube', 'mega', 'mini', 'moji'],
 ): Promise<PuzzleType[]> => {
   try {
-    const result = await readOnlyClient.query<{ crosscubes: any }>({
+    const result = await getReadOnlyClient().query<{ crosscubes: any }>({
       query: gql`
         query Query {
           crosscubes(
@@ -99,7 +99,7 @@ export const getPuzzleBySlug = async (
   slug: string,
 ): Promise<PuzzleType | null> => {
   try {
-    const result = await readOnlyClient.query<{ crosscube: any }>({
+    const result = await getReadOnlyClient().query<{ crosscube: any }>({
       query: gql`
         query Query {
           crosscube(

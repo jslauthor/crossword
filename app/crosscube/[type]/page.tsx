@@ -17,3 +17,6 @@ export default async function Page({
 }) {
   return <HomePage puzzles={await getPuzzles([type])} atlas={TEXTURE_RECORD} />;
 }
+
+// Regenerate every 5 minutes
+export const revalidate = 600;

@@ -7,7 +7,7 @@ import {
   TEXTURE_RECORD,
   generateTextures,
 } from 'lib/utils/textures';
-import { readOnlyClient } from 'lib/hygraph';
+import { getReadOnlyClient } from 'lib/hygraph';
 import { gql } from '@apollo/client';
 
 export type PuzzleProps = {
@@ -21,7 +21,7 @@ interface PuzzlePageProps extends PuzzleProps {
 }
 
 export async function generateStaticParams() {
-  const result = await readOnlyClient.query<{ crosscubes: any }>({
+  const result = await getReadOnlyClient().query<{ crosscubes: any }>({
     query: gql`
       query Query {
         crosscubes(orderBy: publishedAt_DESC) {
@@ -30,7 +30,6 @@ export async function generateStaticParams() {
       }
     `,
   });
-
   return result?.data?.crosscubes;
 }
 
