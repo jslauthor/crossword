@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { AtlasType } from '../textures';
+import { encode } from 'js-base64';
 
 const ATLAS_SIZE = 2048;
 const SVG_BASE_PATH = '/noto/svg/emoji_';
@@ -84,7 +85,7 @@ function useSvgAtlas(unicodeValues?: string[]) {
             resolve(img);
           };
           img.onerror = reject;
-          const base64 = 'data:image/svg+xml;base64,' + btoa(svgText);
+          const base64 = 'data:image/svg+xml;base64,' + encode(svgText);
           setSvgContentMap((prev) => ({ ...prev, [unicodeValue]: base64 }));
           img.src = base64;
         });
@@ -101,7 +102,7 @@ function useSvgAtlas(unicodeValues?: string[]) {
         return new Promise((resolve) => {
           const img = new Image();
           img.onload = () => resolve(img);
-          const base64 = 'data:image/svg+xml;base64,' + btoa(FALLBACK_SVG);
+          const base64 = 'data:image/svg+xml;base64,' + encode(FALLBACK_SVG);
           setSvgContentMap((prev) => ({ ...prev, [unicodeValue]: base64 }));
           img.src = base64;
         });

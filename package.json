@@ -12,6 +12,7 @@
     "postinstall": "prisma generate --no-engine"
   },
   "dependencies": {
+    "@apollo/client": "^3.10.8",
     "@babel/plugin-proposal-class-properties": "^7.18.6",
     "@babel/plugin-transform-typescript": "^7.23.6",
     "@clerk/backend": "^0.38.4",
@@ -46,6 +47,7 @@
     "framer-motion": "^10.18.0",
     "i": "^0.3.7",
     "idb": "^8.0.0",
+    "js-base64": "^3.7.7",
     "js-easing-functions": "^1.0.3",
     "localforage": "^1.10.0",
     "lucide-react": "^0.395.0",

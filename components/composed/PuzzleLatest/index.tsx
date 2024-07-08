@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import Image from 'next/image';
 import { Badge } from 'components/core/ui/badge';
-import { formatTime } from 'lib/utils/date';
+import { formatDate, formatTime } from 'lib/utils/date';
 import { Button } from 'components/core/ui/button';
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import PuzzleIcon from 'components/composed/PuzzleIcon';
@@ -34,7 +34,7 @@ const Background = styled.div<{ $type: PuzzleLatestProps['type'] }>`
 interface PuzzleLatestProps {
   type: CrosscubeType;
   title: string;
-  author: string;
+  authors: string[];
   date: string;
   puzzleLabel: string[];
   puzzleStats: PuzzleStats;
@@ -45,11 +45,13 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
   type = 'moji',
   title,
   date,
-  author,
+  authors = [''],
   puzzleLabel,
   puzzleStats,
   previewState = ProgressEnum.ZeroPercent,
 }) => {
+  const formattedAuthors = useMemo(() => authors[0], [authors]);
+
   const formattedLabel = useMemo(() => {
     return puzzleLabel.map((label, index) => (
       <PuzzleType $isFirst={index === 0} key={index}>
@@ -57,6 +59,8 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
       </PuzzleType>
     ));
   }, [puzzleLabel]);
+
+  const formattedDate = useMemo(() => formatDate(date), [date]);
 
   return (
     <Card className="relative rounded-xl overflow-hidden md:min-h-[600px] flex flex-col justify-center items-center">
@@ -69,8 +73,10 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
           <div className="text-lg">&ldquo;{title}&rdquo;</div>
         </div>
         <div className="flex flex-col items-center gap-0">
-          <span className="font-medium text-base">{date}</span>
-          <span className="capitalize text-base">by {author}</span>
+          <span className="font-medium text-base">{formattedDate}</span>
+          <span className="text-base">
+            by <span className="capitalize text-base">{formattedAuthors}</span>
+          </span>
         </div>
         <Button variant="inverted" size="share" className="w-40">
           Play

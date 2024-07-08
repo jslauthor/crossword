@@ -225,8 +225,8 @@ export default function Puzzle({
 }: PuzzleProps) {
   const { theme } = useTheme();
   const layout = useMemo<keyof KeyboardLayoutType>(
-    () => (puzzle.svgsegments != null ? 'emoji' : 'default'),
-    [puzzle.svgsegments],
+    () => (puzzle.svgSegments != null ? 'emoji' : 'default'),
+    [puzzle.svgSegments],
   );
   const [svgCssMap, setSvgCssMap] = useState<CssMapType>({});
 
@@ -236,7 +236,7 @@ export default function Puzzle({
     svgGridSize,
     progress,
     svgContentMap,
-  } = useSvgAtlas(puzzle.svgsegments);
+  } = useSvgAtlas(puzzle.svgSegments);
 
   const disableOrientation = useMemo(
     () => svgTextureAtlasLookup != null,

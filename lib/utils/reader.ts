@@ -1,6 +1,5 @@
 import { currentUser } from '@clerk/nextjs';
 import { CrosscubeType, PuzzleType } from 'types/types';
-import { queryDato } from 'lib/dato';
 import { getPuzzlesProgressForUser, getUserForClerkId } from 'lib/db';
 import {
   updateAnswerIndex,
@@ -13,59 +12,63 @@ import {
 import { formatDate } from 'lib/utils/date';
 import { TEXTURE_RECORD } from './textures';
 import * as Y from 'yjs';
+import { readOnlyClient } from 'lib/hygraph';
+import { gql } from '@apollo/client';
 
 export const getPuzzles = async (
   types: CrosscubeType[] = ['cube', 'mega', 'mini', 'moji'],
-  first: number = 100,
-  skip: number = 0,
 ): Promise<PuzzleType[]> => {
   try {
-    const result = await queryDato({
-      query: `
-        {
-          allPuzzles(
-            first: ${first},
-            skip: ${skip},
-            orderBy: _firstPublishedAt_DESC
-          ) {
+    const result = await readOnlyClient.query<{ crosscubes: any }>({
+      query: gql`
+        query Query {
+          crosscubes(orderBy: publishedAt_DESC) {
             id
-            difficulty
-            puzzleType
-            data
-            author {
-              fullName
-            }
-            isAiAssisted
-            slug
             title
-            svgsegments
-            _status
-            _firstPublishedAt
-          }
-  
-          _allPuzzlesMeta {
-            count
+            authors {
+              name {
+                firstName
+                lastName
+              }
+            }
+            editors {
+              name {
+                firstName
+                lastName
+              }
+            }
+            data
+            svgSegments
+            slug
+            publishedAt
+            updatedAt
+            stage
           }
         }
       `,
     });
 
-    const puzzles: PuzzleType[] = result?.allPuzzles.map((puzzle: any) => ({
-      id: puzzle.id,
-      title: puzzle.title,
-      author: puzzle.author.fullName,
-      date: formatDate(puzzle._firstPublishedAt),
-      isAiAssisted: puzzle.isAiAssisted,
-      difficulty: puzzle.difficulty,
-      previewState: 0,
-      slug: puzzle.slug,
-      data: puzzle.data,
-      record: getCharacterRecord(puzzle.data),
-    }));
+    const puzzles: PuzzleType[] = result?.data?.crosscubes.map(
+      (puzzle: any) =>
+        ({
+          id: puzzle.id,
+          title: puzzle.title,
+          authors: [
+            puzzle.authors[0].name.firstName +
+              ' ' +
+              puzzle.authors[0].name.lastName,
+          ],
+          date: puzzle.publishedAt ?? puzzle.updatedAt,
+          previewState: 0,
+          slug: puzzle.slug,
+          data: puzzle.data,
+          record: getCharacterRecord(puzzle.data),
+        }) as PuzzleType,
+    );
 
     return await enrichPuzzles(puzzles);
   } catch (error) {
-    console.error('Error calling dato!', error);
+    console.error('Error calling graphql!', error);
   }
 
   return [];
@@ -75,86 +78,63 @@ export const getPuzzleBySlug = async (
   slug: string,
 ): Promise<PuzzleType | null> => {
   try {
-    const result = await queryDato({
-      query: `
-        {
-          allPuzzles(
-            filter: {
-              slug: { eq: "${slug}" }
-            }
+    const result = await readOnlyClient.query<{ crosscube: any }>({
+      query: gql`
+        query Query {
+          crosscube(
+            where: { slug: "${slug}" }
           ) {
             id
-            difficulty
-            puzzleType
-            data
-            author {
-              fullName
-            }
-            isAiAssisted
-            slug
             title
-            svgsegments
-            _status
-            _firstPublishedAt
-          }
+            authors { name {
+              firstName
+              lastName
+            } }
+            editors { name {
+              firstName
+              lastName
+            } }
+            data
+            svgSegments
+            slug
+            publishedAt
+            updatedAt
+            stage  
+           }
         }
       `,
     });
 
-    const puzzle = result?.allPuzzles[0];
+    const crosscube = result?.data?.crosscube;
 
-    if (puzzle == null) {
-      return puzzle;
+    if (crosscube == null) {
+      return null;
     }
 
-    puzzle.record = getCharacterRecord(puzzle.data);
+    const puzzle: PuzzleType = {
+      id: crosscube.id,
+      title: crosscube.title,
+      authors: [
+        crosscube.authors[0].name.firstName +
+          ' ' +
+          crosscube.authors[0].name.lastName,
+      ],
+      date: crosscube.publishedAt ?? crosscube.updatedAt,
+      previewState: 0,
+      slug: crosscube.slug,
+      data: crosscube.data,
+      svgSegments: crosscube.svgSegments,
+      record: getCharacterRecord(crosscube.data),
+    };
+
     await enrichPuzzles([puzzle]);
 
     return puzzle;
   } catch (error) {
-    console.error('Error calling dato!', error);
+    console.error('Error calling graphql!', error);
   }
 
   return null;
-};
-
-export const getPuzzleById = async (id: string): Promise<PuzzleType | null> => {
-  const result = await queryDato({
-    query: `
-      {
-        allPuzzles(
-          filter: {
-            id: { eq: "${id}" }
-          }
-        ) {
-          id
-          difficulty
-          puzzleType
-          data
-          author {
-            fullName
-          }
-          isAiAssisted
-          slug
-          title
-          svgsegments
-          _status
-          _firstPublishedAt
-        }
-      }
-    `,
-  });
-
-  const puzzle = result?.allPuzzles[0];
-
-  if (puzzle == null) {
-    return puzzle;
-  }
-
-  puzzle.record = getCharacterRecord(puzzle.data);
-  await enrichPuzzles([puzzle]);
-
-  return puzzle;
 };
 
 const atlas = invertAtlas(TEXTURE_RECORD);

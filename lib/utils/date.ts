@@ -1,8 +1,14 @@
-export const formatDate = (date: string) => {
+export const formatDate = (date: string, includeWeekday?: boolean) => {
   const dateObj = new Date(date);
   const month = dateObj.toLocaleString('default', { month: 'long' });
   const day = dateObj.getDate();
   const year = dateObj.getFullYear();
+
+  if (includeWeekday === true) {
+    const weekday = dateObj.toLocaleString('default', { weekday: 'long' });
+    return `${weekday}, ${month} ${day}, ${year}`;
+  }
+
   return `${month} ${day}, ${year}`;
 };
 

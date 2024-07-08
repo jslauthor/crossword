@@ -73,11 +73,14 @@ declare module '@react-three/fiber' {
   }
 }
 
-export type PuzzleType = Omit<PuzzlePreviewProps, 'dimensions'> & {
+export type PuzzleType = Omit<
+  PuzzlePreviewProps,
+  'dimensions' | 'puzzleLabel' | 'type'
+> & {
   slug: string;
   id: string;
   data: PuzzleData[];
-  svgsegments?: string[];
+  svgSegments?: string[];
   record: CharacterRecord;
   previewState: number;
 };

@@ -99,7 +99,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
                 puzzleLabel={getPuzzleLabel(puzzle)}
                 puzzleStats={getPuzzleStats(puzzle)}
                 title={puzzle.title}
-                author={puzzle.author}
+                authors={puzzle.authors}
                 date={puzzle.date}
                 previewState={puzzle.previewState}
               />
@@ -109,13 +109,13 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
         <h1 className="text-base mt-4">Archive</h1>
         <PuzzlesContainer>
           {otherPuzzles.map((puzzle, index) => {
-            const { author, title, date, previewState, slug } = puzzle;
+            const { authors, title, date, previewState, slug } = puzzle;
             return (
               <div className="flex flex-col gap-4" key={slug}>
                 <Link href={`/puzzle/${slug}`}>
                   <PuzzlePreview
                     title={title}
-                    author={author}
+                    authors={authors}
                     date={date}
                     previewState={previewState}
                     puzzleLabel={getPuzzleLabel(puzzle)}
