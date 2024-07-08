@@ -3,13 +3,13 @@
 import styled from 'styled-components';
 import Menu from 'components/containers/Menu';
 import PuzzlePreview from 'components/composed/PuzzlePreview';
-import { PuzzleType, ValidCrosscubeArray } from 'types/types';
+import { CrosscubeType, PuzzleType, ValidCrosscubeArray } from 'types/types';
 import Link from 'next/link';
 import { useMemo } from 'react';
-import { AtlasType } from 'lib/utils/textures';
 import PuzzleLatest from 'components/composed/PuzzleLatest';
 import {
   getPuzzleLabel,
+  getPuzzleLabelForType,
   getPuzzleStats,
   getTypeForSize,
 } from 'lib/utils/puzzle';
@@ -35,16 +35,22 @@ const PuzzlesContainer = styled.div`
   width: 100%;
 `;
 
+const LatestTitle = styled.span<{ $type?: CrosscubeType }>`
+  font-size: inherit;
+  ${({ $type }) =>
+    $type != null ? `color: hsl(var(--text-${$type}));` : null};
+`;
+
 const ErrorContainer = styled.div`
   padding: 1rem;
 `;
 
 export interface HomePageProps {
   puzzles: PuzzleType[];
-  atlas: AtlasType;
+  type?: CrosscubeType;
 }
 
-const Page: React.FC<HomePageProps> = ({ puzzles }) => {
+const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
   const { latestPuzzles, otherPuzzles } = useMemo(
     () =>
       puzzles.reduce(
@@ -71,6 +77,11 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
     [puzzles],
   );
 
+  const formattedLabel = useMemo(() => {
+    if (type == null) return 'Puzzles';
+    return getPuzzleLabelForType(type).map((label, index) => `${label} `);
+  }, [type]);
+
   if (puzzles.length === 0) {
     return (
       <Menu>
@@ -91,7 +102,9 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
     <Menu>
       <Container>
         <div className="flex flex-col gap-3">
-          <h1 className="text-base">Latest Puzzles</h1>
+          <h1 className="text-base capitalize">
+            Latest <LatestTitle $type={type}>{formattedLabel}</LatestTitle>
+          </h1>
           {latestPuzzles.map((puzzle, index) => (
             <Link key={puzzle.slug} href={`/puzzle/${puzzle.slug}`}>
               <PuzzleLatest
@@ -106,7 +119,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles }) => {
             </Link>
           ))}
         </div>
-        <h1 className="text-base mt-4">Archive</h1>
+        {otherPuzzles.length > 0 && <h1 className="text-base mt-4">Archive</h1>}
         <PuzzlesContainer>
           {otherPuzzles.map((puzzle, index) => {
             const { authors, title, date, previewState, slug } = puzzle;

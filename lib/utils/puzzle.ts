@@ -518,18 +518,36 @@ export const getPuzzleStats = (
   };
 };
 
+const CROSSMOJI_LABEL = ['crossmoji'];
+const MINI_LABEL = ['crosscube', 'mini'];
+const MEGA_LABEL = ['crosscube', 'mega'];
+const CROSSCUBE_LABEL = ['crosscube'];
+
+export const getPuzzleLabelForType = (type: CrosscubeType): string[] => {
+  switch (type) {
+    case 'moji':
+      return CROSSMOJI_LABEL;
+    case 'mini':
+      return MINI_LABEL;
+    case 'mega':
+      return MEGA_LABEL;
+    default:
+      return CROSSCUBE_LABEL;
+  }
+};
+
 export const getPuzzleLabel = (puzzle: PuzzleType): string[] => {
   const { width, height } = puzzle.data[0].dimensions;
   const size = width * height;
   switch (size) {
     case 9:
-      return ['crossmoji'];
+      return CROSSMOJI_LABEL;
     case 25:
-      return ['crosscube', 'mini'];
+      return MINI_LABEL;
     case 144:
-      return ['crosscube', 'mega'];
+      return MEGA_LABEL;
     default:
-      return ['crosscube'];
+      return CROSSCUBE_LABEL;
   }
 };
 
