@@ -9,11 +9,29 @@ import {
   initializeAnswerIndex,
   GAME_STATE_KEY,
 } from './puzzle';
-import { formatDate } from 'lib/utils/date';
 import { TEXTURE_RECORD } from './textures';
 import * as Y from 'yjs';
 import { readOnlyClient } from 'lib/hygraph';
 import { gql } from '@apollo/client';
+
+const createWhereForType = (types: CrosscubeType[]) => {
+  return types
+    .map((type) => {
+      switch (type) {
+        case 'cube':
+          return '(@.dimensions.width == 8 && @.dimensions.height == 8)';
+        case 'mega':
+          return '(@.dimensions.width == 12 && @.dimensions.height == 12)';
+        case 'mini':
+          return '(@.dimensions.width == 5 && @.dimensions.height == 5)';
+        case 'moji':
+          return '(@.dimensions.width == 3 && @.dimensions.height == 3)';
+        default:
+          return '';
+      }
+    })
+    .join(' || ');
+};
 
 export const getPuzzles = async (
   types: CrosscubeType[] = ['cube', 'mega', 'mini', 'moji'],
@@ -22,7 +40,10 @@ export const getPuzzles = async (
     const result = await readOnlyClient.query<{ crosscubes: any }>({
       query: gql`
         query Query {
-          crosscubes(orderBy: publishedAt_DESC) {
+          crosscubes(
+            orderBy: publishedAt_DESC
+            where: { data_json_path_exists: "$[*] ? (${createWhereForType(types)})" }
+          ) {
             id
             title
             authors {
@@ -68,7 +89,7 @@ export const getPuzzles = async (
 
     return await enrichPuzzles(puzzles);
   } catch (error) {
-    console.error('Error calling graphql!', error);
+    console.error('Error calling graphql!', JSON.stringify(error));
   }
 
   return [];

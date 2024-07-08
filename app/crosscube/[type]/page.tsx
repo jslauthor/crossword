@@ -4,7 +4,10 @@ import { TEXTURE_RECORD } from 'lib/utils/textures';
 import { CrosscubeType, ValidCrosscubeArray } from 'types/types';
 
 export async function generateStaticParams() {
-  return ['cube', 'mega', 'mini', 'moji'] as ValidCrosscubeArray;
+  const types = ['cube', 'mega', 'mini', 'moji'] as ValidCrosscubeArray;
+  return (types as Array<string>).map((type) => ({
+    type,
+  }));
 }
 
 export default async function Page({

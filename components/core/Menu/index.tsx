@@ -326,7 +326,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                   </Link>
                   <MenuItemGroup>
                     <MenuHeader>Games</MenuHeader>
-                    <Link href="/crosscube/mojis">
+                    <Link href="/crosscube/moji">
                       <div className="flex gap-2 items-center">
                         <Image
                           className="rounded-md"
@@ -338,7 +338,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         Crossmoji
                       </div>
                     </Link>
-                    <Link href="/crosscube/minis">
+                    <Link href="/crosscube/mini">
                       <div className="flex gap-2 items-center">
                         <Image
                           className="rounded-md"
@@ -350,7 +350,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         Crosscube mini
                       </div>
                     </Link>
-                    <Link href="/crosscube/cubes">
+                    <Link href="/crosscube/cube">
                       <div className="flex gap-2 items-center">
                         <Image
                           className="rounded-md"
@@ -362,7 +362,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         Crosscube
                       </div>
                     </Link>
-                    <Link href="/crosscube/megas">
+                    <Link href="/crosscube/mega">
                       <div className="flex gap-2 items-center">
                         <Image
                           className="rounded-md"
