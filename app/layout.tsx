@@ -21,7 +21,7 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en">
+      <html lang="en" translate="no">
         <head>
           <link rel="stylesheet" href="https://use.typekit.net/nhh2njv.css" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
