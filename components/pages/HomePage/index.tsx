@@ -20,8 +20,8 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: var(--primary-app-width);
   padding: 0.75rem;
+  max-width: var(--primary-app-width);
   background: hsl(var(--background));
 `;
 
@@ -45,13 +45,27 @@ const ErrorContainer = styled.div`
   padding: 1rem;
 `;
 
+const MegaPreview = () => (
+  <PuzzleLatest
+    type="mega"
+    puzzleLabel={getPuzzleLabelForType('mega')}
+    title="Not for the faint of heart."
+    buttonLabel="Coming Soon"
+    buttonDisabled
+  />
+);
+
 export interface HomePageProps {
   puzzles: PuzzleType[];
   type?: CrosscubeType;
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
-  const { latestPuzzles, otherPuzzles } = useMemo(
+  const {
+    latestPuzzles,
+    otherPuzzles,
+    types: absentTypes,
+  } = useMemo(
     () =>
       puzzles.reduce(
         (acc, val) => {
@@ -81,6 +95,16 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
     if (type == null) return 'Puzzles';
     return getPuzzleLabelForType(type).map((label, index) => `${label} `);
   }, [type]);
+
+  if (type == 'mega' && puzzles.length === 0) {
+    return (
+      <Menu>
+        <Container>
+          <MegaPreview />
+        </Container>
+      </Menu>
+    );
+  }
 
   if (puzzles.length === 0) {
     return (
@@ -118,6 +142,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
               />
             </Link>
           ))}
+          {absentTypes.has('mega') && type == null && <MegaPreview />}
         </div>
         {otherPuzzles.length > 0 && <h1 className="text-base mt-4">Archive</h1>}
         <PuzzlesContainer>

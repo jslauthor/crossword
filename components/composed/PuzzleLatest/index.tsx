@@ -21,24 +21,34 @@ const PuzzleType = styled.h1<{ $isFirst: boolean }>`
 `;
 
 const Background = styled.div<{ $type: PuzzleLatestProps['type'] }>`
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border));
+
   ${({ $type }) => {
     switch ($type) {
       case 'moji':
         return `background: var(--bg-${$type}); opacity: 0.6;`;
       default:
-        return `background: hsl(var(--bg-${$type}));`;
+        return `
+          background-blend-mode: overlay, normal; 
+          background: linear-gradient(0deg, rgba(0, 0, 0, 0.00) 0%, rgba(0, 0, 0, 0.50) 100%), hsl(var(--bg-${$type}));
+        `;
     }
   }};
 `;
 
+const BUTTON_DEFAULT_LABEL = 'Play';
+
 interface PuzzleLatestProps {
   type: CrosscubeType;
   title: string;
-  authors: string[];
-  date: string;
+  authors?: string[];
+  date?: string;
+  buttonLabel?: string;
+  buttonDisabled?: boolean;
   puzzleLabel: string[];
-  puzzleStats: PuzzleStats;
-  previewState: ProgressEnum;
+  puzzleStats?: PuzzleStats;
+  previewState?: ProgressEnum;
 }
 
 const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
@@ -46,6 +56,8 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
   title,
   date,
   authors = [''],
+  buttonLabel = BUTTON_DEFAULT_LABEL,
+  buttonDisabled = false,
   puzzleLabel,
   puzzleStats,
   previewState = ProgressEnum.ZeroPercent,
@@ -60,7 +72,10 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
     ));
   }, [puzzleLabel]);
 
-  const formattedDate = useMemo(() => formatDate(date), [date]);
+  const formattedDate = useMemo(
+    () => (date != null ? formatDate(date) : ''),
+    [date],
+  );
 
   return (
     <Card className="relative rounded-xl overflow-hidden md:min-h-[600px] flex flex-col justify-center items-center">
@@ -72,42 +87,52 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
           <div>{formattedLabel}</div>
           <div className="text-lg">&ldquo;{title}&rdquo;</div>
         </div>
-        <div className="flex flex-col items-center gap-0">
-          <span className="font-medium text-base">{formattedDate}</span>
-          <span className="text-base">
-            by <span className="capitalize text-base">{formattedAuthors}</span>
-          </span>
-        </div>
-        <Button variant="inverted" size="share" className="w-40">
-          Play
-        </Button>
-        <Badge
-          size="large"
-          className="text-auto border-foreground/10 border-solid bg-foreground/[3%] hover:bg-foreground/20"
+        {date != null && (
+          <div className="flex flex-col items-center gap-0">
+            <span className="font-medium text-base">{formattedDate}</span>
+            <span className="text-base">
+              by{' '}
+              <span className="capitalize text-base">{formattedAuthors}</span>
+            </span>
+          </div>
+        )}
+        <Button
+          variant="inverted"
+          disabled={buttonDisabled}
+          size="share"
+          className="w-40"
         >
-          <div className="flex flex-row items-center mr-2">
-            <Image
-              src="/noto/svg/emoji_u23f1.svg"
-              alt="clock"
-              width={16}
-              height={16}
-              className="mr-1"
-            />
-            <div className="font-medium">
-              {formatTime(puzzleStats.goalTime)}
+          {buttonLabel}
+        </Button>
+        {puzzleStats != null && (
+          <Badge
+            size="large"
+            className="text-auto border-foreground/10 border-solid bg-foreground/[3%] hover:bg-foreground/20"
+          >
+            <div className="flex flex-row items-center mr-2">
+              <Image
+                src="/noto/svg/emoji_u23f1.svg"
+                alt="clock"
+                width={16}
+                height={16}
+                className="mr-1"
+              />
+              <div className="font-medium">
+                {formatTime(puzzleStats.goalTime)}
+              </div>
             </div>
-          </div>
-          <div className="flex flex-row items-center">
-            <Image
-              src="/noto/svg/emoji_u1f7e6.svg"
-              alt="blue square"
-              width={16}
-              height={16}
-              className="mr-1"
-            />
-            <div className="font-medium">{puzzleStats.goalGuesses}</div>
-          </div>
-        </Badge>
+            <div className="flex flex-row items-center">
+              <Image
+                src="/noto/svg/emoji_u1f7e6.svg"
+                alt="blue square"
+                width={16}
+                height={16}
+                className="mr-1"
+              />
+              <div className="font-medium">{puzzleStats.goalGuesses}</div>
+            </div>
+          </Badge>
+        )}
       </CardContent>
     </Card>
   );
