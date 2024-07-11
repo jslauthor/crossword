@@ -76,8 +76,9 @@ export const getPuzzles = async (
           title: puzzle.title,
           authors: [
             puzzle.authors[0].name.firstName +
-              ' ' +
-              puzzle.authors[0].name.lastName,
+              (puzzle.authors[0].name.lastName != null
+                ? ' ' + puzzle.authors[0].name.lastName
+                : ''),
           ],
           date: puzzle.publishedAt ?? puzzle.updatedAt,
           previewState: 0,
