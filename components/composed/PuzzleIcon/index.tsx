@@ -21,13 +21,13 @@ interface PuzzleIconProps {
 
 const PuzzleIcon: React.FC<PuzzleIconProps> = ({ previewState, type }) => {
   return (
-    <div className="relative">
+    <div className="relative h-full w-full aspect-square">
       <Image
         alt={getAltForType(type)}
         src={getIconForType(type)}
-        width={64}
-        height={64}
-        className="rounded-[8px]"
+        objectFit="cover"
+        fill
+        className="rounded-[8px] aspect-square"
       />
       {previewState !== ProgressEnum.ZeroPercent && (
         <ProgressContainer>

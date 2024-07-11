@@ -82,7 +82,9 @@ const PuzzleLatest: React.FC<PuzzleLatestProps> = ({
       <Background $type={type} className="absolute inset-0 w-full h-full" />
       <div className="absolute inset-0 w-full h-full backdrop-blur-xl scale-95" />
       <CardContent className="p-14 relative w-full h-full flex flex-col gap-6 justify-center items-center">
-        <PuzzleIcon type={type} previewState={previewState} />
+        <div className="w-[72px] h-[72px] relative">
+          <PuzzleIcon type={type} previewState={previewState} />
+        </div>
         <div className="flex flex-col gap-4 items-center justify-center">
           <div>{formattedLabel}</div>
           <div className="text-lg">&ldquo;{title}&rdquo;</div>

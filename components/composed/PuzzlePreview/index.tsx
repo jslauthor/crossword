@@ -40,6 +40,7 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
   type,
   authors = [''],
   date = '',
+  title = '',
   puzzleLabel,
   previewState = ProgressEnum.ZeroPercent,
 }) => {
@@ -66,6 +67,9 @@ const PuzzlePreview: React.FC<PuzzlePreviewProps> = ({
       <div>
         <div>{formattedLabel}</div>
         <div className="font-semibold">{formattedDate}</div>
+        <div className="font-semibold text-sm leading-6">
+          &ldquo;{title}&rdquo;
+        </div>
         <div className="opacity-50 mt-4 text-sm">{formattedAuthors}</div>
       </div>
       <FontAwesomeIcon icon={faChevronRight} size="lg" />
