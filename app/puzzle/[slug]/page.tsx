@@ -125,5 +125,3 @@ export default async function Page({
   const props = await getProps(slug);
   return <PuzzlePage {...props} />;
 }
-
-export const dynamicParams = false; // force 404
