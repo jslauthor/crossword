@@ -16,10 +16,13 @@ const ProgressContainer = styled.div`
 
 interface PuzzleIconProps {
   type: CrosscubeType;
-  previewState: ProgressEnum;
+  previewState?: ProgressEnum;
 }
 
-const PuzzleIcon: React.FC<PuzzleIconProps> = ({ previewState, type }) => {
+const PuzzleIcon: React.FC<PuzzleIconProps> = ({
+  previewState = ProgressEnum.ZeroPercent,
+  type,
+}) => {
   return (
     <div className="relative h-full w-full aspect-square">
       <Image

@@ -399,6 +399,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                     >
                       Privacy Policy
                     </PointerLink>
+                    <PointerLink href="/credits">Credits</PointerLink>
                   </MenuItemGroup>
                 </MenuItemsContainer>
                 <div>
