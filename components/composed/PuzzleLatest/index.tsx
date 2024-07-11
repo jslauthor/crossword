@@ -30,8 +30,7 @@ const Background = styled.div<{ $type: PuzzleLatestProps['type'] }>`
         return `background: var(--bg-${$type}); opacity: 0.6;`;
       default:
         return `
-          background-blend-mode: overlay, normal; 
-          background: linear-gradient(0deg, rgba(0, 0, 0, 0.00) 0%, rgba(0, 0, 0, 0.50) 100%), hsl(var(--bg-${$type}));
+          background: hsl(var(--bg-${$type}));
         `;
     }
   }};
