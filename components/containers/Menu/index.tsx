@@ -14,6 +14,7 @@ const Menu: React.FC<MenuProps> = ({
   rotatingBoxProps,
   children,
   onSettingsPressed,
+  onDisplayChange,
 }) => {
   const router = useRouter();
   const { signOut } = useClerk();
@@ -25,22 +26,18 @@ const Menu: React.FC<MenuProps> = ({
     router.push(`/signin?redirect_url=${window.location.href}`);
   }, [router]);
 
-  const onSignUp = useCallback(() => {
-    router.push(`/signup?redirect_url=${window.location.href}`);
-  }, [router]);
-
   return (
     <MenuWrapper
       centerLabel={centerLabel}
       autocheckEnabled={autocheckEnabled}
       onAutocheckChanged={onAutocheckChanged}
       onSignOutPressed={onSignOut}
-      onSignUpPressed={onSignUp}
       onSignInPressed={onSignIn}
       rotatingBoxProps={rotatingBoxProps}
       draftModeEnabled={draftModeEnabled}
       onDraftModeChanged={onDraftModeChanged}
       onSettingsPressed={onSettingsPressed}
+      onDisplayChange={onDisplayChange}
     >
       {children}
     </MenuWrapper>

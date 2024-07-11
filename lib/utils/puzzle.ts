@@ -1,6 +1,7 @@
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import {
   Clue,
+  CrosscubeType,
   GameState,
   PuzzleData,
   SolutionCell,
@@ -8,7 +9,7 @@ import {
   SolutionCellValue,
 } from '../../types/types';
 import memoizeOne from 'memoize-one';
-import { PuzzleType } from 'app/page';
+import { PuzzleType } from 'types/types';
 import * as Y from 'yjs';
 
 export const GAME_STATE_KEY = 'GAME_STATE_KEY';
@@ -470,9 +471,9 @@ const baseLength = 3;
 
 export const getPuzzleStats = (
   puzzle: PuzzleType,
-  time: number,
-  guesses: number,
-  validations: Int16Array,
+  time?: number,
+  guesses?: number,
+  validations?: Int16Array,
 ): PuzzleStats => {
   const { width, height } = puzzle.data[0].dimensions;
   const gridSize = width * height;
@@ -507,14 +508,32 @@ export const getPuzzleStats = (
   );
 
   return {
-    hintSuccess: !validations.some((v) => v !== 0),
-    timeSuccess: time <= goalTime,
+    hintSuccess: !validations?.some((v) => v !== 0),
+    timeSuccess: (time ?? 0) <= goalTime,
     goalTime,
-    guessSuccess: guesses <= goalGuesses,
+    guessSuccess: (guesses ?? 0) <= goalGuesses,
     goalGuesses,
-    time,
-    guesses,
+    time: time ?? 0,
+    guesses: guesses ?? 0,
   };
+};
+
+const CROSSMOJI_LABEL = ['crossmoji'];
+const MINI_LABEL = ['crosscube', 'mini'];
+const MEGA_LABEL = ['crosscube', 'mega'];
+const CROSSCUBE_LABEL = ['crosscube'];
+
+export const getPuzzleLabelForType = (type: CrosscubeType): string[] => {
+  switch (type) {
+    case 'moji':
+      return CROSSMOJI_LABEL;
+    case 'mini':
+      return MINI_LABEL;
+    case 'mega':
+      return MEGA_LABEL;
+    default:
+      return CROSSCUBE_LABEL;
+  }
 };
 
 export const getPuzzleLabel = (puzzle: PuzzleType): string[] => {
@@ -522,12 +541,57 @@ export const getPuzzleLabel = (puzzle: PuzzleType): string[] => {
   const size = width * height;
   switch (size) {
     case 9:
-      return ['crossmoji'];
+      return CROSSMOJI_LABEL;
     case 25:
-      return ['crosscube', 'mini'];
+      return MINI_LABEL;
     case 144:
-      return ['crosscube', 'mega'];
+      return MEGA_LABEL;
     default:
-      return ['crusscube'];
+      return CROSSCUBE_LABEL;
+  }
+};
+
+export const getIconForType = (type: CrosscubeType) => {
+  switch (type) {
+    case 'moji':
+      return '/moji_icon.png';
+    case 'mini':
+      return '/mini_icon.png';
+    case 'cube':
+      return '/crosscube_icon.png';
+    case 'mega':
+      return '/mega_icon.png';
+    default:
+      return '/general_icon.png';
+  }
+};
+
+export const getAltForType = (type: CrosscubeType) => {
+  switch (type) {
+    case 'moji':
+      return 'Answer a three-dimensioanl crossword puzzle with emojis. Ready?';
+    case 'mini':
+      return 'A quick 4-part puzzler in three dimensions. Ready?';
+    case 'cube':
+      return 'A challenging 8x8 crossword puzzle in three dimensions. Ready?';
+    case 'mega':
+      return 'A monster 12x12 crossword puzzle in three dimensions. Ready?';
+    default:
+      return 'A crossword puzzle in three dimensions. Ready?';
+  }
+};
+
+export const getTypeForSize = (puzzle: PuzzleType): CrosscubeType => {
+  const { width, height } = puzzle.data[0].dimensions;
+  const size = width * height;
+  switch (size) {
+    case 9:
+      return 'moji';
+    case 25:
+      return 'mini';
+    case 144:
+      return 'mega';
+    default:
+      return 'cube';
   }
 };

@@ -1,13 +1,12 @@
 import IconHamburger from 'components/svg/IconHamburger';
 import IconX from 'components/svg/IconX';
-import IconMainLogo from 'components/svg/MainLogo';
 import { ReactNode, useCallback, useMemo } from 'react';
 import { styled } from 'styled-components';
 import RotatingBox, { RotatingBoxProps } from '../3d/Box';
 import Link from 'next/link';
 import LightBulb from 'components/svg/LightBulb';
 import Pencil from 'components/svg/Pencil';
-import { DEFAULT_CORRECT_COLOR, getColorHex } from 'lib/utils/color';
+import { getColorHex } from 'lib/utils/color';
 import Gear from 'components/svg/Gear';
 import { Button } from '../ui/button';
 import { useTheme } from 'lib/utils/hooks/theme';
@@ -27,7 +26,13 @@ const MenuIconContainer = styled.div`
   width: 18px;
 `;
 
-const LogoStyled = styled(IconMainLogo)``;
+const LogoStyled = styled.div`
+  letter-spacing: -1.28px;
+  font-weight: 600;
+  font-size: 1.5rem;
+  font-style: italic;
+  text-align: center;
+`;
 
 const CenterLabelContainer = styled.div``;
 
@@ -39,6 +44,7 @@ const RightContentContainer = styled.div`
   flex-direction: row;
   align-items: center;
   gap: 1rem;
+  min-width: 18px;
 `;
 
 interface HeaderProps {
@@ -51,6 +57,7 @@ interface HeaderProps {
   draftModeEnabled?: boolean;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
+  className?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -63,6 +70,7 @@ const Header: React.FC<HeaderProps> = ({
   onDraftModeChanged,
   draftModeEnabled,
   onSettingsPressed,
+  className,
 }) => {
   const { colors } = useTheme();
 
@@ -95,7 +103,7 @@ const Header: React.FC<HeaderProps> = ({
   }, [autocheckEnabled, colors.correct]);
 
   return (
-    <Container $hasCenterLabel={hasCenterLabel}>
+    <Container $hasCenterLabel={hasCenterLabel} className={className}>
       <MenuIconContainer onClick={onMenuPressed}>
         {showCloseButton ? (
           <IconX width={20} height={25} />
@@ -105,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({
       </MenuIconContainer>
       {hasCenterLabel === false && (
         <Link href="/">
-          <LogoStyled width={140} height={25} />
+          <LogoStyled>crosscube</LogoStyled>
         </Link>
       )}
       {hasCenterLabel === true && (

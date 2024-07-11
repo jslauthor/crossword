@@ -49,7 +49,7 @@ function isValidEmojiList(unicodes) {
 
       // Check if the emoji is in the list of valid emojis
       if (!validEmojis.includes(emoji)) {
-        console.log(emoji);
+        console.log(emoji, normalizedUnicodeString);
         isValid = false;
       }
     } catch (e) {
@@ -64,32 +64,32 @@ function isValidEmojiList(unicodes) {
 async function main() {
   console.log(
     isValidEmojiList([
-      'u1f3f0',
-      'u1f5fd',
-      'u1f1e8_u1f1f3',
-      'u1f5fc',
-      'u1f3db',
-      'u1f1ef_u1f1f5',
-      'u1f5fb',
-      'u1f1ec_u1f1e7',
-      'u1f1eb_u1f1f7',
-      'u1f1ee_u1f1f3',
-      'u1f1ee_u1f1f9',
-      'u1f1e8_u1f1e6',
-      'u1f3ef',
-      'u1f1e6_u1f1fa',
-      'u1f1e7_u1f1f7',
-      'u1f1f7_u1f1fa',
-      'u1f1ea_u1f1f8',
-      'u1f1f2_u1f1fd',
-      'u1f1f3_u1f1f1',
-      'u1f1e8_u1f1ed',
-      'u1f1f8_u1f1ea',
-      'u1f1f8_u1f1ec',
-      'u1f1e6_u1f1ea',
-      'u1f1e7_u1f1ea',
-      'u1f1f3_u1f1f4',
-      'u1f1e9_u1f1f0',
+      'u1f4f4',
+      'u1faf4',
+      'u1f5bc',
+      'u1fa9f',
+      'u1f9d9',
+      'u1f404',
+      'u1f34f',
+      'u1f46c',
+      'u1f695',
+      'u1fae3',
+      'u1f968',
+      'u1f4b3',
+      'u1f9b5',
+      'u1f531',
+      'u1f392',
+      'u1f620',
+      'u1f455',
+      'u2b06',
+      'u1f9fc',
+      'u1f6cc',
+      'u1f57f',
+      'u1f495',
+      'u1f31e',
+      'u264b',
+      'u1f567',
+      'u1f945',
     ]),
   );
 }

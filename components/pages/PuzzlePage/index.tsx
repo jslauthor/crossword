@@ -53,6 +53,7 @@ import { PuzzleProps } from 'app/puzzle/[slug]/page';
 import TimerAndGuesses from 'components/composed/Timer';
 import PuzzleShare from 'components/composed/PuzzleShare';
 import ShareButton from 'components/core/ShareButton';
+import PuzzlePrompt from 'components/composed/PuzzlePrompt';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -224,8 +225,8 @@ export default function Puzzle({
 }: PuzzleProps) {
   const { theme } = useTheme();
   const layout = useMemo<keyof KeyboardLayoutType>(
-    () => (puzzle.svgsegments != null ? 'emoji' : 'default'),
-    [puzzle.svgsegments],
+    () => (puzzle.svgSegments != null ? 'emoji' : 'default'),
+    [puzzle.svgSegments],
   );
   const [svgCssMap, setSvgCssMap] = useState<CssMapType>({});
 
@@ -235,7 +236,7 @@ export default function Puzzle({
     svgGridSize,
     progress,
     svgContentMap,
-  } = useSvgAtlas(puzzle.svgsegments);
+  } = useSvgAtlas(puzzle.svgSegments);
 
   const disableOrientation = useMemo(
     () => svgTextureAtlasLookup != null,
@@ -328,6 +329,7 @@ export default function Puzzle({
     return new Vector3(-multiplier, -multiplier, multiplier);
   }, [puzzleWidth]);
 
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
   const {
     hasInteractedWithPuzzle,
     isPuzzleSolved,
@@ -350,6 +352,7 @@ export default function Puzzle({
     puzzle,
     svgTextureAtlasLookup ?? characterTextureAtlasLookup,
     isInitialized === true,
+    setIsPromptOpen,
   );
   const turnLeft = useCallback(
     () => setSideOffset(sideOffset + 1),
@@ -461,28 +464,6 @@ export default function Puzzle({
     setVerticalOrientation(!isVerticalOrientation);
   }, [isVerticalOrientation, disableOrientation]);
 
-  const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
-
-  const { reset } = useElapsedTime({
-    isPlaying:
-      shouldStartTimer === true &&
-      hasRetrievedState === true &&
-      (typeof window === 'undefined' ? false : !document.hidden) &&
-      (isPuzzleSolved || !isInitialized) === false,
-    updateInterval: 1,
-    onUpdate: (elapsedTime) => {
-      // console.log('Elapsed time:', elapsedTime);
-      addTime(elapsedTime);
-    },
-  });
-
-  useEffect(() => {
-    if (hasRetrievedState === true && shouldStartTimer === false) {
-      reset(Number(elapsedTime ?? 0));
-      setShouldStartTimer(true);
-    }
-  }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
-
   const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
     return {
       color: selectedColor,
@@ -565,6 +546,44 @@ export default function Puzzle({
     () => handlePrevWord(selected)(undefined),
     [handlePrevWord, selected],
   );
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
+  const puzzleIsActive = useMemo(
+    () =>
+      (typeof window === 'undefined' ? false : !document.hidden) &&
+      (isPuzzleSolved || !isInitialized) === false &&
+      shouldStartTimer === true &&
+      hasRetrievedState === true &&
+      isSettingsOpen === false &&
+      isMenuOpen === false &&
+      isPromptOpen === false,
+    [
+      hasRetrievedState,
+      isInitialized,
+      isMenuOpen,
+      isPuzzleSolved,
+      isSettingsOpen,
+      shouldStartTimer,
+      isPromptOpen,
+    ],
+  );
+
+  const { reset } = useElapsedTime({
+    isPlaying: puzzleIsActive,
+    updateInterval: 1,
+    onUpdate: (elapsedTime) => {
+      // console.log('Elapsed time:', elapsedTime);
+      addTime(elapsedTime);
+    },
+  });
+
+  useEffect(() => {
+    if (hasRetrievedState === true && shouldStartTimer === false) {
+      reset(Number(elapsedTime ?? 0));
+      setShouldStartTimer(true);
+    }
+  }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
   // Keyboard shortcuts
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
@@ -665,6 +684,10 @@ export default function Puzzle({
     }
   }, [isPuzzleSolved, hasInteractedWithPuzzle]);
 
+  const handleClosePrompt = useCallback(() => {
+    setIsPromptOpen(false);
+  }, []);
+
   return (
     <>
       <Menu
@@ -677,6 +700,7 @@ export default function Puzzle({
         onAutocheckChanged={handleAutocheckChanged}
         onDraftModeChanged={handleDraftModeChanged}
         onSettingsPressed={handleSettingsPressed}
+        onDisplayChange={setIsMenuOpen}
       >
         <Canvas
           gl={{ antialias: false }}
@@ -863,6 +887,7 @@ export default function Puzzle({
           puzzleSubLabel={puzzle.title}
         />
       )}
+      <PuzzlePrompt isOpen={isPromptOpen} onClose={handleClosePrompt} />
     </>
   );
 }

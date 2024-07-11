@@ -12,12 +12,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { RotatingBoxProps } from '../3d/Box';
 import TurnArrow from 'components/svg/TurnArrow';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClose } from '@fortawesome/free-solid-svg-icons';
+import { faClose, faHome } from '@fortawesome/free-solid-svg-icons';
 import IconX from 'components/svg/IconX';
 import { HRule } from '../Dividers';
 import { Button } from '../ui/button';
 import { useTheme } from 'lib/utils/hooks/theme';
 import { getColorHex } from 'lib/utils/color';
+import Image from 'next/image';
+import Link from 'next/link';
 
 const Main = styled.div`
   position: relative;
@@ -31,16 +33,12 @@ const HeaderContainer = styled.div`
   top: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(hsl(var(--background)), #00000000);
   padding: 0.75rem;
-`;
-
-const HeaderStyled = styled(Header)`
-  width: 100%;
 `;
 
 const Container = styled.div`
   position: relative;
+  background-color: hsl(var(--background));
   width: 100vw;
   height: 100%;
   overflow-y: auto;
@@ -74,17 +72,22 @@ const MenuContainer = styled(motion.nav)<{ $headerHeight: number }>`
   position: absolute;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
   background-color: hsl(var(--background));
   max-width: 300px;
   width: 100%;
   height: 100%;
-  padding: 0.75rem;
-  box-shadow: 10px 0px 10px 10px rgba(10, 10, 10, 0.25);
+  box-shadow:
+    4px 16px 16px 0px rgba(0, 0, 0, 0.25),
+    4px 4px 4px 0px rgba(0, 0, 0, 0.1);
 `;
 
-const MenuItem = styled.div`
+const MenuItem = styled.div<{ $accent?: boolean }>`
   font-size: 1rem;
+  padding: 0.5rem 1rem;
+  ${({ $accent }) =>
+    $accent
+      ? 'background-color: rgba(0,0,0,0.03); border-left: 3px solid black;'
+      : 'none'};
 `;
 
 const MenuItemFlex = styled(MenuItem)`
@@ -93,23 +96,35 @@ const MenuItemFlex = styled(MenuItem)`
   align-items: center;
 `;
 
-const UserInfoStyled = styled(UserInfo)`
-  margin: 0.5rem;
-`;
-
 const SignInContainer = styled.div`
   display: flex;
+  padding: 1rem;
+  gap: 1rem;
   flex-direction: column;
   justify-content: stretch;
+`;
+
+const MenuHeader = styled.div`
+  text-transform: uppercase;
+  font-weight: 600;
 `;
 
 const MenuItemsContainer = styled.div`
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1.5rem;
+  padding: 1.5rem 0;
+  padding-top: 1rem;
   overflow-y: auto;
   overflow-x: hidden;
+`;
+
+const MenuItemGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0 1rem;
 `;
 
 const ModalContainer = styled.div`
@@ -174,7 +189,9 @@ const BlurLayer = styled.div`
   backdrop-filter: blur(5px);
 `;
 
-const Link = styled.a<{ color: string }>``;
+const PointerLink = styled.a`
+  cursor: pointer;
+`;
 
 export type MenuWrapperProps = {
   children?: ReactNode;
@@ -184,10 +201,10 @@ export type MenuWrapperProps = {
   rotatingBoxProps?: RotatingBoxProps;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
-  onSignUpPressed?: () => void;
   onSignInPressed?: () => void;
   onSignOutPressed?: () => void;
   onSettingsPressed?: () => void;
+  onDisplayChange?: (isMenuOpen: boolean) => void;
 };
 
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
@@ -196,12 +213,12 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   autocheckEnabled,
   draftModeEnabled,
   rotatingBoxProps,
-  onSignUpPressed,
   onSignOutPressed,
   onSignInPressed,
   onAutocheckChanged,
   onDraftModeChanged,
   onSettingsPressed,
+  onDisplayChange,
 }) => {
   const { colors } = useTheme();
 
@@ -246,6 +263,12 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
     setIsMenuOpen(false);
   }, [showHelpModal]);
 
+  useEffect(() => {
+    if (onDisplayChange) {
+      onDisplayChange(isMenuOpen || showHelpModal);
+    }
+  }, [onDisplayChange, isMenuOpen, showHelpModal]);
+
   return (
     <Main>
       <Container>
@@ -255,8 +278,14 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
           </ChildrenContainer>
         )}
         {(isMenuOpen || showHelpModal) && <BlurLayer />}
-        <HeaderContainer ref={headerRef}>
-          <HeaderStyled
+
+        <HeaderContainer
+          ref={headerRef}
+          className="border-b border-solid border-foreground/10 relative"
+        >
+          <div className="absolute inset-0 bg-background z-0" />
+          <Header
+            className="z-10 w-full relative"
             onMenuPressed={handleMenuPressed}
             showCloseButton={isMenuOpen}
             centerLabel={centerLabel}
@@ -283,69 +312,123 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                 $headerHeight={height}
               >
                 <MenuItemsContainer>
-                  <MenuItemFlex onClick={handleMenuPressed}>
-                    <IconX width={20} height={25} />
-                    <div>Close</div>
-                  </MenuItemFlex>
-                  <HRule />
-                  <Link color="foreground" href="/">
-                    Home
+                  <div className="flex flex-col gap-4">
+                    <MenuItemFlex onClick={handleMenuPressed}>
+                      <IconX width={12} height={12} />
+                    </MenuItemFlex>
+                    <HRule />
+                  </div>
+                  <Link href="/">
+                    <MenuItemFlex $accent>
+                      <FontAwesomeIcon icon={faHome} size="1x" />
+                      Latest
+                    </MenuItemFlex>
                   </Link>
-                  <Link color="foreground" onClick={toggleModal}>
-                    How to Play
-                  </Link>
-                  <HRule />
-                  {isSignedIn === false && (
-                    <>
-                      <MenuItem>
-                        <Link color="foreground" onClick={onSignInPressed}>
-                          Sign In
-                        </Link>
-                        <span className="opacity-50 px-1 text-lg"> / </span>
-                        <Link color="foreground" onClick={onSignUpPressed}>
-                          Sign Up
-                        </Link>
-                      </MenuItem>
-                      <HRule />
-                    </>
-                  )}
-                  <MenuItem>
-                    <Link color="foreground" href="mailto:info@crosscube.com">
-                      Give Feedback
+                  <MenuItemGroup>
+                    <MenuHeader>Games</MenuHeader>
+                    <Link href="/crosscube/moji">
+                      <div className="flex gap-2 items-center">
+                        <Image
+                          className="rounded-md"
+                          alt="Crossmoji Icon"
+                          src="/moji_icon.png"
+                          width={24}
+                          height={24}
+                        />
+                        Crossmoji
+                      </div>
                     </Link>
-                  </MenuItem>
-                  <MenuItem>
-                    <Link
+                    <Link href="/crosscube/mini">
+                      <div className="flex gap-2 items-center">
+                        <Image
+                          className="rounded-md"
+                          alt="Crossmoji Icon"
+                          src="/mini_icon.png"
+                          width={24}
+                          height={24}
+                        />
+                        Crosscube mini
+                      </div>
+                    </Link>
+                    <Link href="/crosscube/cube">
+                      <div className="flex gap-2 items-center">
+                        <Image
+                          className="rounded-md"
+                          alt="Crossmoji Icon"
+                          src="/crosscube_icon.png"
+                          width={24}
+                          height={24}
+                        />
+                        Crosscube
+                      </div>
+                    </Link>
+                    <Link href="/crosscube/mega">
+                      <div className="flex gap-2 items-center">
+                        <Image
+                          className="rounded-md"
+                          alt="Crossmoji Icon"
+                          src="/mega_icon.png"
+                          width={24}
+                          height={24}
+                        />
+                        Crosscube MEGA
+                      </div>
+                    </Link>
+                  </MenuItemGroup>
+                  <HRule />
+                  <MenuItemGroup>
+                    <MenuHeader>TIPS AND TRICKS</MenuHeader>
+                    <PointerLink onClick={toggleModal}>How to Play</PointerLink>
+                  </MenuItemGroup>
+                  <HRule />
+                  <MenuItemGroup>
+                    <PointerLink href="mailto:info@crosscube.com">
+                      Give Feedback
+                    </PointerLink>
+                    <PointerLink
                       color="foreground"
                       target="_blank"
                       href="https://organic-icicle-eb4.notion.site/Terms-of-Service-79ef0a4a094f4f929a1ea31cf56a7499?pvs=4"
                     >
                       Terms of Service
-                    </Link>
-                  </MenuItem>
-                  <MenuItem>
-                    <Link
+                    </PointerLink>
+                    <PointerLink
                       color="foreground"
                       target="_blank"
                       href="https://organic-icicle-eb4.notion.site/Privacy-Policy-4b3d620031254ea5915660ac55d2efcd?pvs=4"
                     >
                       Privacy Policy
-                    </Link>
-                  </MenuItem>
+                    </PointerLink>
+                    <PointerLink href="/credits">Credits</PointerLink>
+                  </MenuItemGroup>
                 </MenuItemsContainer>
                 <div>
+                  {isSignedIn === false && (
+                    <>
+                      <HRule $heavy />
+                      <SignInContainer>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={onSignInPressed}
+                        >
+                          Sign In / Sign Up
+                        </Button>
+                      </SignInContainer>
+                    </>
+                  )}
                   {isSignedIn === true && (
                     <>
-                      <HRule />
+                      <HRule $heavy />
                       <SignInContainer>
-                        <UserInfoStyled
+                        <UserInfo
                           name={user.fullName ?? ''}
                           email={user.primaryEmailAddress?.emailAddress ?? ''}
                           src={avatarUrl}
                         />
                         <Button
                           size="sm"
-                          variant="default"
+                          variant="outline"
                           onClick={onSignOutPressed}
                         >
                           Log Out

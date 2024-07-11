@@ -21,7 +21,7 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en">
+      <html lang="en" translate="no">
         <head>
           <link rel="stylesheet" href="https://use.typekit.net/nhh2njv.css" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -30,9 +30,11 @@ export default function RootLayout({
           <link rel="apple-touch-icon" href="ccapp.png" />
         </head>
         <body>
-          <Providers>{children}</Providers>
-          <Analytics />
-          <SpeedInsights />
+          <div vaul-drawer-wrapper="">
+            <Providers>{children}</Providers>
+            <Analytics />
+            <SpeedInsights />
+          </div>
         </body>
       </html>
     </ClerkProvider>
@@ -57,16 +59,23 @@ export const metadata: Metadata = {
         height: 600,
         alt: 'Crosscube: A crossword puzzle in three dimensions',
       },
-      {
-        url: 'https://crosscube.app/og-alt.png',
-        width: 1800,
-        height: 1600,
-        alt: 'Crosscube: A crossword puzzle in three dimensions',
-      },
     ],
     locale: 'en_US',
     type: 'website',
   },
+  twitter: {
+    title: 'Crosscube',
+    description: 'A crossword puzzle in three dimensions',
+    site: 'https://crosscube.app',
+    images: [
+      {
+        url: 'https://crosscube.app/og.png',
+        width: 800,
+        height: 600,
+        alt: 'Crosscube: A crossword puzzle in three dimensions',
+      },
+    ],
+    creator: '@jslauthor',
+    card: 'summary',
+  },
 };
-
-export const dynamic = 'force-dynamic';

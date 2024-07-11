@@ -1,6 +1,6 @@
 'use client';
 
-import { PuzzleType } from 'app/page';
+import { PuzzleType } from 'types/types';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SolutionCell } from 'types/types';
 import {
@@ -16,7 +16,7 @@ import {
   initializeAnswerIndex,
   invertAtlas,
   updateAnswerIndex as mutateAnswerIndex,
-  verifyAnswerIndex,
+  verifyAnswerIndex as testAnswerIndex,
 } from '../puzzle';
 import localforage from 'localforage';
 import { nanoid } from 'nanoid';
@@ -25,6 +25,9 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
 import { AtlasType } from '../textures';
+import memoizeOne from 'memoize-one';
+
+const verifyAnswerIndex = memoizeOne(testAnswerIndex);
 
 const AUTO_NEXT_KEY = 'auto-next';
 
@@ -41,10 +44,19 @@ const getLocalCacheId = async (puzzleId: string) => {
   return `${anonymousKey}:${puzzleId}`;
 };
 
+const getNumberOfEntries = memoizeOne((positions: Float32Array) => {
+  return (
+    positions.reduce((acc, val) => {
+      return acc + (val > -1 ? 1 : 0);
+    }, 0) / 2
+  );
+});
+
 export const usePuzzleProgress = (
   puzzle: PuzzleType,
   atlas?: AtlasType,
   isInitialized = true,
+  openPrompt?: (isOpen: boolean) => void,
 ) => {
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -396,6 +408,7 @@ export const usePuzzleProgress = (
         }
 
         setAnswerIndex(newAnswerIndex);
+        return newAnswerIndex;
       }
     },
     [
@@ -417,7 +430,7 @@ export const usePuzzleProgress = (
       }
       if (validations[selectedIndex * 2] !== 2) {
         // do not allow updating a guess that's been successfully validated
-        updateAnswerIndex(
+        const newIndex = updateAnswerIndex(
           puzzle.record.solution[selectedIndex].value,
           selectedIndex,
           key.toUpperCase(),
@@ -425,36 +438,47 @@ export const usePuzzleProgress = (
         const newArray = new Float32Array([...characterPositions]);
         newArray[selectedIndex * 2] = x;
         newArray[selectedIndex * 2 + 1] = y;
-        addCharacterPosition(newArray);
 
-        const numEntries =
-          newArray.reduce((acc, val) => {
-            return acc + (val > -1 ? 1 : 0);
-          }, 0) / 2;
-
+        const numEntries = getNumberOfEntries(newArray);
+        const newPositionIsNotBlank = x > -1 && y > -1;
         // We only want to increment guesses if the user has filled in all the cells at least once
         // If guesses is -1, then we haven't filled in all the cells yet
         // We only increment guesses if the user didn't use backspace
-        if (numEntries >= numberOfCells && guesses === -1) {
-          setGuesses(0);
-        } else if (x > -1 && y > -1 && guesses != null && guesses > -1) {
-          addGuesses(guesses + 1);
+        if (numEntries >= numberOfCells) {
+          if (guesses === -1) {
+            setGuesses(0);
+          } else if (newPositionIsNotBlank === true) {
+            if (guesses != null) {
+              addGuesses(guesses + 1);
+            }
+          }
+          if (
+            newPositionIsNotBlank === true &&
+            openPrompt != null &&
+            characterPositions[selectedIndex * 2] == -1 && // check if the original cell was empty
+            characterPositions[selectedIndex * 2 + 1] == -1 && // check if the original cell was empty
+            verifyAnswerIndex(newIndex) === false
+          ) {
+            openPrompt(true);
+          }
         }
 
+        addCharacterPosition(newArray);
         return true;
       }
 
       return false;
     },
     [
-      hasInteractedWithPuzzle,
       validations,
       characterPositions,
+      hasInteractedWithPuzzle,
       updateAnswerIndex,
       puzzle.record.solution,
       addCharacterPosition,
       numberOfCells,
       guesses,
+      openPrompt,
       addGuesses,
     ],
   );

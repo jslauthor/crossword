@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { Object3DNode, MaterialNode } from '@react-three/fiber';
+import { PuzzlePreviewProps } from 'components/composed/PuzzlePreview';
+import { CharacterRecord, CrosscubeType } from 'lib/utils/puzzle';
 
 declare global {
   var prisma: PrismaClient;
@@ -70,3 +72,29 @@ declare module '@react-three/fiber' {
     meshLineMaterial: MaterialNode<MeshLineMaterial, typeof MeshLineMaterial>;
   }
 }
+
+export type PuzzleType = Omit<
+  PuzzlePreviewProps,
+  'dimensions' | 'puzzleLabel' | 'type'
+> & {
+  slug: string;
+  id: string;
+  data: PuzzleData[];
+  svgSegments?: string[];
+  record: CharacterRecord;
+  previewState: number;
+};
+
+export type CrosscubeType = 'moji' | 'mini' | 'cube' | 'mega';
+export const crosscubeTypes = ['cube', 'mega', 'mini', 'moji'] as const;
+type CheckAllUnions = {
+  [K in CrosscubeType]: K extends (typeof crosscubeTypes)[number]
+    ? true
+    : false;
+};
+type AllUnionsPresent = CheckAllUnions[CrosscubeType] extends true
+  ? true
+  : false;
+export type ValidCrosscubeArray = AllUnionsPresent extends true
+  ? typeof crosscubeTypes
+  : never;
