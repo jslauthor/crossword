@@ -1,39 +1,31 @@
-import {
-  ApolloClient,
-  InMemoryCache,
-  createHttpLink,
-  NormalizedCacheObject,
-} from '@apollo/client';
-import { setContext } from '@apollo/client/link/context';
+export async function queryReadOnly<T = {}>(
+  query: string,
+  variables: Record<string, any> = {},
+): Promise<T> {
+  const res = await fetch(
+    'https://us-west-2.cdn.hygraph.com/content/cly83hf2e01ad07waoq2pzj2p/master',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.HYGRAPH_API_TOKEN}`,
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
+      next: {
+        revalidate: process.env.NODE_ENV === 'production' ? 3600 : 0, // revalidate every hour in production
+      },
+    },
+  );
 
-const httpLink = createHttpLink({
-  uri: 'https://us-west-2.cdn.hygraph.com/content/cly83hf2e01ad07waoq2pzj2p/master',
-});
+  const json = await res.json();
 
-const authLink = setContext((_, { headers }) => ({
-  headers: {
-    ...headers,
-    Authorization: `Bearer ${process.env.HYGRAPH_API_TOKEN}`,
-  },
-}));
-
-const client = new ApolloClient({
-  link: authLink.concat(httpLink),
-  cache: new InMemoryCache(),
-});
-
-let lastCacheClear = Date.now();
-const CACHE_LIFETIME = 60000; // 1 minute in milliseconds
-
-export function getReadOnlyClient(): ApolloClient<NormalizedCacheObject> {
-  const currentTime = Date.now();
-
-  if (currentTime - lastCacheClear > CACHE_LIFETIME) {
-    // Clear the cache if more than 1 minute has passed
-    client.resetStore();
-    lastCacheClear = currentTime;
-    console.info('Cache cleared at:', new Date().toISOString());
+  if (json.errors) {
+    console.error(json.errors);
+    throw new Error('Failed to fetch API');
   }
 
-  return client;
+  return json.data;
 }

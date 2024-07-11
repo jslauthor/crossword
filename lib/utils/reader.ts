@@ -11,8 +11,7 @@ import {
 } from './puzzle';
 import { TEXTURE_RECORD } from './textures';
 import * as Y from 'yjs';
-import { getReadOnlyClient } from 'lib/hygraph';
-import { gql } from '@apollo/client';
+import { queryReadOnly } from 'lib/hygraph';
 
 const createWhereForType = (types: CrosscubeType[]) => {
   return types
@@ -37,39 +36,37 @@ export const getPuzzles = async (
   types: CrosscubeType[] = ['cube', 'mega', 'mini', 'moji'],
 ): Promise<PuzzleType[]> => {
   try {
-    const result = await getReadOnlyClient().query<{ crosscubes: any }>({
-      query: gql`
-        query Query {
-          crosscubes(
-            orderBy: publishedAt_DESC
-            where: { data_json_path_exists: "$[*] ? (${createWhereForType(types)})" }
-          ) {
-            id
-            title
-            authors {
-              name {
-                firstName
-                lastName
-              }
+    const result = await queryReadOnly<{ crosscubes: any }>(`
+      query Query {
+        crosscubes(
+          orderBy: publishedAt_DESC
+          where: { data_json_path_exists: "$[*] ? (${createWhereForType(types)})" }
+        ) {
+          id
+          title
+          authors {
+            name {
+              firstName
+              lastName
             }
-            editors {
-              name {
-                firstName
-                lastName
-              }
-            }
-            data
-            svgSegments
-            slug
-            publishedAt
-            updatedAt
-            stage
           }
+          editors {
+            name {
+              firstName
+              lastName
+            }
+          }
+          data
+          svgSegments
+          slug
+          publishedAt
+          updatedAt
+          stage
         }
-      `,
-    });
+      }
+    `);
 
-    const puzzles: PuzzleType[] = result?.data?.crosscubes.map(
+    const puzzles: PuzzleType[] = result?.crosscubes.map(
       (puzzle: any) =>
         ({
           id: puzzle.id,
@@ -100,34 +97,32 @@ export const getPuzzleBySlug = async (
   slug: string,
 ): Promise<PuzzleType | null> => {
   try {
-    const result = await getReadOnlyClient().query<{ crosscube: any }>({
-      query: gql`
-        query Query {
-          crosscube(
-            where: { slug: "${slug}" }
-          ) {
-            id
-            title
-            authors { name {
-              firstName
-              lastName
-            } }
-            editors { name {
-              firstName
-              lastName
-            } }
-            data
-            svgSegments
-            slug
-            publishedAt
-            updatedAt
-            stage  
-           }
-        }
-      `,
-    });
+    const result = await queryReadOnly<{ crosscube: any }>(`
+      query Query {
+        crosscube(
+          where: { slug: "${slug}" }
+        ) {
+          id
+          title
+          authors { name {
+            firstName
+            lastName
+          } }
+          editors { name {
+            firstName
+            lastName
+          } }
+          data
+          svgSegments
+          slug
+          publishedAt
+          updatedAt
+          stage  
+          }
+      }
+    `);
 
-    const crosscube = result?.data?.crosscube;
+    const crosscube = result?.crosscube;
 
     if (crosscube == null) {
       return null;

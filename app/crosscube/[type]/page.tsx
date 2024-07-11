@@ -16,6 +16,3 @@ export default async function Page({
 }) {
   return <HomePage puzzles={await getPuzzles([type])} type={type} />;
 }
-
-// Regenerate every 5 minutes
-export const revalidate = 600;
