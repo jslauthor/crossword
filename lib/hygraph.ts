@@ -1,3 +1,8 @@
+console.log(
+  process.env.NODE_ENV,
+  process.env.NODE_ENV === 'production' ? 3600 : 0,
+);
+
 export async function queryReadOnly<T = {}>(
   query: string,
   variables: Record<string, any> = {},
