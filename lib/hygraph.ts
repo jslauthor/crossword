@@ -1,8 +1,3 @@
-console.log(
-  process.env.VERCEL_ENV,
-  process.env.VERCEL_ENV === 'production' ? 3600 : 0,
-);
-
 export async function queryReadOnly<T = {}>(
   query: string,
   variables: Record<string, any> = {},
