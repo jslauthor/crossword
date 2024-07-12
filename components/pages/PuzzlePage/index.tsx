@@ -54,6 +54,7 @@ import TimerAndGuesses from 'components/composed/Timer';
 import PuzzleShare from 'components/composed/PuzzleShare';
 import ShareButton from 'components/core/ShareButton';
 import PuzzlePrompt from 'components/composed/PuzzlePrompt';
+import { track } from '@vercel/analytics';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -236,7 +237,17 @@ export default function Puzzle({
     svgGridSize,
     progress,
     svgContentMap,
+    error: svgError,
   } = useSvgAtlas(puzzle.svgSegments);
+
+  useEffect(() => {
+    if (svgError === true) {
+      console.error('Failed to load emojis in the SVG texture atlas!');
+      track('puzzle_svg_error', {
+        puzzleId: puzzle.id,
+      });
+    }
+  }, [puzzle.id, svgError]);
 
   const disableOrientation = useMemo(
     () => svgTextureAtlasLookup != null,
