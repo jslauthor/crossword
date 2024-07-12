@@ -142,7 +142,6 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
               />
             </Link>
           ))}
-          {absentTypes.has('mega') && type == null && <MegaPreview />}
         </div>
         {otherPuzzles.length > 0 && <h1 className="text-base mt-4">Archive</h1>}
         <PuzzlesContainer>
