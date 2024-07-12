@@ -425,6 +425,7 @@ export default function Puzzle({
     setIsSpinning(progress <= 0.98);
   }, []);
 
+  const animationStarted = useRef(false);
   // Intro spinny animation
   const [rotation, setRotation] = useState(0);
   const { rotation: introAnimation } = useSpring({
@@ -435,14 +436,17 @@ export default function Puzzle({
     },
   });
   useEffect(() => {
-    introAnimation.start({
-      from: 0,
-      to: 1,
-      onChange: (props, spring) => {
-        setRotation(spring.get());
-      },
-    });
-  }, [introAnimation]);
+    if (canvasWidth != null && animationStarted.current === false) {
+      animationStarted.current = true;
+      introAnimation.start({
+        from: 0,
+        to: 1,
+        onChange: (props, spring) => {
+          setRotation(spring.get());
+        },
+      });
+    }
+  }, [canvasWidth, introAnimation]);
 
   const mouse = useRef([0, 0]);
   const toHex = useCallback(
