@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { AtlasType } from '../textures';
 import { encode } from 'js-base64';
+import { trimLeadingZeros } from 'lib/utils';
 
 const ATLAS_SIZE = 2048;
 const SVG_BASE_PATH = '/noto/svg/emoji_';
@@ -113,9 +114,9 @@ function useSvgAtlas(unicodeValues?: string[]) {
       const newEmojiMap: AtlasType = {};
 
       try {
-        const loadPromises = unicodeValues.map((value, index) =>
-          loadSVG(value, index, unicodeValues.length),
-        );
+        const loadPromises = unicodeValues.map((value, index) => {
+          return loadSVG(trimLeadingZeros(value), index, unicodeValues.length);
+        });
         const loadedImages = await Promise.all(loadPromises);
 
         loadedImages.forEach((img, i) => {
