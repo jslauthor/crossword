@@ -28,9 +28,9 @@ const PuzzleIcon: React.FC<PuzzleIconProps> = ({
       <Image
         alt={getAltForType(type)}
         src={getIconForType(type)}
-        objectFit="cover"
         fill
-        className="rounded-[8px] aspect-square"
+        sizes="(max-width: 768px) 150px, 300px"
+        className="rounded-[8px] aspect-square object-cover"
       />
       {previewState !== ProgressEnum.ZeroPercent && (
         <ProgressContainer>
