@@ -21,13 +21,14 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en" translate="no">
+      <html lang="en" translate="no" className="notranslate">
         <head>
           <link rel="stylesheet" href="https://use.typekit.net/nhh2njv.css" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="white" />
           <meta name="apple-mobile-web-app-title" content="Crosscube" />
           <link rel="apple-touch-icon" href="general_icon.png" />
+          <meta name="google" content="notranslate" />
         </head>
         <body>
           <div vaul-drawer-wrapper="">
