@@ -1,6 +1,6 @@
 console.log(
-  process.env.NODE_ENV,
-  process.env.NODE_ENV === 'production' ? 3600 : 0,
+  process.env.VERCEL_ENV,
+  process.env.VERCEL_ENV === 'production' ? 3600 : 0,
 );
 
 export async function queryReadOnly<T = {}>(
@@ -20,7 +20,7 @@ export async function queryReadOnly<T = {}>(
         variables,
       }),
       next: {
-        revalidate: process.env.NODE_ENV === 'production' ? 3600 : 0, // revalidate every hour in production
+        revalidate: process.env.VERCEL_ENV === 'production' ? 3600 : 0, // revalidate every hour in production
       },
     },
   );

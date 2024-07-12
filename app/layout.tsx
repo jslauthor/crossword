@@ -42,7 +42,8 @@ export default function RootLayout({
   );
 }
 
-const prefix = process.env.NODE_ENV === 'development' ? 'http://' : 'https://';
+const prefix =
+  process.env.VERCEL_ENV === 'development' ? 'http://' : 'https://';
 
 export const metadata: Metadata = {
   metadataBase: new URL(`${prefix}${process.env.VERCEL_URL}`),
