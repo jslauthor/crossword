@@ -27,16 +27,18 @@ jobs:
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
           PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
-          POSTGRES_URL_NON_POOLING: ${{ secrets.PRODUCTION_POSTGRES_URL_NON_POOLING }}
-          PRISMA_ACCELERATE_URL: ${{ secrets.PRODUCTION_PRISMA_ACCELERATE_URL }}
-          CLERK_ENDPOINT: ${{ secrets.PRODUCTION_CLERK_ENDPOINT }}
-        run: npx partykit deploy
+        run: |
+          echo "POSTGRES_URL_NON_POOLING=\"${{ secrets.PRODUCTION_POSTGRES_URL_NON_POOLING }}\"" >> .env
+          echo "PRISMA_ACCELERATE_URL=\"${{ secrets.PRODUCTION_PRISMA_ACCELERATE_URL }}\"" >> .env
+          echo "CLERK_ENDPOINT=\"${{ secrets.PRODUCTION_CLERK_ENDPOINT }}\"" >> .env
+          npx partykit deploy
       - name: Deploy to staging
         if: github.ref != 'refs/heads/main'
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
           PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
-          POSTGRES_URL_NON_POOLING: ${{ secrets.STAGING_POSTGRES_URL_NON_POOLING }}
-          PRISMA_ACCELERATE_URL: ${{ secrets.STAGING_PRISMA_ACCELERATE_URL }}
-          CLERK_ENDPOINT: ${{ secrets.STAGING_CLERK_ENDPOINT }}
-        run: npx partykit deploy --preview staging
+        run: |
+          echo "POSTGRES_URL_NON_POOLING=\"${{ secrets.STAGING_POSTGRES_URL_NON_POOLING }}\"" >> .env
+          echo "PRISMA_ACCELERATE_URL=\"${{ secrets.STAGING_PRISMA_ACCELERATE_URL }}\"" >> .env
+          echo "CLERK_ENDPOINT=\"${{ secrets.STAGING_CLERK_ENDPOINT }}\"" >> .env
+          npx partykit deploy --preview staging
