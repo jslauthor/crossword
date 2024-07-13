@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { AtlasType } from '../textures';
+import { AtlasType } from '../atlas';
 import { encode } from 'js-base64';
 import { trimLeadingZeros } from 'lib/utils';
 

@@ -9,9 +9,34 @@ import {
   initializeAnswerIndex,
   GAME_STATE_KEY,
 } from './puzzle';
-import { TEXTURE_RECORD } from './textures';
+import { TEXTURE_RECORD } from './atlas';
 import * as Y from 'yjs';
 import { queryReadOnly } from 'lib/hygraph';
+import { setTimeout } from 'timers/promises';
+import { User } from '@clerk/backend';
+
+const puzzleProperties = `
+  id
+  title
+  authors {
+    name {
+      firstName
+      lastName
+    }
+  }
+  editors {
+    name {
+      firstName
+      lastName
+    }
+  }
+  data
+  svgSegments
+  slug
+  publishedAt
+  updatedAt
+  stage
+`;
 
 const createWhereForType = (types: CrosscubeType[]) => {
   return types
@@ -42,6 +67,7 @@ export const getPuzzles = async (
       let after = null;
 
       while (hasNextPage) {
+        await setTimeout(100);
         const result: any = await queryReadOnly<{
           crosscubesConnection: {
             edges: { node: any }[];
@@ -58,26 +84,7 @@ export const getPuzzles = async (
             ) {
               edges {
                 node {
-                  id
-                  title
-                  authors {
-                    name {
-                      firstName
-                      lastName
-                    }
-                  }
-                  editors {
-                    name {
-                      firstName
-                      lastName
-                    }
-                  }
-                  data
-                  svgSegments
-                  slug
-                  publishedAt
-                  updatedAt
-                  stage
+                  ${puzzleProperties}
                 }
               }
               pageInfo {
@@ -122,7 +129,8 @@ export const getPuzzles = async (
         }) as PuzzleType,
     );
 
-    return await enrichPuzzles(puzzles);
+    const clerkUser = await currentUser();
+    return await enrichPuzzles(puzzles, clerkUser);
   } catch (error) {
     console.error('Error calling graphql!', JSON.stringify(error));
   }
@@ -139,50 +147,31 @@ export const getPuzzleBySlug = async (
         crosscube(
           where: { slug: "${slug}" }
         ) {
-          id
-          title
-          authors { name {
-            firstName
-            lastName
-          } }
-          editors { name {
-            firstName
-            lastName
-          } }
-          data
-          svgSegments
-          slug
-          publishedAt
-          updatedAt
-          stage  
+          ${puzzleProperties}
         }
       }
     `);
 
-    const crosscube = result?.crosscube;
-
-    if (crosscube == null) {
-      return null;
-    }
+    const puzzleData = result?.crosscube;
 
     const puzzle: PuzzleType = {
-      id: crosscube.id,
-      title: crosscube.title,
+      id: puzzleData.id,
+      title: puzzleData.title,
       authors: [
-        crosscube.authors[0].name.firstName +
+        puzzleData.authors[0].name.firstName +
           ' ' +
-          crosscube.authors[0].name.lastName,
+          puzzleData.authors[0].name.lastName,
       ],
-      date: crosscube.publishedAt ?? crosscube.updatedAt,
+      date: puzzleData.publishedAt ?? puzzleData.updatedAt,
       previewState: 0,
-      slug: crosscube.slug,
-      data: crosscube.data,
-      svgSegments: crosscube.svgSegments,
-      record: getCharacterRecord(crosscube.data),
+      slug: puzzleData.slug,
+      data: puzzleData.data,
+      svgSegments: puzzleData.svgSegments,
+      record: getCharacterRecord(puzzleData.data),
     };
 
-    await enrichPuzzles([puzzle]);
-
+    const clerkUser = await currentUser();
+    await enrichPuzzles([puzzle], clerkUser);
     return puzzle;
   } catch (error) {
     console.error('Error calling graphql!', error);
@@ -194,8 +183,10 @@ export const getPuzzleBySlug = async (
 const atlas = invertAtlas(TEXTURE_RECORD);
 
 // WARNING: This mutates the puzzles that are passed in
-export const enrichPuzzles = async (puzzles: PuzzleType[]) => {
-  const clerkUser = await currentUser();
+export const enrichPuzzles = async (
+  puzzles: PuzzleType[],
+  clerkUser: User | null,
+) => {
   if (clerkUser != null) {
     const user = await getUserForClerkId(clerkUser.id);
     if (user != null) {

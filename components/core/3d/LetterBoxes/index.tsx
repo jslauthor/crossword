@@ -20,7 +20,7 @@ import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation'
 import { hexToVector } from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
-import { AtlasType } from 'lib/utils/textures';
+import { AtlasType } from 'lib/utils/atlas';
 extend({ RoundedBoxGeometry });
 
 export enum CubeSidesEnum {
@@ -730,6 +730,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         (i) => sequenceIndex === parseInt(i, 10),
       );
       const nextIndex = keys[currentIndex + 1];
+
+      // TODO: Instead of worrying about the last cell, can you just look for the next cell even if it's on the next side?
+      // Then you can have one logic path
+
       if (nextIndex != null) {
         const nextRange =
           wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];

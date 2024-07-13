@@ -24,7 +24,7 @@ import { useUser, useAuth } from '@clerk/nextjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
-import { AtlasType } from '../textures';
+import { AtlasType } from '../atlas';
 import memoizeOne from 'memoize-one';
 
 const verifyAnswerIndex = memoizeOne(testAnswerIndex);

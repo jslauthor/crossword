@@ -1,13 +1,8 @@
 import { PuzzleType } from 'types/types';
 import PuzzlePage from 'components/pages/PuzzlePage';
+import { notFound } from 'next/navigation';
+import { AtlasType, NUMBER_RECORD, TEXTURE_RECORD } from 'lib/utils/atlas';
 import { getPuzzleBySlug } from 'lib/utils/reader';
-import {
-  AtlasType,
-  NUMBER_RECORD,
-  TEXTURE_RECORD,
-  generateTextures,
-} from 'lib/utils/textures';
-import { queryReadOnly } from 'lib/hygraph';
 
 export type PuzzleProps = {
   puzzle: PuzzleType;
@@ -19,64 +14,11 @@ interface PuzzlePageProps extends PuzzleProps {
   slug: string;
 }
 
-export async function generateStaticParams() {
-  const fetchAllCrosscubes = async () => {
-    let allCrosscubes: any = [];
-    let hasNextPage = true;
-    let after = null;
-
-    while (hasNextPage) {
-      const result: any = await queryReadOnly<{
-        crosscubesConnection: {
-          edges: { node: { slug: string } }[];
-          pageInfo: { hasNextPage: boolean; endCursor: string };
-        };
-      }>(
-        `
-        query Query($after: String) {
-          crosscubesConnection(
-            orderBy: publishedAt_DESC
-            first: 1000
-            after: $after
-          ) {
-            edges {
-              node {
-                slug
-              }
-            }
-            pageInfo {
-              hasNextPage
-              endCursor
-            }
-          }
-        }
-      `,
-        { after },
-      );
-
-      const newCrosscubes = result?.crosscubesConnection.edges.map(
-        (edge: any) => edge.node,
-      );
-      allCrosscubes = [...allCrosscubes, ...newCrosscubes];
-      hasNextPage = result?.crosscubesConnection.pageInfo.hasNextPage;
-      after = result?.crosscubesConnection.pageInfo.endCursor;
-    }
-
-    return allCrosscubes;
-  };
-
-  const crosscubes = await fetchAllCrosscubes();
-  return crosscubes;
-}
-
 async function getProps(slug: string): Promise<PuzzlePageProps> {
-  // Only generate textures when needed
-  if (process.env.GENERATE_TEXTURES === 'true') {
-    await generateTextures();
-  }
-
   const puzzle = await getPuzzleBySlug(slug);
-  if (puzzle == null) throw new Error('Puzzle not found');
+  if (puzzle == null) {
+    notFound();
+  }
   const characterTextureAtlasLookup = TEXTURE_RECORD;
   const cellNumberTextureAtlasLookup = NUMBER_RECORD;
 
