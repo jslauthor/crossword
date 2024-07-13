@@ -81,3 +81,5 @@ export const metadata: Metadata = {
     card: 'summary',
   },
 };
+
+export const dynamic = 'force-dynamic';
