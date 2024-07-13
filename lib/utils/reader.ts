@@ -36,37 +36,74 @@ export const getPuzzles = async (
   types: CrosscubeType[] = ['cube', 'mega', 'mini', 'moji'],
 ): Promise<PuzzleType[]> => {
   try {
-    const result = await queryReadOnly<{ crosscubes: any }>(`
-      query Query {
-        crosscubes(
-          orderBy: publishedAt_DESC
-          where: { data_json_path_exists: "$[*] ? (${createWhereForType(types)})" }
-        ) {
-          id
-          title
-          authors {
-            name {
-              firstName
-              lastName
-            }
-          }
-          editors {
-            name {
-              firstName
-              lastName
-            }
-          }
-          data
-          svgSegments
-          slug
-          publishedAt
-          updatedAt
-          stage
-        }
-      }
-    `);
+    const fetchAllCrosscubes = async () => {
+      let allCrosscubes: any = [];
+      let hasNextPage = true;
+      let after = null;
 
-    const puzzles: PuzzleType[] = result?.crosscubes.map(
+      while (hasNextPage) {
+        const result: any = await queryReadOnly<{
+          crosscubesConnection: {
+            edges: { node: any }[];
+            pageInfo: { hasNextPage: boolean; endCursor: string };
+          };
+        }>(
+          `
+          query Query($after: String) {
+            crosscubesConnection(
+              orderBy: publishedAt_DESC
+              where: { data_json_path_exists: "$[*] ? (${createWhereForType(types)})" }
+              first: 1000
+              after: $after
+            ) {
+              edges {
+                node {
+                  id
+                  title
+                  authors {
+                    name {
+                      firstName
+                      lastName
+                    }
+                  }
+                  editors {
+                    name {
+                      firstName
+                      lastName
+                    }
+                  }
+                  data
+                  svgSegments
+                  slug
+                  publishedAt
+                  updatedAt
+                  stage
+                }
+              }
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+            }
+          }
+        `,
+          { after },
+        );
+
+        const newCrosscubes = result?.crosscubesConnection.edges.map(
+          (edge: any) => edge.node,
+        );
+        allCrosscubes = [...allCrosscubes, ...newCrosscubes];
+        hasNextPage = result?.crosscubesConnection.pageInfo.hasNextPage;
+        after = result?.crosscubesConnection.pageInfo.endCursor;
+      }
+
+      return allCrosscubes;
+    };
+
+    const crosscubes = await fetchAllCrosscubes();
+
+    const puzzles: PuzzleType[] = crosscubes.map(
       (puzzle: any) =>
         ({
           id: puzzle.id,
@@ -118,7 +155,7 @@ export const getPuzzleBySlug = async (
           publishedAt
           updatedAt
           stage  
-          }
+        }
       }
     `);
 

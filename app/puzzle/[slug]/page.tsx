@@ -20,14 +20,53 @@ interface PuzzlePageProps extends PuzzleProps {
 }
 
 export async function generateStaticParams() {
-  const result = await queryReadOnly<{ crosscubes: any }>(`
-    query Query {
-      crosscubes(orderBy: publishedAt_DESC) {
-        slug
-      }
+  const fetchAllCrosscubes = async () => {
+    let allCrosscubes: any = [];
+    let hasNextPage = true;
+    let after = null;
+
+    while (hasNextPage) {
+      const result: any = await queryReadOnly<{
+        crosscubesConnection: {
+          edges: { node: { slug: string } }[];
+          pageInfo: { hasNextPage: boolean; endCursor: string };
+        };
+      }>(
+        `
+        query Query($after: String) {
+          crosscubesConnection(
+            orderBy: publishedAt_DESC
+            first: 1000
+            after: $after
+          ) {
+            edges {
+              node {
+                slug
+              }
+            }
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+          }
+        }
+      `,
+        { after },
+      );
+
+      const newCrosscubes = result?.crosscubesConnection.edges.map(
+        (edge: any) => edge.node,
+      );
+      allCrosscubes = [...allCrosscubes, ...newCrosscubes];
+      hasNextPage = result?.crosscubesConnection.pageInfo.hasNextPage;
+      after = result?.crosscubesConnection.pageInfo.endCursor;
     }
-  `);
-  return result?.crosscubes;
+
+    return allCrosscubes;
+  };
+
+  const crosscubes = await fetchAllCrosscubes();
+  return crosscubes;
 }
 
 async function getProps(slug: string): Promise<PuzzlePageProps> {

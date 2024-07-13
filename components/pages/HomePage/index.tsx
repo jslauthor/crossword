@@ -61,11 +61,7 @@ export interface HomePageProps {
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
-  const {
-    latestPuzzles,
-    otherPuzzles,
-    types: absentTypes,
-  } = useMemo(
+  const { latestPuzzles, otherPuzzles } = useMemo(
     () =>
       puzzles.reduce(
         (acc, val) => {
