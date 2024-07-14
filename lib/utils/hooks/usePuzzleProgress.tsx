@@ -277,6 +277,8 @@ export const usePuzzleProgress = (
           getPuzzleStats(puzzle, elapsedTime, guesses, validations),
         );
       }
+    } else {
+      setIsPuzzleSolved(false);
     }
   }, [answerIndex, elapsedTime, guesses, puzzle, validations]);
 
