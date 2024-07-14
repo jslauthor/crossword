@@ -21,13 +21,14 @@ export default function RootLayout({
         },
       }}
     >
-      <html lang="en" translate="no">
+      <html lang="en" translate="no" className="notranslate">
         <head>
           <link rel="stylesheet" href="https://use.typekit.net/nhh2njv.css" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="white" />
           <meta name="apple-mobile-web-app-title" content="Crosscube" />
-          <link rel="apple-touch-icon" href="ccapp.png" />
+          <link rel="apple-touch-icon" href="general_icon.png" />
+          <meta name="google" content="notranslate" />
         </head>
         <body>
           <div vaul-drawer-wrapper="">
@@ -41,7 +42,8 @@ export default function RootLayout({
   );
 }
 
-const prefix = process.env.NODE_ENV === 'development' ? 'http://' : 'https://';
+const prefix =
+  process.env.VERCEL_ENV === 'development' ? 'http://' : 'https://';
 
 export const metadata: Metadata = {
   metadataBase: new URL(`${prefix}${process.env.VERCEL_URL}`),
@@ -79,3 +81,5 @@ export const metadata: Metadata = {
     card: 'summary',
   },
 };
+
+export const dynamic = 'force-dynamic';

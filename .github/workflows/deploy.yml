@@ -24,13 +24,18 @@ jobs:
           pnpm i
       - name: Deploy to production
         if: github.ref == 'refs/heads/main'
-        run: npx partykit deploy
-        env:
-          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
-          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
+        run: |
+          echo "POSTGRES_URL_NON_POOLING=\"${{ secrets.PRODUCTION_POSTGRES_URL_NON_POOLING }}\"" >> .env
+          echo "PRISMA_ACCELERATE_URL=\"${{ secrets.PRODUCTION_PRISMA_ACCELERATE_URL }}\"" >> .env
+          echo "CLERK_ENDPOINT=\"${{ secrets.PRODUCTION_CLERK_ENDPOINT }}\"" >> .env
+          npx partykit deploy --with-vars
       - name: Deploy to staging
         if: github.ref != 'refs/heads/main'
-        run: npx partykit deploy --preview staging
+        run: |
+          echo "POSTGRES_URL_NON_POOLING=\"${{ secrets.STAGING_POSTGRES_URL_NON_POOLING }}\"" >> .env
+          echo "PRISMA_ACCELERATE_URL=\"${{ secrets.STAGING_PRISMA_ACCELERATE_URL }}\"" >> .env
+          echo "CLERK_ENDPOINT=\"${{ secrets.STAGING_CLERK_ENDPOINT }}\"" >> .env
+          npx partykit deploy --preview staging --with-vars
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
           PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}

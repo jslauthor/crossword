@@ -108,6 +108,10 @@ export default class Server implements Party.Server {
             console.error('Error saving progress to postgres!', e);
           }
         },
+        // save every second
+        debounceWait: 1000,
+        // if updates keep coming, save at least once every 10 seconds (default)
+        debounceMaxWait: 1000,
       },
     });
   }

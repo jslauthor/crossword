@@ -1,13 +1,8 @@
 import { PuzzleType } from 'types/types';
 import PuzzlePage from 'components/pages/PuzzlePage';
-import { getPuzzleBySlug } from 'lib/utils/reader';
-import {
-  AtlasType,
-  NUMBER_RECORD,
-  TEXTURE_RECORD,
-  generateTextures,
-} from 'lib/utils/textures';
-import { queryReadOnly } from 'lib/hygraph';
+import { notFound } from 'next/navigation';
+import { AtlasType, NUMBER_RECORD, TEXTURE_RECORD } from 'lib/utils/atlas';
+import { getPuzzlesBySlugs } from 'lib/utils/reader';
 
 export type PuzzleProps = {
   puzzle: PuzzleType;
@@ -19,25 +14,12 @@ interface PuzzlePageProps extends PuzzleProps {
   slug: string;
 }
 
-export async function generateStaticParams() {
-  const result = await queryReadOnly<{ crosscubes: any }>(`
-    query Query {
-      crosscubes(orderBy: publishedAt_DESC) {
-        slug
-      }
-    }
-  `);
-  return result?.crosscubes;
-}
-
 async function getProps(slug: string): Promise<PuzzlePageProps> {
-  // Only generate textures when needed
-  if (process.env.GENERATE_TEXTURES === 'true') {
-    await generateTextures();
+  const puzzles = await getPuzzlesBySlugs([slug]);
+  if (puzzles.length === 0 || puzzles == null) {
+    notFound();
   }
-
-  const puzzle = await getPuzzleBySlug(slug);
-  if (puzzle == null) throw new Error('Puzzle not found');
+  const puzzle = puzzles[0];
   const characterTextureAtlasLookup = TEXTURE_RECORD;
   const cellNumberTextureAtlasLookup = NUMBER_RECORD;
 

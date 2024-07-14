@@ -399,12 +399,22 @@ export const getProgressFromSolution = (
     return 3; // Solved
   }
 
-  const puzzleSize = puzzle.record.solution.filter(
-    ({ value }) => value !== '#',
-  ).length;
-  const completedSize =
-    Object.values(characterPositions).filter((v) => v > -1).length / 2;
-  const percentage = completedSize / puzzleSize;
+  let attempted = 0;
+  let total = 0;
+  for (let x = 0; x < puzzle.record.solution.length; x++) {
+    const { value: cell } = puzzle.record.solution[x];
+    if (cell !== '#') {
+      if (
+        characterPositions[x * 2] !== -1 &&
+        characterPositions[x * 2 + 1] !== -1
+      ) {
+        attempted++;
+      }
+      total++;
+    }
+  }
+
+  const percentage = attempted / total;
 
   if (percentage <= 0.01) {
     return 0;

@@ -14,6 +14,8 @@ import {
   getTypeForSize,
 } from 'lib/utils/puzzle';
 import { HRule } from 'components/core/Dividers';
+import { usePreviewState } from 'lib/utils/hooks/usePreviewState';
+import { useUser } from '@clerk/nextjs';
 
 const Container = styled.div`
   position: relative;
@@ -61,11 +63,10 @@ export interface HomePageProps {
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
-  const {
-    latestPuzzles,
-    otherPuzzles,
-    types: absentTypes,
-  } = useMemo(
+  const { user } = useUser();
+  const slugs = useMemo(() => puzzles.map((puzzle) => puzzle.slug), [puzzles]);
+  const previewStates = usePreviewState(slugs, user?.id);
+  const { latestPuzzles, otherPuzzles } = useMemo(
     () =>
       puzzles.reduce(
         (acc, val) => {
@@ -138,11 +139,14 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
                 title={puzzle.title}
                 authors={puzzle.authors}
                 date={puzzle.date}
-                previewState={puzzle.previewState}
+                previewState={
+                  previewStates[puzzle.slug] == null
+                    ? puzzle.previewState
+                    : previewStates[puzzle.slug]
+                }
               />
             </Link>
           ))}
-          {absentTypes.has('mega') && type == null && <MegaPreview />}
         </div>
         {otherPuzzles.length > 0 && <h1 className="text-base mt-4">Archive</h1>}
         <PuzzlesContainer>
@@ -155,7 +159,11 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
                     title={title}
                     authors={authors}
                     date={date}
-                    previewState={previewState}
+                    previewState={
+                      previewStates[slug] == null
+                        ? previewState
+                        : previewStates[slug]
+                    }
                     puzzleLabel={getPuzzleLabel(puzzle)}
                     type={getTypeForSize(puzzle)}
                   />

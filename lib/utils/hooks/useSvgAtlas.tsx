@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
-import { AtlasType } from '../textures';
+import { AtlasType, buildSvgTextureAtlasLookup } from '../atlas';
 import { encode } from 'js-base64';
+import { trimLeadingZeros } from 'lib/utils';
 
 const ATLAS_SIZE = 2048;
 const SVG_BASE_PATH = '/noto/svg/emoji_';
@@ -25,7 +26,7 @@ const FALLBACK_SVG = `
 
 function useSvgAtlas(unicodeValues?: string[]) {
   const [progress, setProgress] = useState(0);
-  const [svgTextureAtlas, setESvgTextureAtlas] = useState<THREE.Texture>(
+  const [svgTextureAtlas, setSvgTextureAtlas] = useState<THREE.Texture>(
     new THREE.Texture(),
   );
   const [svgTextureAtlasLookup, setSvgTextureAtlasLookup] = useState<AtlasType>(
@@ -110,16 +111,16 @@ function useSvgAtlas(unicodeValues?: string[]) {
     };
 
     const drawEmojis = async () => {
-      const newEmojiMap: AtlasType = {};
-
       try {
-        const loadPromises = unicodeValues.map((value, index) =>
-          loadSVG(value, index, unicodeValues.length),
-        );
+        const loadPromises = unicodeValues.map((value, index) => {
+          return loadSVG(trimLeadingZeros(value), index, unicodeValues.length);
+        });
         const loadedImages = await Promise.all(loadPromises);
 
+        // Build the lookup table
+        setSvgTextureAtlasLookup(buildSvgTextureAtlasLookup(unicodeValues));
+
         loadedImages.forEach((img, i) => {
-          const unicodeValue = unicodeValues[i];
           const x = (i % svgGridSize) * svgSize;
           const y = Math.floor(i / svgGridSize) * svgSize;
 
@@ -138,17 +139,11 @@ function useSvgAtlas(unicodeValues?: string[]) {
           const adjustedOffsetY = Math.min(offsetY, svgSize - height);
           ctx.drawImage(img, x + offsetX, y + adjustedOffsetY, width, height);
           ctx.drawImage(img, x + offsetX, y + offsetY, width, height);
-
-          newEmojiMap[unicodeValue.toUpperCase()] = [
-            i % svgGridSize,
-            Math.floor(i / svgGridSize),
-          ];
         });
 
-        setSvgTextureAtlasLookup(newEmojiMap);
         const texture = new THREE.CanvasTexture(canvas);
         texture.colorSpace = THREE.SRGBColorSpace;
-        setESvgTextureAtlas(texture);
+        setSvgTextureAtlas(texture);
       } catch (err) {
         console.error('Failed to draw emojis:', err);
         setError(true);

@@ -6,44 +6,14 @@ import satori, { init } from 'satori';
 import Yoga from 'yoga-wasm-web';
 import sharp from 'sharp';
 import emojis from 'public/emojis.json';
+import {
+  NUMBER_OF_CELLS_PER_LINE,
+  NUMBER_OF_NUMBERS_PER_LINE,
+  NUMBER_RECORD,
+  TEXTURE_MAP_SIZE,
+  TEXTURE_RECORD,
+} from './atlas';
 
-export const TEXTURE_MAP_SIZE = 2048;
-export const NUMBER_OF_NUMBERS_PER_LINE = 6;
-export const NUMBER_OF_CELLS_PER_LINE = 17; // 22 is the number of cells in the 3D grid - 1
-
-const characterItems: string[] = [];
-for (let x = 0; x < 10; x++) {
-  characterItems.push(x.toString(10));
-}
-for (let x = 0; x <= 25; x++) {
-  characterItems.push(String.fromCharCode(65 + x));
-}
-
-const numberItems: string[] = [];
-for (let x = 0; x <= NUMBER_OF_CELLS_PER_LINE ** 2; x++) {
-  numberItems.push(x.toString(10));
-}
-
-export type AtlasType = Record<string, [number, number]>;
-
-export const generateTextureRecord = (
-  items = characterItems,
-  size = NUMBER_OF_NUMBERS_PER_LINE,
-): AtlasType => {
-  // It's a 6x6 grid that contains A-Z and 0-9 (36 total items)
-  let position = 0;
-  const grid: Record<string, [number, number]> = {};
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      grid[items[position]] = [x, y];
-      position += 1;
-    }
-  }
-
-  return grid;
-};
-
-export const TEXTURE_RECORD = generateTextureRecord();
 const TEXTURE_RECORD_ITEMS = Object.keys(TEXTURE_RECORD).map((item: string) => (
   <div
     style={{
@@ -139,10 +109,6 @@ export const SingleCharacterTexture: React.FC<{ character: string }> = ({
   </div>
 );
 
-export const NUMBER_RECORD = generateTextureRecord(
-  numberItems,
-  NUMBER_OF_CELLS_PER_LINE,
-);
 const NUMBER_RECORD_ITEMS = Object.keys(NUMBER_RECORD).map((item: string) =>
   item == null ? null : (
     <div
@@ -268,7 +234,7 @@ const saveElementToDisk = async (
 
 // This must include the noto folder with pngs
 // /noto-emoji/png/512/ -> public/noto/png
-const generateEmojis = async () => {
+export const generateEmojis = async () => {
   const EMOJI_ITEMS = Object.keys(emojis).map((value: string) => {
     // load the svg from disk
     const item = fs.readFileSync(

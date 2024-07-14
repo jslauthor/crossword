@@ -9,9 +9,34 @@ import {
   initializeAnswerIndex,
   GAME_STATE_KEY,
 } from './puzzle';
-import { TEXTURE_RECORD } from './textures';
+import { AtlasType, TEXTURE_RECORD, buildSvgTextureAtlasLookup } from './atlas';
 import * as Y from 'yjs';
 import { queryReadOnly } from 'lib/hygraph';
+import { setTimeout } from 'timers/promises';
+import { User } from '@clerk/backend';
+
+const puzzleProperties = `
+  id
+  title
+  authors {
+    name {
+      firstName
+      lastName
+    }
+  }
+  editors {
+    name {
+      firstName
+      lastName
+    }
+  }
+  data
+  svgSegments
+  slug
+  publishedAt
+  updatedAt
+  stage
+`;
 
 const createWhereForType = (types: CrosscubeType[]) => {
   return types
@@ -36,37 +61,56 @@ export const getPuzzles = async (
   types: CrosscubeType[] = ['cube', 'mega', 'mini', 'moji'],
 ): Promise<PuzzleType[]> => {
   try {
-    const result = await queryReadOnly<{ crosscubes: any }>(`
-      query Query {
-        crosscubes(
-          orderBy: publishedAt_DESC
-          where: { data_json_path_exists: "$[*] ? (${createWhereForType(types)})" }
-        ) {
-          id
-          title
-          authors {
-            name {
-              firstName
-              lastName
-            }
-          }
-          editors {
-            name {
-              firstName
-              lastName
-            }
-          }
-          data
-          svgSegments
-          slug
-          publishedAt
-          updatedAt
-          stage
-        }
-      }
-    `);
+    const fetchAllCrosscubes = async () => {
+      let allCrosscubes: any = [];
+      let hasNextPage = true;
+      let after = null;
 
-    const puzzles: PuzzleType[] = result?.crosscubes.map(
+      while (hasNextPage) {
+        await setTimeout(100);
+        const result: any = await queryReadOnly<{
+          crosscubesConnection: {
+            edges: { node: any }[];
+            pageInfo: { hasNextPage: boolean; endCursor: string };
+          };
+        }>(
+          `
+          query Query($after: String) {
+            crosscubesConnection(
+              orderBy: publishedAt_DESC
+              where: { data_json_path_exists: "$[*] ? (${createWhereForType(types)})" }
+              first: 1000
+              after: $after
+            ) {
+              edges {
+                node {
+                  ${puzzleProperties}
+                }
+              }
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+            }
+          }
+        `,
+          { after },
+        );
+
+        const newCrosscubes = result?.crosscubesConnection.edges.map(
+          (edge: any) => edge.node,
+        );
+        allCrosscubes = [...allCrosscubes, ...newCrosscubes];
+        hasNextPage = result?.crosscubesConnection.pageInfo.hasNextPage;
+        after = result?.crosscubesConnection.pageInfo.endCursor;
+      }
+
+      return allCrosscubes;
+    };
+
+    const crosscubes = await fetchAllCrosscubes();
+
+    const puzzles: PuzzleType[] = crosscubes.map(
       (puzzle: any) =>
         ({
           id: puzzle.id,
@@ -85,7 +129,8 @@ export const getPuzzles = async (
         }) as PuzzleType,
     );
 
-    return await enrichPuzzles(puzzles);
+    const clerkUser = await currentUser();
+    return await enrichPuzzles(puzzles, clerkUser);
   } catch (error) {
     console.error('Error calling graphql!', JSON.stringify(error));
   }
@@ -93,72 +138,101 @@ export const getPuzzles = async (
   return [];
 };
 
-export const getPuzzleBySlug = async (
-  slug: string,
-): Promise<PuzzleType | null> => {
+export const getPuzzlesBySlugs = async (
+  slugs: string[],
+): Promise<PuzzleType[]> => {
   try {
-    const result = await queryReadOnly<{ crosscube: any }>(`
-      query Query {
-        crosscube(
-          where: { slug: "${slug}" }
-        ) {
-          id
-          title
-          authors { name {
-            firstName
-            lastName
-          } }
-          editors { name {
-            firstName
-            lastName
-          } }
-          data
-          svgSegments
-          slug
-          publishedAt
-          updatedAt
-          stage  
+    const fetchAllCrosscubes = async () => {
+      let allCrosscubes: any[] = [];
+      let hasNextPage = true;
+      let after = null;
+      const slugConditions = slugs
+        .map((slug) => `{ slug: "${slug}" }`)
+        .join(', ');
+
+      while (hasNextPage) {
+        await setTimeout(100);
+        const result: any = await queryReadOnly<{
+          crosscubesConnection: {
+            edges: { node: any }[];
+            pageInfo: { hasNextPage: boolean; endCursor: string };
+          };
+        }>(
+          `
+          query Query($after: String) {
+            crosscubesConnection(
+              where: { OR: [${slugConditions}] }
+              first: 1000
+              after: $after
+            ) {
+              edges {
+                node {
+                  ${puzzleProperties}
+                }
+              }
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+            }
           }
+        `,
+          { after },
+        );
+
+        const newCrosscubes = result?.crosscubesConnection.edges.map(
+          (edge: any) => edge.node,
+        );
+        allCrosscubes = [...allCrosscubes, ...newCrosscubes];
+        hasNextPage = result?.crosscubesConnection.pageInfo.hasNextPage;
+        after = result?.crosscubesConnection.pageInfo.endCursor;
       }
-    `);
 
-    const crosscube = result?.crosscube;
-
-    if (crosscube == null) {
-      return null;
-    }
-
-    const puzzle: PuzzleType = {
-      id: crosscube.id,
-      title: crosscube.title,
-      authors: [
-        crosscube.authors[0].name.firstName +
-          ' ' +
-          crosscube.authors[0].name.lastName,
-      ],
-      date: crosscube.publishedAt ?? crosscube.updatedAt,
-      previewState: 0,
-      slug: crosscube.slug,
-      data: crosscube.data,
-      svgSegments: crosscube.svgSegments,
-      record: getCharacterRecord(crosscube.data),
+      return allCrosscubes;
     };
 
-    await enrichPuzzles([puzzle]);
+    const crosscubes = await fetchAllCrosscubes();
 
-    return puzzle;
+    const puzzles: PuzzleType[] = crosscubes
+      .filter(
+        (puzzleData): puzzleData is any =>
+          puzzleData !== null && puzzleData !== undefined,
+      )
+      .map((puzzleData) => ({
+        id: puzzleData.id,
+        title: puzzleData.title,
+        authors:
+          puzzleData.authors
+            ?.map(
+              (author: { name: { firstName: string; lastName: string } }) =>
+                author.name
+                  ? `${author.name.firstName || ''} ${author.name.lastName || ''}`.trim()
+                  : '',
+            )
+            .filter(Boolean) || [],
+        date: puzzleData.publishedAt ?? puzzleData.updatedAt,
+        previewState: 0,
+        slug: puzzleData.slug,
+        data: puzzleData.data,
+        svgSegments: puzzleData.svgSegments,
+        record: getCharacterRecord(puzzleData.data),
+      }));
+
+    const clerkUser = await currentUser();
+    return await enrichPuzzles(puzzles, clerkUser);
   } catch (error) {
     console.error('Error calling graphql!', error);
+    return [];
   }
-
-  return null;
 };
 
-const atlas = invertAtlas(TEXTURE_RECORD);
+const numberAtlas = invertAtlas(TEXTURE_RECORD);
 
 // WARNING: This mutates the puzzles that are passed in
-export const enrichPuzzles = async (puzzles: PuzzleType[]) => {
-  const clerkUser = await currentUser();
+export const enrichPuzzles = async (
+  puzzles: PuzzleType[],
+  clerkUser: User | null,
+) => {
   if (clerkUser != null) {
     const user = await getUserForClerkId(clerkUser.id);
     if (user != null) {
@@ -179,7 +253,9 @@ export const enrichPuzzles = async (puzzles: PuzzleType[]) => {
           );
           const index = updateAnswerIndex(
             initializeAnswerIndex(puzzle.record.solution),
-            atlas,
+            puzzle.svgSegments != null
+              ? invertAtlas(buildSvgTextureAtlasLookup(puzzle.svgSegments))
+              : numberAtlas,
             positions,
             puzzle.record.solution,
           );
