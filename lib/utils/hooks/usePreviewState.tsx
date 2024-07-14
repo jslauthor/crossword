@@ -21,7 +21,6 @@ export const usePreviewState = (slugs: string[], userId?: string) => {
     if (userId != null) {
       const getPreviewState = async () => {
         const state = await getPuzzleProgressesForUser(userId, slugs);
-        console.log(state);
         setPreviewState(state);
       };
       getPreviewState();

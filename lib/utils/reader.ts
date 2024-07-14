@@ -142,23 +142,58 @@ export const getPuzzlesBySlugs = async (
   slugs: string[],
 ): Promise<PuzzleType[]> => {
   try {
-    const slugConditions = slugs
-      .map((slug) => `{ slug: "${slug}" }`)
-      .join(', ');
-    const result = await queryReadOnly<{ crosscubes: (any | null)[] }>(`
-      query Query {
-        crosscubes(
-          where: { OR: [${slugConditions}] }
-          first: 1000
-        ) {
-          ${puzzleProperties}
-        }
+    const fetchAllCrosscubes = async () => {
+      let allCrosscubes: any[] = [];
+      let hasNextPage = true;
+      let after = null;
+      const slugConditions = slugs
+        .map((slug) => `{ slug: "${slug}" }`)
+        .join(', ');
+
+      while (hasNextPage) {
+        await setTimeout(100);
+        const result: any = await queryReadOnly<{
+          crosscubesConnection: {
+            edges: { node: any }[];
+            pageInfo: { hasNextPage: boolean; endCursor: string };
+          };
+        }>(
+          `
+          query Query($after: String) {
+            crosscubesConnection(
+              where: { OR: [${slugConditions}] }
+              first: 1000
+              after: $after
+            ) {
+              edges {
+                node {
+                  ${puzzleProperties}
+                }
+              }
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+            }
+          }
+        `,
+          { after },
+        );
+
+        const newCrosscubes = result?.crosscubesConnection.edges.map(
+          (edge: any) => edge.node,
+        );
+        allCrosscubes = [...allCrosscubes, ...newCrosscubes];
+        hasNextPage = result?.crosscubesConnection.pageInfo.hasNextPage;
+        after = result?.crosscubesConnection.pageInfo.endCursor;
       }
-    `);
 
-    const puzzlesData = result?.crosscubes || [];
+      return allCrosscubes;
+    };
 
-    const puzzles: PuzzleType[] = puzzlesData
+    const crosscubes = await fetchAllCrosscubes();
+
+    const puzzles: PuzzleType[] = crosscubes
       .filter(
         (puzzleData): puzzleData is any =>
           puzzleData !== null && puzzleData !== undefined,
@@ -184,8 +219,7 @@ export const getPuzzlesBySlugs = async (
       }));
 
     const clerkUser = await currentUser();
-    await enrichPuzzles(puzzles, clerkUser);
-    return puzzles;
+    return await enrichPuzzles(puzzles, clerkUser);
   } catch (error) {
     console.error('Error calling graphql!', error);
     return [];
