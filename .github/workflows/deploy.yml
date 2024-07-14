@@ -29,6 +29,9 @@ jobs:
           echo "PRISMA_ACCELERATE_URL=\"${{ secrets.PRODUCTION_PRISMA_ACCELERATE_URL }}\"" >> .env
           echo "CLERK_ENDPOINT=\"${{ secrets.PRODUCTION_CLERK_ENDPOINT }}\"" >> .env
           npx partykit deploy --with-vars
+        env:
+          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
       - name: Deploy to staging
         if: github.ref != 'refs/heads/main'
         run: |
