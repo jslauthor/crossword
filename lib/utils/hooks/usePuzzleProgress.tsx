@@ -198,13 +198,18 @@ export const usePuzzleProgress = (
           }
         },
       );
-      ypartyProvider.once('synced', () => {
-        initState(ypartyProvider.doc, atlas);
-        setPartykit(ypartyProvider);
+
+      ypartyProvider.once('synced', (isSynced: boolean) => {
+        if (isSynced === true) {
+          setHasRetrievedState(true);
+        }
       });
+
+      setPartykit(ypartyProvider);
     };
 
     initialize();
+    setHasRetrievedState(false);
 
     return () => {
       ypartyProvider?.disconnect();
@@ -221,15 +226,22 @@ export const usePuzzleProgress = (
 
   // Observe the document for changes and update the state
   useEffect(() => {
+    if (atlas == null) return;
     indexDb?.doc?.getMap(GAME_STATE_KEY).observe((event) => {
       event.keysChanged.forEach((key) => {
         switch (key) {
           case CHARACTER_POSITIONS_KEY:
-            setCharacterPositionArray(
-              new Float32Array(
-                event.target.get(CHARACTER_POSITIONS_KEY) as number[],
-              ),
+            const positions = new Float32Array(
+              event.target.get(CHARACTER_POSITIONS_KEY) as number[],
             );
+            const index = mutateAnswerIndex(
+              initializeAnswerIndex(puzzle.record.solution),
+              invertAtlas(atlas),
+              positions,
+              puzzle.record.solution,
+            );
+            setCharacterPositionArray(positions);
+            setAnswerIndex(index);
             break;
           case VALIDATIONS_KEY:
             setCellValidationArray(
@@ -252,7 +264,7 @@ export const usePuzzleProgress = (
         }
       });
     });
-  }, [indexDb?.doc]);
+  }, [atlas, indexDb?.doc, puzzle.record.solution]);
 
   // Check if the puzzle is solved when the answer index changes
   useEffect(() => {
