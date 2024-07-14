@@ -39,3 +39,19 @@ export const NUMBER_RECORD = generateTextureRecord(
   numberItems,
   NUMBER_OF_CELLS_PER_LINE,
 );
+
+export function buildSvgTextureAtlasLookup(unicodeValues: string[]): AtlasType {
+  const totalEmojis = unicodeValues.length;
+  const svgGridSize = Math.ceil(Math.sqrt(totalEmojis));
+
+  const lookup: AtlasType = {};
+
+  unicodeValues.forEach((unicodeValue, i) => {
+    lookup[unicodeValue.toUpperCase()] = [
+      i % svgGridSize,
+      Math.floor(i / svgGridSize),
+    ];
+  });
+
+  return lookup;
+}

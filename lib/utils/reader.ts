@@ -9,7 +9,7 @@ import {
   initializeAnswerIndex,
   GAME_STATE_KEY,
 } from './puzzle';
-import { TEXTURE_RECORD } from './atlas';
+import { AtlasType, TEXTURE_RECORD, buildSvgTextureAtlasLookup } from './atlas';
 import * as Y from 'yjs';
 import { queryReadOnly } from 'lib/hygraph';
 import { setTimeout } from 'timers/promises';
@@ -226,7 +226,7 @@ export const getPuzzlesBySlugs = async (
   }
 };
 
-const atlas = invertAtlas(TEXTURE_RECORD);
+const numberAtlas = invertAtlas(TEXTURE_RECORD);
 
 // WARNING: This mutates the puzzles that are passed in
 export const enrichPuzzles = async (
@@ -253,7 +253,9 @@ export const enrichPuzzles = async (
           );
           const index = updateAnswerIndex(
             initializeAnswerIndex(puzzle.record.solution),
-            atlas,
+            puzzle.svgSegments != null
+              ? invertAtlas(buildSvgTextureAtlasLookup(puzzle.svgSegments))
+              : numberAtlas,
             positions,
             puzzle.record.solution,
           );
