@@ -2,7 +2,7 @@ import { PuzzleType } from 'types/types';
 import PuzzlePage from 'components/pages/PuzzlePage';
 import { notFound } from 'next/navigation';
 import { AtlasType, NUMBER_RECORD, TEXTURE_RECORD } from 'lib/utils/atlas';
-import { getPuzzleBySlug } from 'lib/utils/reader';
+import { getPuzzlesBySlugs } from 'lib/utils/reader';
 
 export type PuzzleProps = {
   puzzle: PuzzleType;
@@ -15,10 +15,11 @@ interface PuzzlePageProps extends PuzzleProps {
 }
 
 async function getProps(slug: string): Promise<PuzzlePageProps> {
-  const puzzle = await getPuzzleBySlug(slug);
-  if (puzzle == null) {
+  const puzzles = await getPuzzlesBySlugs([slug]);
+  if (puzzles.length === 0 || puzzles == null) {
     notFound();
   }
+  const puzzle = puzzles[0];
   const characterTextureAtlasLookup = TEXTURE_RECORD;
   const cellNumberTextureAtlasLookup = NUMBER_RECORD;
 

@@ -14,6 +14,8 @@ import {
   getTypeForSize,
 } from 'lib/utils/puzzle';
 import { HRule } from 'components/core/Dividers';
+import { usePreviewState } from 'lib/utils/hooks/usePreviewState';
+import { useUser } from '@clerk/nextjs';
 
 const Container = styled.div`
   position: relative;
@@ -61,6 +63,9 @@ export interface HomePageProps {
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
+  const { user } = useUser();
+  const slugs = useMemo(() => puzzles.map((puzzle) => puzzle.slug), [puzzles]);
+  const previewStates = usePreviewState(slugs, user?.id);
   const { latestPuzzles, otherPuzzles } = useMemo(
     () =>
       puzzles.reduce(
@@ -134,7 +139,11 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
                 title={puzzle.title}
                 authors={puzzle.authors}
                 date={puzzle.date}
-                previewState={puzzle.previewState}
+                previewState={
+                  previewStates[puzzle.slug] == null
+                    ? puzzle.previewState
+                    : previewStates[puzzle.slug]
+                }
               />
             </Link>
           ))}
@@ -150,7 +159,11 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
                     title={title}
                     authors={authors}
                     date={date}
-                    previewState={previewState}
+                    previewState={
+                      previewStates[slug] == null
+                        ? previewState
+                        : previewStates[slug]
+                    }
                     puzzleLabel={getPuzzleLabel(puzzle)}
                     type={getTypeForSize(puzzle)}
                   />

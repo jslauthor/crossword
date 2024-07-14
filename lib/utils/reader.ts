@@ -138,46 +138,58 @@ export const getPuzzles = async (
   return [];
 };
 
-export const getPuzzleBySlug = async (
-  slug: string,
-): Promise<PuzzleType | null> => {
+export const getPuzzlesBySlugs = async (
+  slugs: string[],
+): Promise<PuzzleType[]> => {
   try {
-    const result = await queryReadOnly<{ crosscube: any }>(`
+    const slugConditions = slugs
+      .map((slug) => `{ slug: "${slug}" }`)
+      .join(', ');
+    const result = await queryReadOnly<{ crosscubes: (any | null)[] }>(`
       query Query {
-        crosscube(
-          where: { slug: "${slug}" }
+        crosscubes(
+          where: { OR: [${slugConditions}] }
+          first: 1000
         ) {
           ${puzzleProperties}
         }
       }
     `);
 
-    const puzzleData = result?.crosscube;
+    const puzzlesData = result?.crosscubes || [];
 
-    const puzzle: PuzzleType = {
-      id: puzzleData.id,
-      title: puzzleData.title,
-      authors: [
-        puzzleData.authors[0].name.firstName +
-          ' ' +
-          puzzleData.authors[0].name.lastName,
-      ],
-      date: puzzleData.publishedAt ?? puzzleData.updatedAt,
-      previewState: 0,
-      slug: puzzleData.slug,
-      data: puzzleData.data,
-      svgSegments: puzzleData.svgSegments,
-      record: getCharacterRecord(puzzleData.data),
-    };
+    const puzzles: PuzzleType[] = puzzlesData
+      .filter(
+        (puzzleData): puzzleData is any =>
+          puzzleData !== null && puzzleData !== undefined,
+      )
+      .map((puzzleData) => ({
+        id: puzzleData.id,
+        title: puzzleData.title,
+        authors:
+          puzzleData.authors
+            ?.map(
+              (author: { name: { firstName: string; lastName: string } }) =>
+                author.name
+                  ? `${author.name.firstName || ''} ${author.name.lastName || ''}`.trim()
+                  : '',
+            )
+            .filter(Boolean) || [],
+        date: puzzleData.publishedAt ?? puzzleData.updatedAt,
+        previewState: 0,
+        slug: puzzleData.slug,
+        data: puzzleData.data,
+        svgSegments: puzzleData.svgSegments,
+        record: getCharacterRecord(puzzleData.data),
+      }));
 
     const clerkUser = await currentUser();
-    await enrichPuzzles([puzzle], clerkUser);
-    return puzzle;
+    await enrichPuzzles(puzzles, clerkUser);
+    return puzzles;
   } catch (error) {
     console.error('Error calling graphql!', error);
+    return [];
   }
-
-  return null;
 };
 
 const atlas = invertAtlas(TEXTURE_RECORD);
