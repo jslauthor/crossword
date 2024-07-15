@@ -21,7 +21,7 @@ import {
 import localforage from 'localforage';
 import { nanoid } from 'nanoid';
 import { useUser, useAuth } from '@clerk/nextjs';
-import { IndexeddbPersistence } from 'y-indexeddb';
+import { IndexeddbPersistence } from 'lib/utils/y-indexeddb';
 import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
 import { AtlasType } from '../atlas';
@@ -202,6 +202,7 @@ export const usePuzzleProgress = (
       ypartyProvider.once('synced', (isSynced: boolean) => {
         if (isSynced === true) {
           setHasRetrievedState(true);
+          indexDb.forcePersist();
         }
       });
 

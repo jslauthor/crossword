@@ -48,6 +48,7 @@
     "idb": "^8.0.0",
     "js-base64": "^3.7.7",
     "js-easing-functions": "^1.0.3",
+    "lib0": "^0.2.94",
     "localforage": "^1.10.0",
     "lucide-react": "^0.395.0",
     "md5": "^2.3.0",
