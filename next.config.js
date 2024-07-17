@@ -12,6 +12,12 @@ const nextConfig = {
       ssr: true,
     },
   },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.devtool = 'eval-source-map';
+    }
+    return config;
+  },
 };
 
 // module.exports = withLitSSR(nextConfig);
