@@ -1,3 +1,4 @@
+import * as Y from 'yjs';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -26,4 +27,10 @@ export function trimLeadingZeros(hexString: string): string {
 
   // Combine the original prefix with the trimmed hex segments
   return prefix + trimmedSegments.join('_');
+}
+
+export function cloneYDoc(original: Y.Doc) {
+  const clone = new Y.Doc();
+  Y.applyUpdate(clone, Y.encodeStateAsUpdate(original));
+  return clone;
 }

@@ -1,7 +1,7 @@
 'use server';
 
 import { ProgressEnum } from 'components/svg/PreviewCube';
-import { currentUser } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
 import { getPuzzlesBySlugs } from 'lib/utils/reader';
 
 export const getPuzzleProgressesForUser = async (

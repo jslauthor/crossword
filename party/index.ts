@@ -14,7 +14,7 @@ export default class Server implements Party.Server {
     try {
       const token = new URL(request.url).searchParams.get('token') ?? '';
       const session = await verifyToken(token, {
-        issuer: lobby.env.CLERK_ENDPOINT as string,
+        secretKey: lobby.env.CLERK_SECRET_KEY as string,
       });
       request.headers.set('X-User-ID', session.sub);
       // forward the request onwards on onConnect

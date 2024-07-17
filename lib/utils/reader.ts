@@ -1,4 +1,4 @@
-import { currentUser } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
 import { CrosscubeType, PuzzleType } from 'types/types';
 import { getPuzzlesProgressForUser, getUserForClerkId } from 'lib/db';
 import {
@@ -9,7 +9,7 @@ import {
   initializeAnswerIndex,
   GAME_STATE_KEY,
 } from './puzzle';
-import { AtlasType, TEXTURE_RECORD, buildSvgTextureAtlasLookup } from './atlas';
+import { TEXTURE_RECORD, buildSvgTextureAtlasLookup } from './atlas';
 import * as Y from 'yjs';
 import { queryReadOnly } from 'lib/hygraph';
 import { setTimeout } from 'timers/promises';
