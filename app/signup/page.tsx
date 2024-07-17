@@ -21,7 +21,10 @@ const Page: React.FC = () => {
   const params = useSearchParams();
   return (
     <Container>
-      <SignUp redirectUrl={params.get('redirect_url') ?? '/'} path={path} />
+      <SignUp
+        forceRedirectUrl={params.get('redirect_url') ?? '/'}
+        path={path}
+      />
     </Container>
   );
 };
