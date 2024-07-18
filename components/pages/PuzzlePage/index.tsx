@@ -597,6 +597,8 @@ export default function Puzzle({
     if (hasRetrievedState === true && shouldStartTimer === false) {
       reset(Number(elapsedTime ?? 0));
       setShouldStartTimer(true);
+    } else if (hasRetrievedState === false) {
+      setShouldStartTimer(false);
     }
   }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
