@@ -55,7 +55,7 @@
     "memoize-one": "^6.0.0",
     "meshline": "^3.2.0",
     "nanoid": "^5.0.6",
-    "next": "^14.1.0",
+    "next": "^14.2.5",
     "next-tick": "^1.1.0",
     "npm": "^10.4.0",
     "partysocket": "1.0.1",
