@@ -587,9 +587,12 @@ export default function Puzzle({
   const { reset } = useElapsedTime({
     isPlaying: puzzleIsActive,
     updateInterval: 1,
-    onUpdate: (elapsedTime) => {
-      // console.log('Elapsed time:', elapsedTime);
-      addTime(elapsedTime);
+    onUpdate: (time) => {
+      if (elapsedTime != null && elapsedTime > time) {
+        reset(elapsedTime);
+      } else {
+        addTime(time);
+      }
     },
   });
 
