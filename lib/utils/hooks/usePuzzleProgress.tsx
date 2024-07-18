@@ -171,8 +171,14 @@ export const usePuzzleProgress = (
     }
 
     const initialize = async () => {
+      let token: string | null = null;
+      try {
+        token = await getToken();
+      } catch (e) {
+        return;
+      }
+
       setHasRetrievedState(false);
-      const token = await getToken();
       // Store the current state of the document to merge in later
       const lastYDoc = cloneYDoc(yDoc);
 
