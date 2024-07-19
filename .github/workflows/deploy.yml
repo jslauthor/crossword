@@ -28,6 +28,7 @@ jobs:
           echo "POSTGRES_URL_NON_POOLING=\"${{ secrets.PRODUCTION_POSTGRES_URL_NON_POOLING }}\"" >> .env
           echo "PRISMA_ACCELERATE_URL=\"${{ secrets.PRODUCTION_PRISMA_ACCELERATE_URL }}\"" >> .env
           echo "CLERK_ENDPOINT=\"${{ secrets.PRODUCTION_CLERK_ENDPOINT }}\"" >> .env
+          echo "CLERK_SECRET_KEY=\"${{ secrets.PRODUCTION_CLERK_SECRET_KEY }}\"" >> .env
           npx partykit deploy --with-vars
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
@@ -38,6 +39,7 @@ jobs:
           echo "POSTGRES_URL_NON_POOLING=\"${{ secrets.STAGING_POSTGRES_URL_NON_POOLING }}\"" >> .env
           echo "PRISMA_ACCELERATE_URL=\"${{ secrets.STAGING_PRISMA_ACCELERATE_URL }}\"" >> .env
           echo "CLERK_ENDPOINT=\"${{ secrets.STAGING_CLERK_ENDPOINT }}\"" >> .env
+          echo "CLERK_SECRET_KEY=\"${{ secrets.STAGING_CLERK_SECRET_KEY }}\"" >> .env
           npx partykit deploy --preview staging --with-vars
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}

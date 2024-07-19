@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
-import { SignUp } from '@clerk/nextjs';
+import { SignIn } from '@clerk/nextjs';
 import { styled } from 'styled-components';
 
 const Container = styled.div`
@@ -21,7 +21,10 @@ const Page: React.FC = () => {
   const params = useSearchParams();
   return (
     <Container>
-      <SignUp redirectUrl={params.get('redirect_url') ?? '/'} path={path} />
+      <SignIn
+        forceRedirectUrl={params.get('redirect_url') ?? '/'}
+        path={path}
+      />
     </Container>
   );
 };

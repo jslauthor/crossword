@@ -19,7 +19,7 @@ const Menu: React.FC<MenuProps> = ({
   const router = useRouter();
   const { signOut } = useClerk();
   const onSignOut = useCallback(() => {
-    signOut();
+    signOut({ redirectUrl: '/' });
   }, [signOut]);
 
   const onSignIn = useCallback(() => {

@@ -1,7 +1,7 @@
 'use client';
 
-import { PuzzleType } from 'types/types';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { DebouncedFunc, PuzzleType } from 'types/types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { SolutionCell } from 'types/types';
 import {
   CHARACTER_POSITIONS_KEY,
@@ -21,11 +21,14 @@ import {
 import localforage from 'localforage';
 import { nanoid } from 'nanoid';
 import { useUser, useAuth } from '@clerk/nextjs';
-import { IndexeddbPersistence } from 'lib/utils/y-indexeddb';
 import * as Y from 'yjs';
 import YPartyKitProvider from 'y-partykit/provider';
 import { AtlasType } from '../atlas';
 import memoizeOne from 'memoize-one';
+import debounce from 'lodash.debounce';
+import { db } from 'lib/utils/indexeddb/index';
+import { decompressData } from '../gzip';
+import { toUint8Array } from 'js-base64';
 
 const verifyAnswerIndex = memoizeOne(testAnswerIndex);
 
@@ -70,8 +73,8 @@ export const usePuzzleProgress = (
   );
 
   const [hasInteractedWithPuzzle, setHasInteractedWithPuzzle] = useState(false);
-  const [anonCacheId, setAnonCacheId] = useState<string | null>(null);
-  const [indexDb, setIndexDb] = useState<IndexeddbPersistence | null>(null);
+  const [cacheId, setCacheId] = useState<string | null>(null);
+  const [yDoc, setYDoc] = useState<Y.Doc | null>(null);
   const [partykit, setPartykit] = useState<YPartyKitProvider | null>(null);
   const [hasRetrievedState, setHasRetrievedState] = useState<boolean>(false);
   const [isPuzzleSolved, setIsPuzzleSolved] = useState<boolean>(false);
@@ -128,55 +131,75 @@ export const usePuzzleProgress = (
     [puzzle.record.solution],
   );
 
-  // Create local cache to store offline progress. This will always be anonymous
-  // but will be merged with the user cache when the user logs in
+  // Grab local cache and merge it with server cache
   useEffect(() => {
     const initializeLocalCache = async () => {
       const autoNext = await localforage.getItem<boolean>(AUTO_NEXT_KEY);
       setAutoNextEnabled(autoNext ?? true);
 
-      const anonCacheId = await getLocalCacheId(puzzle.id);
-      setAnonCacheId(anonCacheId);
-    };
-    initializeLocalCache();
-  }, [puzzle]);
+      const cacheId = await getLocalCacheId(puzzle.id);
+      setCacheId(cacheId);
 
-  // Setup indexdb yjs provider for local storage
-  useEffect(() => {
-    if (anonCacheId != null && atlas != null && Object.keys(atlas).length > 0) {
-      const db = new IndexeddbPersistence(
-        anonCacheId,
-        createInitialYDoc(puzzle), // Always initialize the document with reasonable defaults
-      );
-      db.once('synced', () => {
-        initState(db.doc, atlas);
-        setIndexDb(db);
+      const initialDoc = new Y.Doc();
+      if (puzzle.initialState != null) {
+        const compressedData = toUint8Array(puzzle.initialState);
+        const decompressedArrayBuffer = await decompressData(compressedData);
+        const state = new Uint8Array(decompressedArrayBuffer);
+        Y.applyUpdateV2(initialDoc, state);
+      }
+
+      let doc = new Y.Doc();
+      const localState = await db.data.get(cacheId);
+      if (localState?.data instanceof Uint8Array) {
+        Y.applyUpdate(doc, new Uint8Array(localState.data));
+      } else {
+        doc = createInitialYDoc(puzzle);
+      }
+
+      // Merge the local state with the store puzzle state
+      const localUpdate = Y.encodeStateAsUpdateV2(doc);
+      initialDoc.transact(() => {
+        Y.applyUpdate(initialDoc, localUpdate);
       });
 
-      return () => {
-        db.destroy();
-      };
-    }
-  }, [anonCacheId, puzzle, initState, atlas]);
+      // Saved merged state to indexeddb
+      await db.data.put({
+        id: cacheId,
+        data: Y.encodeStateAsUpdateV2(initialDoc),
+      });
+      setYDoc(initialDoc);
+
+      if (atlas != null) {
+        initState(initialDoc, atlas);
+      }
+    };
+
+    initializeLocalCache();
+  }, [atlas, puzzle, puzzle.id, initState]);
 
   // Initialize the server after local cache is synced
   useEffect(() => {
     if (
       user?.id == null ||
-      indexDb == null ||
+      yDoc == null ||
       isInitialized === false ||
       atlas == null
-    )
+    ) {
       return;
-
-    let ypartyProvider: YPartyKitProvider | null = null;
+    }
 
     const initialize = async () => {
-      const token = await getToken();
+      let token: string | null = null;
+      try {
+        token = await getToken();
+      } catch (e) {
+        return;
+      }
+
       const ypartyProvider: YPartyKitProvider = new YPartyKitProvider(
         process.env.NEXT_PUBLIC_PARTYKIT_URL!,
         `${user.id}:${puzzle.id}`,
-        indexDb.doc,
+        yDoc,
         {
           params: {
             clerkId: user.id,
@@ -187,6 +210,7 @@ export const usePuzzleProgress = (
           maxBackoffTime: 30000,
         },
       );
+
       ypartyProvider.on(
         'connection-error',
         (_e: any, provider: YPartyKitProvider) => {
@@ -199,23 +223,11 @@ export const usePuzzleProgress = (
         },
       );
 
-      ypartyProvider.once('synced', (isSynced: boolean) => {
-        if (isSynced === true) {
-          setHasRetrievedState(true);
-          indexDb.forcePersist();
-        }
-      });
-
       setPartykit(ypartyProvider);
     };
 
     initialize();
-    setHasRetrievedState(false);
-
-    return () => {
-      ypartyProvider?.disconnect();
-    };
-  }, [atlas, getToken, indexDb, initState, isInitialized, puzzle.id, user?.id]);
+  }, [atlas, getToken, initState, isInitialized, puzzle.id, user?.id, yDoc]);
 
   useEffect(() => {
     // disconnect from server if the user is no longer logged in
@@ -223,13 +235,31 @@ export const usePuzzleProgress = (
       partykit.disconnect();
       setPartykit(null);
     }
+
+    return () => {
+      partykit?.disconnect();
+    };
   }, [partykit, user?.id]);
+
+  // Create a ref to store the debounced function
+  const debouncedSaveRef = useRef<DebouncedFunc<() => void>>();
 
   // Observe the document for changes and update the state
   useEffect(() => {
-    if (atlas == null) return;
-    indexDb?.doc?.getMap(GAME_STATE_KEY).observe((event) => {
-      event.keysChanged.forEach((key) => {
+    if (atlas == null || yDoc == null || cacheId == null) return;
+
+    const saveToIndexedDB = () => {
+      const update = Y.encodeStateAsUpdateV2(yDoc);
+      db.data.put({ id: cacheId, data: update });
+    };
+
+    // Create the debounced function and store it in the ref
+    debouncedSaveRef.current = debounce(saveToIndexedDB, 500, {
+      maxWait: 5000,
+    });
+
+    const updateState = (event: Y.YMapEvent<unknown>) => {
+      event.keysChanged.forEach((key: any) => {
         switch (key) {
           case CHARACTER_POSITIONS_KEY:
             const positions = new Float32Array(
@@ -264,8 +294,18 @@ export const usePuzzleProgress = (
             break;
         }
       });
-    });
-  }, [atlas, indexDb?.doc, puzzle.record.solution]);
+
+      debouncedSaveRef.current?.();
+    };
+
+    // Observe changes
+    yDoc?.getMap(GAME_STATE_KEY).observe(updateState);
+
+    return () => {
+      yDoc?.getMap(GAME_STATE_KEY).unobserve(updateState);
+      debouncedSaveRef.current?.cancel();
+    };
+  }, [atlas, cacheId, puzzle.record.solution, yDoc]);
 
   // Check if the puzzle is solved when the answer index changes
   useEffect(() => {
@@ -285,11 +325,11 @@ export const usePuzzleProgress = (
 
   const addCellValidation = useCallback(
     (validations: Int16Array) => {
-      indexDb?.doc
+      yDoc
         ?.getMap(GAME_STATE_KEY)
         .set(VALIDATIONS_KEY, Y.Array.from(Array.from(validations)));
     },
-    [indexDb?.doc],
+    [yDoc],
   );
 
   const addAutocheckEnabled = useCallback(
@@ -343,23 +383,23 @@ export const usePuzzleProgress = (
 
   const addCellDraftMode = useCallback(
     (draftModes: Int16Array) => {
-      indexDb?.doc
+      yDoc
         ?.getMap(GAME_STATE_KEY)
         .set(DRAFT_MODES_KEY, Y.Array.from(Array.from(draftModes)));
     },
-    [indexDb?.doc],
+    [yDoc],
   );
 
   const addCharacterPosition = useCallback(
     (characterPositions: Float32Array) => {
-      indexDb?.doc
+      yDoc
         ?.getMap(GAME_STATE_KEY)
         .set(
           CHARACTER_POSITIONS_KEY,
           Y.Array.from(Array.from(characterPositions)),
         );
     },
-    [indexDb?.doc],
+    [yDoc],
   );
 
   const addTime = useCallback(
@@ -367,11 +407,9 @@ export const usePuzzleProgress = (
       if (elapsedTime == null) return;
       // Always take the larger of the two times since multiple
       // clients can be on the page longer
-      indexDb?.doc
-        ?.getMap(GAME_STATE_KEY)
-        .set(TIME_KEY, Math.max(time, elapsedTime));
+      yDoc?.getMap(GAME_STATE_KEY).set(TIME_KEY, Math.max(time, elapsedTime));
     },
-    [indexDb?.doc, elapsedTime],
+    [yDoc, elapsedTime],
   );
 
   const addGuesses = useCallback(
@@ -379,11 +417,11 @@ export const usePuzzleProgress = (
       if (guesses == null) return;
       // Always take the larger of the two times since multiple
       // clients can be filling in guesses faster
-      indexDb?.doc
+      yDoc
         ?.getMap(GAME_STATE_KEY)
         .set(GUESSES_KEY, Math.max(newGuesses, guesses));
     },
-    [guesses, indexDb?.doc],
+    [guesses, yDoc],
   );
 
   const updateAnswerIndex = useCallback(
