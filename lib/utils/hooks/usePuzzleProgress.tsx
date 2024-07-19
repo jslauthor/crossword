@@ -28,6 +28,7 @@ import memoizeOne from 'memoize-one';
 import debounce from 'lodash.debounce';
 import { db } from 'lib/utils/indexeddb/index';
 import { decompressData } from '../gzip';
+import { toUint8Array } from 'js-base64';
 
 const verifyAnswerIndex = memoizeOne(testAnswerIndex);
 
@@ -141,11 +142,7 @@ export const usePuzzleProgress = (
 
       const initialDoc = new Y.Doc();
       if (puzzle.initialState != null) {
-        const compressedData = new Uint8Array(
-          atob(puzzle.initialState)
-            .split('')
-            .map((char) => char.charCodeAt(0)),
-        );
+        const compressedData = toUint8Array(puzzle.initialState);
         const decompressedArrayBuffer = await decompressData(compressedData);
         const state = new Uint8Array(decompressedArrayBuffer);
         Y.applyUpdateV2(initialDoc, state);
