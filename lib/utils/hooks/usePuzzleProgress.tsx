@@ -248,11 +248,6 @@ export const usePuzzleProgress = (
   useEffect(() => {
     if (atlas == null || yDoc == null || cacheId == null) return;
 
-    // TODO:
-    // Make sure you disconnect indexdb somewhere
-    // Do not load up local state if the user is logged in (just) or don't show the state
-    // maybe instead of returning the ydoc onconnect, use a message handler to merge the local state?
-
     const saveToIndexedDB = () => {
       const update = Y.encodeStateAsUpdateV2(yDoc);
       db.data.put({ id: cacheId, data: update });
