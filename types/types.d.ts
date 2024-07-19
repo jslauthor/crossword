@@ -83,6 +83,7 @@ export type PuzzleType = Omit<
   svgSegments?: string[];
   record: CharacterRecord;
   previewState: number;
+  initialState?: string; // GZIP encoded YJS Uint8Array
 };
 
 export type CrosscubeType = 'moji' | 'mini' | 'cube' | 'mega';

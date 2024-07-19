@@ -31,6 +31,6 @@ export function trimLeadingZeros(hexString: string): string {
 
 export function cloneYDoc(original: Y.Doc) {
   const clone = new Y.Doc();
-  Y.applyUpdate(clone, Y.encodeStateAsUpdate(original));
+  Y.applyUpdate(clone, Y.encodeStateAsUpdateV2(original));
   return clone;
 }

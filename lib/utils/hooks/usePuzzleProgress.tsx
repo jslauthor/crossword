@@ -26,8 +26,8 @@ import YPartyKitProvider from 'y-partykit/provider';
 import { AtlasType } from '../atlas';
 import memoizeOne from 'memoize-one';
 import debounce from 'lodash.debounce';
-import { cloneYDoc } from 'lib/utils';
 import { db } from 'lib/utils/indexeddb/index';
+import { decompressData } from '../gzip';
 
 const verifyAnswerIndex = memoizeOne(testAnswerIndex);
 
@@ -130,8 +130,7 @@ export const usePuzzleProgress = (
     [puzzle.record.solution],
   );
 
-  // Create local cache to store offline progress. This will always be session (browser)
-  // specific, but will be merged with the user cache when the user logs in
+  // Grab local cache and merge it with server cache
   useEffect(() => {
     const initializeLocalCache = async () => {
       const autoNext = await localforage.getItem<boolean>(AUTO_NEXT_KEY);
@@ -140,19 +139,41 @@ export const usePuzzleProgress = (
       const cacheId = await getLocalCacheId(puzzle.id);
       setCacheId(cacheId);
 
+      const initialDoc = new Y.Doc();
+      if (puzzle.initialState != null) {
+        const compressedData = new Uint8Array(
+          atob(puzzle.initialState)
+            .split('')
+            .map((char) => char.charCodeAt(0)),
+        );
+        const decompressedArrayBuffer = await decompressData(compressedData);
+        const state = new Uint8Array(decompressedArrayBuffer);
+        Y.applyUpdateV2(initialDoc, state);
+      }
+
       let doc = new Y.Doc();
       const localState = await db.data.get(cacheId);
       if (localState?.data instanceof Uint8Array) {
         Y.applyUpdate(doc, new Uint8Array(localState.data));
       } else {
         doc = createInitialYDoc(puzzle);
-        await db.data.put({ id: cacheId, data: Y.encodeStateAsUpdate(doc) });
       }
 
-      setYDoc(doc);
+      // Merge the local state with the store puzzle state
+      const localUpdate = Y.encodeStateAsUpdateV2(doc);
+      initialDoc.transact(() => {
+        Y.applyUpdate(initialDoc, localUpdate);
+      });
+
+      // Saved merged state to indexeddb
+      await db.data.put({
+        id: cacheId,
+        data: Y.encodeStateAsUpdateV2(initialDoc),
+      });
+      setYDoc(initialDoc);
 
       if (atlas != null) {
-        initState(doc, atlas);
+        initState(initialDoc, atlas);
       }
     };
 
@@ -178,10 +199,6 @@ export const usePuzzleProgress = (
         return;
       }
 
-      setHasRetrievedState(false);
-      // Store the current state of the document to merge in later
-      const lastYDoc = cloneYDoc(yDoc);
-
       const ypartyProvider: YPartyKitProvider = new YPartyKitProvider(
         process.env.NEXT_PUBLIC_PARTYKIT_URL!,
         `${user.id}:${puzzle.id}`,
@@ -196,6 +213,7 @@ export const usePuzzleProgress = (
           maxBackoffTime: 30000,
         },
       );
+
       ypartyProvider.on(
         'connection-error',
         (_e: any, provider: YPartyKitProvider) => {
@@ -207,19 +225,6 @@ export const usePuzzleProgress = (
           }
         },
       );
-
-      ypartyProvider.once('synced', (isSynced: boolean) => {
-        if (isSynced === true) {
-          // Merge the last yDoc with the synced yDoc
-          const localUpdate = Y.encodeStateAsUpdate(lastYDoc);
-          yDoc.transact(() => {
-            Y.applyUpdate(yDoc, localUpdate);
-          });
-
-          setHasRetrievedState(true);
-          initState(ypartyProvider.doc, atlas);
-        }
-      });
 
       setPartykit(ypartyProvider);
     };
@@ -252,7 +257,7 @@ export const usePuzzleProgress = (
     // maybe instead of returning the ydoc onconnect, use a message handler to merge the local state?
 
     const saveToIndexedDB = () => {
-      const update = Y.encodeStateAsUpdate(yDoc);
+      const update = Y.encodeStateAsUpdateV2(yDoc);
       db.data.put({ id: cacheId, data: update });
     };
 
