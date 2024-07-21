@@ -710,42 +710,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   });
 
-  // TODO: Update this function to be able to go next or previous
-  // TODO: Cube should turn the correct direction based on polarity
   // TODO: Vertical last column should select the 2nd column on the next side
-  // TODO: MOve all sequences to puzzle and remove other sequences
-
-  const allSequences = useMemo(() => {
-    const { wordSequencesBySide } = record;
-    const allSequences: Record<
-      SequenceKeys,
-      { side: number; index: number; sequence: number[] }[]
-    > = {
-      across: [],
-      down: [],
-    };
-    for (const [key, value] of Object.entries(wordSequencesBySide)) {
-      allSequences['across'] = allSequences['across'].concat(
-        Object.entries(value['across']).map(([index, sequence]) => ({
-          side: parseInt(key, 10),
-          index: parseInt(index, 10),
-          sequence,
-        })),
-      );
-      allSequences['down'] = allSequences['down'].concat(
-        Object.entries(value['down']).map(([index, sequence]) => ({
-          side: parseInt(key, 10),
-          index: parseInt(index, 10),
-          sequence,
-        })),
-      );
-    }
-    return allSequences;
-  }, [record]);
 
   const goToNextWord = useCallback(
     (selected: number, polarity: 1 | -1 = 1) => {
-      const { solution } = record;
+      const { solution, wordSequencesBySideFlat } = record;
       const cell = solution[selected];
 
       if (cell?.mapping == null) {
@@ -757,7 +726,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         ? cell?.mapping[selectedSide]?.downSequenceIndex
         : cell?.mapping[selectedSide]?.acrossSequenceIndex;
 
-      let sequences = allSequences[direction];
+      let sequences = wordSequencesBySideFlat[direction];
 
       const currentIndex = sequences.findIndex(
         (i) => i.index == sequenceIndex && i.side == selectedSide,
@@ -835,7 +804,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       record,
       isVerticalOrientation,
       selectedSide,
-      allSequences,
       selectNextBlankEnabled,
       characterPositionArray,
       puzzle.data.length,
