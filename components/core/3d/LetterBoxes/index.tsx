@@ -241,8 +241,9 @@ export type LetterBoxesProps = {
   onInitialize?: () => void;
   turnLeft: (offset?: number) => void;
   turnRight: (offset?: number) => void;
-  setOnNextWord?: (callback: (selected: number) => void) => void;
-  setOnPrevWord?: (callback: (selected: number) => void) => void;
+  setGoToNextWord?: (
+    callback: (selected: number, polarity: 1 | -1) => void,
+  ) => void;
   theme?: string;
   isSpinning?: boolean;
 };
@@ -343,8 +344,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   selectNextBlankEnabled,
   turnLeft,
   turnRight,
-  setOnPrevWord,
-  setOnNextWord,
+  setGoToNextWord,
   theme,
   isSpinning,
 }) => {
@@ -711,7 +711,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   });
 
   // TODO: Update this function to be able to go next or previous
+  // TODO: Cube should turn the correct direction based on polarity
   // TODO: Vertical last column should select the 2nd column on the next side
+  // TODO: MOve all sequences to puzzle and remove other sequences
 
   const allSequences = useMemo(() => {
     const { wordSequencesBySide } = record;
@@ -742,7 +744,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   }, [record]);
 
   const goToNextWord = useCallback(
-    (selected: number) => {
+    (selected: number, polarity: 1 | -1 = 1) => {
       const { solution } = record;
       const cell = solution[selected];
 
@@ -762,22 +764,34 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       );
 
       const nextSequenceIndex =
-        sequences[constrain(0, sequences.length - 1, currentIndex + 1)].index;
+        sequences[constrain(0, sequences.length - 1, currentIndex + polarity)]
+          .index;
       const nextIndex = sequences.findIndex(
         (i) => i.index == nextSequenceIndex,
       );
       // Find the next cell and default to it
       let nextCell = sequences[nextIndex];
-      let nextSelected = nextCell.sequence[0];
+      let nextSelected =
+        nextCell.sequence[polarity === 1 ? 0 : nextCell.sequence.length - 1];
 
       if (selectNextBlankEnabled === true) {
         let shouldBreak: boolean = false;
         // Look for next blank cell. If there isn't one, default to the very next cell
         // as if selectNextBlank is false
         for (let i = 0; i < sequences.length; i++) {
-          const tempIndex = constrain(0, sequences.length - 1, nextIndex + i);
+          const tempIndex = constrain(
+            0,
+            sequences.length - 1,
+            nextIndex + i * polarity,
+          );
           const { sequence } = sequences[tempIndex];
-          for (let y = 0; y < sequence.length; y++) {
+          const start = polarity === 1 ? 0 : sequence.length;
+          const end = polarity === 1 ? sequence.length : 0;
+          for (
+            let y = start;
+            polarity === 1 ? y < end : y > end;
+            y += polarity
+          ) {
             // Look for empty cells
             if (
               characterPositionArray[sequence[y] * 2] === -1 &&
@@ -801,13 +815,20 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         while (numSides < puzzle.data.length) {
           numSides++;
           if (
-            constrain(0, puzzle.data.length - 1, selectedSide + numSides) ===
-            nextCell.side
+            constrain(
+              0,
+              puzzle.data.length - 1,
+              selectedSide + numSides * polarity,
+            ) === nextCell.side
           ) {
             break;
           }
         }
-        turnRight(numSides);
+        if (polarity === 1) {
+          turnRight(numSides);
+        } else {
+          turnLeft(numSides);
+        }
       }
     },
     [
@@ -819,75 +840,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       characterPositionArray,
       puzzle.data.length,
       turnRight,
+      turnLeft,
     ],
   );
 
-  const goToPreviousWord = useCallback(
-    (selected: number, startFromBeginning: boolean = false) => {
-      // const { solution, wordSequencesBySide } = record;
-      // const cell = solution[selected];
-      // if (cell?.mapping == null) {
-      //   return;
-      // }
-      // const direction: SequenceKeys = isVerticalOrientation ? 'down' : 'across';
-      // const sequenceIndex = isVerticalOrientation
-      //   ? cell?.mapping[selectedSide]?.downSequenceIndex
-      //   : cell?.mapping[selectedSide]?.acrossSequenceIndex;
-      // // Update letter and move to the next word
-      // const keys = Object.keys(wordSequencesBySide[selectedSide][direction]);
-      // const currentIndex = keys.findIndex(
-      //   (i) => sequenceIndex === parseInt(i, 10),
-      // );
-      // const nextIndex = keys[currentIndex - 1];
-      // if (nextIndex != null) {
-      //   const nextRange =
-      //     wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];
-      //   if (nextRange != null) {
-      //     setSelected(nextRange[startFromBeginning ? 0 : nextRange.length - 1]);
-      //   }
-      // } else {
-      //   // Move to the previous side!
-      //   const nextSide = constrain(0, puzzle.data.length - 1, selectedSide - 1);
-      //   let range = null;
-      //   // in this case it's a crossmoji
-      //   if (disableOrientation === true) {
-      //     // Pick the first blank cell otherwise pick the first cell
-      //     range = wordSequencesBySide[nextSide][direction].findLast((i) => {
-      //       if (i == null) return false;
-      //       return (
-      //         characterPositionArray[i[0] * 2] === -1 &&
-      //         characterPositionArray[i[0] * 2 + 1] === -1
-      //       );
-      //     });
-      //     range =
-      //       range ??
-      //       wordSequencesBySide[nextSide][direction].findLast((i) => i != null);
-      //   } else {
-      //     range = wordSequencesBySide[nextSide][direction].findLast((i) => {
-      //       if (i == null) return false;
-      //       return !isVerticalOrientation || solution[i[0]].x !== 0;
-      //     });
-      //   }
-      //   if (range != null) {
-      //     setSelected(range[startFromBeginning ? 0 : range.length - 1]);
-      //     turnLeft();
-      //   }
-      // }
-    },
-    [],
-  );
-
   useEffect(() => {
-    if (setOnNextWord) {
-      setOnNextWord(goToNextWord);
+    if (setGoToNextWord) {
+      setGoToNextWord(goToNextWord);
     }
-  }, [goToNextWord, setOnNextWord]);
-
-  useEffect(() => {
-    if (setOnPrevWord) {
-      setOnPrevWord(goToPreviousWord);
-    }
-  }, [goToPreviousWord, setOnPrevWord]);
+  }, [goToNextWord, setGoToNextWord]);
 
   const onLetterChange = useCallback(
     (key: string, selectedOverride?: number) => {
@@ -943,7 +904,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 const nextCell = range[sIndex + 1];
                 setSelected(nextCell);
               } else if (autoNextEnabled === true) {
-                goToNextWord(selectedIndex);
+                goToNextWord(selectedIndex, 1);
               }
             } else {
               // Delete letter and move to the previous cell
@@ -953,7 +914,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
                 const nextCell = range[sIndex - 1];
                 setSelected(nextCell);
               } else if (autoNextEnabled === true) {
-                goToPreviousWord(selectedIndex);
+                goToNextWord(selectedIndex, -1);
               }
             }
           }
@@ -974,7 +935,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       selectedSide,
       autoNextEnabled,
       goToNextWord,
-      goToPreviousWord,
     ],
   );
 

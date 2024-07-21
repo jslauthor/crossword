@@ -278,11 +278,8 @@ export default function Puzzle({
     return isPuzzleReady && progress >= 1;
   }, [isPuzzleReady, progress]);
 
-  const onPrevWord =
-    useRef<
-      (selected: number, startFromBeginning?: boolean) => void | undefined
-    >();
-  const onNextWord = useRef<(selected: number) => void | undefined>();
+  const goToNextWord =
+    useRef<(selected: number, polarity: 1 | -1) => void | undefined>();
 
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
@@ -506,19 +503,18 @@ export default function Puzzle({
   /**
    * setState did not work for this callback, so I used a reference instead. Very odd.
    */
-  const setOnNextWord = useCallback((s: (selected: number) => void) => {
-    onNextWord.current = s;
-  }, []);
-
-  const setOnPrevWord = useCallback((s: (selected: number) => void) => {
-    onPrevWord.current = s;
-  }, []);
+  const setGoToNextWord = useCallback(
+    (s: (selected: number, polarity: 1 | -1) => void) => {
+      goToNextWord.current = s;
+    },
+    [],
+  );
 
   const handlePrevWord = useCallback(
     (selected?: number) => (event?: MouseEvent) => {
       if (event) event.stopPropagation();
-      if (onPrevWord.current == null || selected == null) return;
-      onPrevWord.current(selected, true);
+      if (goToNextWord.current == null || selected == null) return;
+      goToNextWord.current(selected, -1);
     },
     [],
   );
@@ -526,8 +522,8 @@ export default function Puzzle({
   const handleNextWord = useCallback(
     (selected?: number) => (event?: MouseEvent) => {
       if (event) event.stopPropagation();
-      if (onNextWord.current == null || selected == null) return;
-      onNextWord.current(selected);
+      if (goToNextWord.current == null || selected == null) return;
+      goToNextWord.current(selected, 1);
     },
     [],
   );
@@ -787,8 +783,7 @@ export default function Puzzle({
                   autoNextEnabled={autoNextEnabled}
                   turnLeft={turnLeft}
                   turnRight={turnRight}
-                  setOnNextWord={setOnNextWord}
-                  setOnPrevWord={setOnPrevWord}
+                  setGoToNextWord={setGoToNextWord}
                   theme={theme}
                   isSpinning={isSpinning}
                 />
