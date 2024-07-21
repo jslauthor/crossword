@@ -560,6 +560,12 @@ export default function Puzzle({
     [handlePrevWord, selected],
   );
 
+  // Update page title with puzzle title
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    document.title = `${puzzle.title} - Crosscube`;
+  }, [puzzle.title]);
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
   const puzzleIsActive = useMemo(
