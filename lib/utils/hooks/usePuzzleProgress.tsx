@@ -33,6 +33,7 @@ import { toUint8Array } from 'js-base64';
 const verifyAnswerIndex = memoizeOne(testAnswerIndex);
 
 const AUTO_NEXT_KEY = 'auto-next';
+const SELECT_BLANK_KEY = 'select-blank';
 
 const ANONYMOUS_PLAYER_STORAGE_KEY = 'anonymous-player-key';
 const getLocalCacheId = async (puzzleId: string) => {
@@ -80,7 +81,9 @@ export const usePuzzleProgress = (
   const [isPuzzleSolved, setIsPuzzleSolved] = useState<boolean>(false);
   const [puzzleStats, setPuzzleStats] = useState<PuzzleStats | null>(null);
   const [autoNextEnabled, setAutoNextEnabled] = useState<boolean>(true);
-  const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
+  const [selectNextBlankEnabled, setSelectNextBlankEnabled] =
+    useState<boolean>(true);
+  const [autoCheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<number>();
   const [guesses, setGuesses] = useState<number>();
@@ -136,6 +139,9 @@ export const usePuzzleProgress = (
     const initializeLocalCache = async () => {
       const autoNext = await localforage.getItem<boolean>(AUTO_NEXT_KEY);
       setAutoNextEnabled(autoNext ?? true);
+
+      const selectBlank = await localforage.getItem<boolean>(SELECT_BLANK_KEY);
+      setSelectNextBlankEnabled(selectBlank ?? true);
 
       const cacheId = await getLocalCacheId(puzzle.id);
       setCacheId(cacheId);
@@ -373,6 +379,17 @@ export const usePuzzleProgress = (
     [setAutoNextEnabled],
   );
 
+  const addSelectNextBlankEnabled = useCallback(
+    (enabled: boolean) => {
+      setSelectNextBlankEnabled(enabled);
+      const save = async () => {
+        await localforage.setItem<boolean>(SELECT_BLANK_KEY, enabled);
+      };
+      save();
+    },
+    [setSelectNextBlankEnabled],
+  );
+
   const addDraftModeEnabled = useCallback(
     (draftModeEnabled: boolean) => {
       if (isPuzzleSolved) return;
@@ -443,7 +460,7 @@ export const usePuzzleProgress = (
 
         if (validations != null) {
           const newValidations = new Int16Array(validations);
-          if (autocheckEnabled) {
+          if (autoCheckEnabled) {
             // 2 = correct
             // 1 = incorrect
             newValidations[index * 2] = isCorrect ? 2 : 1;
@@ -468,7 +485,7 @@ export const usePuzzleProgress = (
       addCellDraftMode,
       addCellValidation,
       answerIndex,
-      autocheckEnabled,
+      autoCheckEnabled,
       draftModes,
       validations,
       draftModeEnabled,
@@ -547,7 +564,9 @@ export const usePuzzleProgress = (
     addCellDraftMode,
     autoNextEnabled,
     addAutoNextEnabled,
-    autocheckEnabled,
+    addSelectNextBlankEnabled,
+    selectNextBlankEnabled,
+    autoCheckEnabled,
     addAutocheckEnabled,
     draftModeEnabled,
     addDraftModeEnabled,

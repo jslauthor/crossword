@@ -354,8 +354,10 @@ export default function Puzzle({
     draftModes,
     autoNextEnabled,
     addAutoNextEnabled,
-    autocheckEnabled,
+    autoCheckEnabled,
     addAutocheckEnabled,
+    addSelectNextBlankEnabled,
+    selectNextBlankEnabled,
     draftModeEnabled,
     addDraftModeEnabled,
     hasRetrievedState,
@@ -366,11 +368,11 @@ export default function Puzzle({
     setIsPromptOpen,
   );
   const turnLeft = useCallback(
-    () => setSideOffset(sideOffset + 1),
+    (offset?: number) => setSideOffset(sideOffset + (offset ?? 1)),
     [sideOffset],
   );
   const turnRight = useCallback(
-    () => setSideOffset(sideOffset - 1),
+    (offset?: number) => setSideOffset(sideOffset - (offset ?? 1)),
     [sideOffset],
   );
 
@@ -603,12 +605,15 @@ export default function Puzzle({
     }
   }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
+  const handleTurnRight = useCallback(() => turnRight(), [turnRight]);
+  const handleTurnLeft = useCallback(() => turnLeft(), [turnLeft]);
+
   // Keyboard shortcuts
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
   useKeyDown(handlePrev, ['ARROWLEFT']);
   useKeyDown(handleNext, ['ARROWRIGHT']);
-  useKeyDown(turnRight, ['ARROWUP']);
-  useKeyDown(turnLeft, ['ARROWDOWN']);
+  useKeyDown(handleTurnRight, ['ARROWUP']);
+  useKeyDown(handleTurnLeft, ['ARROWDOWN']);
   useKeyDown(onClueClick, [' ']);
   useKeyDown(finishPuzzle, ['`']);
 
@@ -713,7 +718,7 @@ export default function Puzzle({
           <TimerAndGuesses elapsedTime={elapsedTime ?? 0} guesses={guesses} />
         }
         rotatingBoxProps={rotatingBoxProps}
-        autocheckEnabled={autocheckEnabled}
+        autocheckEnabled={autoCheckEnabled}
         draftModeEnabled={draftModeEnabled}
         onAutocheckChanged={handleAutocheckChanged}
         onDraftModeChanged={handleDraftModeChanged}
@@ -773,7 +778,8 @@ export default function Puzzle({
                   isVerticalOrientation={isVerticalOrientation}
                   disableOrientation={disableOrientation}
                   onVerticalOrientationChange={handleSetOrientation}
-                  autocheckEnabled={autocheckEnabled}
+                  autoCheckEnabled={autoCheckEnabled}
+                  selectNextBlankEnabled={selectNextBlankEnabled}
                   characterPositionArray={
                     characterPositions ?? defaultCharacterPositions
                   }
@@ -806,7 +812,7 @@ export default function Puzzle({
           <>
             <InfoBar>
               <TurnButton
-                onClick={turnLeft}
+                onClick={handleTurnLeft}
                 $side="left"
                 $color={toHex(adjacentColor)}
               >
@@ -857,7 +863,7 @@ export default function Puzzle({
                 </BackNextButtonsContainer>
               </ClueContainer>
               <TurnButton
-                onClick={turnRight}
+                onClick={handleTurnRight}
                 $side="right"
                 $color={toHex(adjacentColor)}
               >
@@ -895,6 +901,8 @@ export default function Puzzle({
         onClose={handleSettingsClose}
         autoNextEnabled={autoNextEnabled}
         onAutoNextChanged={addAutoNextEnabled}
+        selectNextBlank={selectNextBlankEnabled}
+        onSelectNextBlankChanged={addSelectNextBlankEnabled}
       />
       {puzzleStats != null && (
         <PuzzleShare

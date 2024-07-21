@@ -226,7 +226,8 @@ export type LetterBoxesProps = {
   characterPositionArray: Float32Array;
   cellValidationArray: Int16Array;
   cellDraftModeArray: Int16Array;
-  autocheckEnabled: boolean;
+  autoCheckEnabled: boolean;
+  selectNextBlankEnabled: boolean;
   autoNextEnabled: boolean;
   updateCharacterPosition: (
     selectedIndex: number,
@@ -239,8 +240,8 @@ export type LetterBoxesProps = {
   onLetterInput?: () => void;
   onSelectClue?: SelectClueFn;
   onInitialize?: () => void;
-  turnLeft: () => void;
-  turnRight: () => void;
+  turnLeft: (offset?: number) => void;
+  turnRight: (offset?: number) => void;
   setOnNextWord?: (callback: (selected: number) => void) => void;
   setOnPrevWord?: (callback: (selected: number) => void) => void;
   theme?: string;
@@ -341,6 +342,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   cellValidationArray,
   cellDraftModeArray,
   autoNextEnabled,
+  selectNextBlankEnabled,
   turnLeft,
   turnRight,
   setOnPrevWord,
@@ -710,6 +712,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   });
 
+  // TODO: Update this function to be able to go next or previous
+  // TODO: Vertical last column should select the 2nd column on the next side
+  // TODO: Memoize what you need
+
   const goToNextWord = useCallback(
     (selected: number) => {
       const { solution, wordSequencesBySide } = record;
@@ -724,59 +730,77 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         ? cell?.mapping[selectedSide]?.downSequenceIndex
         : cell?.mapping[selectedSide]?.acrossSequenceIndex;
 
-      // Update letter and move to the next word
-      const keys = Object.keys(wordSequencesBySide[selectedSide][direction]);
-      const currentIndex = keys.findIndex(
-        (i) => sequenceIndex === parseInt(i, 10),
+      let sequences: { side: number; index: number; sequence: number[] }[] = [];
+      for (const [key, value] of Object.entries(wordSequencesBySide)) {
+        sequences = sequences.concat(
+          Object.entries(value[direction]).map(([index, sequence]) => ({
+            side: parseInt(key, 10),
+            index: parseInt(index, 10),
+            sequence,
+          })),
+        );
+      }
+
+      const currentIndex = sequences.findIndex(
+        (i) => i.index == sequenceIndex && i.side == selectedSide,
       );
-      const nextIndex = keys[currentIndex + 1];
 
-      // TODO: Instead of worrying about the last cell, can you just look for the next cell even if it's on the next side?
-      // Then you can have one logic path
+      const nextSequenceIndex =
+        sequences[constrain(0, sequences.length - 1, currentIndex + 1)].index;
+      const nextIndex = sequences.findIndex(
+        (i) => i.index == nextSequenceIndex,
+      );
+      // Find the next cell and default to it
+      let nextCell = sequences[nextIndex];
+      let nextSelected = nextCell.sequence[0];
 
-      if (nextIndex != null) {
-        const nextRange =
-          wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];
-        if (nextRange != null) {
-          setSelected(nextRange[0]);
+      if (selectNextBlankEnabled === true) {
+        let shouldBreak: boolean = false;
+        // Look for next blank cell. If there isn't one, default to the very next cell
+        // as if selectNextBlank is false
+        for (let i = 0; i < sequences.length; i++) {
+          const tempIndex = constrain(0, sequences.length - 1, nextIndex + i);
+          const { sequence } = sequences[tempIndex];
+          for (let y = 0; y < sequence.length; y++) {
+            // Look for empty cells
+            if (
+              characterPositionArray[sequence[y] * 2] === -1 &&
+              characterPositionArray[sequence[y] * 2 + 1] === -1
+            ) {
+              nextCell = sequences[tempIndex];
+              nextSelected = sequence[y];
+              shouldBreak = true;
+              break;
+            }
+          }
+          if (shouldBreak === true) {
+            break;
+          }
         }
-      } else {
-        // Move to the next side!
-        const nextSide = constrain(0, puzzle.data.length - 1, selectedSide + 1);
-        let range = null;
-        if (disableOrientation === true) {
-          // in this case it's a crossmoji
-          // Pick the first blank cell otherwise pick the first cell
-          range = wordSequencesBySide[nextSide][direction].find((i) => {
-            if (i == null) return false;
-            return (
-              characterPositionArray[i[0] * 2] === -1 &&
-              characterPositionArray[i[0] * 2 + 1] === -1
-            );
-          });
-          range =
-            range ??
-            wordSequencesBySide[nextSide][direction].find((i) => i != null);
-        } else {
-          range = wordSequencesBySide[nextSide][direction].find((i) => {
-            if (i == null) return false;
-            return !isVerticalOrientation || solution[i[0]].x !== 0;
-          });
-        }
+      }
 
-        if (range != null) {
-          setSelected(range[0]);
-          turnRight();
+      setSelected(nextSelected);
+      if (nextCell.side !== selectedSide) {
+        let numSides = 0;
+        while (numSides < puzzle.data.length) {
+          numSides++;
+          if (
+            constrain(0, puzzle.data.length - 1, selectedSide + numSides) ===
+            nextCell.side
+          ) {
+            break;
+          }
         }
+        turnRight(numSides);
       }
     },
     [
       record,
       isVerticalOrientation,
       selectedSide,
-      puzzle.data.length,
-      disableOrientation,
+      selectNextBlankEnabled,
       characterPositionArray,
+      puzzle.data.length,
       turnRight,
     ],
   );
