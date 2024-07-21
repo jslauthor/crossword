@@ -776,7 +776,6 @@ export default function Puzzle({
                   borderColor={borderColor}
                   onInitialize={onInitialize}
                   isVerticalOrientation={isVerticalOrientation}
-                  disableOrientation={disableOrientation}
                   onVerticalOrientationChange={handleSetOrientation}
                   autoCheckEnabled={autoCheckEnabled}
                   selectNextBlankEnabled={selectNextBlankEnabled}

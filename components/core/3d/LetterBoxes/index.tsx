@@ -222,7 +222,6 @@ export type LetterBoxesProps = {
   correctColor: number;
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
-  disableOrientation: boolean;
   characterPositionArray: Float32Array;
   cellValidationArray: Int16Array;
   cellDraftModeArray: Int16Array;
@@ -320,7 +319,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
   isVerticalOrientation = false,
-  disableOrientation,
   onVerticalOrientationChange,
   setInstancedMesh,
   selectedSide,
@@ -826,68 +824,57 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const goToPreviousWord = useCallback(
     (selected: number, startFromBeginning: boolean = false) => {
-      const { solution, wordSequencesBySide } = record;
-      const cell = solution[selected];
-
-      if (cell?.mapping == null) {
-        return;
-      }
-
-      const direction: SequenceKeys = isVerticalOrientation ? 'down' : 'across';
-      const sequenceIndex = isVerticalOrientation
-        ? cell?.mapping[selectedSide]?.downSequenceIndex
-        : cell?.mapping[selectedSide]?.acrossSequenceIndex;
-
-      // Update letter and move to the next word
-      const keys = Object.keys(wordSequencesBySide[selectedSide][direction]);
-      const currentIndex = keys.findIndex(
-        (i) => sequenceIndex === parseInt(i, 10),
-      );
-      const nextIndex = keys[currentIndex - 1];
-      if (nextIndex != null) {
-        const nextRange =
-          wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];
-        if (nextRange != null) {
-          setSelected(nextRange[startFromBeginning ? 0 : nextRange.length - 1]);
-        }
-      } else {
-        // Move to the previous side!
-        const nextSide = constrain(0, puzzle.data.length - 1, selectedSide - 1);
-        let range = null;
-        // in this case it's a crossmoji
-        if (disableOrientation === true) {
-          // Pick the first blank cell otherwise pick the first cell
-          range = wordSequencesBySide[nextSide][direction].findLast((i) => {
-            if (i == null) return false;
-            return (
-              characterPositionArray[i[0] * 2] === -1 &&
-              characterPositionArray[i[0] * 2 + 1] === -1
-            );
-          });
-          range =
-            range ??
-            wordSequencesBySide[nextSide][direction].findLast((i) => i != null);
-        } else {
-          range = wordSequencesBySide[nextSide][direction].findLast((i) => {
-            if (i == null) return false;
-            return !isVerticalOrientation || solution[i[0]].x !== 0;
-          });
-        }
-        if (range != null) {
-          setSelected(range[startFromBeginning ? 0 : range.length - 1]);
-          turnLeft();
-        }
-      }
+      // const { solution, wordSequencesBySide } = record;
+      // const cell = solution[selected];
+      // if (cell?.mapping == null) {
+      //   return;
+      // }
+      // const direction: SequenceKeys = isVerticalOrientation ? 'down' : 'across';
+      // const sequenceIndex = isVerticalOrientation
+      //   ? cell?.mapping[selectedSide]?.downSequenceIndex
+      //   : cell?.mapping[selectedSide]?.acrossSequenceIndex;
+      // // Update letter and move to the next word
+      // const keys = Object.keys(wordSequencesBySide[selectedSide][direction]);
+      // const currentIndex = keys.findIndex(
+      //   (i) => sequenceIndex === parseInt(i, 10),
+      // );
+      // const nextIndex = keys[currentIndex - 1];
+      // if (nextIndex != null) {
+      //   const nextRange =
+      //     wordSequencesBySide[selectedSide][direction][parseInt(nextIndex, 10)];
+      //   if (nextRange != null) {
+      //     setSelected(nextRange[startFromBeginning ? 0 : nextRange.length - 1]);
+      //   }
+      // } else {
+      //   // Move to the previous side!
+      //   const nextSide = constrain(0, puzzle.data.length - 1, selectedSide - 1);
+      //   let range = null;
+      //   // in this case it's a crossmoji
+      //   if (disableOrientation === true) {
+      //     // Pick the first blank cell otherwise pick the first cell
+      //     range = wordSequencesBySide[nextSide][direction].findLast((i) => {
+      //       if (i == null) return false;
+      //       return (
+      //         characterPositionArray[i[0] * 2] === -1 &&
+      //         characterPositionArray[i[0] * 2 + 1] === -1
+      //       );
+      //     });
+      //     range =
+      //       range ??
+      //       wordSequencesBySide[nextSide][direction].findLast((i) => i != null);
+      //   } else {
+      //     range = wordSequencesBySide[nextSide][direction].findLast((i) => {
+      //       if (i == null) return false;
+      //       return !isVerticalOrientation || solution[i[0]].x !== 0;
+      //     });
+      //   }
+      //   if (range != null) {
+      //     setSelected(range[startFromBeginning ? 0 : range.length - 1]);
+      //     turnLeft();
+      //   }
+      // }
     },
-    [
-      characterPositionArray,
-      disableOrientation,
-      isVerticalOrientation,
-      puzzle.data.length,
-      record,
-      selectedSide,
-      turnLeft,
-    ],
+    [],
   );
 
   useEffect(() => {
