@@ -86,7 +86,7 @@ export const usePuzzleProgress = (
   const [autoCheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<number>();
-  const [guesses, setGuesses] = useState<number>();
+  const [guesses, setGuesses] = useState<number>(-1);
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   const [characterPositions, setCharacterPositionArray] =
     useState<Float32Array>();
@@ -492,6 +492,8 @@ export const usePuzzleProgress = (
     ],
   );
 
+  const [prevSelectedIndex, setPrevSelectedIndex] = useState<number>();
+
   const updateCharacterPosition = useCallback(
     (selectedIndex: number, key: string, x: number, y: number) => {
       if (validations == null || characterPositions == null) return false;
@@ -511,28 +513,32 @@ export const usePuzzleProgress = (
 
         const numEntries = getNumberOfEntries(newArray);
         const newPositionIsNotBlank = x > -1 && y > -1;
+
         // We only want to increment guesses if the user has filled in all the cells at least once
         // If guesses is -1, then we haven't filled in all the cells yet
         // We only increment guesses if the user didn't use backspace
-        if (numEntries >= numberOfCells) {
-          if (guesses === -1) {
-            setGuesses(0);
-          } else if (newPositionIsNotBlank === true) {
-            if (guesses != null) {
-              addGuesses(guesses + 1);
-            }
-          }
+        if (numEntries >= numberOfCells || guesses > -1) {
           if (
             newPositionIsNotBlank === true &&
-            openPrompt != null &&
-            characterPositions[selectedIndex * 2] == -1 && // check if the original cell was empty
-            characterPositions[selectedIndex * 2 + 1] == -1 && // check if the original cell was empty
-            verifyAnswerIndex(newIndex) === false
+            (characterPositions[selectedIndex * 2] !== x || // check if the previous cell was the same guess
+              characterPositions[selectedIndex * 2 + 1] !== y) // check if the previous cell was the same guess
           ) {
-            openPrompt(true);
+            addGuesses(guesses + 1);
           }
         }
 
+        // Control how the almost done prompt appears
+        if (
+          newPositionIsNotBlank === true &&
+          openPrompt != null &&
+          numEntries >= numberOfCells &&
+          prevSelectedIndex !== selectedIndex &&
+          verifyAnswerIndex(newIndex) === false
+        ) {
+          openPrompt(true);
+        }
+
+        setPrevSelectedIndex(selectedIndex);
         addCharacterPosition(newArray);
         return true;
       }
@@ -545,10 +551,11 @@ export const usePuzzleProgress = (
       hasInteractedWithPuzzle,
       updateAnswerIndex,
       puzzle.record.solution,
-      addCharacterPosition,
       numberOfCells,
       guesses,
       openPrompt,
+      prevSelectedIndex,
+      addCharacterPosition,
       addGuesses,
     ],
   );
