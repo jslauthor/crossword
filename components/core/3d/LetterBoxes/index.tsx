@@ -710,8 +710,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
   });
 
-  // TODO: Vertical last column should select the 2nd column on the next side
-
   const goToNextWord = useCallback(
     (selected: number, polarity: 1 | -1 = 1) => {
       const { solution, wordSequencesBySideFlat } = record;
@@ -735,9 +733,33 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       const nextSequenceIndex =
         sequences[constrain(0, sequences.length - 1, currentIndex + polarity)]
           .index;
-      const nextIndex = sequences.findIndex(
-        (i) => i.index == nextSequenceIndex,
-      );
+      let nextIndex = sequences.findIndex((i) => i.index == nextSequenceIndex);
+
+      // In the case of the shared columns,
+      // we need to move it to the next spot on the other side
+      // where the vertical sequence is x != 0
+      if (
+        isVerticalOrientation &&
+        cell.x === 0 &&
+        sequences[currentIndex].side != sequences[nextIndex].side
+      ) {
+        // Search for the next cell that is not x = 0
+        // If you can't find it, default to the cell above
+        for (let i = 0; i < sequences.length; i++) {
+          const tempIndex = constrain(
+            0,
+            sequences.length - 1,
+            nextIndex + i * polarity,
+          );
+          const { sequence } = sequences[tempIndex];
+          const cell = solution[sequence[0]];
+          if (cell.x !== 0) {
+            nextIndex = tempIndex;
+            break;
+          }
+        }
+      }
+
       // Find the next cell and default to it
       let nextCell = sequences[nextIndex];
       let nextSelected =
