@@ -278,11 +278,8 @@ export default function Puzzle({
     return isPuzzleReady && progress >= 1;
   }, [isPuzzleReady, progress]);
 
-  const onPrevWord =
-    useRef<
-      (selected: number, startFromBeginning?: boolean) => void | undefined
-    >();
-  const onNextWord = useRef<(selected: number) => void | undefined>();
+  const goToNextWord =
+    useRef<(selected: number, polarity: 1 | -1) => void | undefined>();
 
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
@@ -354,8 +351,10 @@ export default function Puzzle({
     draftModes,
     autoNextEnabled,
     addAutoNextEnabled,
-    autocheckEnabled,
+    autoCheckEnabled,
     addAutocheckEnabled,
+    addSelectNextBlankEnabled,
+    selectNextBlankEnabled,
     draftModeEnabled,
     addDraftModeEnabled,
     hasRetrievedState,
@@ -366,11 +365,11 @@ export default function Puzzle({
     setIsPromptOpen,
   );
   const turnLeft = useCallback(
-    () => setSideOffset(sideOffset + 1),
+    (offset?: number) => setSideOffset(sideOffset + (offset ?? 1)),
     [sideOffset],
   );
   const turnRight = useCallback(
-    () => setSideOffset(sideOffset - 1),
+    (offset?: number) => setSideOffset(sideOffset - (offset ?? 1)),
     [sideOffset],
   );
 
@@ -504,19 +503,18 @@ export default function Puzzle({
   /**
    * setState did not work for this callback, so I used a reference instead. Very odd.
    */
-  const setOnNextWord = useCallback((s: (selected: number) => void) => {
-    onNextWord.current = s;
-  }, []);
-
-  const setOnPrevWord = useCallback((s: (selected: number) => void) => {
-    onPrevWord.current = s;
-  }, []);
+  const setGoToNextWord = useCallback(
+    (s: (selected: number, polarity: 1 | -1) => void) => {
+      goToNextWord.current = s;
+    },
+    [],
+  );
 
   const handlePrevWord = useCallback(
     (selected?: number) => (event?: MouseEvent) => {
       if (event) event.stopPropagation();
-      if (onPrevWord.current == null || selected == null) return;
-      onPrevWord.current(selected, true);
+      if (goToNextWord.current == null || selected == null) return;
+      goToNextWord.current(selected, -1);
     },
     [],
   );
@@ -524,8 +522,8 @@ export default function Puzzle({
   const handleNextWord = useCallback(
     (selected?: number) => (event?: MouseEvent) => {
       if (event) event.stopPropagation();
-      if (onNextWord.current == null || selected == null) return;
-      onNextWord.current(selected);
+      if (goToNextWord.current == null || selected == null) return;
+      goToNextWord.current(selected, 1);
     },
     [],
   );
@@ -561,6 +559,12 @@ export default function Puzzle({
     () => handlePrevWord(selected)(undefined),
     [handlePrevWord, selected],
   );
+
+  // Update page title with puzzle title
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    document.title = `${puzzle.title} - Crosscube`;
+  }, [puzzle.title]);
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
@@ -603,12 +607,15 @@ export default function Puzzle({
     }
   }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
+  const handleTurnRight = useCallback(() => turnRight(), [turnRight]);
+  const handleTurnLeft = useCallback(() => turnLeft(), [turnLeft]);
+
   // Keyboard shortcuts
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
   useKeyDown(handlePrev, ['ARROWLEFT']);
   useKeyDown(handleNext, ['ARROWRIGHT']);
-  useKeyDown(turnRight, ['ARROWUP']);
-  useKeyDown(turnLeft, ['ARROWDOWN']);
+  useKeyDown(handleTurnRight, ['ARROWUP']);
+  useKeyDown(handleTurnLeft, ['ARROWDOWN']);
   useKeyDown(onClueClick, [' ']);
   useKeyDown(finishPuzzle, ['`']);
 
@@ -713,7 +720,7 @@ export default function Puzzle({
           <TimerAndGuesses elapsedTime={elapsedTime ?? 0} guesses={guesses} />
         }
         rotatingBoxProps={rotatingBoxProps}
-        autocheckEnabled={autocheckEnabled}
+        autocheckEnabled={autoCheckEnabled}
         draftModeEnabled={draftModeEnabled}
         onAutocheckChanged={handleAutocheckChanged}
         onDraftModeChanged={handleDraftModeChanged}
@@ -771,9 +778,9 @@ export default function Puzzle({
                   borderColor={borderColor}
                   onInitialize={onInitialize}
                   isVerticalOrientation={isVerticalOrientation}
-                  disableOrientation={disableOrientation}
                   onVerticalOrientationChange={handleSetOrientation}
-                  autocheckEnabled={autocheckEnabled}
+                  autoCheckEnabled={autoCheckEnabled}
+                  selectNextBlankEnabled={selectNextBlankEnabled}
                   characterPositionArray={
                     characterPositions ?? defaultCharacterPositions
                   }
@@ -782,8 +789,7 @@ export default function Puzzle({
                   autoNextEnabled={autoNextEnabled}
                   turnLeft={turnLeft}
                   turnRight={turnRight}
-                  setOnNextWord={setOnNextWord}
-                  setOnPrevWord={setOnPrevWord}
+                  setGoToNextWord={setGoToNextWord}
                   theme={theme}
                   isSpinning={isSpinning}
                 />
@@ -806,7 +812,7 @@ export default function Puzzle({
           <>
             <InfoBar>
               <TurnButton
-                onClick={turnLeft}
+                onClick={handleTurnLeft}
                 $side="left"
                 $color={toHex(adjacentColor)}
               >
@@ -857,7 +863,7 @@ export default function Puzzle({
                 </BackNextButtonsContainer>
               </ClueContainer>
               <TurnButton
-                onClick={turnRight}
+                onClick={handleTurnRight}
                 $side="right"
                 $color={toHex(adjacentColor)}
               >
@@ -895,6 +901,8 @@ export default function Puzzle({
         onClose={handleSettingsClose}
         autoNextEnabled={autoNextEnabled}
         onAutoNextChanged={addAutoNextEnabled}
+        selectNextBlank={selectNextBlankEnabled}
+        onSelectNextBlankChanged={addSelectNextBlankEnabled}
       />
       {puzzleStats != null && (
         <PuzzleShare

@@ -44,6 +44,10 @@ export interface CharacterRecord {
       [K in SequenceKeys]: CharacterRecord['wordSequences'];
     }
   >;
+  wordSequencesBySideFlat: Record<
+    SequenceKeys,
+    { side: number; index: number; sequence: number[] }[]
+  >;
   solution: SolutionType[];
   clues: {
     across: Clue[];
@@ -360,10 +364,37 @@ export const getCharacterRecord = (
     solutionArray[x].x = x % (width - 1);
   }
 
+  const wordSequencesBySideFlat: Record<
+    SequenceKeys,
+    { side: number; index: number; sequence: number[] }[]
+  > = {
+    across: [],
+    down: [],
+  };
+  for (const [key, value] of Object.entries(wordSequencesBySide)) {
+    wordSequencesBySideFlat['across'] = wordSequencesBySideFlat[
+      'across'
+    ].concat(
+      Object.entries(value['across']).map(([index, sequence]) => ({
+        side: parseInt(key, 10),
+        index: parseInt(index, 10),
+        sequence,
+      })),
+    );
+    wordSequencesBySideFlat['down'] = wordSequencesBySideFlat['down'].concat(
+      Object.entries(value['down']).map(([index, sequence]) => ({
+        side: parseInt(key, 10),
+        index: parseInt(index, 10),
+        sequence,
+      })),
+    );
+  }
+
   return {
     words,
     wordSequences,
     wordSequencesBySide,
+    wordSequencesBySideFlat,
     solution: solutionArray,
     clues: {
       across,
