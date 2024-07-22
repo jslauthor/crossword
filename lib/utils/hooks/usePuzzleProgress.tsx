@@ -33,6 +33,7 @@ import { toUint8Array } from 'js-base64';
 const verifyAnswerIndex = memoizeOne(testAnswerIndex);
 
 const AUTO_NEXT_KEY = 'auto-next';
+const SELECT_BLANK_KEY = 'select-blank';
 
 const ANONYMOUS_PLAYER_STORAGE_KEY = 'anonymous-player-key';
 const getLocalCacheId = async (puzzleId: string) => {
@@ -80,10 +81,12 @@ export const usePuzzleProgress = (
   const [isPuzzleSolved, setIsPuzzleSolved] = useState<boolean>(false);
   const [puzzleStats, setPuzzleStats] = useState<PuzzleStats | null>(null);
   const [autoNextEnabled, setAutoNextEnabled] = useState<boolean>(true);
-  const [autocheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
+  const [selectNextBlankEnabled, setSelectNextBlankEnabled] =
+    useState<boolean>(true);
+  const [autoCheckEnabled, setAutocheckEnabled] = useState<boolean>(false);
   const [draftModeEnabled, setDraftModeEnabled] = useState<boolean>(false);
   const [elapsedTime, setElapsedTime] = useState<number>();
-  const [guesses, setGuesses] = useState<number>();
+  const [guesses, setGuesses] = useState<number>(-1);
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   const [characterPositions, setCharacterPositionArray] =
     useState<Float32Array>();
@@ -136,6 +139,9 @@ export const usePuzzleProgress = (
     const initializeLocalCache = async () => {
       const autoNext = await localforage.getItem<boolean>(AUTO_NEXT_KEY);
       setAutoNextEnabled(autoNext ?? true);
+
+      const selectBlank = await localforage.getItem<boolean>(SELECT_BLANK_KEY);
+      setSelectNextBlankEnabled(selectBlank ?? true);
 
       const cacheId = await getLocalCacheId(puzzle.id);
       setCacheId(cacheId);
@@ -373,6 +379,17 @@ export const usePuzzleProgress = (
     [setAutoNextEnabled],
   );
 
+  const addSelectNextBlankEnabled = useCallback(
+    (enabled: boolean) => {
+      setSelectNextBlankEnabled(enabled);
+      const save = async () => {
+        await localforage.setItem<boolean>(SELECT_BLANK_KEY, enabled);
+      };
+      save();
+    },
+    [setSelectNextBlankEnabled],
+  );
+
   const addDraftModeEnabled = useCallback(
     (draftModeEnabled: boolean) => {
       if (isPuzzleSolved) return;
@@ -443,7 +460,7 @@ export const usePuzzleProgress = (
 
         if (validations != null) {
           const newValidations = new Int16Array(validations);
-          if (autocheckEnabled) {
+          if (autoCheckEnabled) {
             // 2 = correct
             // 1 = incorrect
             newValidations[index * 2] = isCorrect ? 2 : 1;
@@ -468,12 +485,14 @@ export const usePuzzleProgress = (
       addCellDraftMode,
       addCellValidation,
       answerIndex,
-      autocheckEnabled,
+      autoCheckEnabled,
       draftModes,
       validations,
       draftModeEnabled,
     ],
   );
+
+  const [prevSelectedIndex, setPrevSelectedIndex] = useState<number>();
 
   const updateCharacterPosition = useCallback(
     (selectedIndex: number, key: string, x: number, y: number) => {
@@ -494,28 +513,32 @@ export const usePuzzleProgress = (
 
         const numEntries = getNumberOfEntries(newArray);
         const newPositionIsNotBlank = x > -1 && y > -1;
+
         // We only want to increment guesses if the user has filled in all the cells at least once
         // If guesses is -1, then we haven't filled in all the cells yet
         // We only increment guesses if the user didn't use backspace
-        if (numEntries >= numberOfCells) {
-          if (guesses === -1) {
-            setGuesses(0);
-          } else if (newPositionIsNotBlank === true) {
-            if (guesses != null) {
-              addGuesses(guesses + 1);
-            }
-          }
+        if (numEntries >= numberOfCells || guesses > -1) {
           if (
             newPositionIsNotBlank === true &&
-            openPrompt != null &&
-            characterPositions[selectedIndex * 2] == -1 && // check if the original cell was empty
-            characterPositions[selectedIndex * 2 + 1] == -1 && // check if the original cell was empty
-            verifyAnswerIndex(newIndex) === false
+            (characterPositions[selectedIndex * 2] !== x || // check if the previous cell was the same guess
+              characterPositions[selectedIndex * 2 + 1] !== y) // check if the previous cell was the same guess
           ) {
-            openPrompt(true);
+            addGuesses(guesses + 1);
           }
         }
 
+        // Control how the almost done prompt appears
+        if (
+          newPositionIsNotBlank === true &&
+          openPrompt != null &&
+          numEntries >= numberOfCells &&
+          prevSelectedIndex !== selectedIndex &&
+          verifyAnswerIndex(newIndex) === false
+        ) {
+          openPrompt(true);
+        }
+
+        setPrevSelectedIndex(selectedIndex);
         addCharacterPosition(newArray);
         return true;
       }
@@ -528,10 +551,11 @@ export const usePuzzleProgress = (
       hasInteractedWithPuzzle,
       updateAnswerIndex,
       puzzle.record.solution,
-      addCharacterPosition,
       numberOfCells,
       guesses,
       openPrompt,
+      prevSelectedIndex,
+      addCharacterPosition,
       addGuesses,
     ],
   );
@@ -547,7 +571,9 @@ export const usePuzzleProgress = (
     addCellDraftMode,
     autoNextEnabled,
     addAutoNextEnabled,
-    autocheckEnabled,
+    addSelectNextBlankEnabled,
+    selectNextBlankEnabled,
+    autoCheckEnabled,
     addAutocheckEnabled,
     draftModeEnabled,
     addDraftModeEnabled,
