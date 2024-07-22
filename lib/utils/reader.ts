@@ -17,6 +17,7 @@ import * as Y from 'yjs';
 import { queryReadOnly } from 'lib/hygraph';
 import { setTimeout } from 'timers/promises';
 import { User } from '@clerk/backend';
+import { fromUint8Array } from 'js-base64';
 
 const gzipAsync = promisify(gzip);
 
@@ -238,6 +239,14 @@ export const enrichPuzzles = async (
   puzzles: PuzzleType[],
   clerkUser: User | null,
 ) => {
+  // Add default YJS state to each puzzle
+  for (const puzzle of puzzles) {
+    const compressed = await gzipAsync(
+      Y.encodeStateAsUpdate(createInitialYDoc(puzzle)),
+    );
+    puzzle.initialState = fromUint8Array(compressed);
+  }
+
   if (clerkUser != null) {
     const user = await getUserForClerkId(clerkUser.id);
     if (user != null) {
@@ -247,38 +256,37 @@ export const enrichPuzzles = async (
         puzzles.map((p) => p.id),
       );
 
-      // Add default YJS state to each puzzle
-      for (const puzzle of puzzles) {
-        const compressed = await gzipAsync(
-          Y.encodeStateAsUpdateV2(createInitialYDoc(puzzle)),
-        );
-        puzzle.initialState = compressed.toString('base64');
-      }
-
       // Update the previewState for each puzzle
       for (const progress of progresses) {
         const puzzle = puzzles.find((p) => p.id === progress.puzzleId);
         if (puzzle != null) {
-          const doc = new Y.Doc();
-          const state = Buffer.from(progress.state) as Uint8Array;
-          Y.applyUpdateV2(doc, state);
-          const positions = Float32Array.from(
-            doc.getMap(GAME_STATE_KEY).get('characterPositions') as number[],
-          );
-          const index = updateAnswerIndex(
-            initializeAnswerIndex(puzzle.record.solution),
-            puzzle.svgSegments != null
-              ? invertAtlas(buildSvgTextureAtlasLookup(puzzle.svgSegments))
-              : numberAtlas,
-            positions,
-            puzzle.record.solution,
-          );
-          puzzle.initialState = (await gzipAsync(state)).toString('base64');
-          puzzle.previewState = getProgressFromSolution(
-            puzzle,
-            positions,
-            index,
-          );
+          try {
+            const doc = new Y.Doc();
+            const state = Buffer.from(progress.state) as Uint8Array;
+            Y.applyUpdate(doc, state);
+            const positions = Float32Array.from(
+              doc.getMap(GAME_STATE_KEY).get('characterPositions') as number[],
+            );
+            const index = updateAnswerIndex(
+              initializeAnswerIndex(puzzle.record.solution),
+              puzzle.svgSegments != null
+                ? invertAtlas(buildSvgTextureAtlasLookup(puzzle.svgSegments))
+                : numberAtlas,
+              positions,
+              puzzle.record.solution,
+            );
+            puzzle.initialState = fromUint8Array(await gzipAsync(state));
+            puzzle.previewState = getProgressFromSolution(
+              puzzle,
+              positions,
+              index,
+            );
+          } catch (e) {
+            console.error(
+              `Could not recover progress for puzzle ${puzzle.id} and user ${user.id}!`,
+              e,
+            );
+          }
         }
       }
     }

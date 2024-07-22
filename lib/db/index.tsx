@@ -1,5 +1,5 @@
 import prisma from 'lib/prisma';
-import { Doc, encodeStateAsUpdateV2 } from 'yjs';
+import { Doc, encodeStateAsUpdate } from 'yjs';
 
 export const getPuzzleProgressForUser = (userId: string, puzzleId: string) => {
   return prisma.progress.findFirst({
@@ -37,7 +37,7 @@ export const upsertPuzzleProgress = (
   userId: string,
   state: Doc,
 ) => {
-  const content = Buffer.from(encodeStateAsUpdateV2(state));
+  const content = Buffer.from(encodeStateAsUpdate(state));
   return prisma.progress.upsert({
     where: {
       puzzleId_userId: {

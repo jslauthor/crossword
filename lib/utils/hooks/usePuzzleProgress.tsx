@@ -151,19 +151,26 @@ export const usePuzzleProgress = (
         const compressedData = toUint8Array(puzzle.initialState);
         const decompressedArrayBuffer = await decompressData(compressedData);
         const state = new Uint8Array(decompressedArrayBuffer);
-        Y.applyUpdateV2(initialDoc, state);
+        Y.applyUpdate(initialDoc, state);
       }
 
       let doc = new Y.Doc();
       const localState = await db.data.get(cacheId);
       if (localState?.data instanceof Uint8Array) {
         Y.applyUpdate(doc, new Uint8Array(localState.data));
-      } else {
+      }
+
+      // If the local state is null or the game state is corrupted,
+      // then we need to create the initial state
+      if (
+        localState?.data == null ||
+        doc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) == null
+      ) {
         doc = createInitialYDoc(puzzle);
       }
 
       // Merge the local state with the store puzzle state
-      const localUpdate = Y.encodeStateAsUpdateV2(doc);
+      const localUpdate = Y.encodeStateAsUpdate(doc);
       initialDoc.transact(() => {
         Y.applyUpdate(initialDoc, localUpdate);
       });
@@ -171,7 +178,7 @@ export const usePuzzleProgress = (
       // Saved merged state to indexeddb
       await db.data.put({
         id: cacheId,
-        data: Y.encodeStateAsUpdateV2(initialDoc),
+        data: Y.encodeStateAsUpdate(initialDoc),
       });
       setYDoc(initialDoc);
 
@@ -255,7 +262,7 @@ export const usePuzzleProgress = (
     if (atlas == null || yDoc == null || cacheId == null) return;
 
     const saveToIndexedDB = () => {
-      const update = Y.encodeStateAsUpdateV2(yDoc);
+      const update = Y.encodeStateAsUpdate(yDoc);
       db.data.put({ id: cacheId, data: update });
     };
 
