@@ -146,26 +146,43 @@ export const usePuzzleProgress = (
       const cacheId = await getLocalCacheId(puzzle.id);
       setCacheId(cacheId);
 
-      const initialDoc = new Y.Doc();
+      let initialDoc = new Y.Doc();
       if (puzzle.initialState != null) {
-        const compressedData = toUint8Array(puzzle.initialState);
-        const decompressedArrayBuffer = await decompressData(compressedData);
-        const state = new Uint8Array(decompressedArrayBuffer);
-        Y.applyUpdateV2(initialDoc, state);
+        try {
+          const compressedData = toUint8Array(puzzle.initialState);
+          const decompressedArrayBuffer = await decompressData(compressedData);
+          const state = new Uint8Array(decompressedArrayBuffer);
+          Y.applyUpdateV2(initialDoc, state);
+        } catch (e) {
+          initialDoc = createInitialYDoc(puzzle);
+          console.error('Failed to apply update to YDoc', e);
+        }
       }
 
       let doc = new Y.Doc();
       const localState = await db.data.get(cacheId);
       if (localState?.data instanceof Uint8Array) {
-        Y.applyUpdate(doc, new Uint8Array(localState.data));
-      } else {
+        try {
+          Y.applyUpdateV2(doc, new Uint8Array(localState.data));
+        } catch (e) {
+          doc = createInitialYDoc(puzzle);
+          console.error('Failed to apply update to YDoc', e);
+        }
+      }
+
+      // If the local state is null or the game state is corrupted,
+      // then we need to create the initial state
+      if (
+        localState?.data == null ||
+        doc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) == null
+      ) {
         doc = createInitialYDoc(puzzle);
       }
 
       // Merge the local state with the store puzzle state
       const localUpdate = Y.encodeStateAsUpdateV2(doc);
       initialDoc.transact(() => {
-        Y.applyUpdate(initialDoc, localUpdate);
+        Y.applyUpdateV2(initialDoc, localUpdate);
       });
 
       // Saved merged state to indexeddb

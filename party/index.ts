@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client/edge';
 import type * as Party from 'partykit/server';
 import { onConnect } from 'y-partykit';
 import { Buffer } from 'buffer';
-import { encodeStateAsUpdateV2, Doc, applyUpdateV2 } from 'yjs';
+import { encodeStateAsUpdateV2 } from 'yjs';
 import { verifyToken } from '@clerk/backend';
 
 const prisma = new PrismaClient();
@@ -63,9 +63,6 @@ export default class Server implements Party.Server {
                 state,
               },
             });
-            console.log(
-              `Successfully saved progress for ${user?.id} ${puzzleId}`,
-            );
           } catch (e) {
             console.error('Error saving progress to postgres!', e);
           }
