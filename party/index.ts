@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client/edge';
 import type * as Party from 'partykit/server';
 import { onConnect } from 'y-partykit';
 import { Buffer } from 'buffer';
-import { encodeStateAsUpdate } from 'yjs';
+import { encodeStateAsUpdateV2 } from 'yjs';
 import { verifyToken } from '@clerk/backend';
 
 const prisma = new PrismaClient();
@@ -46,7 +46,7 @@ export default class Server implements Party.Server {
                 `Save: User or puzzle not found! ${clerkId} ${user?.id} ${puzzleId}`,
               );
             }
-            const state = Buffer.from(encodeStateAsUpdate(yDoc));
+            const state = Buffer.from(encodeStateAsUpdateV2(yDoc));
             await prisma.progress.upsert({
               where: {
                 puzzleId_userId: {

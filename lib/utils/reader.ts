@@ -242,7 +242,7 @@ export const enrichPuzzles = async (
   // Add default YJS state to each puzzle
   for (const puzzle of puzzles) {
     const compressed = await gzipAsync(
-      Y.encodeStateAsUpdate(createInitialYDoc(puzzle)),
+      Y.encodeStateAsUpdateV2(createInitialYDoc(puzzle)),
     );
     puzzle.initialState = fromUint8Array(compressed);
   }
@@ -263,7 +263,7 @@ export const enrichPuzzles = async (
           try {
             const doc = new Y.Doc();
             const state = Buffer.from(progress.state) as Uint8Array;
-            Y.applyUpdate(doc, state);
+            Y.applyUpdateV2(doc, state);
             const positions = Float32Array.from(
               doc.getMap(GAME_STATE_KEY).get('characterPositions') as number[],
             );

@@ -878,7 +878,7 @@ export default function Puzzle({
             <KeyboardContainer $svgCssMap={svgCssMap}>
               {isPuzzleSolved && (
                 <SolvedContainer>
-                  You did it!
+                  &ldquo;You did it!&rdquo;
                   <ShareButton onClick={handleSharePressed} />
                 </SolvedContainer>
               )}
