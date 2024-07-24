@@ -2,18 +2,14 @@
 
 import Overlay, { OverlayProps } from 'components/core/Overlay';
 import ShareButton from 'components/core/ShareButton';
-import React, {
-  ReactNode,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { ReactNode, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import { formatTime } from 'lib/utils/date';
 import { HRule } from 'components/core/Dividers';
 import Image from 'next/image';
 import { PuzzleStats } from 'lib/utils/puzzle';
+import { User } from '@clerk/backend';
+import SaveProgressCard, { SaveProgressCardProps } from '../SaveProgressCard';
 
 const StarsContainer = styled.div`
   font-size: 5rem;
@@ -21,7 +17,7 @@ const StarsContainer = styled.div`
   gap: 1rem;
 `;
 
-const SettingsContainer = styled.div`
+const Container = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
@@ -153,6 +149,8 @@ interface PuzzleShareProps extends Partial<OverlayProps> {
   puzzleLabel: string[];
   puzzleSubLabel: string;
   puzzleStats: PuzzleStats;
+  user?: User;
+  onAuthClick?: SaveProgressCardProps['onAuthClick'];
 }
 
 const noop = () => {};
@@ -164,6 +162,8 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
   puzzleSubLabel,
   onClose = noop,
   puzzleStats,
+  user,
+  onAuthClick,
 }) => {
   const numStars = useMemo(() => {
     const { timeSuccess, guessSuccess, hintSuccess } = puzzleStats;
@@ -212,7 +212,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
 
   return (
     <Overlay title={title} onClose={onClose} isOpen={isOpen}>
-      <SettingsContainer>
+      <Container>
         <div className="flex flex-col gap-1 justify-center items-center">
           <div>{formattedLabel}</div>
           <div className="text-sm">&quot;{puzzleSubLabel}&quot;</div>
@@ -287,7 +287,9 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
         </div>
 
         <ShareButton onClick={handleShare} />
-      </SettingsContainer>
+
+        {user == null && <SaveProgressCard onAuthClick={onAuthClick} />}
+      </Container>
     </Overlay>
   );
 };
