@@ -147,7 +147,8 @@ export const usePuzzleProgress = (
       setCacheId(cacheId);
 
       let initialDoc = new Y.Doc();
-      if (puzzle.initialState != null) {
+      // iniitalState is only set if the user is logged in
+      if (puzzle.initialState != null && user?.id != null) {
         try {
           const compressedData = toUint8Array(puzzle.initialState);
           const decompressedArrayBuffer = await decompressData(compressedData);
@@ -198,7 +199,7 @@ export const usePuzzleProgress = (
     };
 
     initializeLocalCache();
-  }, [atlas, puzzle, puzzle.id, initState]);
+  }, [atlas, puzzle, puzzle.id, initState, user?.id]);
 
   // Initialize the server after local cache is synced
   useEffect(() => {
