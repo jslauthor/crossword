@@ -281,10 +281,10 @@ export const enrichPuzzles = async (
               positions,
               index,
             );
-          } catch (e) {
+          } catch (e: any) {
             console.error(
-              `Could not recover progress for puzzle ${puzzle.id} and user ${user.id}!`,
-              e,
+              `Could not retrieve progress for puzzle ${puzzle.id} and user ${user.id}!`,
+              e.message,
             );
           }
         }
