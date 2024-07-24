@@ -239,14 +239,6 @@ export const enrichPuzzles = async (
   puzzles: PuzzleType[],
   clerkUser: User | null,
 ) => {
-  // Add default YJS state to each puzzle
-  for (const puzzle of puzzles) {
-    const compressed = await gzipAsync(
-      Y.encodeStateAsUpdate(createInitialYDoc(puzzle)),
-    );
-    puzzle.initialState = fromUint8Array(compressed);
-  }
-
   if (clerkUser != null) {
     const user = await getUserForClerkId(clerkUser.id);
     if (user != null) {
@@ -256,6 +248,14 @@ export const enrichPuzzles = async (
         puzzles.map((p) => p.id),
       );
 
+      // Add default YJS state to each puzzle
+      for (const puzzle of puzzles) {
+        const compressed = await gzipAsync(
+          Y.encodeStateAsUpdateV2(createInitialYDoc(puzzle)),
+        );
+        puzzle.initialState = fromUint8Array(compressed);
+      }
+
       // Update the previewState for each puzzle
       for (const progress of progresses) {
         const puzzle = puzzles.find((p) => p.id === progress.puzzleId);
@@ -263,7 +263,7 @@ export const enrichPuzzles = async (
           try {
             const doc = new Y.Doc();
             const state = Buffer.from(progress.state) as Uint8Array;
-            Y.applyUpdate(doc, state);
+            Y.applyUpdateV2(doc, state);
             const positions = Float32Array.from(
               doc.getMap(GAME_STATE_KEY).get('characterPositions') as number[],
             );
