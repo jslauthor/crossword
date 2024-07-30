@@ -601,6 +601,5 @@ export const usePuzzleProgress = (
     characterPositions,
     hasRetrievedState,
     puzzleStats,
-    user,
   };
 };

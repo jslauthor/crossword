@@ -201,7 +201,7 @@ export type MenuWrapperProps = {
   rotatingBoxProps?: RotatingBoxProps;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
-  onSignInPressed?: () => void;
+  onSignInPressed: () => void;
   onSignOutPressed?: () => void;
   onSettingsPressed?: () => void;
   onDisplayChange?: (isMenuOpen: boolean) => void;

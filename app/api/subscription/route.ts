@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
+import { findContact, updateSubscription } from 'lib/loops';
 
 export async function PUT(request: NextRequest) {
   const user = await currentUser();
@@ -15,25 +16,8 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(
-      'https://app.loops.so/api/v1/contacts/update',
-      {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${process.env.LOOPS_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: user.primaryEmailAddress,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          userId: user.id,
-          userGroup: body.isSubscribed ? ['subscribed'] : [''],
-        }),
-      },
-    );
-
-    if (!response.ok) {
+    const successful = await updateSubscription(user, body.isSubscribed);
+    if (successful === false) {
       throw new Error('Failed to update subscription in Loops.so');
     }
 
@@ -71,8 +55,13 @@ export async function GET() {
       throw new Error('Failed to fetch user data from Loops.so');
     }
 
-    const userData = await response.json();
-    const isSubscribed = userData.groups.includes('subscribed');
+    const userData = await findContact(user.id);
+
+    if (!userData) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const isSubscribed = userData.subscribed;
 
     return NextResponse.json({ isSubscribed });
   } catch (error) {

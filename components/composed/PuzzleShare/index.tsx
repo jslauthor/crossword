@@ -8,8 +8,9 @@ import { formatTime } from 'lib/utils/date';
 import { HRule } from 'components/core/Dividers';
 import Image from 'next/image';
 import { PuzzleStats } from 'lib/utils/puzzle';
-import { User } from '@clerk/backend';
 import SaveProgressCard, { SaveProgressCardProps } from '../SaveProgressCard';
+import GetUpdatesCard, { GetUpdatesCardProps } from '../GetUpdatesCard';
+import { useUser } from '@clerk/nextjs';
 
 const StarsContainer = styled.div`
   font-size: 5rem;
@@ -149,8 +150,8 @@ interface PuzzleShareProps extends Partial<OverlayProps> {
   puzzleLabel: string[];
   puzzleSubLabel: string;
   puzzleStats: PuzzleStats;
-  user?: User;
   onAuthClick?: SaveProgressCardProps['onAuthClick'];
+  onSignUp?: GetUpdatesCardProps['onSignUp'];
 }
 
 const noop = () => {};
@@ -162,9 +163,11 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
   puzzleSubLabel,
   onClose = noop,
   puzzleStats,
-  user,
   onAuthClick,
+  onSignUp,
 }) => {
+  const { isSignedIn } = useUser();
+
   const numStars = useMemo(() => {
     const { timeSuccess, guessSuccess, hintSuccess } = puzzleStats;
     return [timeSuccess, guessSuccess, hintSuccess].reduce((acc, val) => {
@@ -209,6 +212,8 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
     };
     share();
   }, [puzzleLabel, puzzleStats, puzzleSubLabel]);
+
+  const handleNotNow = useCallback(() => {}, []);
 
   return (
     <Overlay title={title} onClose={onClose} isOpen={isOpen}>
@@ -288,7 +293,10 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
 
         <ShareButton onClick={handleShare} />
 
-        {user == null && <SaveProgressCard onAuthClick={onAuthClick} />}
+        {isSignedIn === false && <SaveProgressCard onAuthClick={onAuthClick} />}
+        {isSignedIn === true && (
+          <GetUpdatesCard onSignUp={onSignUp} onNotNow={handleNotNow} />
+        )}
       </Container>
     </Overlay>
   );

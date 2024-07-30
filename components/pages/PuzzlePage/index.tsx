@@ -360,7 +360,6 @@ export default function Puzzle({
     draftModeEnabled,
     addDraftModeEnabled,
     hasRetrievedState,
-    user,
   } = usePuzzleProgress(
     puzzle,
     svgTextureAtlasLookup ?? characterTextureAtlasLookup,
