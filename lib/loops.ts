@@ -74,7 +74,7 @@ export const createContact = async (
 };
 
 export const updateSubscription = async (
-  user: User,
+  email: string,
   subscribed: boolean,
 ): Promise<boolean> => {
   try {
@@ -87,10 +87,7 @@ export const updateSubscription = async (
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: user.primaryEmailAddress,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          userId: user.id,
+          email,
           subscribed,
         }),
       },
