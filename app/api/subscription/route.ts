@@ -27,6 +27,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       message: 'Subscription updated successfully',
       userId: user.id,
+      isSubscribed: body.isSubscribed,
     });
   } catch (error) {
     console.error('Error updating subscription:', error);
