@@ -16,7 +16,10 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
-    const successful = await updateSubscription(user, body.isSubscribed);
+    const successful = await updateSubscription(
+      user.emailAddresses[0].emailAddress,
+      body.isSubscribed,
+    );
     if (successful === false) {
       throw new Error('Failed to update subscription in Loops.so');
     }
