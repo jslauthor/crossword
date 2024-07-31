@@ -4,6 +4,7 @@ import { onConnect } from 'y-partykit';
 import { Buffer } from 'buffer';
 import { encodeStateAsUpdateV2 } from 'yjs';
 import { verifyToken } from '@clerk/backend';
+import pako from 'pako';
 
 const prisma = new PrismaClient();
 
@@ -47,6 +48,7 @@ export default class Server implements Party.Server {
               );
             }
             const state = Buffer.from(encodeStateAsUpdateV2(yDoc));
+            const compressedState = Buffer.from(pako.gzip(state));
             await prisma.progress.upsert({
               where: {
                 puzzleId_userId: {
@@ -55,12 +57,12 @@ export default class Server implements Party.Server {
                 },
               },
               update: {
-                state,
+                state: compressedState,
               },
               create: {
                 userId: user?.id,
                 puzzleId,
-                state,
+                state: compressedState,
               },
             });
           } catch (e) {

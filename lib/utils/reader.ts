@@ -1,4 +1,4 @@
-import { gzip } from 'zlib';
+import { gzip, gunzip } from 'zlib';
 import { promisify } from 'util';
 import { currentUser } from '@clerk/nextjs/server';
 import { CrosscubeType, PuzzleType } from 'types/types';
@@ -18,8 +18,10 @@ import { queryReadOnly } from 'lib/hygraph';
 import { setTimeout } from 'timers/promises';
 import { User } from '@clerk/backend';
 import { fromUint8Array } from 'js-base64';
+import isGzip from 'is-gzip';
 
 const gzipAsync = promisify(gzip);
+const gunzipAsync = promisify(gunzip);
 
 const puzzleProperties = `
   id
@@ -262,7 +264,13 @@ export const enrichPuzzles = async (
         if (puzzle != null) {
           try {
             const doc = new Y.Doc();
-            const state = Buffer.from(progress.state) as Uint8Array;
+            let state = Buffer.from(progress.state) as Uint8Array;
+
+            // Check if the state is gzipped and decompress if necessary
+            if (isGzip(state)) {
+              state = await gunzipAsync(state);
+            }
+
             Y.applyUpdateV2(doc, state);
             const positions = Float32Array.from(
               doc.getMap(GAME_STATE_KEY).get('characterPositions') as number[],
