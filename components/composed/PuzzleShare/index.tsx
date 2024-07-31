@@ -166,12 +166,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
   onAuthClick,
 }) => {
   const isSubscribed = useUserConfigStore((store) => store.isSubscribed);
-  const updateSubscription = useUserConfigStore(
-    (store) => store.updateSubscription,
-  );
-  const handleUpdateSubscription = useCallback(() => {
-    updateSubscription(true);
-  }, [updateSubscription]);
+  const subcribe = useUserConfigStore((store) => store.subcribe);
 
   const { isSignedIn } = useUser();
 
@@ -300,7 +295,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
 
         {isSignedIn === false && <SaveProgressCard onAuthClick={onAuthClick} />}
         {isSignedIn === true && isSubscribed === false && (
-          <GetUpdatesCard onSignUp={handleUpdateSubscription} />
+          <GetUpdatesCard onSignUp={subcribe} />
         )}
       </Container>
     </Overlay>

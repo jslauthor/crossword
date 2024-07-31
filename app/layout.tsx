@@ -8,6 +8,7 @@ import { Providers } from './providers';
 import { headers } from 'next/headers';
 import { UserConfigState } from 'lib/stores/user-config';
 import { HEADER_X_USER_SUBSCRIBED } from 'middleware';
+import { Toaster } from 'components/core/ui/toaster';
 
 export default async function RootLayout({
   children,
@@ -50,6 +51,7 @@ export default async function RootLayout({
             <Analytics />
             <SpeedInsights />
           </div>
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

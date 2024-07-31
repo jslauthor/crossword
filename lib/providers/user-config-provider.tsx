@@ -1,6 +1,7 @@
 'use client';
 
 import { type ReactNode, createContext, useContext, useState } from 'react';
+import { useToast } from 'components/core/ui/use-toast';
 import { useStore } from 'zustand';
 
 import {
@@ -24,7 +25,8 @@ export const UserConfigStoreProvider = ({
   initialState,
   children,
 }: UserConfigStoreProviderProps) => {
-  const [store] = useState(() => createUserConfigStore(initialState));
+  const { toast } = useToast();
+  const [store] = useState(() => createUserConfigStore(initialState, toast));
   return (
     <UserConfigStoreContext.Provider value={store}>
       {children}

@@ -8,11 +8,14 @@ import {
 import React from 'react';
 import { SettingsItem, SettingsTitle } from '../PuzzleSettings';
 import { Switch } from 'components/core/ui/switch';
+import { Loader } from 'lucide-react';
+import { Spinner } from 'components/core/ui/spinner';
 
 interface UserSettingsProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   isSubscribed: boolean;
+  isLoading: boolean;
   onSubscribedChange: (isSubscribed: boolean) => void;
 }
 
@@ -21,13 +24,14 @@ const UserSettings: React.FC<UserSettingsProps> = ({
   onOpenChange,
   isSubscribed,
   onSubscribedChange,
+  isLoading,
 }) => {
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
       <DrawerContent className="mb-8">
         <DrawerHeader className="flex flex-col justify-center items-center max-w-22 w-full my-6 p-0 gap-1">
           <DrawerTitle className="text-base font-normal">
-            Notifications
+            User Settings
           </DrawerTitle>
         </DrawerHeader>
         <div className="w-full flex flex-col justify-center items-center mb-1 ">
@@ -36,10 +40,14 @@ const UserSettings: React.FC<UserSettingsProps> = ({
             <HRule />
             <SettingsItem>
               <div className="text-base">Crosscube Updates</div>
-              <Switch
-                checked={isSubscribed}
-                onCheckedChange={onSubscribedChange}
-              />
+              <div className="flex flex-row gap-2">
+                {isLoading && <Spinner size="small" />}
+                <Switch
+                  checked={isSubscribed}
+                  onCheckedChange={onSubscribedChange}
+                  disabled={isLoading}
+                />
+              </div>
             </SettingsItem>
             <HRule />
           </div>

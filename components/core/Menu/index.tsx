@@ -224,6 +224,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   onDisplayChange,
 }) => {
   const isSubscribed = useUserConfigStore((store) => store.isSubscribed);
+  const isLoading = useUserConfigStore((store) => store.isLoading);
   const showSettings = useUserConfigStore((store) => store.showSettings);
   const toggleSettings = useUserConfigStore((store) => store.toggleSettings);
   const updateSubscription = useUserConfigStore(
@@ -507,6 +508,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
         onOpenChange={toggleSettings}
         isSubscribed={isSubscribed}
         onSubscribedChange={handleUpdateSubscription}
+        isLoading={isLoading ?? false}
       />
     </Main>
   );
