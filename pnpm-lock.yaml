@@ -212,6 +212,9 @@ importers:
       yoga-wasm-web:
         specifier: ^0.3.3
         version: 0.3.3
+      zustand:
+        specifier: ^4.5.4
+        version: 4.5.4(@types/react@18.2.37)(react@18.2.0)
     devDependencies:
       '@next/bundle-analyzer':
         specifier: ^14.2.4
@@ -4221,8 +4224,8 @@ packages:
       react:
         optional: true
 
-  zustand@4.5.1:
-    resolution: {integrity: sha512-XlauQmH64xXSC1qGYNv00ODaQ3B+tNPoy22jv2diYiP4eoDKr9LA+Bh5Bc3gplTrFdb6JVI+N4kc1DZ/tbtfPg==}
+  zustand@4.5.4:
+    resolution: {integrity: sha512-/BPMyLKJPtFEvVL0E9E9BTUM63MNyhPGlvxk1XjrfWTUlV+BR8jufjsovHzrtR6YNcBEcL7cMHovL1n9xHawEg==}
     engines: {node: '>=12.7.0'}
     peerDependencies:
       '@types/react': '>=16.8'
@@ -8029,7 +8032,7 @@ snapshots:
 
   tunnel-rat@0.1.2(@types/react@18.2.37)(react@18.2.0):
     dependencies:
-      zustand: 4.5.1(@types/react@18.2.37)(react@18.2.0)
+      zustand: 4.5.4(@types/react@18.2.37)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
       - immer
@@ -8328,7 +8331,7 @@ snapshots:
     optionalDependencies:
       react: 18.2.0
 
-  zustand@4.5.1(@types/react@18.2.37)(react@18.2.0):
+  zustand@4.5.4(@types/react@18.2.37)(react@18.2.0):
     dependencies:
       use-sync-external-store: 1.2.0(react@18.2.0)
     optionalDependencies:

@@ -79,7 +79,8 @@
     "vaul": "^0.9.1",
     "y-partykit": "^0.0.28",
     "yjs": "^13.6.14",
-    "yoga-wasm-web": "^0.3.3"
+    "yoga-wasm-web": "^0.3.3",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^14.2.4",

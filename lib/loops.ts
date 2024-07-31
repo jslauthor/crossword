@@ -1,5 +1,3 @@
-import { User } from '@clerk/backend';
-
 export type ContactType = {
   id: string;
   email: string;
@@ -13,7 +11,7 @@ export type ContactType = {
 
 export const findContact = async (
   email: string,
-): Promise<ContactType | null> => {
+): Promise<ContactType[] | null> => {
   try {
     const url = new URL('https://app.loops.so/api/v1/contacts/find');
     url.searchParams.append('email', email);

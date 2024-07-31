@@ -46,26 +46,13 @@ export async function GET() {
   }
 
   try {
-    const url = new URL('https://app.loops.so/api/v1/contacts/find');
-    url.searchParams.append('userId', user.id);
-
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${process.env.LOOPS_API_KEY}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch user data from Loops.so');
-    }
-
     const userData = await findContact(user.id);
 
-    if (!userData) {
+    if (!userData || (Array.isArray(userData) && userData.length === 0)) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const isSubscribed = userData.subscribed;
+    const isSubscribed = userData[0].subscribed;
 
     return NextResponse.json({ isSubscribed });
   } catch (error) {

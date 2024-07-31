@@ -22,7 +22,7 @@ const SettingsContainer = styled.div`
   padding-top: 1.5rem;
 `;
 
-const SettingsTitle = styled.h3`
+export const SettingsTitle = styled.h3`
   text-transform: uppercase;
   font-size: 0.875rem;
   font-weight: 400;
@@ -38,7 +38,7 @@ const SettingsSection = styled.div`
   gap: 0.5rem;
 `;
 
-const SettingsItem = styled.div`
+export const SettingsItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;

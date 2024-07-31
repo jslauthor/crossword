@@ -2,9 +2,13 @@ import { clerkMiddleware, clerkClient } from '@clerk/nextjs/server';
 import kv from 'lib/kv';
 import { createContact, findContact } from 'lib/loops';
 import prisma from 'lib/prisma';
+import { NextResponse } from 'next/server';
+
+export const HEADER_X_USER_SUBSCRIBED = 'X-User-Subscribed';
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = auth();
+  const response = NextResponse.next();
 
   // Sync user to local DB
   if (userId != null) {
@@ -32,40 +36,42 @@ export default clerkMiddleware(async (auth, req) => {
       }
     }
 
-    const hasSyncedLoops = await kv.get(`email-synced:${user.id}`);
-    if (!hasSyncedLoops) {
-      try {
-        // Find existing loops.so contact
-        const loopsUser = await findContact(
-          user.emailAddresses[0].emailAddress,
-        );
-        // Create if not found
-        if (
-          loopsUser == null ||
-          (Array.isArray(loopsUser) && loopsUser.length === 0)
-        ) {
-          const createdLoopsUser = await createContact(
-            user.id,
-            user.emailAddresses[0].emailAddress,
-            user.firstName ?? undefined,
-            user.lastName ?? undefined,
-            process.env.VERCEL_ENV,
-          );
-          if (
-            createdLoopsUser.success === false &&
-            createdLoopsUser.message !== 'Email or userId is already on list.'
-          ) {
-            throw new Error('Failed to create contact in Loops.so!');
-          }
+    // Find existing loops.so contact
+    const loopsUser = await findContact(user.emailAddresses[0].emailAddress);
 
-          // Set a flag in KV store to indicate this user has been synced
-          await kv.set(`email-synced:${user.id}`, true);
+    if (Array.isArray(loopsUser) && loopsUser.length > 0) {
+      response.headers.set(
+        HEADER_X_USER_SUBSCRIBED,
+        loopsUser[0].subscribed === true ? '1' : '0',
+      );
+    }
+
+    if (
+      loopsUser == null ||
+      (Array.isArray(loopsUser) && loopsUser.length === 0)
+    ) {
+      try {
+        // Create if not found
+        const createdLoopsUser = await createContact(
+          user.id,
+          user.emailAddresses[0].emailAddress,
+          user.firstName ?? undefined,
+          user.lastName ?? undefined,
+          process.env.VERCEL_ENV,
+        );
+        if (
+          createdLoopsUser.success === false &&
+          createdLoopsUser.message !== 'Email or userId is already on list.'
+        ) {
+          throw new Error('Failed to create contact in Loops.so!');
         }
       } catch (e) {
         console.error('Error syncing loops:', e);
       }
     }
   }
+
+  return response;
 });
 
 export const config = {

@@ -9,8 +9,9 @@ import { HRule } from 'components/core/Dividers';
 import Image from 'next/image';
 import { PuzzleStats } from 'lib/utils/puzzle';
 import SaveProgressCard, { SaveProgressCardProps } from '../SaveProgressCard';
-import GetUpdatesCard, { GetUpdatesCardProps } from '../GetUpdatesCard';
+import GetUpdatesCard from '../GetUpdatesCard';
 import { useUser } from '@clerk/nextjs';
+import { useUserConfigStore } from 'lib/providers/user-config-provider';
 
 const StarsContainer = styled.div`
   font-size: 5rem;
@@ -151,7 +152,6 @@ interface PuzzleShareProps extends Partial<OverlayProps> {
   puzzleSubLabel: string;
   puzzleStats: PuzzleStats;
   onAuthClick?: SaveProgressCardProps['onAuthClick'];
-  onSignUp?: GetUpdatesCardProps['onSignUp'];
 }
 
 const noop = () => {};
@@ -164,8 +164,15 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
   onClose = noop,
   puzzleStats,
   onAuthClick,
-  onSignUp,
 }) => {
+  const isSubscribed = useUserConfigStore((store) => store.isSubscribed);
+  const updateSubscription = useUserConfigStore(
+    (store) => store.updateSubscription,
+  );
+  const handleUpdateSubscription = useCallback(() => {
+    updateSubscription(true);
+  }, [updateSubscription]);
+
   const { isSignedIn } = useUser();
 
   const numStars = useMemo(() => {
@@ -212,8 +219,6 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
     };
     share();
   }, [puzzleLabel, puzzleStats, puzzleSubLabel]);
-
-  const handleNotNow = useCallback(() => {}, []);
 
   return (
     <Overlay title={title} onClose={onClose} isOpen={isOpen}>
@@ -294,8 +299,8 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
         <ShareButton onClick={handleShare} />
 
         {isSignedIn === false && <SaveProgressCard onAuthClick={onAuthClick} />}
-        {isSignedIn === true && (
-          <GetUpdatesCard onSignUp={onSignUp} onNotNow={handleNotNow} />
+        {isSignedIn === true && isSubscribed === false && (
+          <GetUpdatesCard onSignUp={handleUpdateSubscription} />
         )}
       </Container>
     </Overlay>

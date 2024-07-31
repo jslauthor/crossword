@@ -5,13 +5,9 @@ import { OutlineCard } from '../OutlineCard';
 
 export interface GetUpdatesCardProps {
   onSignUp?: () => void;
-  onNotNow?: () => void;
 }
 
-const GetUpdatesCard: React.FC<GetUpdatesCardProps> = ({
-  onSignUp,
-  onNotNow,
-}) => {
+const GetUpdatesCard: React.FC<GetUpdatesCardProps> = ({ onSignUp }) => {
   return (
     <OutlineCard>
       <>
@@ -35,14 +31,6 @@ const GetUpdatesCard: React.FC<GetUpdatesCardProps> = ({
             onClick={onSignUp}
           >
             Sign Up
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            size="share"
-            onClick={onNotNow}
-          >
-            Not Now
           </Button>
         </div>
       </>
