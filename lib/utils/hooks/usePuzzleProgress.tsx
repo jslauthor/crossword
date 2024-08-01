@@ -27,7 +27,8 @@ import { AtlasType } from '../atlas';
 import memoizeOne from 'memoize-one';
 import debounce from 'lodash.debounce';
 import { db } from 'lib/utils/indexeddb/index';
-import { decompressData } from '../gzip';
+import { compressData, decompressData } from 'lib/utils/gzip';
+import isGzip from 'is-gzip';
 import { toUint8Array } from 'js-base64';
 
 const verifyAnswerIndex = memoizeOne(testAnswerIndex);
@@ -164,7 +165,15 @@ export const usePuzzleProgress = (
       const localState = await db.data.get(cacheId);
       if (localState?.data instanceof Uint8Array) {
         try {
-          Y.applyUpdateV2(doc, new Uint8Array(localState.data));
+          let decompressedData: Uint8Array;
+          if (isGzip(localState.data) === true) {
+            decompressedData = new Uint8Array(
+              await decompressData(localState.data.buffer),
+            );
+          } else {
+            decompressedData = new Uint8Array(localState.data);
+          }
+          Y.applyUpdateV2(doc, decompressedData);
         } catch (e) {
           doc = createInitialYDoc(puzzle);
           console.error('Failed to apply update to YDoc', e);
@@ -187,9 +196,11 @@ export const usePuzzleProgress = (
       });
 
       // Saved merged state to indexeddb
+      const stateUpdate = Y.encodeStateAsUpdateV2(initialDoc);
+      const compressedState = await compressData(stateUpdate);
       await db.data.put({
         id: cacheId,
-        data: Y.encodeStateAsUpdateV2(initialDoc),
+        data: compressedState,
       });
       setYDoc(initialDoc);
 
@@ -266,15 +277,16 @@ export const usePuzzleProgress = (
   }, [partykit, user?.id]);
 
   // Create a ref to store the debounced function
-  const debouncedSaveRef = useRef<DebouncedFunc<() => void>>();
+  const debouncedSaveRef = useRef<DebouncedFunc<() => Promise<void>>>();
 
   // Observe the document for changes and update the state
   useEffect(() => {
     if (atlas == null || yDoc == null || cacheId == null) return;
 
-    const saveToIndexedDB = () => {
+    const saveToIndexedDB = async () => {
       const update = Y.encodeStateAsUpdateV2(yDoc);
-      db.data.put({ id: cacheId, data: update });
+      const compressedUpdate = await compressData(update);
+      db.data.put({ id: cacheId, data: compressedUpdate });
     };
 
     // Create the debounced function and store it in the ref
