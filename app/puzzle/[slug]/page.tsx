@@ -15,7 +15,7 @@ interface PuzzlePageProps extends PuzzleProps {
 }
 
 async function getProps(slug: string): Promise<PuzzlePageProps> {
-  const puzzles = await getPuzzlesBySlugs([slug]);
+  const puzzles = await getPuzzlesBySlugs([slug], true);
   if (puzzles.length === 0 || puzzles == null) {
     notFound();
   }

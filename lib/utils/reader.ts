@@ -66,6 +66,7 @@ const createWhereForType = (types: CrosscubeType[]) => {
 };
 
 export const getPuzzles = async (
+  enrich: boolean,
   types: CrosscubeType[] = ['cube', 'mega', 'mini', 'moji'],
 ): Promise<PuzzleType[]> => {
   try {
@@ -137,8 +138,12 @@ export const getPuzzles = async (
         }) as PuzzleType,
     );
 
-    const clerkUser = await currentUser();
-    return await enrichPuzzles(puzzles, clerkUser);
+    if (enrich === true) {
+      const clerkUser = await currentUser();
+      return await enrichPuzzles(puzzles, clerkUser);
+    }
+
+    return puzzles;
   } catch (error) {
     console.error('Error calling graphql!', JSON.stringify(error));
   }
@@ -148,6 +153,7 @@ export const getPuzzles = async (
 
 export const getPuzzlesBySlugs = async (
   slugs: string[],
+  enrich: boolean,
 ): Promise<PuzzleType[]> => {
   try {
     const fetchAllCrosscubes = async () => {
@@ -226,8 +232,11 @@ export const getPuzzlesBySlugs = async (
         record: getCharacterRecord(puzzleData.data),
       }));
 
-    const clerkUser = await currentUser();
-    return await enrichPuzzles(puzzles, clerkUser);
+    if (enrich === true) {
+      const clerkUser = await currentUser();
+      return await enrichPuzzles(puzzles, clerkUser);
+    }
+    return puzzles;
   } catch (error) {
     console.error('Error calling graphql!', error);
     return [];
@@ -289,10 +298,10 @@ export const enrichPuzzles = async (
               positions,
               index,
             );
-          } catch (e) {
+          } catch (e: any) {
             console.error(
-              `Could not recover progress for puzzle ${puzzle.id} and user ${user.id}!`,
-              e,
+              `Could not retrieve progress for puzzle ${puzzle.id} and user ${user.id}!`,
+              e.message,
             );
           }
         }

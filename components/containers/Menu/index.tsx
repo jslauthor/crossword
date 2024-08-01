@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 import MenuWrapper, { MenuWrapperProps } from 'components/core/Menu';
 import { useClerk } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 
 interface MenuProps extends MenuWrapperProps {}
 
@@ -15,16 +14,12 @@ const Menu: React.FC<MenuProps> = ({
   children,
   onSettingsPressed,
   onDisplayChange,
+  onSignInPressed,
 }) => {
-  const router = useRouter();
   const { signOut } = useClerk();
   const onSignOut = useCallback(() => {
     signOut({ redirectUrl: '/' });
   }, [signOut]);
-
-  const onSignIn = useCallback(() => {
-    router.push(`/signin?redirect_url=${window.location.href}`);
-  }, [router]);
 
   return (
     <MenuWrapper
@@ -32,7 +27,7 @@ const Menu: React.FC<MenuProps> = ({
       autocheckEnabled={autocheckEnabled}
       onAutocheckChanged={onAutocheckChanged}
       onSignOutPressed={onSignOut}
-      onSignInPressed={onSignIn}
+      onSignInPressed={onSignInPressed}
       rotatingBoxProps={rotatingBoxProps}
       draftModeEnabled={draftModeEnabled}
       onDraftModeChanged={onDraftModeChanged}

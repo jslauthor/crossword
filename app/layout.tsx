@@ -5,12 +5,27 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/react';
 import './tailwind.css';
 import { Providers } from './providers';
+import { headers } from 'next/headers';
+import { UserConfigState } from 'lib/stores/user-config';
+import { HEADER_X_USER_SUBSCRIBED } from 'middleware';
+import { Toaster } from 'components/core/ui/toaster';
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let defaultConfig: UserConfigState = {
+    isSubscribed: false,
+    showSettings: false,
+  };
+
+  const headersList = headers();
+  const isSubscribed = headersList.get(HEADER_X_USER_SUBSCRIBED);
+  if (isSubscribed != null) {
+    defaultConfig.isSubscribed = Boolean(parseInt(isSubscribed, 10));
+  }
+
   return (
     <ClerkProvider
       appearance={{
@@ -32,10 +47,11 @@ export default function RootLayout({
         </head>
         <body>
           <div vaul-drawer-wrapper="">
-            <Providers>{children}</Providers>
+            <Providers userConfig={defaultConfig}>{children}</Providers>
             <Analytics />
             <SpeedInsights />
           </div>
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

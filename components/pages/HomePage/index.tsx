@@ -5,7 +5,7 @@ import Menu from 'components/containers/Menu';
 import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { CrosscubeType, PuzzleType, ValidCrosscubeArray } from 'types/types';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import PuzzleLatest from 'components/composed/PuzzleLatest';
 import {
   getPuzzleLabel,
@@ -16,6 +16,7 @@ import {
 import { HRule } from 'components/core/Dividers';
 import { usePreviewState } from 'lib/utils/hooks/usePreviewState';
 import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 const Container = styled.div`
   position: relative;
@@ -63,6 +64,7 @@ export interface HomePageProps {
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
+  const router = useRouter();
   const { user } = useUser();
   const slugs = useMemo(() => puzzles.map((puzzle) => puzzle.slug), [puzzles]);
   const previewStates = usePreviewState(slugs, user?.id);
@@ -92,6 +94,10 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
     [puzzles],
   );
 
+  const onSignIn = useCallback(() => {
+    router.push(`/signin?redirect_url=${window.location.href}`);
+  }, [router]);
+
   const formattedLabel = useMemo(() => {
     if (type == null) return 'Puzzles';
     return getPuzzleLabelForType(type).map((label, index) => `${label} `);
@@ -99,7 +105,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
 
   if (type == 'mega' && puzzles.length === 0) {
     return (
-      <Menu>
+      <Menu onSignInPressed={onSignIn}>
         <Container>
           <MegaPreview />
         </Container>
@@ -109,7 +115,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
 
   if (puzzles.length === 0) {
     return (
-      <Menu>
+      <Menu onSignInPressed={onSignIn}>
         <Container>
           <ErrorContainer>
             <h2>
@@ -124,7 +130,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
   }
 
   return (
-    <Menu>
+    <Menu onSignInPressed={onSignIn}>
       <Container>
         <div className="flex flex-col gap-3">
           <h1 className="text-base capitalize">

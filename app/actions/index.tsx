@@ -13,7 +13,7 @@ export const getPuzzleProgressesForUser = async (
     return {};
   }
 
-  const puzzles = await getPuzzlesBySlugs(slugs);
+  const puzzles = await getPuzzlesBySlugs(slugs, true);
   return puzzles.reduce(
     (acc, { slug, previewState }) => {
       acc[slug] = previewState;

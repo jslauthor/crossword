@@ -55,6 +55,7 @@ import PuzzleShare from 'components/composed/PuzzleShare';
 import ShareButton from 'components/core/ShareButton';
 import PuzzlePrompt from 'components/composed/PuzzlePrompt';
 import { track } from '@vercel/analytics';
+import { useRouter } from 'next/navigation';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -224,6 +225,7 @@ export default function Puzzle({
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
+  const router = useRouter();
   const { theme } = useTheme();
   const layout = useMemo<keyof KeyboardLayoutType>(
     () => (puzzle.svgSegments != null ? 'emoji' : 'default'),
@@ -713,6 +715,10 @@ export default function Puzzle({
     setIsPromptOpen(false);
   }, []);
 
+  const onSignIn = useCallback(() => {
+    router.push(`/signin?redirect_url=${window.location.href}`);
+  }, [router]);
+
   return (
     <>
       <Menu
@@ -726,6 +732,7 @@ export default function Puzzle({
         onDraftModeChanged={handleDraftModeChanged}
         onSettingsPressed={handleSettingsPressed}
         onDisplayChange={setIsMenuOpen}
+        onSignInPressed={onSignIn}
       >
         <Canvas
           gl={{ antialias: false }}
@@ -911,6 +918,7 @@ export default function Puzzle({
           puzzleStats={puzzleStats}
           puzzleLabel={getPuzzleLabel(puzzle)}
           puzzleSubLabel={puzzle.title}
+          onAuthClick={onSignIn}
         />
       )}
       <PuzzlePrompt isOpen={isPromptOpen} onClose={handleClosePrompt} />
