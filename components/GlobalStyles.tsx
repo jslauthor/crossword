@@ -232,17 +232,23 @@ export default createGlobalStyle/*css*/ `
     --yellow400: #F8DB4A;
     --yellow400-hsl: 51 92% 64%;
 
-    --red400: #ce1af3;
-    --red400-hsl: 292 87% 54%;
-
     --red500: #EB5757;
     --red500-hsl: 0 80% 63%;
 
     --red600: #db3232;
     --red600-hsl: 0 72% 54%;
 
-    --blue500: #0081fa;
-    --blue500-hsl: 211 100% 49%;
+    --red700: #fc2727;
+    --red700-hsl: 0 97% 57%;
+
+    --blue500: #0E8AFF;
+    --blue500-hsl: 209 100% 53%;
+
+    --blue-muted-400: #477AAA;
+    --blue-muted-400-hsl: 209 41% 47%;
+
+    --purple-800: #483F80;
+    --purple-800-hsl: 248 34% 37%;
 
     --teal500: #00dcff;
     --teal500-hsl: 190 100% 50%;
@@ -259,8 +265,8 @@ export default createGlobalStyle/*css*/ `
     --light-grey500: #999EAb;
     --light-grey500-hsl: 222 8% 63%;
 
-    --light-grey900: #53565e;
-    --light-grey900-hsl: 225 5% 35%;
+    --light-grey900: #595963;
+    --light-grey900-hsl: 225 5% 35%; 
 
     --light-grey-blue300: #7faab0;
     --light-grey-blue300-hsl: 190 25% 58%;
@@ -337,13 +343,13 @@ export default createGlobalStyle/*css*/ `
     // Puzzle specific theme vars
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--white);
     ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--black);
-    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--light-grey-blue300);
-    ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--magenta500);
-    ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--mint-green400);
-    ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--teal500);
-    ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red400);
+    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--light-grey900);
+    ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--blue-muted-400);
+    ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--purple-800);
+    ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--blue500);
+    ${DEFAULT_ERROR_COLOR_CSS_VARIABLE}: var(--red700);
     ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
-    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--mint-green200);
+    ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--white);
 
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
