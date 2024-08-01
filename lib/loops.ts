@@ -59,8 +59,11 @@ export const createContact = async (
         firstName,
         lastName,
         userId: userId,
-        subscribed: false,
+        subscribed: true,
         userGroup,
+        mailingLists: {
+          clz6yziwv015y0ml1gf4b8beo: false,
+        },
       }),
     });
 
@@ -86,7 +89,9 @@ export const updateSubscription = async (
         },
         body: JSON.stringify({
           email,
-          subscribed,
+          mailingLists: {
+            clz6yziwv015y0ml1gf4b8beo: subscribed,
+          },
         }),
       },
     );
