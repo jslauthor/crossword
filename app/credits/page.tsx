@@ -4,7 +4,8 @@ import Menu from 'components/containers/Menu';
 import { Button } from 'components/core/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react';
+import { useRouter } from 'next/navigation';
+import React, { useCallback } from 'react';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -23,8 +24,13 @@ const Heading = styled.div`
 `;
 
 const Page: React.FC = () => {
+  const router = useRouter();
+  const onSignIn = useCallback(() => {
+    router.push(`/signin?redirect_url=${window.location.href}`);
+  }, [router]);
+
   return (
-    <Menu>
+    <Menu onSignInPressed={onSignIn}>
       <div className="py-[48px] px-[32px] flex flex-col gap-[2rem] justify-center items-center">
         <Container className="gap-[1.5rem]">
           <Image
