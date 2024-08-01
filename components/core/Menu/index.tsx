@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, useEffect, useRef } from 'react';
+import React, { ReactNode, use, useEffect, useRef } from 'react';
 import md5 from 'md5';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
@@ -20,6 +20,9 @@ import { useTheme } from 'lib/utils/hooks/theme';
 import { getColorHex } from 'lib/utils/color';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useUserConfigStore } from 'lib/providers/user-config-provider';
+import UserSettings from 'components/composed/UserSettings';
+import Gear from 'components/svg/Gear';
 
 const Main = styled.div`
   position: relative;
@@ -99,7 +102,7 @@ const MenuItemFlex = styled(MenuItem)`
 const SignInContainer = styled.div`
   display: flex;
   padding: 1rem;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-direction: column;
   justify-content: stretch;
 `;
@@ -201,7 +204,7 @@ export type MenuWrapperProps = {
   rotatingBoxProps?: RotatingBoxProps;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
-  onSignInPressed?: () => void;
+  onSignInPressed: () => void;
   onSignOutPressed?: () => void;
   onSettingsPressed?: () => void;
   onDisplayChange?: (isMenuOpen: boolean) => void;
@@ -220,6 +223,23 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   onSettingsPressed,
   onDisplayChange,
 }) => {
+  const isSubscribed = useUserConfigStore((store) => store.isSubscribed);
+  const isLoading = useUserConfigStore((store) => store.isLoading);
+  const showSettings = useUserConfigStore((store) => store.showSettings);
+  const toggleSettings = useUserConfigStore((store) => store.toggleSettings);
+  const updateSubscription = useUserConfigStore(
+    (store) => store.updateSubscription,
+  );
+  const handleUpdateSubscription = useCallback(
+    (val: boolean) => {
+      updateSubscription(val);
+    },
+    [updateSubscription],
+  );
+  const handleOpenSettings = useCallback(() => {
+    toggleSettings(true);
+  }, [toggleSettings]);
+
   const { colors } = useTheme();
 
   const { isSignedIn, user } = useUser();
@@ -235,8 +255,9 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   }, [isMenuOpen]);
 
   const handleClickOutside = useCallback(() => {
+    if (showSettings) return;
     setIsMenuOpen(false);
-  }, []);
+  }, [showSettings]);
   useOnClickOutside(menuRef, handleClickOutside);
 
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
@@ -429,6 +450,14 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={handleOpenSettings}
+                        >
+                          Settings
+                          <Gear className="ml-1" height={12} />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={onSignOutPressed}
                         >
                           Log Out
@@ -474,6 +503,13 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
           </ModalContainer>
         )}
       </Container>
+      <UserSettings
+        isOpen={showSettings}
+        onOpenChange={toggleSettings}
+        isSubscribed={isSubscribed}
+        onSubscribedChange={handleUpdateSubscription}
+        isLoading={isLoading ?? false}
+      />
     </Main>
   );
 };
