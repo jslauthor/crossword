@@ -26,6 +26,7 @@ const ModalContent = styled.div`
 const ScrollableContent = styled.div`
   overflow-y: auto;
   height: 100%;
+  width: 100%;
 `;
 
 const ModalHeader = styled.div`
