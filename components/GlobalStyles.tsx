@@ -220,6 +220,9 @@ export default createGlobalStyle/*css*/ `
     --grey600: #41483E;
     --grey600-hsl: 90 7% 25%;
 
+    --grey400: #6B6B6B;
+    --grey400-hsl: 0 0% 42%;
+
     --grey800: #2C2F2A;
     --grey800-hsl: 85 7% 18%;
 
@@ -314,7 +317,7 @@ export default createGlobalStyle/*css*/ `
     --hard-difficulty-text: var(--red500);
 
     --keyboard-bg: transparent;
-    --keyboard-button-bg: hsl(var(--grey800-hsl));
+    --keyboard-button-bg: hsl(var(--grey400-hsl));
     --keyboard-button-color: hsl(var(--foreground));
     --keyboard-function-bg: var(--light-grey900);
     --keyboard-padding: 0;
