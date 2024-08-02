@@ -26,6 +26,7 @@ const Container = styled.div`
   gap: 2rem;
   padding: 1rem;
   padding-top: 2rem;
+  padding-bottom: 4rem;
   justify-content: center;
   align-items: center;
 `;

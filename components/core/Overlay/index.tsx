@@ -17,9 +17,16 @@ const ModalContainer = styled(motion.div)`
 `;
 
 const ModalContent = styled.div`
+  position: relative;
   width: 100%;
   height: 100%;
   max-width: var(--primary-app-width);
+`;
+
+const ScrollableContent = styled.div`
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
 `;
 
 const ModalHeader = styled.div`
@@ -76,7 +83,7 @@ const Overlay: React.FC<OverlayProps> = ({
               </Text>
             </ModalHeader>
             <HRule />
-            {children}
+            <ScrollableContent>{children}</ScrollableContent>
           </ModalContent>
         </ModalContainer>
       )}

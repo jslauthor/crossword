@@ -296,8 +296,8 @@ export default createGlobalStyle/*css*/ `
     --card-foreground: 0 0% 95%;
     --popover: 0 0% 9%;
     --popover-foreground: 0 0% 95%;
-    --primary: var(--mint-green400-hsl);
-    --primary-foreground: 144.9 80.4% 10%;
+    --primary: var(--blue500-hsl);
+    --primary-foreground: var(--true-white-hsl);
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 15%;
