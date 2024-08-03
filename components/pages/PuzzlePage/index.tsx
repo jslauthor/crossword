@@ -56,6 +56,7 @@ import ShareButton from 'components/core/ShareButton';
 import PuzzlePrompt from 'components/composed/PuzzlePrompt';
 import { track } from '@vercel/analytics';
 import { useRouter } from 'next/navigation';
+import { usePageVisibility } from 'lib/utils/hooks/usePageVisibility';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -568,11 +569,13 @@ export default function Puzzle({
     document.title = `${puzzle.title} - Crosscube`;
   }, [puzzle.title]);
 
+  const isVisible = usePageVisibility();
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [shouldStartTimer, setShouldStartTimer] = useState<boolean>(false);
   const puzzleIsActive = useMemo(
     () =>
-      (typeof window === 'undefined' ? false : !document.hidden) &&
+      isVisible === true &&
       (isPuzzleSolved || !isInitialized) === false &&
       shouldStartTimer === true &&
       hasRetrievedState === true &&
@@ -580,6 +583,7 @@ export default function Puzzle({
       isMenuOpen === false &&
       isPromptOpen === false,
     [
+      isVisible,
       hasRetrievedState,
       isInitialized,
       isMenuOpen,
