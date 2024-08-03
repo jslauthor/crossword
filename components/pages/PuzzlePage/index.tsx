@@ -90,8 +90,8 @@ const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
             &::before {
               content: url('${data}');
               display: block;
-              width: 30px;
-              height: 30px;
+              aspect-ratio: 1;
+              width: 92%;
             }
           }
 
@@ -702,9 +702,9 @@ export default function Puzzle({
         'MORE Z X C V B N M {bksp}',
       ],
       emoji: [
-        `${emojiKeys.slice(0, 10).join(' ')}`,
-        `{sp} ${emojiKeys.slice(10, 19).join(' ')} {sp}`,
-        `MORE ${emojiKeys.slice(19, 26).join(' ')} {bksp}`,
+        `${emojiKeys.slice(0, 9).join(' ')}`,
+        `${emojiKeys.slice(9, 18).join(' ')}`,
+        `${emojiKeys.slice(18, 26).join(' ')} {bksp}`,
       ],
     };
   }, [svgContentMap]);
