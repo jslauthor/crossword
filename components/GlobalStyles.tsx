@@ -229,6 +229,9 @@ export default createGlobalStyle/*css*/ `
     --grey900: #20231F;
     --grey900-hsl: 100 7% 13%;
 
+    --grey1000: #191816;
+    --grey1000-hsl: 40 6.40% 9.20%
+
     --yellow500: #F2C94C;
     --yellow500-hsl: 47 86% 63%;
 
@@ -282,7 +285,6 @@ export default createGlobalStyle/*css*/ `
 
     --magenta500: #f70ca9;
     --magenta500-hsl: 322 94% 53%;
-
     
     --max-app-width: 500px;
   }
@@ -317,7 +319,7 @@ export default createGlobalStyle/*css*/ `
     --hard-difficulty-text: var(--red500);
 
     --keyboard-bg: transparent;
-    --keyboard-button-bg: hsl(var(--grey400-hsl));
+    --keyboard-button-bg: var(--grey900);
     --keyboard-button-color: hsl(var(--foreground));
     --keyboard-function-bg: var(--light-grey900);
     --keyboard-padding: 0;
