@@ -15,7 +15,7 @@ const VERTICAL_OFFSET_FACTOR = 0.1; // Move the emoji down by 10% of its boundin
 
 // Fallback emoji SVG
 const FALLBACK_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
   <rect width="100" height="100" fill="#eb073b"/>
   <text x="50" y="20" font-family="Arial" font-size="10" fill="white" text-anchor="middle">EMOJI ERROR</text>
   <circle cx="50" cy="50" r="22.5" fill="#FF0000" stroke="#FFFFFF" stroke-width="2"/>
@@ -82,6 +82,22 @@ function useSvgAtlas(unicodeValues?: string[]) {
         return new Promise((resolve, reject) => {
           const img = new Image();
           img.onload = () => {
+            if (img.width === 0 || img.height === 0) {
+              // Browsers like Firefox don't infer the width and height from the SVG's viewBox
+
+              // Parse the SVG to extract viewBox
+              const parser = new DOMParser();
+              const svgDoc = parser.parseFromString(svgText, 'image/svg+xml');
+              const svgElement = svgDoc.documentElement;
+
+              // Get the viewBox values
+              const viewBox = svgElement.getAttribute('viewBox');
+              const [, , w, h] = viewBox
+                ? viewBox.split(' ').map(Number)
+                : [0, 0, 250, 250];
+              img.width = w;
+              img.height = h;
+            }
             updateProgress();
             resolve(img);
           };
@@ -106,6 +122,8 @@ function useSvgAtlas(unicodeValues?: string[]) {
           const base64 = 'data:image/svg+xml;base64,' + encode(FALLBACK_SVG);
           setSvgContentMap((prev) => ({ ...prev, [unicodeValue]: base64 }));
           img.src = base64;
+          img.width = 100;
+          img.height = 100;
         });
       }
     };
