@@ -5,25 +5,28 @@ export const useKeyDown = (
   key: string | string[],
   caseInsensitive: boolean = true,
   disabled?: boolean,
+  preventDefault?: boolean,
 ) => {
   const handleKeyDown = useCallback(
-    ({ key: pressedKey }: KeyboardEvent) => {
-      if (key instanceof Array) {
-        if (
-          !key.includes(
-            caseInsensitive === true ? pressedKey.toUpperCase() : pressedKey,
-          )
-        )
-          return;
-      } else {
-        if (key !== '_all' && key !== pressedKey) return;
-      }
+    (event: KeyboardEvent) => {
+      const pressedKey = event.key;
+      const normalizedPressedKey = caseInsensitive
+        ? pressedKey.toUpperCase()
+        : pressedKey;
 
-      callBack(
-        caseInsensitive === true ? pressedKey.toUpperCase() : pressedKey,
-      );
+      if (
+        key === '_all' ||
+        (typeof key === 'string' && key === normalizedPressedKey) ||
+        (Array.isArray(key) && key.includes(normalizedPressedKey))
+      ) {
+        if (preventDefault) {
+          event.preventDefault();
+        }
+
+        callBack(normalizedPressedKey);
+      }
     },
-    [callBack, caseInsensitive, key],
+    [callBack, caseInsensitive, key, preventDefault],
   );
 
   useEffect(() => {
