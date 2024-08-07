@@ -618,6 +618,7 @@ export default function Puzzle({
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
   useKeyDown(handlePrev, ['ARROWLEFT']);
   useKeyDown(handleNext, ['ARROWRIGHT']);
+  useKeyDown(handleNext, ['TAB'], true, false, true);
   useKeyDown(handleTurnRight, ['ARROWUP']);
   useKeyDown(handleTurnLeft, ['ARROWDOWN']);
   useKeyDown(onClueClick, [' ']);
