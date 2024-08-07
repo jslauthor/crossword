@@ -76,6 +76,18 @@ export default class Server implements Party.Server {
       },
     });
   }
+
+  static async onFetch(request: Party.Request) {
+    const url = new URL(request.url);
+
+    // Handle heartbeat request
+    if (url.pathname === '/heartbeat') {
+      return new Response('OK', { status: 200 });
+    }
+
+    // Handle unsupported methods
+    return new Response('Method Not Allowed', { status: 405 });
+  }
 }
 
 Server satisfies Party.Worker;
