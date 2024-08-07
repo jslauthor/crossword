@@ -396,16 +396,24 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
                       </div>
                     </Link>
                   </MenuItemGroup>
-                  <HRule />
                   <MenuItemGroup>
+                    <HRule />
                     <MenuHeader>TIPS AND TRICKS</MenuHeader>
                     <PointerLink onClick={toggleModal}>How to Play</PointerLink>
-                  </MenuItemGroup>
-                  <HRule />
-                  <MenuItemGroup>
-                    <PointerLink href="mailto:info@crosscube.com">
+                    <HRule />
+                    <PointerLink
+                      href="https://crosscube.notion.site/Guide-Making-a-Crosscube-Crossmoji-05a21935d75840559848bf0025e7b28c?pvs=4"
+                      target="_blank"
+                    >
+                      Submit a Puzzle
+                    </PointerLink>
+                    <PointerLink
+                      href="https://tally.so/r/wgLa2P"
+                      target="_blank"
+                    >
                       Give Feedback
                     </PointerLink>
+                    <HRule />
                     <PointerLink
                       color="foreground"
                       target="_blank"
