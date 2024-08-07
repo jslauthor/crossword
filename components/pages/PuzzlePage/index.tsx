@@ -54,9 +54,9 @@ import TimerAndGuesses from 'components/composed/Timer';
 import PuzzleShare from 'components/composed/PuzzleShare';
 import ShareButton from 'components/core/ShareButton';
 import PuzzlePrompt from 'components/composed/PuzzlePrompt';
-import { track } from '@vercel/analytics';
 import { useRouter } from 'next/navigation';
 import { usePageVisibility } from 'lib/utils/hooks/usePageVisibility';
+import posthog from 'posthog-js';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -246,9 +246,7 @@ export default function Puzzle({
   useEffect(() => {
     if (svgError === true) {
       console.error('Failed to load emojis in the SVG texture atlas!');
-      track('puzzle_svg_error', {
-        puzzleId: puzzle.id,
-      });
+      posthog.capture('puzzle_svg_error', { puzzleId: puzzle.id });
     }
   }, [puzzle.id, svgError]);
 

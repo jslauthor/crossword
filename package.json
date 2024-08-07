@@ -63,6 +63,7 @@
     "npm": "^10.4.0",
     "pako": "^2.1.0",
     "partysocket": "1.0.1",
+    "posthog-js": "^1.154.5",
     "react": "^18.2.0",
     "react-cool-dimensions": "^3.0.1",
     "react-dom": "^18.2.0",
