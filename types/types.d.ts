@@ -68,6 +68,7 @@ export interface SvgProps {
 
 export interface CrossmojiData {
   title: string;
+  seed: number;
   items: Record<string, string | null>;
   grid: number[][];
   metadata: Record<

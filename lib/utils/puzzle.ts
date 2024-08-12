@@ -675,11 +675,33 @@ export function emojiToUnicode(emoji: string): string {
   return 'u' + codePoints.join('_');
 }
 
+// PLEASE NEVER CHANGE THE SEED LEST IT WILL BREAK ALL OF THE PUZZLES
+type Entry = [string, string | null];
+function deterministicSort(entries: Entry[], seed: number): Entry[] {
+  // Create a seeded random number generator
+  const seededRandom = (index: number): number => {
+    const x = Math.sin(seed + index) * 10000;
+    return x - Math.floor(x);
+  };
+
+  // Create an array of indices, sort it based on the seeded random values
+  const sortedIndices = [...entries.keys()].sort(
+    (a, b) => seededRandom(a) - seededRandom(b),
+  );
+
+  // Use the sorted indices to create a new array of entries in the determined order
+  return sortedIndices.map((index) => entries[index]);
+}
+
 export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
   const width = data.grid[0].length;
   const height = data.grid.length;
 
-  const items = Object.entries(data.items);
+  if (data.seed == null) {
+    throw new Error('Seed is required!');
+  }
+
+  const items = deterministicSort(Object.entries(data.items), data.seed);
   const secondSidePuzzleData = createBlankPuzzleData(width, height);
   const thirdSidePuzzleData = createBlankPuzzleData(width, height);
   const fourthSidePuzzleData = createBlankPuzzleData(width, height);
