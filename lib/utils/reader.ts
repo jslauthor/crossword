@@ -51,11 +51,12 @@ const puzzleProperties = `
 const convertPuzzleData = (puzzleData: any) => {
   let data = puzzleData.data;
   let svgSegments = puzzleData.svgSegments;
-  // If the data is a crossmoji, convert it to a crosscube
-  // Crossmoji has entries and grid, while crosscube has puzzle and solution
-  if (puzzleData.data.entries != null) {
+  // If the data is the crossmoji data format, convert it to a crosscube
+  // Crossmoji data has items and grid, while crosscube has puzzle and solution
+  // You can also create a 3d crossmoji which uses the crosscube data format
+  if (puzzleData.data.items != null) {
     data = convertCrossmojiData(puzzleData.data);
-    svgSegments = Object.keys(puzzleData.data.entries).map(emojiToUnicode);
+    svgSegments = Object.keys(puzzleData.data.items).map(emojiToUnicode);
   }
 
   return {
@@ -72,8 +73,8 @@ const convertPuzzleData = (puzzleData: any) => {
     date: puzzleData.publishedAt ?? puzzleData.updatedAt,
     previewState: 0,
     slug: puzzleData.slug,
-    data: data,
-    svgSegments: svgSegments,
+    data,
+    svgSegments,
     record: getCharacterRecord(data),
   };
 };
@@ -83,13 +84,13 @@ const createWhereForType = (types: CrosscubeType[]) => {
     .map((type) => {
       switch (type) {
         case 'cube':
-          return '(@.dimensions.width == 8 && @.dimensions.height == 8)';
+          return '(@.dimensions != null && @.dimensions.width == 8 && @.dimensions.height == 8)';
         case 'mega':
-          return '(@.dimensions.width == 12 && @.dimensions.height == 12)';
+          return '(@.dimensions != null && @.dimensions.width == 12 && @.dimensions.height == 12)';
         case 'mini':
-          return '(@.dimensions.width == 5 && @.dimensions.height == 5)';
+          return '(@.dimensions != null && @.dimensions.width == 5 && @.dimensions.height == 5)';
         case 'moji':
-          return '(@.dimensions.width == 3 && @.dimensions.height == 3)';
+          return '(@.dimensions != null && @.dimensions.width == 3 && @.dimensions.height == 3)';
         default:
           return '';
       }
@@ -108,18 +109,11 @@ export const getPuzzles = async (
       let after = null;
 
       while (hasNextPage) {
-        await setTimeout(100);
-        const result: any = await queryReadOnly<{
-          crosscubesConnection: {
-            edges: { node: any }[];
-            pageInfo: { hasNextPage: boolean; endCursor: string };
-          };
-        }>(
-          `
+        const query = `
           query Query($after: String) {
             crosscubesConnection(
               orderBy: publishedAt_DESC
-              where: { data_json_path_exists: "$[*] ? (${createWhereForType(types)})" }
+              where: { data_json_path_exists: "$[*] ? ${createWhereForType(types)}" }
               first: 1000
               after: $after
             ) {
@@ -134,9 +128,15 @@ export const getPuzzles = async (
               }
             }
           }
-        `,
-          { after },
-        );
+        `;
+
+        await setTimeout(100);
+        const result: any = await queryReadOnly<{
+          crosscubesConnection: {
+            edges: { node: any }[];
+            pageInfo: { hasNextPage: boolean; endCursor: string };
+          };
+        }>(query, { after });
 
         const newCrosscubes = result?.crosscubesConnection.edges.map(
           (edge: any) => edge.node,

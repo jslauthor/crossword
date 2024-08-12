@@ -874,6 +874,7 @@ export default function Puzzle({
                   setGoToNextWord={setGoToNextWord}
                   theme={theme}
                   isSpinning={isSpinning}
+                  isSingleSided={isSingleSided}
                 />
               </group>
             </SwipeControls>

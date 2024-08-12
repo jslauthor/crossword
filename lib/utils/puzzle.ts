@@ -671,8 +671,8 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
   const width = data.grid[0].length;
   const height = data.grid.length;
 
-  const entries = Object.entries(data.entries);
-  const keys = Object.keys(data.entries);
+  const entries = Object.entries(data.items);
+  const keys = Object.keys(data.items);
 
   const secondSidePuzzleData = createBlankPuzzleData(width, height);
   const fourthSidePuzzleData = createBlankPuzzleData(width, height);

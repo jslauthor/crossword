@@ -246,6 +246,7 @@ export type LetterBoxesProps = {
   ) => void;
   theme?: string;
   isSpinning?: boolean;
+  isSingleSided?: boolean;
 };
 
 const tempObject = new Object3D();
@@ -347,6 +348,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   setGoToNextWord,
   theme,
   isSpinning,
+  isSingleSided,
 }) => {
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
@@ -641,6 +643,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       // We want to show the next sides as the cube is animating
       const { x } = record.solution[id];
       if (
+        isSingleSided === true ||
         isSpinning === true ||
         cellBelongsOnSide(id, selectedSide) ||
         cellBelongsOnSide(id, prevSelectedSide)
