@@ -48,7 +48,7 @@ const puzzleProperties = `
   stage
 `;
 
-const convertPuzzleData = (puzzleData: any) => {
+const convertPuzzleData = (puzzleData: any): PuzzleType => {
   let data = puzzleData.data;
   let svgSegments = puzzleData.svgSegments;
   // If the data is the crossmoji data format, convert it to a crosscube
@@ -84,13 +84,13 @@ const createWhereForType = (types: CrosscubeType[]) => {
     .map((type) => {
       switch (type) {
         case 'cube':
-          return '(@.dimensions != null && @.dimensions.width == 8 && @.dimensions.height == 8)';
+          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 8 && @.dimensions.height == 8)" }';
         case 'mega':
-          return '(@.dimensions != null && @.dimensions.width == 12 && @.dimensions.height == 12)';
+          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 12 && @.dimensions.height == 12)" }';
         case 'mini':
-          return '(@.dimensions != null && @.dimensions.width == 5 && @.dimensions.height == 5)';
+          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 5 && @.dimensions.height == 5)" }';
         case 'moji':
-          return '(@.dimensions != null && @.dimensions.width == 3 && @.dimensions.height == 3)';
+          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 3 && @.dimensions.height == 3)" }, { data_json_path_exists: "$.items" }';
         default:
           return '';
       }
@@ -113,7 +113,7 @@ export const getPuzzles = async (
           query Query($after: String) {
             crosscubesConnection(
               orderBy: publishedAt_DESC
-              where: { data_json_path_exists: "$[*] ? ${createWhereForType(types)}" }
+              where: { OR: [${createWhereForType(types)}] }
               first: 1000
               after: $after
             ) {

@@ -97,6 +97,7 @@ export type PuzzleType = Omit<
   record: CharacterRecord;
   previewState: number;
   initialState?: string; // GZIP encoded YJS Uint8Array
+  type?: CrosscubeType;
 };
 
 export type CrosscubeType = 'moji' | 'mini' | 'cube' | 'mega';
