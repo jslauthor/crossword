@@ -804,7 +804,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
 
       setSelected(nextSelected);
-      if (nextCell.side !== selectedSide) {
+      if (isSingleSided === false && nextCell.side !== selectedSide) {
         let numSides = 0;
         while (numSides < puzzle.data.length) {
           numSides++;
@@ -827,6 +827,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     },
     [
       record,
+      isSingleSided,
       isVerticalOrientation,
       selectedSide,
       selectNextBlankEnabled,
