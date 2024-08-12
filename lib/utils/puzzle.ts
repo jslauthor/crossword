@@ -624,7 +624,11 @@ export const getAltForType = (type: CrosscubeType) => {
   }
 };
 
-export const getTypeForSize = (puzzle: PuzzleType): CrosscubeType => {
+export const getType = (puzzle: PuzzleType): CrosscubeType => {
+  if (puzzle.type != null) {
+    return puzzle.type;
+  }
+
   const { width, height } = puzzle.data[0].dimensions;
   const size = width * height;
   switch (size) {

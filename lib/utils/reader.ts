@@ -51,12 +51,14 @@ const puzzleProperties = `
 const convertPuzzleData = (puzzleData: any): PuzzleType => {
   let data = puzzleData.data;
   let svgSegments = puzzleData.svgSegments;
+  let type: CrosscubeType | undefined = undefined;
   // If the data is the crossmoji data format, convert it to a crosscube
   // Crossmoji data has items and grid, while crosscube has puzzle and solution
   // You can also create a 3d crossmoji which uses the crosscube data format
   if (puzzleData.data.items != null) {
     data = convertCrossmojiData(puzzleData.data);
     svgSegments = Object.keys(puzzleData.data.items).map(emojiToUnicode);
+    type = 'moji';
   }
 
   return {
@@ -76,6 +78,7 @@ const convertPuzzleData = (puzzleData: any): PuzzleType => {
     data,
     svgSegments,
     record: getCharacterRecord(data),
+    type,
   };
 };
 
