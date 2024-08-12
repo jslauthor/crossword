@@ -226,6 +226,22 @@ export default function Puzzle({
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
+  const [width, rowLength] = useMemo(() => {
+    let { width } = puzzle.data[0].dimensions;
+    return [width, width * puzzle.data.length - puzzle.data.length];
+  }, [puzzle.data]);
+
+  const isSingleSided = useMemo(() => {
+    for (let j = 0; j < puzzle.record.solution.length; j++) {
+      const { value: cell } = puzzle.record.solution[j];
+      const side = Math.floor((j % rowLength) / width);
+      if (cell !== '#' && side > 0) {
+        return false;
+      }
+    }
+    return true;
+  }, [puzzle.record.solution, rowLength, width]);
+
   const router = useRouter();
   const { theme } = useTheme();
   const layout = useMemo<keyof KeyboardLayoutType>(
@@ -365,13 +381,69 @@ export default function Puzzle({
     isInitialized === true,
     setIsPromptOpen,
   );
+
+  const [_, api] = useSpring(() => ({
+    singleSidedOffset: 0,
+  }));
+  const turnAnimationPlaying = useRef(false);
+
   const turnLeft = useCallback(
-    (offset?: number) => setSideOffset(sideOffset + (offset ?? 1)),
-    [sideOffset],
+    (offset?: number) => {
+      if (turnAnimationPlaying.current === true) return;
+      if (isSingleSided === true) {
+        api.start({
+          config: {
+            duration: 30,
+          },
+          from: { singleSidedOffset: sideOffset },
+          to: [
+            { singleSidedOffset: sideOffset + 0.2 },
+            { singleSidedOffset: sideOffset },
+          ],
+          onResolve: ({ finished }) => {
+            if (finished === true) {
+              turnAnimationPlaying.current = false;
+            }
+          },
+          onChange: (_, spring) => {
+            turnAnimationPlaying.current = true;
+            setSideOffset(spring.get().singleSidedOffset);
+          },
+        });
+        return;
+      }
+      setSideOffset(sideOffset + (offset ?? 1));
+    },
+    [api, isSingleSided, sideOffset],
   );
   const turnRight = useCallback(
-    (offset?: number) => setSideOffset(sideOffset - (offset ?? 1)),
-    [sideOffset],
+    (offset?: number) => {
+      if (turnAnimationPlaying.current === true) return;
+      if (isSingleSided === true) {
+        api.start({
+          config: {
+            duration: 30,
+          },
+          from: { singleSidedOffset: sideOffset },
+          to: [
+            { singleSidedOffset: sideOffset - 0.2 },
+            { singleSidedOffset: sideOffset },
+          ],
+          onResolve: ({ finished }) => {
+            if (finished === true) {
+              turnAnimationPlaying.current = false;
+            }
+          },
+          onChange: (_, spring) => {
+            turnAnimationPlaying.current = true;
+            setSideOffset(spring.get().singleSidedOffset);
+          },
+        });
+        return;
+      }
+      setSideOffset(sideOffset - (offset ?? 1));
+    },
+    [api, isSingleSided, sideOffset],
   );
 
   const selectedSide = useMemo(() => {

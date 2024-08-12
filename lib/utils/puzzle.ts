@@ -2,7 +2,9 @@ import { ProgressEnum } from 'components/svg/PreviewCube';
 import {
   Clue,
   CrosscubeType,
+  CrossmojiData,
   GameState,
+  PuzzleCell,
   PuzzleData,
   SolutionCell,
   SolutionCellNumber,
@@ -635,4 +637,126 @@ export const getTypeForSize = (puzzle: PuzzleType): CrosscubeType => {
     default:
       return 'cube';
   }
+};
+
+export const createBlankPuzzleData = (
+  width: number,
+  height: number,
+): PuzzleData => ({
+  dimensions: {
+    width,
+    height,
+  },
+  puzzle: Array.from({ length: height }, () =>
+    Array.from({ length: width }, () => '#'),
+  ),
+  solution: Array.from({ length: height }, () =>
+    Array.from({ length: width }, () => '#'),
+  ),
+  clues: {
+    Across: [],
+    Down: [],
+  },
+});
+
+export function emojiToUnicode(emoji: string): string {
+  const codePoints = Array.from(emoji).map(
+    (char) => char.codePointAt(0)?.toString(16).padStart(4, '0') || '',
+  );
+
+  return 'u' + codePoints.join('_');
+}
+
+export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
+  const width = data.grid[0].length;
+  const height = data.grid.length;
+
+  const entries = Object.entries(data.entries);
+  const keys = Object.keys(data.entries);
+
+  const secondSidePuzzleData = createBlankPuzzleData(width, height);
+  const fourthSidePuzzleData = createBlankPuzzleData(width, height);
+
+  let total = 0;
+  const puzzle: PuzzleCell[][] = [];
+  const solution: SolutionCell[][] = [];
+  data.grid.forEach((row, x) =>
+    row.map((cell, y) => {
+      if (puzzle[x] == null) {
+        puzzle[x] = [];
+      }
+      if (solution[x] == null) {
+        solution[x] = [];
+      }
+      if (cell === 1) {
+        total++;
+        puzzle[x].push(total);
+        const emoji = keys[y * row.length + x];
+        const value = {
+          value: emojiToUnicode(emoji),
+          cell: total,
+        };
+        solution[x].push(value);
+        // Store the last column values in the solution
+        if (y === row.length - 1) {
+          secondSidePuzzleData.puzzle[x][0] = total;
+          secondSidePuzzleData.solution[x][0] = value;
+        }
+        if (y === 0) {
+          fourthSidePuzzleData.puzzle[x][row.length - 1] = total;
+          fourthSidePuzzleData.solution[x][row.length - 1] = value;
+        }
+      } else {
+        puzzle[x].push('#');
+        solution[x].push('#');
+        // Store the last column values in the solution
+        if (y === row.length - 1) {
+          secondSidePuzzleData.puzzle[x][0] = '#';
+          secondSidePuzzleData.solution[x][0] = '#';
+        }
+        if (y === 0) {
+          fourthSidePuzzleData.puzzle[x][row.length - 1] = '#';
+          fourthSidePuzzleData.solution[x][row.length - 1] = '#';
+        }
+      }
+    }),
+  );
+
+  // Convert CrossmojiData to PuzzleData
+  const puzzleData: PuzzleData = {
+    dimensions: {
+      width,
+      height,
+    },
+    puzzle,
+    solution,
+    clues: {
+      Across: [],
+      Down: [],
+    },
+  };
+
+  // Generate clues
+  let clueNumber = 1;
+  entries.forEach(([emoji, clue]) => {
+    if (clue) {
+      puzzleData.clues.Across.push({
+        number: clueNumber,
+        clue: clue,
+        answer: emojiToUnicode(emoji),
+      });
+      clueNumber++;
+    }
+  });
+
+  secondSidePuzzleData.clues.Across = puzzleData.clues.Across;
+  fourthSidePuzzleData.clues.Across = puzzleData.clues.Across;
+
+  // Convert PuzzleData to CharacterRecord
+  return [
+    puzzleData,
+    secondSidePuzzleData,
+    createBlankPuzzleData(width, height),
+    fourthSidePuzzleData,
+  ];
 };

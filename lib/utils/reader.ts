@@ -11,6 +11,8 @@ import {
   initializeAnswerIndex,
   GAME_STATE_KEY,
   createInitialYDoc,
+  convertCrossmojiData,
+  emojiToUnicode,
 } from './puzzle';
 import { TEXTURE_RECORD, buildSvgTextureAtlasLookup } from './atlas';
 import * as Y from 'yjs';
@@ -45,6 +47,36 @@ const puzzleProperties = `
   updatedAt
   stage
 `;
+
+const convertPuzzleData = (puzzleData: any) => {
+  let data = puzzleData.data;
+  let svgSegments = puzzleData.svgSegments;
+  // If the data is a crossmoji, convert it to a crosscube
+  // Crossmoji has entries and grid, while crosscube has puzzle and solution
+  if (puzzleData.data.entries != null) {
+    data = convertCrossmojiData(puzzleData.data);
+    svgSegments = Object.keys(puzzleData.data.entries).map(emojiToUnicode);
+  }
+
+  return {
+    id: puzzleData.id,
+    title: puzzleData.title,
+    authors:
+      puzzleData.authors
+        ?.map((author: { name: { firstName: string; lastName: string } }) =>
+          author.name
+            ? `${author.name.firstName || ''} ${author.name.lastName || ''}`.trim()
+            : '',
+        )
+        .filter(Boolean) || [],
+    date: puzzleData.publishedAt ?? puzzleData.updatedAt,
+    previewState: 0,
+    slug: puzzleData.slug,
+    data: data,
+    svgSegments: svgSegments,
+    record: getCharacterRecord(data),
+  };
+};
 
 const createWhereForType = (types: CrosscubeType[]) => {
   return types
@@ -119,24 +151,11 @@ export const getPuzzles = async (
 
     const crosscubes = await fetchAllCrosscubes();
 
-    const puzzles: PuzzleType[] = crosscubes.map(
-      (puzzle: any) =>
-        ({
-          id: puzzle.id,
-          title: puzzle.title,
-          authors: [
-            puzzle.authors[0].name.firstName +
-              (puzzle.authors[0].name.lastName != null
-                ? ' ' + puzzle.authors[0].name.lastName
-                : ''),
-          ],
-          date: puzzle.publishedAt ?? puzzle.updatedAt,
-          previewState: 0,
-          slug: puzzle.slug,
-          data: puzzle.data,
-          record: getCharacterRecord(puzzle.data),
-        }) as PuzzleType,
-    );
+    const puzzles: PuzzleType[] = crosscubes
+      .filter(
+        (puzzleData: any) => puzzleData !== null && puzzleData !== undefined,
+      )
+      .map(convertPuzzleData);
 
     if (enrich === true) {
       const clerkUser = await currentUser();
@@ -209,28 +228,9 @@ export const getPuzzlesBySlugs = async (
 
     const puzzles: PuzzleType[] = crosscubes
       .filter(
-        (puzzleData): puzzleData is any =>
-          puzzleData !== null && puzzleData !== undefined,
+        (puzzleData: any) => puzzleData !== null && puzzleData !== undefined,
       )
-      .map((puzzleData) => ({
-        id: puzzleData.id,
-        title: puzzleData.title,
-        authors:
-          puzzleData.authors
-            ?.map(
-              (author: { name: { firstName: string; lastName: string } }) =>
-                author.name
-                  ? `${author.name.firstName || ''} ${author.name.lastName || ''}`.trim()
-                  : '',
-            )
-            .filter(Boolean) || [],
-        date: puzzleData.publishedAt ?? puzzleData.updatedAt,
-        previewState: 0,
-        slug: puzzleData.slug,
-        data: puzzleData.data,
-        svgSegments: puzzleData.svgSegments,
-        record: getCharacterRecord(puzzleData.data),
-      }));
+      .map(convertPuzzleData);
 
     if (enrich === true) {
       const clerkUser = await currentUser();

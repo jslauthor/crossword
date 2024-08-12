@@ -1,0 +1,43 @@
+{
+  "entries": {
+    "🍕": "Circular delight that's anything but square",
+    "🌈": "Nature's Instagram filter after a good cry",
+    "🦋": "Winged fashion icon of the insect world",
+    "🚀": "Elon Musk's favorite way to dodge traffic",
+    "🎭": "Two-faced performers that aren't being shady",
+    "🏆": "Shiny shelf ornament for the competitive",
+    "🌻": "Tall, golden-headed admirer of Sol",
+    "🍦": "Dairy queen's scepter on a summer day",
+    "🎸": "Six-stringed attention seeker at parties",
+    "🐘": "Gentle giant with built-in water hose",
+    "🌋": "Earth's temperamental pimple",
+    "🤪": "Where grains go for spring break",
+    "🎨": "Jackson Pollock's favorite dinner plate",
+    "🚲": null,
+    "🍄": null,
+    "🦉": null,
+    "🈶": null,
+    "🧩": null,
+    "🎻": null,
+    "🌮": null,
+    "🧲": null,
+    "🦜": null,
+    "🧺": null,
+    "🥇": null,
+    "📅": null,
+    "🦷": null
+  },
+  "grid": [
+    [1, 0, 1, 0, 1],
+    [0, 1, 0, 1, 0],
+    [1, 0, 1, 0, 1],
+    [0, 1, 0, 1, 0],
+    [1, 0, 1, 0, 1]
+  ],
+  "metadata": {
+    "0": {
+      "styles": ["circled"],
+      "related": [2, 3, 5]
+    }
+  }
+}

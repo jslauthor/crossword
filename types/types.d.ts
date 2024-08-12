@@ -45,8 +45,8 @@ export type Clue = {
 };
 
 export interface PuzzleData {
-  author: string;
-  copyright: string;
+  author?: string;
+  copyright?: string;
   dimensions: {
     width: number;
     height: number;
@@ -64,6 +64,21 @@ export interface SvgProps {
   height?: number;
   color?: string;
   className?: string;
+}
+
+export interface CrossmojiData {
+  title: string;
+  entries: {
+    [key: string]: string | null;
+  };
+  grid: number[][];
+  metadata: Record<
+    string,
+    {
+      styles: string[];
+      related: number[];
+    }
+  >;
 }
 
 declare module '@react-three/fiber' {
