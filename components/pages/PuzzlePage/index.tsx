@@ -821,9 +821,10 @@ export default function Puzzle({
               ref={setCameraRef}
               makeDefault
               position={[0, 0, 0]}
+              fov={25}
             />
             <ambientLight intensity={3} />
-            {/* <pointLight position={[0, 0, -2]} intensity={2} /> */}
+            <pointLight position={[0, 0, 5]} intensity={5} />
             <SwipeControls
               global
               dragEnabled={false}
@@ -850,14 +851,14 @@ export default function Puzzle({
                   updateCharacterPosition={updateCharacterPosition}
                   onLetterInput={onLetterInput}
                   onSelectClue={handleClueChange}
-                  fontColor={fontColor}
+                  fontColor={0x000000}
                   fontDraftColor={fontDraftColor}
-                  defaultColor={defaultColor}
+                  defaultColor={0xffffff}
                   selectedColor={selectedColor}
                   adjacentColor={adjacentColor}
                   errorColor={errorColor}
                   correctColor={correctColor}
-                  borderColor={borderColor}
+                  borderColor={0x000000}
                   onInitialize={onInitialize}
                   isVerticalOrientation={isVerticalOrientation}
                   onVerticalOrientationChange={handleSetOrientation}
@@ -875,6 +876,8 @@ export default function Puzzle({
                   theme={theme}
                   isSpinning={isSpinning}
                   isSingleSided={isSingleSided}
+                  fresnelColor={0xffffff}
+                  fresnelPower={0.05}
                 />
               </group>
             </SwipeControls>

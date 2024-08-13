@@ -9,9 +9,10 @@ import {
   Euler,
   Texture,
   Vector4,
+  MeshPhongMaterial,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
-import { InstancedMesh, MeshPhysicalMaterial } from 'three';
+import { InstancedMesh } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
@@ -88,21 +89,25 @@ const fragmentShader = `
   varying vec3 vCellColor;
   flat varying ivec2 vCubeSideDisplay;
 
+  uniform vec3 fresnelColor;
+  uniform float fresnelPower;
+
   vec4 applyColorChange(vec4 color, vec4 newColor) {
     return vec4(newColor.rgb, color.a); // Change white to the target color
-  }
-
-  float borderSDF(vec2 uv, vec2 size, float radius, float width) {
-    uv = uv * 2.0 - 1.0;
-    vec2 d = abs(uv) - size + vec2(radius);
-    float dist = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
-    return smoothstep(width, width + fwidth(dist), dist);
   }
 
   void main(void)
   {
     vec3 c = vCellColor.rgb;
     
+    // Calculate fresnel effect
+    vec3 viewDir = normalize(vViewPosition);
+    float fresnel = pow(1.0 - dot(vNormal, viewDir), fresnelPower);
+    vec3 fresnelEffect = fresnel * fresnelColor;
+
+    // Blend the fresnel effect with the existing color
+    c = mix(c, fresnelEffect, fresnel);
+
     // Here we paint all of our textures
 
     // Show character when bitflag is on for the side
@@ -158,10 +163,6 @@ const fragmentShader = `
         c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
       }
 
-      // Draw the border with rounded corners
-      float sdf = borderSDF(vUv, vec2(0.94 - borderRadius), 0.02, borderRadius);
-      c = mix(c, borderColor.rgb, sdf * borderColor.a);
-
       // Draw the cell number
       // A coord of -1, -1 means do not paint
       if (vCellNumberPosition.x >= 0.0 && vCellNumberPosition.y >= 0.0) {
@@ -190,7 +191,8 @@ const fragmentShader = `
         }
       }
     } else {
-      c = vec3(0.07, 0.07, 0.07) * c.rgb;  // blending equation
+      // c = vec3(0.07, 0.07, 0.07) * c.rgb;  // blending equation
+      c = mix(vec3(0.0, 0.0, 0.0) * c.rgb, fresnelEffect, fresnel);
     }
     
     csm_DiffuseColor = vec4(c, 1.0);
@@ -247,6 +249,8 @@ export type LetterBoxesProps = {
   theme?: string;
   isSpinning?: boolean;
   isSingleSided?: boolean;
+  fresnelColor: number;
+  fresnelPower: number;
 };
 
 const tempObject = new Object3D();
@@ -258,10 +262,10 @@ const uniformDefaults = {
 
 type Uniforms = Record<
   string,
-  { value: Texture | Vector4 | number | boolean | undefined }
+  { value: Texture | Vector4 | number | boolean | undefined | Vector3 }
 >;
 const materialConfig = {
-  baseMaterial: MeshPhysicalMaterial,
+  baseMaterial: MeshPhongMaterial,
   toneMapped: false,
   fog: false,
   vertexShader,
@@ -349,6 +353,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   theme,
   isSpinning,
   isSingleSided,
+  fresnelColor,
+  fresnelPower,
 }) => {
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
@@ -396,6 +402,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     () => hexToVector(correctColor),
     [correctColor],
   );
+  const convertedFresnelColor = useMemo(
+    () => hexToVector(fresnelColor),
+    [fresnelColor],
+  );
 
   const uniforms: Uniforms = useMemo(
     () => ({
@@ -409,6 +419,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       errorColor: { value: convertedErrorColor },
       borderColor: { value: convertedBorderColor },
       correctColor: { value: convertedCorrectColor },
+      fresnelColor: { value: convertedFresnelColor },
+      fresnelPower: { value: fresnelPower },
       ...uniformDefaults,
     }),
     [
@@ -418,6 +430,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       convertedErrorColor,
       convertedFontColor,
       convertedFontDraftColor,
+      convertedFresnelColor,
+      fresnelPower,
       numberTextureAtlas,
       svgGridSize,
       svgTextureAtlas,
@@ -606,7 +620,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
         // Hide blank cells
         if (cell === '#') {
-          tempObject.scale.set(0, 0, 0);
+          // tempObject.scale.set(0, 0, 0);
         }
 
         tempObject.updateMatrix();
@@ -1028,7 +1042,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       onPointerDown={onPointerDown}
       material={[side0, side1, side2, side3, side4, side5]}
     >
-      <roundedBoxGeometry args={[1.05, 1.05, 1.05, 2, 0.08]}>
+      <roundedBoxGeometry args={[0.9, 0.9, 0.9, 5, 0.1]}>
         <instancedBufferAttribute
           attach="attributes-characterPosition"
           count={characterPositionArray.length}
