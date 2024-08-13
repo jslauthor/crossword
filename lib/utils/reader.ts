@@ -98,7 +98,7 @@ const createWhereForType = (types: CrosscubeType[]) => {
           return '';
       }
     })
-    .join(' || ');
+    .join(', ');
 };
 
 export const getPuzzles = async (
