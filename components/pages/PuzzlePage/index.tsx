@@ -3,7 +3,7 @@
 import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
-import { Stats, PerspectiveCamera, Html } from '@react-three/drei';
+import { Stats, PerspectiveCamera, Html, Environment } from '@react-three/drei';
 import LetterBoxes, { SelectClueFn } from 'components/core/3d/LetterBoxes';
 import {
   Suspense,
@@ -17,6 +17,7 @@ import {
   PerspectiveCamera as PerspectiveCameraType,
   Vector3,
   Object3D,
+  HemisphereLight,
 } from 'three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
@@ -272,6 +273,8 @@ export default function Puzzle({
   );
   const [groupRef, setGroup] = useState<Object3D | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
+  const [hemisphereLightRef, setHemisphereLightRef] =
+    useState<HemisphereLight | null>();
   const [sideOffset, setSideOffset] = useState(0);
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
     useState<[string, number]>();
@@ -817,14 +820,19 @@ export default function Puzzle({
           ref={containerRef}
         >
           <Suspense fallback={<Loader />}>
+            <Environment
+              preset="studio"
+              resolution={128}
+              environmentIntensity={0.1}
+              environmentRotation={[0, Math.PI / 1.12, 0]}
+            />
             <PerspectiveCamera
               ref={setCameraRef}
               makeDefault
               position={[0, 0, 0]}
-              fov={25}
+              fov={1}
             />
-            <ambientLight intensity={3} />
-            <pointLight position={[0, 0, 5]} intensity={5} />
+            <ambientLight intensity={1.75} />
             <SwipeControls
               global
               dragEnabled={false}
@@ -854,6 +862,7 @@ export default function Puzzle({
                   fontColor={0x000000}
                   fontDraftColor={fontDraftColor}
                   defaultColor={0xffffff}
+                  blankColor={0x000000}
                   selectedColor={selectedColor}
                   adjacentColor={adjacentColor}
                   errorColor={errorColor}
@@ -876,8 +885,6 @@ export default function Puzzle({
                   theme={theme}
                   isSpinning={isSpinning}
                   isSingleSided={isSingleSided}
-                  fresnelColor={0xffffff}
-                  fresnelPower={0.05}
                 />
               </group>
             </SwipeControls>

@@ -9,10 +9,9 @@ import {
   Euler,
   Texture,
   Vector4,
-  MeshPhongMaterial,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
-import { InstancedMesh } from 'three';
+import { InstancedMesh, MeshPhysicalMaterial } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
@@ -89,25 +88,21 @@ const fragmentShader = `
   varying vec3 vCellColor;
   flat varying ivec2 vCubeSideDisplay;
 
-  uniform vec3 fresnelColor;
-  uniform float fresnelPower;
-
   vec4 applyColorChange(vec4 color, vec4 newColor) {
     return vec4(newColor.rgb, color.a); // Change white to the target color
+  }
+
+  float borderSDF(vec2 uv, vec2 size, float radius, float width) {
+    uv = uv * 2.0 - 1.0;
+    vec2 d = abs(uv) - size + vec2(radius);
+    float dist = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
+    return smoothstep(width, width + fwidth(dist), dist);
   }
 
   void main(void)
   {
     vec3 c = vCellColor.rgb;
     
-    // Calculate fresnel effect
-    vec3 viewDir = normalize(vViewPosition);
-    float fresnel = pow(1.0 - dot(vNormal, viewDir), fresnelPower);
-    vec3 fresnelEffect = fresnel * fresnelColor;
-
-    // Blend the fresnel effect with the existing color
-    c = mix(c, fresnelEffect, fresnel);
-
     // Here we paint all of our textures
 
     // Show character when bitflag is on for the side
@@ -190,9 +185,6 @@ const fragmentShader = `
             }
         }
       }
-    } else {
-      // c = vec3(0.07, 0.07, 0.07) * c.rgb;  // blending equation
-      c = mix(vec3(0.0, 0.0, 0.0) * c.rgb, fresnelEffect, fresnel);
     }
     
     csm_DiffuseColor = vec4(c, 1.0);
@@ -217,6 +209,7 @@ export type LetterBoxesProps = {
   fontColor: number;
   fontDraftColor: number;
   defaultColor: number;
+  blankColor: number;
   selectedColor: number;
   adjacentColor: number;
   errorColor: number;
@@ -249,8 +242,6 @@ export type LetterBoxesProps = {
   theme?: string;
   isSpinning?: boolean;
   isSingleSided?: boolean;
-  fresnelColor: number;
-  fresnelPower: number;
 };
 
 const tempObject = new Object3D();
@@ -265,7 +256,7 @@ type Uniforms = Record<
   { value: Texture | Vector4 | number | boolean | undefined | Vector3 }
 >;
 const materialConfig = {
-  baseMaterial: MeshPhongMaterial,
+  baseMaterial: MeshPhysicalMaterial,
   toneMapped: false,
   fog: false,
   vertexShader,
@@ -299,6 +290,11 @@ const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
         charactersGridSize: { value: 6.0 },
         ...uniforms,
       },
+      roughness: 0.5,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.5,
+      iridescence: 1,
+      iridescenceIOR: 1.5,
     });
     materialMap.set(sideEnum, material);
     return material;
@@ -337,6 +333,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   fontColor,
   fontDraftColor,
   defaultColor,
+  blankColor,
   selectedColor,
   adjacentColor,
   errorColor,
@@ -353,8 +350,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   theme,
   isSpinning,
   isSingleSided,
-  fresnelColor,
-  fresnelPower,
 }) => {
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
@@ -402,10 +397,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     () => hexToVector(correctColor),
     [correctColor],
   );
-  const convertedFresnelColor = useMemo(
-    () => hexToVector(fresnelColor),
-    [fresnelColor],
-  );
 
   const uniforms: Uniforms = useMemo(
     () => ({
@@ -419,8 +410,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       errorColor: { value: convertedErrorColor },
       borderColor: { value: convertedBorderColor },
       correctColor: { value: convertedCorrectColor },
-      fresnelColor: { value: convertedFresnelColor },
-      fresnelPower: { value: fresnelPower },
       ...uniformDefaults,
     }),
     [
@@ -430,8 +419,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       convertedErrorColor,
       convertedFontColor,
       convertedFontDraftColor,
-      convertedFresnelColor,
-      fresnelPower,
       numberTextureAtlas,
       svgGridSize,
       svgTextureAtlas,
@@ -618,9 +605,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           );
         }
 
-        // Hide blank cells
         if (cell === '#') {
-          // tempObject.scale.set(0, 0, 0);
+          if (
+            isSingleSided === true &&
+            Math.floor((j % rowLength) / width) !== 0 // first side including last column
+          ) {
+            tempObject.scale.set(0, 0, 0);
+          } else {
+            tempColor.set(blankColor).toArray(cellColorsArray, j * 3);
+          }
         }
 
         tempObject.updateMatrix();
@@ -631,6 +624,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       ref.geometry.attributes.characterPosition.needsUpdate = true;
       ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
       ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
+      ref.geometry.attributes.cellColor.needsUpdate = true;
       ref.instanceMatrix.needsUpdate = true;
       // setInitialRotations(rotations);
       // showIntroAnimation(true);
@@ -688,10 +682,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setSelectedWordCell(undefined);
         setPrevTheme(theme);
 
-        (id === hovered || id === selected
-          ? tempColor.set(selectedColor)
-          : tempColor.set(defaultColor)
-        ).toArray(cellColorsArray, id * 3);
+        const { solution } = record;
+        const cell = solution[id];
+
+        if (cell.value !== '#') {
+          (id === hovered || id === selected
+            ? tempColor.set(selectedColor)
+            : tempColor.set(defaultColor)
+          ).toArray(cellColorsArray, id * 3);
+        }
 
         if (selected != null && isVisibleSide(selected) === true) {
           const { solution, wordSequences } = record;
@@ -1042,7 +1041,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       onPointerDown={onPointerDown}
       material={[side0, side1, side2, side3, side4, side5]}
     >
-      <roundedBoxGeometry args={[0.9, 0.9, 0.9, 5, 0.1]}>
+      <roundedBoxGeometry args={[0.95, 0.95, 0.95, 10, 0.1]}>
         <instancedBufferAttribute
           attach="attributes-characterPosition"
           count={characterPositionArray.length}
