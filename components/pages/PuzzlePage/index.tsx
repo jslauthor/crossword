@@ -822,7 +822,7 @@ export default function Puzzle({
           <Suspense fallback={<Loader />}>
             <Environment
               preset="studio"
-              resolution={128}
+              resolution={64}
               environmentIntensity={0.1}
               environmentRotation={[0, Math.PI / 1.12, 0]}
             />
@@ -830,7 +830,7 @@ export default function Puzzle({
               ref={setCameraRef}
               makeDefault
               position={[0, 0, 0]}
-              fov={1}
+              fov={25}
             />
             <ambientLight intensity={1.75} />
             <SwipeControls
@@ -863,7 +863,7 @@ export default function Puzzle({
                   fontDraftColor={fontDraftColor}
                   defaultColor={0xffffff}
                   blankColor={0x000000}
-                  selectedColor={selectedColor}
+                  selectedColor={0xff8800}
                   adjacentColor={adjacentColor}
                   errorColor={errorColor}
                   correctColor={correctColor}

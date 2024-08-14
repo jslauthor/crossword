@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ThreeEvent, extend, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
@@ -9,6 +15,7 @@ import {
   Euler,
   Texture,
   Vector4,
+  PointLight,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh, MeshPhysicalMaterial } from 'three';
@@ -351,6 +358,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   isSpinning,
   isSingleSided,
 }) => {
+  const [cellPositions, setCellPositions] = useState<Record<number, Vector3>>(
+    {},
+  );
+  const lightRef = useRef<PointLight>(null);
+
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
     characterTextureAtlas.wrapS = RepeatWrapping;
@@ -545,6 +557,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     () => {
       if (ref == null) return;
 
+      const positions: Record<number, Vector3> = {};
       const rotations: Euler[] = [];
       const tempCellMapping: Record<number, number> = {};
 
@@ -619,7 +632,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         tempObject.updateMatrix();
         ref.setMatrixAt(j, tempObject.matrix);
         rotations[j] = new Euler().copy(tempObject.rotation);
+        positions[j] = new Vector3().copy(tempObject.position);
       }
+
+      setCellPositions(positions);
 
       ref.geometry.attributes.characterPosition.needsUpdate = true;
       ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
@@ -723,6 +739,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
         ref.geometry.attributes.cellColor.needsUpdate = true;
       }
+    }
+
+    if (lightRef.current && selected !== undefined && cellPositions[selected]) {
+      lightRef.current.position.copy(cellPositions[selected]);
     }
   });
 
@@ -1033,53 +1053,56 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   );
 
   return (
-    <instancedMesh
-      ref={setRef}
-      args={[undefined, undefined, size]}
-      onPointerMove={onPointerMove}
-      onPointerOut={onPointerOut}
-      onPointerDown={onPointerDown}
-      material={[side0, side1, side2, side3, side4, side5]}
-    >
-      <roundedBoxGeometry args={[0.95, 0.95, 0.95, 10, 0.1]}>
-        <instancedBufferAttribute
-          attach="attributes-characterPosition"
-          count={characterPositionArray.length}
-          itemSize={2}
-          array={characterPositionArray}
-        />
-        <instancedBufferAttribute
-          attach="attributes-cellNumberPosition"
-          count={cellNumberPositionArray.length}
-          itemSize={2}
-          array={cellNumberPositionArray}
-        />
-        <instancedBufferAttribute
-          attach="attributes-cubeSideDisplay"
-          count={cubeSideDisplayArray.length}
-          itemSize={2}
-          array={cubeSideDisplayArray}
-        />
-        <instancedBufferAttribute
-          attach="attributes-cellColor"
-          count={cellColorsArray.length}
-          itemSize={3}
-          array={cellColorsArray}
-        />
-        <instancedBufferAttribute
-          attach="attributes-cellValidation"
-          count={cellValidationArray.length}
-          itemSize={2}
-          array={cellValidationArray}
-        />
-        <instancedBufferAttribute
-          attach="attributes-cellDraftMode"
-          count={cellDraftModeArray.length}
-          itemSize={2}
-          array={cellDraftModeArray}
-        />
-      </roundedBoxGeometry>
-    </instancedMesh>
+    <>
+      <instancedMesh
+        ref={setRef}
+        args={[undefined, undefined, size]}
+        onPointerMove={onPointerMove}
+        onPointerOut={onPointerOut}
+        onPointerDown={onPointerDown}
+        material={[side0, side1, side2, side3, side4, side5]}
+      >
+        <roundedBoxGeometry args={[0.92, 0.92, 0.92, 5, 0.05]}>
+          <instancedBufferAttribute
+            attach="attributes-characterPosition"
+            count={characterPositionArray.length}
+            itemSize={2}
+            array={characterPositionArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cellNumberPosition"
+            count={cellNumberPositionArray.length}
+            itemSize={2}
+            array={cellNumberPositionArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cubeSideDisplay"
+            count={cubeSideDisplayArray.length}
+            itemSize={2}
+            array={cubeSideDisplayArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cellColor"
+            count={cellColorsArray.length}
+            itemSize={3}
+            array={cellColorsArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cellValidation"
+            count={cellValidationArray.length}
+            itemSize={2}
+            array={cellValidationArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cellDraftMode"
+            count={cellDraftModeArray.length}
+            itemSize={2}
+            array={cellDraftModeArray}
+          />
+        </roundedBoxGeometry>
+      </instancedMesh>
+      <pointLight ref={lightRef} intensity={10} color={selectedColor} />
+    </>
   );
 };
 
