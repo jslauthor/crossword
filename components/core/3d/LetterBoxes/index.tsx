@@ -16,9 +16,11 @@ import {
   Texture,
   Vector4,
   PointLight,
+  MeshBasicMaterial,
+  DoubleSide,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
-import { InstancedMesh, MeshPhysicalMaterial } from 'three';
+import { InstancedMesh } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
@@ -99,16 +101,9 @@ const fragmentShader = `
     return vec4(newColor.rgb, color.a); // Change white to the target color
   }
 
-  float borderSDF(vec2 uv, vec2 size, float radius, float width) {
-    uv = uv * 2.0 - 1.0;
-    vec2 d = abs(uv) - size + vec2(radius);
-    float dist = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
-    return smoothstep(width, width + fwidth(dist), dist);
-  }
-
   void main(void)
   {
-    vec3 c = vCellColor.rgb;
+    vec4 finalColor = vec4(0.0, 0.0, 0.0, 0.0);
     
     // Here we paint all of our textures
 
@@ -137,7 +132,7 @@ const fragmentShader = `
         if (vCellValidation.x == 2.0) {
           // Draw the mark for a correct letter
           if (vUv.y > (1.0 - vUv.x + 0.75)) {
-            c = correctColor.rgb;
+            finalColor = correctColor;
           } 
         } else {
           if (vCellDraftMode.x > 0.0) {
@@ -157,12 +152,14 @@ const fragmentShader = `
             // Calculate the distance to the diagonal line (y = x)
             float distance = abs(vUv.y - vUv.x);
             if (distance < errorWidth) {
-              c = errorColor.rgb * errorColor.a + c.rgb * (1.0 - errorColor.a);
+              finalColor = errorColor;
             } 
           } 
         }
 
-        c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
+        if (Ca.a > 0.4) { // gets rid of a nasty white border
+          finalColor = Ca; 
+        }
       }
 
       // Draw the cell number
@@ -177,9 +174,6 @@ const fragmentShader = `
         vec2 offset = vec2(0.0, 0.0); // No additional offset needed for upper-left
         vec2 coord = position + size * (scaledUV + offset);
 
-        // // Clamp the coordinates to prevent wrapping
-        // coord = clamp(coord, position, position + size);
-
         // Check if the UV coordinates are within the [0, 1] bounds to avoid texture wrapping
         if (scaledUV.x >= 0.0 && scaledUV.x <= 1.0 && scaledUV.y >= 0.0 && scaledUV.y <= 1.0) {
             vec4 Cb = texture2D(numberTexture, coord);
@@ -188,13 +182,13 @@ const fragmentShader = `
             Cb = applyColorChange(Cb, fontColor);
 
             if (Cb.a > 0.2) { // gets rid of a nasty white border
-              c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a); // blending equation
+              finalColor = Cb; // blending equation
             }
         }
       }
     }
     
-    csm_DiffuseColor = vec4(c, 1.0);
+    csm_DiffuseColor = finalColor;
   }
 `;
 
@@ -263,7 +257,7 @@ type Uniforms = Record<
   { value: Texture | Vector4 | number | boolean | undefined | Vector3 }
 >;
 const materialConfig = {
-  baseMaterial: MeshPhysicalMaterial,
+  baseMaterial: MeshBasicMaterial,
   toneMapped: false,
   fog: false,
   vertexShader,
@@ -297,11 +291,8 @@ const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
         charactersGridSize: { value: 6.0 },
         ...uniforms,
       },
-      roughness: 0.5,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.5,
-      iridescence: 1,
-      iridescenceIOR: 1.5,
+      side: DoubleSide,
+      transparent: true,
     });
     materialMap.set(sideEnum, material);
     return material;
@@ -1062,7 +1053,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         onPointerDown={onPointerDown}
         material={[side0, side1, side2, side3, side4, side5]}
       >
-        <roundedBoxGeometry args={[0.92, 0.92, 0.92, 5, 0.05]}>
+        <boxGeometry args={[0.92, 0.92, 0.92]}>
           <instancedBufferAttribute
             attach="attributes-characterPosition"
             count={characterPositionArray.length}
@@ -1099,7 +1090,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             itemSize={2}
             array={cellDraftModeArray}
           />
-        </roundedBoxGeometry>
+        </boxGeometry>
       </instancedMesh>
       <pointLight ref={lightRef} intensity={10} color={selectedColor} />
     </>

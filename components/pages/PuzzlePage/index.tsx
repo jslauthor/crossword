@@ -820,12 +820,12 @@ export default function Puzzle({
           ref={containerRef}
         >
           <Suspense fallback={<Loader />}>
-            <Environment
+            {/* <Environment
               preset="studio"
               resolution={64}
               environmentIntensity={0.1}
               environmentRotation={[0, Math.PI / 1.12, 0]}
-            />
+            /> */}
             <PerspectiveCamera
               ref={setCameraRef}
               makeDefault
