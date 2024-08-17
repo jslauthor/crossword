@@ -18,6 +18,7 @@ import {
   PointLight,
   MeshBasicMaterial,
   DoubleSide,
+  MeshPhongMaterial,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh } from 'three';
@@ -30,6 +31,7 @@ import { hexToVector } from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
 import { AtlasType } from 'lib/utils/atlas';
+import { useMatcapTexture } from '@react-three/drei';
 extend({ RoundedBoxGeometry });
 
 export enum CubeSidesEnum {
@@ -192,6 +194,42 @@ const fragmentShader = `
   }
 `;
 
+const vertexPhongShader = `
+  attribute vec3 cellColor;
+
+  varying vec2 vMatcapUV;
+  varying vec3 vCellColor;
+
+  void main() {
+    vCellColor = cellColor;
+    
+    vec4 pos = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+    
+    gl_Position = projectionMatrix * pos;
+
+    vec3 normalWorld = normalize(mat3(modelViewMatrix * instanceMatrix) * normal);
+    vec3 viewDir = normalize(pos.xyz);
+    vec3 x = normalize(vec3(viewDir.z, 0.0, -viewDir.x));
+    vec3 y = cross(viewDir, x);
+    vMatcapUV = vec2(dot(x, normalWorld), dot(y, normalWorld)) * 0.495 + 0.5;
+  }
+`;
+
+const fragmentPhongShader = `
+  #ifdef GL_ES
+  precision highp float;
+  #endif
+
+  uniform sampler2D matcapTexture;
+  varying vec2 vMatcapUV;
+  varying vec3 vCellColor;  
+
+  void main(void) {
+    vec4 matcapColor = texture2D(matcapTexture, vMatcapUV);
+    csm_DiffuseColor = vec4(matcapColor.rgb, csm_DiffuseColor.a);
+  }
+`;
+
 export type SelectClueFn = (
   clue: string | undefined,
   cellNumber?: number,
@@ -256,16 +294,9 @@ type Uniforms = Record<
   string,
   { value: Texture | Vector4 | number | boolean | undefined | Vector3 }
 >;
-const materialConfig = {
-  baseMaterial: MeshBasicMaterial,
-  toneMapped: false,
-  fog: false,
-  vertexShader,
-  fragmentShader,
-};
-const materialMap: Map<CubeSidesEnum, CustomShaderMaterial> = new Map();
-const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
-  let material = materialMap.get(sideEnum);
+const basicMaterialMap: Map<CubeSidesEnum, CustomShaderMaterial> = new Map();
+const createBasicMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
+  let material = basicMaterialMap.get(sideEnum);
   if (material != null) {
     // Update uniforms
     Object.keys(uniforms).forEach((key) => {
@@ -285,7 +316,11 @@ const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
     return material;
   } else {
     material = new CustomShaderMaterial({
-      ...materialConfig,
+      baseMaterial: MeshBasicMaterial,
+      toneMapped: false,
+      fog: false,
+      vertexShader,
+      fragmentShader,
       uniforms: {
         sideIndex: { value: sideEnum },
         charactersGridSize: { value: 6.0 },
@@ -293,8 +328,45 @@ const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
       },
       side: DoubleSide,
       transparent: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -4,
     });
-    materialMap.set(sideEnum, material);
+    basicMaterialMap.set(sideEnum, material);
+    return material;
+  }
+};
+
+const cellsMaterialMap: Map<CubeSidesEnum, CustomShaderMaterial> = new Map();
+const createCellsMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
+  let material = cellsMaterialMap.get(sideEnum);
+  if (material != null) {
+    // Update uniforms
+    Object.keys(uniforms).forEach((key) => {
+      if (material != null) {
+        if (material.uniforms[key]) {
+          material.uniforms[key].value = uniforms[key].value;
+        } else {
+          material.uniforms[key] = uniforms[key];
+        }
+      }
+    });
+    material.needsUpdate = true;
+    return material;
+  } else {
+    material = new CustomShaderMaterial({
+      baseMaterial: MeshPhongMaterial,
+      fog: true,
+      uniforms: {
+        ...uniforms,
+      },
+      vertexShader: vertexPhongShader,
+      fragmentShader: fragmentPhongShader,
+      color: new Color(0xff0000),
+      specular: new Color(0x111111),
+      shininess: 100,
+    });
+    cellsMaterialMap.set(sideEnum, material);
     return material;
   }
 };
@@ -366,7 +438,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     numberTextureAtlas.wrapT = RepeatWrapping;
   }, [numberTextureAtlas]);
 
-  const [ref, setRef] = useState<InstancedMesh | null>(null);
+  const [cellsDisplayRef, setCellsDisplayRef] = useState<InstancedMesh | null>(
+    null,
+  );
+  const [cellsRef, setCellsRef] = useState<InstancedMesh | null>(null);
   // const [isVerticalOrientation, setVerticalOrientation] =
   //   useState<boolean>(false);
   const [prevOrientation, setPrevOrientation] = useState<boolean>(
@@ -431,9 +506,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   useEffect(() => {
     if (setInstancedMesh) {
-      setInstancedMesh(ref);
+      setInstancedMesh(cellsDisplayRef);
     }
-  }, [ref, setInstancedMesh]);
+  }, [cellsDisplayRef, setInstancedMesh]);
 
   const [width, height, rowLength] = useMemo(() => {
     let { width, height } = puzzle.data[0].dimensions;
@@ -475,19 +550,19 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   );
 
   useEffect(() => {
-    if (ref == null) return;
-    ref.geometry.attributes.cellValidation.needsUpdate = true;
-  }, [cellValidationArray, ref]);
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.cellValidation.needsUpdate = true;
+  }, [cellValidationArray, cellsDisplayRef]);
 
   useEffect(() => {
-    if (ref == null) return;
-    ref.geometry.attributes.cellDraftMode.needsUpdate = true;
-  }, [cellDraftModeArray, ref]);
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.cellDraftMode.needsUpdate = true;
+  }, [cellDraftModeArray, cellsDisplayRef]);
 
   useEffect(() => {
-    if (ref == null) return;
-    ref.geometry.attributes.characterPosition.needsUpdate = true;
-  }, [characterPositionArray, ref]);
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
+  }, [characterPositionArray, cellsDisplayRef]);
 
   const cellColorsArray = useMemo(
     () =>
@@ -538,15 +613,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     width,
     height,
     puzzle.data.length,
-    ref,
+    cellsDisplayRef,
   );
 
-  const showScaleAnimation = useScaleAnimation(ref);
+  const showScaleAnimation = useScaleAnimation(cellsDisplayRef);
 
   // Initial setup (orient the instanced boxes)
   useEffect(
     () => {
-      if (ref == null) return;
+      if (cellsDisplayRef == null || cellsRef == null) return;
 
       const positions: Record<number, Vector3> = {};
       const rotations: Euler[] = [];
@@ -621,18 +696,20 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         }
 
         tempObject.updateMatrix();
-        ref.setMatrixAt(j, tempObject.matrix);
+        cellsDisplayRef.setMatrixAt(j, tempObject.matrix);
+        cellsRef.setMatrixAt(j, tempObject.matrix);
         rotations[j] = new Euler().copy(tempObject.rotation);
         positions[j] = new Vector3().copy(tempObject.position);
       }
 
       setCellPositions(positions);
 
-      ref.geometry.attributes.characterPosition.needsUpdate = true;
-      ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
-      ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
-      ref.geometry.attributes.cellColor.needsUpdate = true;
-      ref.instanceMatrix.needsUpdate = true;
+      cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
+      cellsDisplayRef.geometry.attributes.cellNumberPosition.needsUpdate = true;
+      cellsDisplayRef.geometry.attributes.cubeSideDisplay.needsUpdate = true;
+      cellsDisplayRef.instanceMatrix.needsUpdate = true;
+
+      cellsRef.geometry.attributes.cellColor.needsUpdate = true;
       // setInitialRotations(rotations);
       // showIntroAnimation(true);
       if (onInitialize) {
@@ -642,18 +719,18 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     },
     // Only run once on load
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ref],
+    [cellsDisplayRef],
   );
 
   // Need to rerender the letters if the character position changes 👆🏻
   useEffect(() => {
-    if (ref == null) return;
-    ref.geometry.attributes.characterPosition.needsUpdate = true;
-  }, [characterPositionArray, ref]);
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
+  }, [characterPositionArray, cellsDisplayRef]);
 
   // This does all of the selection logic. Row/cell highlighting, etc.
   useFrame((state) => {
-    if (ref == null) return;
+    if (cellsDisplayRef == null || cellsRef == null) return;
     for (let id = 0; id < record.solution.length; id++) {
       // We want to show the next sides as the cube is animating
       const { x } = record.solution[id];
@@ -668,7 +745,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         // Zero means don't show a cube face
         cubeSideDisplayArray[id * 2] = 0;
       }
-      ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
+      cellsDisplayRef.geometry.attributes.cubeSideDisplay.needsUpdate = true;
 
       if (
         prevHover !== hovered ||
@@ -728,7 +805,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           }
         }
 
-        ref.geometry.attributes.cellColor.needsUpdate = true;
+        cellsRef.geometry.attributes.cellColor.needsUpdate = true;
       }
     }
 
@@ -885,7 +962,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       ];
       if (
         selectedIndex != null &&
-        ref != null &&
+        cellsDisplayRef != null &&
         (coord != null || key === '' || key === 'BACKSPACE')
       ) {
         const x = key === '' || key === 'BACKSPACE' ? -1 : coord[0];
@@ -945,7 +1022,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       isVisibleSide,
       svgTextureAtlasLookup,
       characterTextureAtlasLookup,
-      ref,
+      cellsDisplayRef,
       updateCharacterPosition,
       record,
       showScaleAnimation,
@@ -978,31 +1055,71 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey]);
 
-  // Material setup
+  // Set up materials for the cube faces (letters, emojis, status, etc)
   const side0 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.one),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.one),
     [uniforms],
   );
   const side1 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.two),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.two),
     [uniforms],
   );
   const side2 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.three),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.three),
     [uniforms],
   );
   const side3 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.four),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.four),
     [uniforms],
   );
   const side4 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.five),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.five),
     [uniforms],
   );
   const side5 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.six),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.six),
     [uniforms],
   );
+
+  const [matcapTexture] = useMatcapTexture(
+    55, // index of the matcap texture https://github.com/emmelleppi/matcaps/blob/master/matcap-list.json
+    64, // size of the texture ( 64, 128, 256, 512, 1024 )
+  );
+
+  const cellsUniforms: Uniforms = useMemo(
+    () => ({
+      matcapTexture: { value: matcapTexture },
+    }),
+    [matcapTexture],
+  );
+
+  // Set up materials for the interactive cells
+  const cellsSide0 = useMemo(
+    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.one),
+    [cellsUniforms],
+  );
+  const cellsSide1 = useMemo(
+    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.two),
+    [cellsUniforms],
+  );
+  const cellsSide2 = useMemo(
+    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.three),
+    [cellsUniforms],
+  );
+  const cellsSide3 = useMemo(
+    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.four),
+    [cellsUniforms],
+  );
+  const cellsSide4 = useMemo(
+    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.five),
+    [cellsUniforms],
+  );
+  const cellsSide5 = useMemo(
+    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.six),
+    [cellsUniforms],
+  );
+
+  // Set up materials for the blank cells
 
   const onPointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
@@ -1046,11 +1163,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   return (
     <>
       <instancedMesh
-        ref={setRef}
+        ref={setCellsDisplayRef}
         args={[undefined, undefined, size]}
-        onPointerMove={onPointerMove}
-        onPointerOut={onPointerOut}
-        onPointerDown={onPointerDown}
+        renderOrder={1}
         material={[side0, side1, side2, side3, side4, side5]}
       >
         <boxGeometry args={[0.92, 0.92, 0.92]}>
@@ -1073,12 +1188,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             array={cubeSideDisplayArray}
           />
           <instancedBufferAttribute
-            attach="attributes-cellColor"
-            count={cellColorsArray.length}
-            itemSize={3}
-            array={cellColorsArray}
-          />
-          <instancedBufferAttribute
             attach="attributes-cellValidation"
             count={cellValidationArray.length}
             itemSize={2}
@@ -1091,6 +1200,31 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             array={cellDraftModeArray}
           />
         </boxGeometry>
+      </instancedMesh>
+      <instancedMesh
+        ref={setCellsRef}
+        args={[undefined, undefined, size]}
+        onPointerMove={onPointerMove}
+        onPointerOut={onPointerOut}
+        onPointerDown={onPointerDown}
+        renderOrder={0}
+        material={[
+          cellsSide0,
+          cellsSide1,
+          cellsSide2,
+          cellsSide3,
+          cellsSide4,
+          cellsSide5,
+        ]}
+      >
+        <roundedBoxGeometry args={[0.92, 0.92, 0.92, 2, 0.08]}>
+          <instancedBufferAttribute
+            attach="attributes-cellColor"
+            count={cellColorsArray.length}
+            itemSize={3}
+            array={cellColorsArray}
+          />
+        </roundedBoxGeometry>
       </instancedMesh>
       <pointLight ref={lightRef} intensity={10} color={selectedColor} />
     </>
