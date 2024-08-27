@@ -11,14 +11,13 @@ import {
   RepeatWrapping,
   Vector3,
   Object3D,
-  Color,
   Euler,
   Texture,
   Vector4,
   PointLight,
   MeshBasicMaterial,
   DoubleSide,
-  MeshPhongMaterial,
+  MeshLambertMaterial,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh } from 'three';
@@ -31,8 +30,14 @@ import { hexToVector } from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
 import { AtlasType } from 'lib/utils/atlas';
-import { useMatcapTexture } from '@react-three/drei';
+import { useTexture } from '@react-three/drei';
 extend({ RoundedBoxGeometry });
+
+export enum MatcapIndexEnum {
+  default = 0,
+  adjacent = 1,
+  blank = 2,
+}
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -48,7 +53,6 @@ const vertexShader = `
   attribute vec2 cellDraftMode;
   attribute vec2 characterPosition;
   attribute vec2 cellNumberPosition;
-  attribute vec3 cellColor;
   in ivec2 cubeSideDisplay;
   
   varying vec2 vUv;
@@ -56,7 +60,6 @@ const vertexShader = `
   varying vec2 vCellDraftMode;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
-  varying vec3 vCellColor;
   flat out ivec2 vCubeSideDisplay;
 
   void main()
@@ -67,7 +70,6 @@ const vertexShader = `
       vCharacterPosition = characterPosition;
       vCellNumberPosition = cellNumberPosition;
       vCubeSideDisplay = cubeSideDisplay;
-      vCellColor = cellColor;
   }
 `;
 
@@ -96,7 +98,6 @@ const fragmentShader = `
   varying vec2 vCellDraftMode;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
-  varying vec3 vCellColor;
   flat varying ivec2 vCubeSideDisplay;
 
   vec4 applyColorChange(vec4 color, vec4 newColor) {
@@ -194,19 +195,16 @@ const fragmentShader = `
   }
 `;
 
-const vertexPhongShader = `
-  attribute vec3 cellColor;
+const vertexCellShader = `
+  attribute float matcapIndex;
 
   varying vec2 vMatcapUV;
-  varying vec3 vCellColor;
+  varying float vMatcapIndex;
 
   void main() {
-    vCellColor = cellColor;
-    
+    vMatcapIndex = matcapIndex;
     vec4 pos = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
     
-    gl_Position = projectionMatrix * pos;
-
     vec3 normalWorld = normalize(mat3(modelViewMatrix * instanceMatrix) * normal);
     vec3 viewDir = normalize(pos.xyz);
     vec3 x = normalize(vec3(viewDir.z, 0.0, -viewDir.x));
@@ -215,17 +213,33 @@ const vertexPhongShader = `
   }
 `;
 
-const fragmentPhongShader = `
+const fragmentCellShader = `
   #ifdef GL_ES
   precision highp float;
   #endif
 
-  uniform sampler2D matcapTexture;
+  uniform sampler2D cellTextureAtlas;
+  uniform sampler2D blankTextureAtlas;
+
   varying vec2 vMatcapUV;
-  varying vec3 vCellColor;  
+  varying float vMatcapIndex;  
 
   void main(void) {
-    vec4 matcapColor = texture2D(matcapTexture, vMatcapUV);
+    vec4 matcapColor = vec4(0.0, 0.0, 0.0, 0.0);
+    if (vMatcapIndex == 0.0 || vMatcapIndex == 1.0) { // cell color
+      matcapColor = texture2D(cellTextureAtlas, vMatcapUV);
+      // Increase brightness for white or near-white colors
+      float luminance = dot(matcapColor.rgb, vec3(0.299, 0.587, 0.114));
+      float brightnessFactor = smoothstep(0.65, 1.0, luminance);
+      float amount = 5.;
+      if (vMatcapIndex == 1.) {
+        amount = 2.5;
+      }
+      matcapColor.rgb = mix(matcapColor.rgb, matcapColor.rgb * amount, brightnessFactor);      
+    } else if (vMatcapIndex == 2.0) { // blank color
+      matcapColor = texture2D(blankTextureAtlas, vMatcapUV);
+    }
+
     csm_DiffuseColor = vec4(matcapColor.rgb, csm_DiffuseColor.a);
   }
 `;
@@ -247,10 +261,7 @@ export type LetterBoxesProps = {
   selectedSide: number;
   fontColor: number;
   fontDraftColor: number;
-  defaultColor: number;
-  blankColor: number;
   selectedColor: number;
-  adjacentColor: number;
   errorColor: number;
   borderColor: number;
   correctColor: number;
@@ -284,7 +295,6 @@ export type LetterBoxesProps = {
 };
 
 const tempObject = new Object3D();
-const tempColor = new Color();
 const uniformDefaults = {
   borderRadius: { value: 0.05 },
   errorWidth: { value: 0.035 },
@@ -355,16 +365,12 @@ const createCellsMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
     return material;
   } else {
     material = new CustomShaderMaterial({
-      baseMaterial: MeshPhongMaterial,
-      fog: true,
+      baseMaterial: MeshLambertMaterial,
       uniforms: {
         ...uniforms,
       },
-      vertexShader: vertexPhongShader,
-      fragmentShader: fragmentPhongShader,
-      color: new Color(0xff0000),
-      specular: new Color(0x111111),
-      shininess: 100,
+      vertexShader: vertexCellShader,
+      fragmentShader: fragmentCellShader,
     });
     cellsMaterialMap.set(sideEnum, material);
     return material;
@@ -402,10 +408,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onSelectClue,
   fontColor,
   fontDraftColor,
-  defaultColor,
-  blankColor,
   selectedColor,
-  adjacentColor,
   errorColor,
   borderColor,
   correctColor,
@@ -549,6 +552,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [size],
   );
 
+  const matcapIndexArray = useMemo(
+    () => Float32Array.from(new Array(size).fill(0)),
+    [size],
+  );
+
   useEffect(() => {
     if (cellsDisplayRef == null) return;
     cellsDisplayRef.geometry.attributes.cellValidation.needsUpdate = true;
@@ -563,16 +571,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     if (cellsDisplayRef == null) return;
     cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
   }, [characterPositionArray, cellsDisplayRef]);
-
-  const cellColorsArray = useMemo(
-    () =>
-      Float32Array.from(
-        new Array(size * 3)
-          .fill(0)
-          .flatMap(() => tempColor.set(defaultColor).toArray()),
-      ),
-    [defaultColor, size],
-  );
 
   const cellBelongsOnSide = useCallback(
     (id?: number, side?: number) => {
@@ -684,15 +682,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           );
         }
 
+        matcapIndexArray[j] = MatcapIndexEnum.default;
         if (cell === '#') {
+          // hide all cells that aren't part of the single side
           if (
             isSingleSided === true &&
             Math.floor((j % rowLength) / width) !== 0 // first side including last column
           ) {
             tempObject.scale.set(0, 0, 0);
-          } else {
-            tempColor.set(blankColor).toArray(cellColorsArray, j * 3);
           }
+          matcapIndexArray[j] = MatcapIndexEnum.blank;
         }
 
         tempObject.updateMatrix();
@@ -709,7 +708,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       cellsDisplayRef.geometry.attributes.cubeSideDisplay.needsUpdate = true;
       cellsDisplayRef.instanceMatrix.needsUpdate = true;
 
-      cellsRef.geometry.attributes.cellColor.needsUpdate = true;
+      cellsRef.geometry.attributes.matcapIndex.needsUpdate = true;
       // setInitialRotations(rotations);
       // showIntroAnimation(true);
       if (onInitialize) {
@@ -769,11 +768,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         const { solution } = record;
         const cell = solution[id];
 
-        if (cell.value !== '#') {
-          (id === hovered || id === selected
-            ? tempColor.set(selectedColor)
-            : tempColor.set(defaultColor)
-          ).toArray(cellColorsArray, id * 3);
+        if (cell.value !== '#' && id !== hovered && id !== selected) {
+          matcapIndexArray[id] = MatcapIndexEnum.default;
         }
 
         if (selected != null && isVisibleSide(selected) === true) {
@@ -797,15 +793,13 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               }
               range.forEach((index) => {
                 if (index === selected) return;
-                tempColor
-                  .set(adjacentColor)
-                  .toArray(cellColorsArray, index * 3);
+                matcapIndexArray[index] = MatcapIndexEnum.adjacent;
               });
             }
           }
         }
 
-        cellsRef.geometry.attributes.cellColor.needsUpdate = true;
+        cellsRef.geometry.attributes.matcapIndex.needsUpdate = true;
       }
     }
 
@@ -1081,41 +1075,20 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [uniforms],
   );
 
-  const [matcapTexture] = useMatcapTexture(
-    55, // index of the matcap texture https://github.com/emmelleppi/matcaps/blob/master/matcap-list.json
-    64, // size of the texture ( 64, 128, 256, 512, 1024 )
-  );
+  const cellTextureAtlas = useTexture('/cell_matcap_512.png');
+  const blankTextureAtlas = useTexture('/blank_matcap_512.png');
 
   const cellsUniforms: Uniforms = useMemo(
     () => ({
-      matcapTexture: { value: matcapTexture },
+      cellTextureAtlas: { value: cellTextureAtlas },
+      blankTextureAtlas: { value: blankTextureAtlas },
     }),
-    [matcapTexture],
+    [blankTextureAtlas, cellTextureAtlas],
   );
 
   // Set up materials for the interactive cells
   const cellsSide0 = useMemo(
     () => createCellsMaterial(cellsUniforms, CubeSidesEnum.one),
-    [cellsUniforms],
-  );
-  const cellsSide1 = useMemo(
-    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.two),
-    [cellsUniforms],
-  );
-  const cellsSide2 = useMemo(
-    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.three),
-    [cellsUniforms],
-  );
-  const cellsSide3 = useMemo(
-    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.four),
-    [cellsUniforms],
-  );
-  const cellsSide4 = useMemo(
-    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.five),
-    [cellsUniforms],
-  );
-  const cellsSide5 = useMemo(
-    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.six),
     [cellsUniforms],
   );
 
@@ -1208,21 +1181,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         onPointerOut={onPointerOut}
         onPointerDown={onPointerDown}
         renderOrder={0}
-        material={[
-          cellsSide0,
-          cellsSide1,
-          cellsSide2,
-          cellsSide3,
-          cellsSide4,
-          cellsSide5,
-        ]}
+        material={cellsSide0}
       >
         <roundedBoxGeometry args={[0.92, 0.92, 0.92, 2, 0.08]}>
           <instancedBufferAttribute
-            attach="attributes-cellColor"
-            count={cellColorsArray.length}
-            itemSize={3}
-            array={cellColorsArray}
+            attach="attributes-matcapIndex"
+            count={matcapIndexArray.length}
+            itemSize={1}
+            array={matcapIndexArray}
           />
         </roundedBoxGeometry>
       </instancedMesh>

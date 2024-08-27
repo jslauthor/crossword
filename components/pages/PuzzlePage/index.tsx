@@ -826,7 +826,7 @@ export default function Puzzle({
               position={[0, 0, 0]}
               fov={25}
             />
-            <ambientLight intensity={1.75} />
+            <ambientLight intensity={1} />
             <SwipeControls
               global
               dragEnabled={false}
@@ -855,10 +855,7 @@ export default function Puzzle({
                   onSelectClue={handleClueChange}
                   fontColor={0x000000}
                   fontDraftColor={fontDraftColor}
-                  defaultColor={0xffffff}
-                  blankColor={0x000000}
                   selectedColor={0xff8800}
-                  adjacentColor={adjacentColor}
                   errorColor={errorColor}
                   correctColor={correctColor}
                   borderColor={0x000000}
@@ -981,7 +978,7 @@ export default function Puzzle({
             </KeyboardContainer>
           </>
         )}
-        {/* <Stats /> */}
+        <Stats />
       </Menu>
       <PuzzleSettings
         isOpen={isSettingsOpen}
