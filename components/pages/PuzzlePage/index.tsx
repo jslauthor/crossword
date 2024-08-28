@@ -331,6 +331,9 @@ export default function Puzzle({
     [],
   );
 
+  const [fogNear, setFogNear] = useState(0);
+  const [fogFar, setFogFar] = useState(100);
+
   useEffect(() => {
     if (cameraRef == null || groupRef == null || isInitialized === false) {
       return undefined;
@@ -342,6 +345,9 @@ export default function Puzzle({
       new Vector3(puzzleWidth, puzzleWidth, puzzleWidth),
       1.02,
     );
+
+    setFogNear(cameraRef.position.z - 2);
+    setFogFar(cameraRef.position.z);
   }, [
     cameraRef,
     groupRef,
@@ -819,12 +825,17 @@ export default function Puzzle({
           ref={containerRef}
         >
           <Suspense fallback={<Loader />}>
-            <fog attach="fog" color={new Color(0x777777)} near={18} far={21} />
+            <fog
+              attach="fog"
+              color={new Color(0x777777)}
+              near={fogNear}
+              far={fogFar}
+            />
             <PerspectiveCamera
               ref={setCameraRef}
               makeDefault
               position={[0, 0, 0]}
-              fov={25}
+              fov={18}
             />
             <ambientLight intensity={1} />
             <SwipeControls
