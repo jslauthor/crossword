@@ -402,6 +402,44 @@ const updateCubeSideDisplay = (
     CubeSidesEnum.six | (x === 0 ? CubeSidesEnum.one : 0);
 };
 
+const PulsatingLight: React.FC<{
+  position: Vector3;
+  color: number;
+  minIntensity?: number;
+  maxIntensity?: number;
+  pulseSpeed?: number;
+}> = ({
+  position,
+  color,
+  minIntensity = 3,
+  maxIntensity = 7,
+  pulseSpeed = 4,
+}) => {
+  const lightRef = useRef<PointLight>(null);
+  const timeRef = useRef(0);
+
+  useFrame((state, delta) => {
+    timeRef.current += delta;
+    if (lightRef.current) {
+      const intensityRange = maxIntensity - minIntensity;
+      const intensity =
+        minIntensity +
+        ((Math.sin(timeRef.current * pulseSpeed) + 1) / 2) * intensityRange;
+      lightRef.current.intensity = intensity;
+    }
+  });
+
+  return (
+    <pointLight
+      ref={lightRef}
+      position={position}
+      color={color}
+      intensity={minIntensity}
+      decay={5}
+    />
+  );
+};
+
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzle,
   svgTextureAtlasLookup,
@@ -438,8 +476,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [cellPositions, setCellPositions] = useState<Record<number, Vector3>>(
     {},
   );
-  const lightRef = useRef<PointLight>(null);
   const selectedCellRef = useRef<Mesh>(null);
+
+  const [lightPosition, setLightPosition] = useState(new Vector3(0, 0, 0));
 
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
@@ -812,8 +851,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
 
     if (selected != null && cellPositions[selected]) {
-      if (lightRef.current) {
-        lightRef.current.position.copy(cellPositions[selected]);
+      if (lightPosition.equals(cellPositions[selected]) === false) {
+        setLightPosition(cellPositions[selected]);
       }
       if (selectedCellRef.current) {
         selectedCellRef.current.position.copy(cellPositions[selected]);
@@ -1213,12 +1252,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           />
         </roundedBoxGeometry>
       </instancedMesh>
-      <pointLight
-        ref={lightRef}
-        intensity={5}
-        color={selectedColor}
-        decay={5}
-      />
+      <PulsatingLight position={lightPosition} color={selectedColor} />
       <mesh ref={selectedCellRef}>
         <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
         <MeshTransmissionMaterial
