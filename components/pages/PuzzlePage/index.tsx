@@ -858,7 +858,6 @@ export default function Puzzle({
                   selectedColor={0xff8800}
                   errorColor={errorColor}
                   correctColor={correctColor}
-                  borderColor={0x000000}
                   onInitialize={onInitialize}
                   isVerticalOrientation={isVerticalOrientation}
                   onVerticalOrientationChange={handleSetOrientation}

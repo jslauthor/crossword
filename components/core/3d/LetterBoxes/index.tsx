@@ -19,7 +19,6 @@ import {
   DoubleSide,
   MeshLambertMaterial,
   Mesh,
-  Matrix4,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh } from 'three';
@@ -95,7 +94,6 @@ const fragmentShader = `
   uniform float charactersGridSize;
   uniform float svgGridSize;
   uniform float borderRadius;
-  uniform vec4 borderColor;
   uniform float errorWidth;
   uniform vec4 errorColor;
   uniform vec4 correctColor;
@@ -235,6 +233,7 @@ const fragmentCellShader = `
 
   uniform sampler2D cellTextureAtlas;
   uniform sampler2D blankTextureAtlas;
+  uniform vec4 adjacentColor;
 
   varying vec2 vMatcapUV;
   varying float vMatcapIndex;  
@@ -246,11 +245,10 @@ const fragmentCellShader = `
       // Increase brightness for white or near-white colors
       float luminance = dot(matcapColor.rgb, vec3(0.299, 0.587, 0.114));
       float brightnessFactor = smoothstep(0.65, 1.0, luminance);
-      float amount = 5.;
       if (vMatcapIndex == 1.) {
-        amount = 2.5;
+        matcapColor.rgb = mix(matcapColor.rgb, adjacentColor.rgb, 0.8);
       }
-      matcapColor.rgb = mix(matcapColor.rgb, matcapColor.rgb * amount, brightnessFactor);      
+      matcapColor.rgb = mix(matcapColor.rgb, matcapColor.rgb * 5., brightnessFactor);      
     } else if (vMatcapIndex == 2.0) { // blank color
       matcapColor = texture2D(blankTextureAtlas, vMatcapUV);
     }
@@ -278,7 +276,6 @@ export type LetterBoxesProps = {
   fontDraftColor: number;
   selectedColor: number;
   errorColor: number;
-  borderColor: number;
   correctColor: number;
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
@@ -426,7 +423,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   fontDraftColor,
   selectedColor,
   errorColor,
-  borderColor,
   correctColor,
   onInitialize,
   cellValidationArray,
@@ -437,7 +433,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   turnRight,
   setGoToNextWord,
   theme,
-  isSpinning,
   isSingleSided,
 }) => {
   const [cellPositions, setCellPositions] = useState<Record<number, Vector3>>(
@@ -487,10 +482,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     () => hexToVector(errorColor),
     [errorColor],
   );
-  const convertedBorderColor = useMemo(
-    () => hexToVector(borderColor),
-    [borderColor],
-  );
   const convertedCorrectColor = useMemo(
     () => hexToVector(correctColor),
     [correctColor],
@@ -506,13 +497,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       fontColor: { value: convertedFontColor },
       fontDraftColor: { value: convertedFontDraftColor },
       errorColor: { value: convertedErrorColor },
-      borderColor: { value: convertedBorderColor },
       correctColor: { value: convertedCorrectColor },
       ...uniformDefaults,
     }),
     [
       characterTextureAtlas,
-      convertedBorderColor,
       convertedCorrectColor,
       convertedErrorColor,
       convertedFontColor,
@@ -1107,8 +1096,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     () => ({
       cellTextureAtlas: { value: cellTextureAtlas },
       blankTextureAtlas: { value: blankTextureAtlas },
+      adjacentColor: { value: hexToVector(selectedColor) },
     }),
-    [blankTextureAtlas, cellTextureAtlas],
+    [blankTextureAtlas, cellTextureAtlas, selectedColor],
   );
 
   // Set up materials for the interactive cells
@@ -1223,18 +1213,22 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           />
         </roundedBoxGeometry>
       </instancedMesh>
-      <pointLight ref={lightRef} intensity={10} color={selectedColor} />
+      <pointLight
+        ref={lightRef}
+        intensity={5}
+        color={selectedColor}
+        decay={5}
+      />
       <mesh ref={selectedCellRef}>
         <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
         <MeshTransmissionMaterial
           color={selectedColor}
           backside={true}
           distortion={1}
-          distortionScale={0.2}
           chromaticAberration={1}
           anisotropicBlur={1}
           transmission={0.5}
-          backsideThickness={0.2}
+          backsideThickness={0.0}
           thickness={0.2}
           samples={4}
           resolution={256}
@@ -1244,9 +1238,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           backsideResolution={256}
           clearcoat={1}
           clearcoatRoughness={0.1}
-          iridescence={1}
-          iridescenceIOR={2.078147}
-          // iridescenceThicknessRange={[0, 100]}
         />
       </mesh>
     </>
