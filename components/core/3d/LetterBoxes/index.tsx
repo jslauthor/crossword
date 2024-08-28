@@ -34,11 +34,12 @@ import { AtlasType } from 'lib/utils/atlas';
 import { MeshTransmissionMaterial, useTexture } from '@react-three/drei';
 extend({ RoundedBoxGeometry });
 
+export const BORDER_RADIUS = 0.08;
 export const CUBE_SIZE: [number, number, number] = [0.92, 0.92, 0.92];
 export const ROUNDED_CUBE_SIZE: [number, number, number, number, number] = [
   ...CUBE_SIZE,
   2,
-  0.08,
+  BORDER_RADIUS,
 ];
 
 export enum MatcapIndexEnum {
@@ -68,6 +69,7 @@ const vertexShader = `
   varying vec2 vCellDraftMode;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
+  varying float vFaceVisibility;
   flat out ivec2 vCubeSideDisplay;
 
   void main()
@@ -78,6 +80,14 @@ const vertexShader = `
       vCharacterPosition = characterPosition;
       vCellNumberPosition = cellNumberPosition;
       vCubeSideDisplay = cubeSideDisplay;
+
+      // Calculate the angle between face normal and view direction
+      vec3 worldNormal = normalize(mat3(modelMatrix * instanceMatrix) * normal);
+      vec3 viewDir = normalize(cameraPosition - (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz);
+      float dotProduct = abs(dot(worldNormal, viewDir));
+      
+      // Set visibility based on the angle (0 if close to 90 degrees, 1 otherwise)
+      vFaceVisibility = step(0.1, dotProduct);
   }
 `;
 
@@ -105,14 +115,31 @@ const fragmentShader = `
   varying vec2 vCellDraftMode;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
+  varying float vFaceVisibility;
   flat varying ivec2 vCubeSideDisplay;
 
   vec4 applyColorChange(vec4 color, vec4 newColor) {
     return vec4(newColor.rgb, color.a); // Change white to the target color
   }
 
+  float roundedRectangle(vec2 uv, vec2 size, float radius) {
+    vec2 q = abs(uv) - (size - 0.01) + radius;
+    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
+  }
+
   void main(void)
   {
+    // Discard fragment if face is not visible (close to 90 degrees from view)
+    if (vFaceVisibility < 0.5) {
+      discard;
+    }
+
+    // Discard fragments outside the rounded rectangle
+    float dist = roundedRectangle(vUv - 0.5, vec2(0.5), borderRadius);
+    if (dist > 0.0) {
+      discard;
+    }
+
     vec4 finalColor = vec4(0.0, 0.0, 0.0, 0.0);
     
     // Here we paint all of our textures
@@ -308,8 +335,8 @@ export type LetterBoxesProps = {
 
 const tempObject = new Object3D();
 const uniformDefaults = {
-  borderRadius: { value: 0.05 },
-  errorWidth: { value: 0.035 },
+  borderRadius: { value: BORDER_RADIUS },
+  errorWidth: { value: 0.05 },
 };
 
 type Uniforms = Record<
