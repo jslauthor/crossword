@@ -369,6 +369,7 @@ const createCellsMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
       uniforms: {
         ...uniforms,
       },
+      fog: true,
       vertexShader: vertexCellShader,
       fragmentShader: fragmentCellShader,
     });

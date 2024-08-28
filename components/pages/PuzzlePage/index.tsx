@@ -18,6 +18,7 @@ import {
   Vector3,
   Object3D,
   HemisphereLight,
+  Color,
 } from 'three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
@@ -273,8 +274,6 @@ export default function Puzzle({
   );
   const [groupRef, setGroup] = useState<Object3D | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
-  const [hemisphereLightRef, setHemisphereLightRef] =
-    useState<HemisphereLight | null>();
   const [sideOffset, setSideOffset] = useState(0);
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
     useState<[string, number]>();
@@ -820,6 +819,7 @@ export default function Puzzle({
           ref={containerRef}
         >
           <Suspense fallback={<Loader />}>
+            <fog attach="fog" color={new Color(0x777777)} near={18} far={21} />
             <PerspectiveCamera
               ref={setCameraRef}
               makeDefault
