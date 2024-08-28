@@ -18,6 +18,8 @@ import {
   MeshBasicMaterial,
   DoubleSide,
   MeshLambertMaterial,
+  Mesh,
+  Matrix4,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh } from 'three';
@@ -30,8 +32,15 @@ import { hexToVector } from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
 import { AtlasType } from 'lib/utils/atlas';
-import { useTexture } from '@react-three/drei';
+import { MeshTransmissionMaterial, useTexture } from '@react-three/drei';
 extend({ RoundedBoxGeometry });
+
+export const CUBE_SIZE: [number, number, number] = [0.92, 0.92, 0.92];
+export const ROUNDED_CUBE_SIZE: [number, number, number, number, number] = [
+  ...CUBE_SIZE,
+  2,
+  0.08,
+];
 
 export enum MatcapIndexEnum {
   default = 0,
@@ -197,6 +206,7 @@ const fragmentShader = `
 
 const vertexCellShader = `
   attribute float matcapIndex;
+  attribute float visibility;
 
   varying vec2 vMatcapUV;
   varying float vMatcapIndex;
@@ -205,6 +215,11 @@ const vertexCellShader = `
     vMatcapIndex = matcapIndex;
     vec4 pos = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
     
+    // Hide the instance if visibility is 0
+    if (visibility < 0.5) {
+      csm_Position = vec3(0.0, 0.0, 2.0); // Move off-screen
+    }
+
     vec3 normalWorld = normalize(mat3(modelViewMatrix * instanceMatrix) * normal);
     vec3 viewDir = normalize(pos.xyz);
     vec3 x = normalize(vec3(viewDir.z, 0.0, -viewDir.x));
@@ -429,6 +444,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     {},
   );
   const lightRef = useRef<PointLight>(null);
+  const selectedCellRef = useRef<Mesh>(null);
 
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
@@ -556,6 +572,21 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const matcapIndexArray = useMemo(
     () => Float32Array.from(new Array(size).fill(0)),
     [size],
+  );
+
+  const visibilityArray = useMemo(
+    () => Float32Array.from(new Array(size).fill(1)),
+    [size],
+  );
+
+  const updateVisibility = useCallback(
+    (index: number, isVisible: boolean) => {
+      if (cellsRef) {
+        visibilityArray[index] = isVisible ? 1 : 0;
+        cellsRef.geometry.attributes.visibility.needsUpdate = true;
+      }
+    },
+    [cellsRef, visibilityArray],
   );
 
   useEffect(() => {
@@ -710,6 +741,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       cellsDisplayRef.instanceMatrix.needsUpdate = true;
 
       cellsRef.geometry.attributes.matcapIndex.needsUpdate = true;
+      cellsRef.instanceMatrix.needsUpdate = true;
       // setInitialRotations(rotations);
       // showIntroAnimation(true);
       if (onInitialize) {
@@ -732,21 +764,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   useFrame((state) => {
     if (cellsDisplayRef == null || cellsRef == null) return;
     for (let id = 0; id < record.solution.length; id++) {
-      // We want to show the next sides as the cube is animating
-      const { x } = record.solution[id];
-      if (
-        isSingleSided === true ||
-        isSpinning === true ||
-        cellBelongsOnSide(id, selectedSide) ||
-        cellBelongsOnSide(id, prevSelectedSide)
-      ) {
-        updateCubeSideDisplay(cubeSideDisplayArray, id, x);
-      } else {
-        // Zero means don't show a cube face
-        cubeSideDisplayArray[id * 2] = 0;
-      }
-      cellsDisplayRef.geometry.attributes.cubeSideDisplay.needsUpdate = true;
-
+      updateVisibility(id, true);
       if (
         prevHover !== hovered ||
         prevSelected !== selected ||
@@ -804,8 +822,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     }
 
-    if (lightRef.current && selected !== undefined && cellPositions[selected]) {
-      lightRef.current.position.copy(cellPositions[selected]);
+    if (selected != null && cellPositions[selected]) {
+      if (lightRef.current) {
+        lightRef.current.position.copy(cellPositions[selected]);
+      }
+      if (selectedCellRef.current) {
+        selectedCellRef.current.position.copy(cellPositions[selected]);
+        updateVisibility(selected, false);
+      }
     }
   });
 
@@ -1142,7 +1166,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         renderOrder={1}
         material={[side0, side1, side2, side3, side4, side5]}
       >
-        <boxGeometry args={[0.92, 0.92, 0.92]}>
+        <boxGeometry args={CUBE_SIZE}>
           <instancedBufferAttribute
             attach="attributes-characterPosition"
             count={characterPositionArray.length}
@@ -1184,16 +1208,47 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         renderOrder={0}
         material={cellsSide0}
       >
-        <roundedBoxGeometry args={[0.92, 0.92, 0.92, 2, 0.08]}>
+        <roundedBoxGeometry args={ROUNDED_CUBE_SIZE}>
           <instancedBufferAttribute
             attach="attributes-matcapIndex"
             count={matcapIndexArray.length}
             itemSize={1}
             array={matcapIndexArray}
           />
+          <instancedBufferAttribute
+            attach="attributes-visibility"
+            count={visibilityArray.length}
+            itemSize={1}
+            array={visibilityArray}
+          />
         </roundedBoxGeometry>
       </instancedMesh>
       <pointLight ref={lightRef} intensity={10} color={selectedColor} />
+      <mesh ref={selectedCellRef}>
+        <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
+        <MeshTransmissionMaterial
+          color={selectedColor}
+          backside={true}
+          distortion={1}
+          distortionScale={0.2}
+          chromaticAberration={1}
+          anisotropicBlur={1}
+          transmission={0.5}
+          backsideThickness={0.2}
+          thickness={0.2}
+          samples={4}
+          resolution={256}
+          roughness={0.33}
+          metalness={0.0}
+          anisotropy={1}
+          backsideResolution={256}
+          clearcoat={1}
+          clearcoatRoughness={0.1}
+          iridescence={1}
+          iridescenceIOR={2.078147}
+          // iridescenceThicknessRange={[0, 100]}
+        />
+      </mesh>
     </>
   );
 };
