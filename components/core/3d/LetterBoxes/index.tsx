@@ -817,6 +817,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
         if (cell.value !== '#' && id !== hovered && id !== selected) {
           matcapIndexArray[id] = MatcapIndexEnum.default;
+        } else if (id === hovered) {
+          matcapIndexArray[id] = MatcapIndexEnum.adjacent;
         }
 
         if (selected != null && isVisibleSide(selected) === true) {
