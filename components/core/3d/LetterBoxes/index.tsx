@@ -737,10 +737,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     width,
     height,
     puzzle.data.length,
-    cellsDisplayRef,
+    [cellsDisplayRef, cellsRef],
   );
 
-  const showScaleAnimation = useScaleAnimation(cellsDisplayRef);
+  const showScaleAnimation = useScaleAnimation([cellsDisplayRef, cellsRef]);
 
   // Initial setup (orient the instanced boxes)
   useEffect(
