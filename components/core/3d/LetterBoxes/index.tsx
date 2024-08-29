@@ -236,6 +236,9 @@ const vertexCellShader = `
   varying vec2 vMatcapUV;
   varying float vMatcapIndex;
 
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
+
   void main() {
     vMatcapIndex = matcapIndex;
     vec4 pos = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
@@ -250,6 +253,9 @@ const vertexCellShader = `
     vec3 x = normalize(vec3(viewDir.z, 0.0, -viewDir.x));
     vec3 y = cross(viewDir, x);
     vMatcapUV = vec2(dot(x, normalWorld), dot(y, normalWorld)) * 0.495 + 0.5;
+
+    vWorldNormal = normalWorld;
+    vWorldPosition = pos.xyz;
   }
 `;
 
@@ -265,6 +271,9 @@ const fragmentCellShader = `
   varying vec2 vMatcapUV;
   varying float vMatcapIndex;  
 
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
+
   void main(void) {
     vec4 matcapColor = vec4(0.0, 0.0, 0.0, 0.0);
     if (vMatcapIndex == 0.0 || vMatcapIndex == 1.0) { // cell color
@@ -273,9 +282,22 @@ const fragmentCellShader = `
       float luminance = dot(matcapColor.rgb, vec3(0.299, 0.587, 0.114));
       float brightnessFactor = smoothstep(0.65, 1.0, luminance);
       if (vMatcapIndex == 1.) {
-        matcapColor.rgb = mix(matcapColor.rgb, adjacentColor.rgb, 0.8);
+        matcapColor.rgb = mix(matcapColor.rgb, adjacentColor.rgb, 0.9);
       }
-      matcapColor.rgb = mix(matcapColor.rgb, matcapColor.rgb * 5., brightnessFactor);      
+      matcapColor.rgb = mix(matcapColor.rgb, matcapColor.rgb * 8., brightnessFactor);      
+
+      // Calculate the angle between face normal and view direction
+      vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+      float dotProduct = dot(normalize(vWorldNormal), viewDir);
+      
+      // Adjust this value to control the darkening effect
+      float darkeningFactor = 0.1;
+      
+      // Calculate darkening based on the angle
+      float darkening = mix(darkeningFactor, 1.0, abs(dotProduct));
+
+      // Apply darkening to the final color
+      matcapColor.rgb *= darkening;
     } else if (vMatcapIndex == 2.0) { // blank color
       matcapColor = texture2D(blankTextureAtlas, vMatcapUV);
     }
@@ -438,8 +460,8 @@ const PulsatingLight: React.FC<{
 }> = ({
   position,
   color,
-  minIntensity = 2,
-  maxIntensity = 4,
+  minIntensity = 0.75,
+  maxIntensity = 3,
   pulseSpeed = 4,
 }) => {
   const lightRef = useRef<PointLight>(null);

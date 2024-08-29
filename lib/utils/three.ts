@@ -233,4 +233,6 @@ export const fitCameraToCenteredObject = function (
 
   camera.far = cameraToFarEdge * 3;
   camera.updateProjectionMatrix();
+
+  return { boundingBox, cameraZ };
 };

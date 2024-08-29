@@ -339,15 +339,19 @@ export default function Puzzle({
       return undefined;
     }
 
-    fitCameraToCenteredObject(
+    const { boundingBox, cameraZ } = fitCameraToCenteredObject(
       cameraRef,
       groupRef,
       new Vector3(puzzleWidth, puzzleWidth, puzzleWidth),
       1.02,
     );
 
-    setFogNear(cameraRef.position.z - 2);
-    setFogFar(cameraRef.position.z);
+    const objectDepth = boundingBox.max.z - boundingBox.min.z;
+    const fogNearDistance = (cameraZ - objectDepth / 2) * 1.02;
+    const fogFarDistance = (cameraZ + objectDepth / 2) * 1.02;
+
+    setFogNear(fogNearDistance);
+    setFogFar(fogFarDistance);
   }, [
     cameraRef,
     groupRef,
@@ -827,7 +831,7 @@ export default function Puzzle({
           <Suspense fallback={<Loader />}>
             <fog
               attach="fog"
-              color={new Color(0x777777)}
+              color={new Color(0x222222)}
               near={fogNear}
               far={fogFar}
             />
@@ -835,7 +839,7 @@ export default function Puzzle({
               ref={setCameraRef}
               makeDefault
               position={[0, 0, 0]}
-              fov={18}
+              fov={50}
             />
             <ambientLight intensity={1} />
             <SwipeControls
