@@ -69,8 +69,10 @@ const vertexShader = `
   varying vec2 vCellDraftMode;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
-  varying float vFaceVisibility;
   flat out ivec2 vCubeSideDisplay;
+
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
 
   void main()
   {
@@ -81,13 +83,8 @@ const vertexShader = `
       vCellNumberPosition = cellNumberPosition;
       vCubeSideDisplay = cubeSideDisplay;
 
-      // Calculate the angle between face normal and view direction
-      vec3 worldNormal = normalize(mat3(modelMatrix * instanceMatrix) * normal);
-      vec3 viewDir = normalize(cameraPosition - (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz);
-      float dotProduct = abs(dot(worldNormal, viewDir));
-      
-      // Set visibility based on the angle (0 if close to 90 degrees, 1 otherwise)
-      vFaceVisibility = step(0.1, dotProduct);
+      vWorldNormal = normalize(mat3(modelViewMatrix * instanceMatrix) * normal);
+      vWorldPosition = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
   }
 `;
 
@@ -118,6 +115,9 @@ const fragmentShader = `
   varying float vFaceVisibility;
   flat varying ivec2 vCubeSideDisplay;
 
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
+
   vec4 applyColorChange(vec4 color, vec4 newColor) {
     return vec4(newColor.rgb, color.a); // Change white to the target color
   }
@@ -129,8 +129,11 @@ const fragmentShader = `
 
   void main(void)
   {
+    vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+    float dotProduct = dot(normalize(vWorldNormal), viewDir);
+
     // Discard fragment if face is not visible (close to 90 degrees from view)
-    if (vFaceVisibility < 0.5) {
+    if (abs(dotProduct) < 0.5) {
       discard;
     }
 
