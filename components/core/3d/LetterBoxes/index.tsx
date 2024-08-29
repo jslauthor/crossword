@@ -107,6 +107,9 @@ const fragmentShader = `
   uniform vec4 fontColor;
   uniform vec4 fontDraftColor;
   
+  // Add a new uniform for the shrink factor
+  uniform float shrinkFactor;
+
   varying vec2 vUv;
   varying vec2 vCellValidation;
   varying vec2 vCellDraftMode;
@@ -137,8 +140,18 @@ const fragmentShader = `
       discard;
     }
 
+    // Adjust UV coordinates to shrink the entire face
+    vec2 centeredUV = vUv - 0.5;
+    vec2 shrunkUV = centeredUV / shrinkFactor;
+    vec2 adjustedUV = shrunkUV + 0.5;
+
+    // Discard fragments outside the shrunk area
+    if (any(lessThan(adjustedUV, vec2(0.0))) || any(greaterThan(adjustedUV, vec2(1.0)))) {
+      discard;
+    }
+
     // Discard fragments outside the rounded rectangle
-    float dist = roundedRectangle(vUv - 0.5, vec2(0.5), borderRadius);
+    float dist = roundedRectangle(adjustedUV - 0.5, vec2(0.5), borderRadius);
     if (dist > 0.0) {
       discard;
     }
@@ -158,12 +171,12 @@ const fragmentShader = `
           // CanvasTexture uses a flipped coordinate system
           position = vec2(vCharacterPosition.x/svgGridSize, 1.0 - (vCharacterPosition.y/svgGridSize + 1.0/svgGridSize));
           size = vec2(1.0 / svgGridSize, 1.0 / svgGridSize);
-          coord = position + size * fract(vUv);
+          coord = position + size * fract(adjustedUV);
           Ca = texture2D(svgTexture, coord);
         } else {
           position = vec2(vCharacterPosition.x/charactersGridSize, -(vCharacterPosition.y/charactersGridSize + 1.0/charactersGridSize));
           size = vec2(1.0 / charactersGridSize, 1.0 / charactersGridSize);
-          coord = position + size * fract(vUv);
+          coord = position + size * fract(adjustedUV);
           Ca = texture2D(characterTexture, coord);
           // Apply color change to the texture color
           Ca = applyColorChange(Ca, fontColor);
@@ -171,7 +184,7 @@ const fragmentShader = `
 
         if (vCellValidation.x == 2.0) {
           // Draw the mark for a correct letter
-          if (vUv.y > (1.0 - vUv.x + 0.75)) {
+          if (vUv.y > (1.0 - vUv.x + 0.65)) {
             finalColor = correctColor;
           } 
         } else {
@@ -210,7 +223,7 @@ const fragmentShader = `
         vec2 size = vec2(1.0 / 17.0, 1.0 / 17.0);
 
         // Adjust UV coordinates to map the texture to the upper-left corner
-        vec2 scaledUV = vUv * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
+        vec2 scaledUV = adjustedUV * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
         vec2 offset = vec2(0.0, 0.0); // No additional offset needed for upper-left
         vec2 coord = position + size * (scaledUV + offset);
 
@@ -589,6 +602,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       fontDraftColor: { value: convertedFontDraftColor },
       errorColor: { value: convertedErrorColor },
       correctColor: { value: convertedCorrectColor },
+      shrinkFactor: { value: 0.9 }, // Adjust this value to control shrinking (e.g., 0.9 for 90% size)
       ...uniformDefaults,
     }),
     [
