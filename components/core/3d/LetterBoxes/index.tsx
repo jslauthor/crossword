@@ -822,7 +822,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const [springs, api] = useSpring(() => ({
     scale: [1, 1, 1],
-    config: { mass: 0.1, tension: 500, friction: 5, duration: 100 },
+    config: { mass: 0.1, tension: 500, friction: 5, duration: 50 },
   }));
 
   // This does all of the selection logic. Row/cell highlighting, etc.
