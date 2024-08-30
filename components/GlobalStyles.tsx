@@ -150,6 +150,7 @@ export default createGlobalStyle/*css*/ `
     margin: 0;
     padding: 0;
     overflow: hidden;
+    background: none;
   }
 
   h1 {
@@ -356,7 +357,8 @@ export default createGlobalStyle/*css*/ `
     ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
     ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--white);
 
-    background-color: hsl(var(--background));
+    background-color: transparent;
+    background: linear-gradient(0deg, hsl(var(--background)), var(--grey));
     color: hsl(var(--foreground));
     scrollbar-color: hsl(--black-hsl) hsl(--black100-hsl);
     --primary-app-width: var(--max-app-width);
@@ -426,7 +428,8 @@ export default createGlobalStyle/*css*/ `
     ${DEFAULT_BORDER_COLOR_CSS_VARIABLE}: var(--true-black);
     ${DEFAULT_TURN_ARROW_COLOR_CSS_VARIABLE}: var(--grey600);
 
-    background-color: hsl(var(--background));
+    background-color: transparent;
+    background: linear-gradient(0deg, hsl(var(--background)), var(--light-grey500));
     color: hsl(var(--foreground));
     scrollbar-color: hsl(--grey100-hsl) hsl(--grey800-hsl);
     --primary-app-width: var(--max-app-width);

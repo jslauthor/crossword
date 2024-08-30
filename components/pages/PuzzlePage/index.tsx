@@ -820,6 +820,7 @@ export default function Puzzle({
         onSettingsPressed={handleSettingsPressed}
         onDisplayChange={setIsMenuOpen}
         onSignInPressed={onSignIn}
+        showBackground={false}
       >
         <Canvas
           gl={{ antialias: false }}
@@ -992,7 +993,7 @@ export default function Puzzle({
             </KeyboardContainer>
           </>
         )}
-        <Stats />
+        {/* <Stats /> */}
       </Menu>
       <PuzzleSettings
         isOpen={isSettingsOpen}
