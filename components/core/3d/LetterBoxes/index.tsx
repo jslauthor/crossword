@@ -32,6 +32,8 @@ import { constrain } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
 import { AtlasType } from 'lib/utils/atlas';
 import { MeshTransmissionMaterial, useTexture } from '@react-three/drei';
+import { useSpring, animated } from '@react-spring/three';
+import PulsatingLight from '../PulsatingLight';
 extend({ RoundedBoxGeometry });
 
 export const BORDER_RADIUS = 0.08;
@@ -467,44 +469,6 @@ const updateCubeSideDisplay = (
     CubeSidesEnum.six | (x === 0 ? CubeSidesEnum.one : 0);
 };
 
-const PulsatingLight: React.FC<{
-  position: Vector3;
-  color: number;
-  minIntensity?: number;
-  maxIntensity?: number;
-  pulseSpeed?: number;
-}> = ({
-  position,
-  color,
-  minIntensity = 0.75,
-  maxIntensity = 3,
-  pulseSpeed = 4,
-}) => {
-  const lightRef = useRef<PointLight>(null);
-  const timeRef = useRef(0);
-
-  useFrame((state, delta) => {
-    timeRef.current += delta;
-    if (lightRef.current) {
-      const intensityRange = maxIntensity - minIntensity;
-      const intensity =
-        minIntensity +
-        ((Math.sin(timeRef.current * pulseSpeed) + 1) / 2) * intensityRange;
-      lightRef.current.intensity = intensity;
-    }
-  });
-
-  return (
-    <pointLight
-      ref={lightRef}
-      position={position}
-      color={color}
-      intensity={minIntensity}
-      decay={5}
-    />
-  );
-};
-
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   puzzle,
   svgTextureAtlasLookup,
@@ -854,6 +818,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
   }, [characterPositionArray, cellsDisplayRef]);
 
+  const [springs, api] = useSpring(() => ({
+    scale: [1, 1, 1],
+    position: [0, 0, 0],
+    config: { mass: 1, tension: 280, friction: 60 },
+    onChange: (props) => {
+      console.log(props);
+    },
+  }));
+
   // This does all of the selection logic. Row/cell highlighting, etc.
   useFrame((state) => {
     if (cellsDisplayRef == null || cellsRef == null) return;
@@ -919,13 +892,25 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
 
     if (selected != null && cellPositions[selected]) {
-      if (lightPosition.equals(cellPositions[selected]) === false) {
-        setLightPosition(cellPositions[selected]);
+      const targetPosition = cellPositions[selected];
+      if (!lightPosition.equals(targetPosition)) {
+        setLightPosition(targetPosition);
       }
-      if (selectedCellRef.current) {
-        selectedCellRef.current.position.copy(cellPositions[selected]);
-        updateVisibility(selected, false);
-      }
+
+      // api.start({
+      //   to: async (next) => {
+      //     // Shrink and hide current cell
+      //     await next({ scale: [0, 0, 0] });
+      //     // Move to new position
+      //     await next({
+      //       position: [targetPosition.x, targetPosition.y, targetPosition.z],
+      //     });
+      //     // Scale up at new position
+      //     await next({ scale: [1, 1, 1] });
+      //   },
+      // });
+
+      updateVisibility(selected, false);
     }
   });
 
@@ -1321,7 +1306,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         </roundedBoxGeometry>
       </instancedMesh>
       <PulsatingLight position={lightPosition} color={selectedColor} />
-      <mesh ref={selectedCellRef}>
+      <animated.mesh
+        ref={selectedCellRef}
+        scale={springs.scale.to((x, y, z) => [x, y, z])}
+        position={springs.position.to((x, y, z) => [x, y, z])}
+      >
         <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
         <MeshTransmissionMaterial
           color={selectedColor}
@@ -1341,7 +1330,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           clearcoat={1}
           clearcoatRoughness={0.1}
         />
-      </mesh>
+      </animated.mesh>
     </>
   );
 };
