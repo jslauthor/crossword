@@ -14,11 +14,11 @@ import {
   Euler,
   Texture,
   Vector4,
-  PointLight,
   MeshBasicMaterial,
   DoubleSide,
   MeshLambertMaterial,
   Mesh,
+  Quaternion,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh } from 'three';
@@ -812,6 +812,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [cellsDisplayRef],
   );
 
+  const lastPosition = useRef<Vector3>(new Vector3(0, 0, 0));
+
   // Need to rerender the letters if the character position changes 👆🏻
   useEffect(() => {
     if (cellsDisplayRef == null) return;
@@ -820,11 +822,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   const [springs, api] = useSpring(() => ({
     scale: [1, 1, 1],
-    position: [0, 0, 0],
-    config: { mass: 1, tension: 280, friction: 60 },
-    onChange: (props) => {
-      console.log(props);
-    },
+    config: { mass: 0.1, tension: 500, friction: 5, duration: 100 },
   }));
 
   // This does all of the selection logic. Row/cell highlighting, etc.
@@ -891,26 +889,56 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     }
 
-    if (selected != null && cellPositions[selected]) {
-      const targetPosition = cellPositions[selected];
-      if (!lightPosition.equals(targetPosition)) {
-        setLightPosition(targetPosition);
-      }
+    // TODO: Do not animate selected cell if animating the scale
 
-      // api.start({
-      //   to: async (next) => {
-      //     // Shrink and hide current cell
-      //     await next({ scale: [0, 0, 0] });
-      //     // Move to new position
-      //     await next({
-      //       position: [targetPosition.x, targetPosition.y, targetPosition.z],
-      //     });
-      //     // Scale up at new position
-      //     await next({ scale: [1, 1, 1] });
-      //   },
-      // });
-
+    if (selected != null) {
+      // Selected cell is no longer visible
       updateVisibility(selected, false);
+
+      if (
+        lastPosition.current == null ||
+        cellPositions[selected] == null ||
+        lastPosition.current.equals(cellPositions[selected]) === false
+      ) {
+        const targetPosition = cellPositions[selected];
+        setLightPosition(targetPosition);
+
+        api.start({
+          to: async (next) => {
+            await next({ scale: [0.95, 0.95, 0.95] });
+            await next({
+              scale: [1, 1, 1],
+            });
+          },
+          onChange: function (state) {
+            cellsDisplayRef.getMatrixAt(selected, tempObject.matrix);
+
+            // Extract position, rotation, and scale from the original matrix
+            const position = new Vector3();
+            const quaternion = new Quaternion();
+            const scale = new Vector3();
+            tempObject.matrix.decompose(position, quaternion, scale);
+
+            // Update position
+            position.copy(targetPosition);
+
+            // Update scale
+            scale.set(
+              state.value.scale[0],
+              state.value.scale[1],
+              state.value.scale[2],
+            );
+
+            // Recompose the matrix with updated position and scale, but original rotation
+            tempObject.matrix.compose(position, quaternion, scale);
+
+            cellsDisplayRef.setMatrixAt(selected, tempObject.matrix);
+            cellsDisplayRef.instanceMatrix.needsUpdate = true;
+          },
+        });
+
+        lastPosition.current = targetPosition;
+      }
     }
   });
 
@@ -1309,7 +1337,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       <animated.mesh
         ref={selectedCellRef}
         scale={springs.scale.to((x, y, z) => [x, y, z])}
-        position={springs.position.to((x, y, z) => [x, y, z])}
+        position={lightPosition}
       >
         <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
         <MeshTransmissionMaterial

@@ -11,8 +11,8 @@ const PulsatingLight: React.FC<{
 }> = ({
   position,
   color,
-  minIntensity = 0.75,
-  maxIntensity = 3,
+  minIntensity = 3,
+  maxIntensity = 6,
   pulseSpeed = 4,
 }) => {
   const lightRef = useRef<PointLight>(null);
