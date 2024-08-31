@@ -11,7 +11,7 @@ import {
   getPuzzleLabel,
   getPuzzleLabelForType,
   getPuzzleStats,
-  getTypeForSize,
+  getType,
 } from 'lib/utils/puzzle';
 import { HRule } from 'components/core/Dividers';
 import { usePreviewState } from 'lib/utils/hooks/usePreviewState';
@@ -72,9 +72,9 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
     () =>
       puzzles.reduce(
         (acc, val) => {
-          if (acc.types.has(getTypeForSize(val))) {
+          if (acc.types.has(getType(val))) {
             acc.latestPuzzles.push(val);
-            acc.types.delete(getTypeForSize(val));
+            acc.types.delete(getType(val));
           } else {
             acc.otherPuzzles.push(val);
           }
@@ -139,7 +139,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
           {latestPuzzles.map((puzzle, index) => (
             <Link key={puzzle.slug} href={`/puzzle/${puzzle.slug}`}>
               <PuzzleLatest
-                type={getTypeForSize(puzzle)}
+                type={getType(puzzle)}
                 puzzleLabel={getPuzzleLabel(puzzle)}
                 puzzleStats={getPuzzleStats(puzzle)}
                 title={puzzle.title}
@@ -171,7 +171,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
                         : previewStates[slug]
                     }
                     puzzleLabel={getPuzzleLabel(puzzle)}
-                    type={getTypeForSize(puzzle)}
+                    type={getType(puzzle)}
                   />
                 </Link>
                 {index !== otherPuzzles.length - 1 && <HRule />}

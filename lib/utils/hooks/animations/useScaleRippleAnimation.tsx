@@ -17,43 +17,43 @@ import {
 const tempObject = new Object3D();
 
 export const applyScaleAnimation = ({
-  mesh,
+  meshes,
   index,
   value,
 }: {
-  mesh: InstancedMesh;
+  meshes: (InstancedMesh | null)[];
   index: number;
   value: number;
 }) => {
-  if (mesh == null) {
-    return;
-  }
+  meshes.forEach((mesh) => {
+    if (mesh == null) return;
 
-  const matrix: Matrix4 = new Matrix4();
-  mesh.getMatrixAt(index, matrix);
-  const position: Vector3 = new Vector3();
-  const rotation: Quaternion = new Quaternion();
-  const scale: Vector3 = new Vector3();
-  matrix.decompose(position, rotation, scale);
+    const matrix: Matrix4 = new Matrix4();
+    mesh.getMatrixAt(index, matrix);
+    const position: Vector3 = new Vector3();
+    const rotation: Quaternion = new Quaternion();
+    const scale: Vector3 = new Vector3();
+    matrix.decompose(position, rotation, scale);
 
-  // Validate the quaternion before applying it
-  if (
-    isNaN(rotation.x) ||
-    isNaN(rotation.y) ||
-    isNaN(rotation.z) ||
-    isNaN(rotation.w)
-  ) {
-    // Cannot apply a NaN quaternion -- likely from an
-    // object with a scale of 0 (the blank squares)
-    return;
-  }
+    // Validate the quaternion before applying it
+    if (
+      isNaN(rotation.x) ||
+      isNaN(rotation.y) ||
+      isNaN(rotation.z) ||
+      isNaN(rotation.w)
+    ) {
+      // Cannot apply a NaN quaternion -- likely from an
+      // object with a scale of 0 (the blank squares)
+      return;
+    }
 
-  tempObject.position.copy(position);
-  tempObject.quaternion.copy(rotation); // Directly copy the quaternion
-  tempObject.scale.set(value, value, value);
-  tempObject.updateMatrix();
-  mesh.setMatrixAt(index, tempObject.matrix);
-  mesh.instanceMatrix.needsUpdate = true;
+    tempObject.position.copy(position);
+    tempObject.quaternion.copy(rotation); // Directly copy the quaternion
+    tempObject.scale.set(value, value, value);
+    tempObject.updateMatrix();
+    mesh.setMatrixAt(index, tempObject.matrix);
+    mesh.instanceMatrix.needsUpdate = true;
+  });
 };
 
 const SCALE = 1.75;
@@ -62,7 +62,7 @@ export const useScaleRippleAnimation = (
   width: number,
   height: number,
   numSides: number,
-  ref: InstancedMesh | null,
+  refs: (InstancedMesh | null)[], // Allow null refs
   onComplete?: () => void,
 ) => {
   const { scale: scaleAnimation } = useSpring({
@@ -85,7 +85,8 @@ export const useScaleRippleAnimation = (
 
   // Animation effect
   const showRippleAnimation = useCallback(() => {
-    if (ref == null) return;
+    const validRefs = refs.filter((ref): ref is InstancedMesh => ref !== null);
+    if (validRefs.length === 0) return;
 
     // Holy quadratic batman!
     // This creates an array of arrays that hold each "ring"
@@ -109,7 +110,7 @@ export const useScaleRippleAnimation = (
         setTimeout(() => {
           ring.forEach((index) => {
             applyScaleAnimation({
-              mesh: ref,
+              meshes: validRefs,
               value,
               index,
             });
@@ -140,7 +141,7 @@ export const useScaleRippleAnimation = (
   }, [
     height,
     onComplete,
-    ref,
+    refs,
     scaleAnimation,
     scaleDownAnimation,
     numSides,

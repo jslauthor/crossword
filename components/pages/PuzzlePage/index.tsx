@@ -3,7 +3,7 @@
 import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
-import { Stats, PerspectiveCamera, Html } from '@react-three/drei';
+import { Stats, PerspectiveCamera, Html, Environment } from '@react-three/drei';
 import LetterBoxes, { SelectClueFn } from 'components/core/3d/LetterBoxes';
 import {
   Suspense,
@@ -17,6 +17,8 @@ import {
   PerspectiveCamera as PerspectiveCameraType,
   Vector3,
   Object3D,
+  HemisphereLight,
+  Color,
 } from 'three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
@@ -226,6 +228,22 @@ export default function Puzzle({
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
+  const [width, rowLength] = useMemo(() => {
+    let { width } = puzzle.data[0].dimensions;
+    return [width, width * puzzle.data.length - puzzle.data.length];
+  }, [puzzle.data]);
+
+  const isSingleSided = useMemo(() => {
+    for (let j = 0; j < puzzle.record.solution.length; j++) {
+      const { value: cell } = puzzle.record.solution[j];
+      const side = Math.floor((j % rowLength) / width);
+      if (cell !== '#' && side > 0) {
+        return false;
+      }
+    }
+    return true;
+  }, [puzzle.record.solution, rowLength, width]);
+
   const router = useRouter();
   const { theme } = useTheme();
   const layout = useMemo<keyof KeyboardLayoutType>(
@@ -313,17 +331,27 @@ export default function Puzzle({
     [],
   );
 
+  const [fogNear, setFogNear] = useState(0);
+  const [fogFar, setFogFar] = useState(100);
+
   useEffect(() => {
     if (cameraRef == null || groupRef == null || isInitialized === false) {
       return undefined;
     }
 
-    fitCameraToCenteredObject(
+    const { boundingBox, cameraZ } = fitCameraToCenteredObject(
       cameraRef,
       groupRef,
       new Vector3(puzzleWidth, puzzleWidth, puzzleWidth),
       1.02,
     );
+
+    const objectDepth = boundingBox.max.z - boundingBox.min.z;
+    const fogNearDistance = (cameraZ - objectDepth / 2) * 1.02;
+    const fogFarDistance = (cameraZ + objectDepth / 2) * 1.02;
+
+    setFogNear(fogNearDistance);
+    setFogFar(fogFarDistance);
   }, [
     cameraRef,
     groupRef,
@@ -365,13 +393,69 @@ export default function Puzzle({
     isInitialized === true,
     setIsPromptOpen,
   );
+
+  const [_, api] = useSpring(() => ({
+    singleSidedOffset: 0,
+  }));
+  const turnAnimationPlaying = useRef(false);
+
   const turnLeft = useCallback(
-    (offset?: number) => setSideOffset(sideOffset + (offset ?? 1)),
-    [sideOffset],
+    (offset?: number) => {
+      if (turnAnimationPlaying.current === true) return;
+      if (isSingleSided === true) {
+        api.start({
+          config: {
+            duration: 30,
+          },
+          from: { singleSidedOffset: sideOffset },
+          to: [
+            { singleSidedOffset: sideOffset + 0.2 },
+            { singleSidedOffset: sideOffset },
+          ],
+          onResolve: ({ finished }) => {
+            if (finished === true) {
+              turnAnimationPlaying.current = false;
+            }
+          },
+          onChange: (_, spring) => {
+            turnAnimationPlaying.current = true;
+            setSideOffset(spring.get().singleSidedOffset);
+          },
+        });
+        return;
+      }
+      setSideOffset(sideOffset + (offset ?? 1));
+    },
+    [api, isSingleSided, sideOffset],
   );
   const turnRight = useCallback(
-    (offset?: number) => setSideOffset(sideOffset - (offset ?? 1)),
-    [sideOffset],
+    (offset?: number) => {
+      if (turnAnimationPlaying.current === true) return;
+      if (isSingleSided === true) {
+        api.start({
+          config: {
+            duration: 30,
+          },
+          from: { singleSidedOffset: sideOffset },
+          to: [
+            { singleSidedOffset: sideOffset - 0.2 },
+            { singleSidedOffset: sideOffset },
+          ],
+          onResolve: ({ finished }) => {
+            if (finished === true) {
+              turnAnimationPlaying.current = false;
+            }
+          },
+          onChange: (_, spring) => {
+            turnAnimationPlaying.current = true;
+            setSideOffset(spring.get().singleSidedOffset);
+          },
+        });
+        return;
+      }
+      setSideOffset(sideOffset - (offset ?? 1));
+    },
+    [api, isSingleSided, sideOffset],
   );
 
   const selectedSide = useMemo(() => {
@@ -736,6 +820,7 @@ export default function Puzzle({
         onSettingsPressed={handleSettingsPressed}
         onDisplayChange={setIsMenuOpen}
         onSignInPressed={onSignIn}
+        showBackground={false}
       >
         <Canvas
           gl={{ antialias: false }}
@@ -745,13 +830,19 @@ export default function Puzzle({
           ref={containerRef}
         >
           <Suspense fallback={<Loader />}>
+            <fog
+              attach="fog"
+              color={new Color(0x222222)}
+              near={fogNear}
+              far={fogFar}
+            />
             <PerspectiveCamera
               ref={setCameraRef}
               makeDefault
               position={[0, 0, 0]}
+              fov={50}
             />
-            <ambientLight intensity={3} />
-            {/* <pointLight position={[0, 0, -2]} intensity={2} /> */}
+            <ambientLight intensity={1} />
             <SwipeControls
               global
               dragEnabled={false}
@@ -778,14 +869,11 @@ export default function Puzzle({
                   updateCharacterPosition={updateCharacterPosition}
                   onLetterInput={onLetterInput}
                   onSelectClue={handleClueChange}
-                  fontColor={fontColor}
+                  fontColor={0x000000}
                   fontDraftColor={fontDraftColor}
-                  defaultColor={defaultColor}
-                  selectedColor={selectedColor}
-                  adjacentColor={adjacentColor}
+                  selectedColor={0xff8800}
                   errorColor={errorColor}
                   correctColor={correctColor}
-                  borderColor={borderColor}
                   onInitialize={onInitialize}
                   isVerticalOrientation={isVerticalOrientation}
                   onVerticalOrientationChange={handleSetOrientation}
@@ -802,6 +890,7 @@ export default function Puzzle({
                   setGoToNextWord={setGoToNextWord}
                   theme={theme}
                   isSpinning={isSpinning}
+                  isSingleSided={isSingleSided}
                 />
               </group>
             </SwipeControls>

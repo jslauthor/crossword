@@ -15,6 +15,7 @@ const Menu: React.FC<MenuProps> = ({
   onSettingsPressed,
   onDisplayChange,
   onSignInPressed,
+  showBackground = true,
 }) => {
   const { signOut } = useClerk();
   const onSignOut = useCallback(() => {
@@ -23,6 +24,7 @@ const Menu: React.FC<MenuProps> = ({
 
   return (
     <MenuWrapper
+      showBackground={showBackground}
       centerLabel={centerLabel}
       autocheckEnabled={autocheckEnabled}
       onAutocheckChanged={onAutocheckChanged}
