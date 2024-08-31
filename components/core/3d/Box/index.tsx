@@ -6,7 +6,7 @@ import {
   PresentationControls,
   useTexture,
 } from '@react-three/drei';
-import { MeshPhysicalMaterial, RepeatWrapping, Texture, Vector4 } from 'three';
+import { MeshBasicMaterial, RepeatWrapping, Texture, Vector4 } from 'three';
 import { Canvas, extend } from '@react-three/fiber';
 import styled from 'styled-components';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
@@ -61,7 +61,7 @@ const fragmentShader = `
 
 type Uniforms = Record<string, { value: Texture | Vector4 | number }>;
 const materialConfig = {
-  baseMaterial: MeshPhysicalMaterial,
+  baseMaterial: MeshBasicMaterial,
   toneMapped: false,
   fog: false,
   vertexShader,
