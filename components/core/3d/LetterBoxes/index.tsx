@@ -889,8 +889,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     }
 
-    // TODO: Do not animate selected cell if animating the scale
-
     if (selected != null) {
       // Selected cell is no longer visible
       updateVisibility(selected, false);
