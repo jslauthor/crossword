@@ -48,7 +48,7 @@ async function getProps(slug: string): Promise<PuzzlePageProps> {
           unicodeParts.length > 2 ||
           (unicodeParts.length === 2 && unicodeParts[1].startsWith('u'))
         ) {
-          throw new Error('Puzzle has invalid emoji format!');
+          throw new Error(`Puzzle has invalid emoji format! ${unicodeString}`);
         }
 
         // Remove the 'u' prefix from the first part
@@ -87,7 +87,9 @@ async function getProps(slug: string): Promise<PuzzlePageProps> {
     });
 
     if (puzzle.svgSegments.length !== 26) {
-      throw new Error('Puzzle must have 26 svg segments!');
+      throw new Error(
+        `Puzzle must have 26 svg segments! Has ${puzzle.svgSegments.length}`,
+      );
     }
   }
 

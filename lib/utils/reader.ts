@@ -11,6 +11,8 @@ import {
   initializeAnswerIndex,
   GAME_STATE_KEY,
   createInitialYDoc,
+  convertCrossmojiData,
+  emojiToUnicode,
 } from './puzzle';
 import { TEXTURE_RECORD, buildSvgTextureAtlasLookup } from './atlas';
 import * as Y from 'yjs';
@@ -46,23 +48,57 @@ const puzzleProperties = `
   stage
 `;
 
+const convertPuzzleData = (puzzleData: any): PuzzleType => {
+  let data = puzzleData.data;
+  let svgSegments = puzzleData.svgSegments;
+  let type: CrosscubeType | undefined = undefined;
+  // If the data is the crossmoji data format, convert it to a crosscube
+  // Crossmoji data has items and grid, while crosscube has puzzle and solution
+  // You can also create a 3d crossmoji which uses the crosscube data format
+  if (puzzleData.data.items != null) {
+    data = convertCrossmojiData(puzzleData.data);
+    svgSegments = Object.keys(puzzleData.data.items).map(emojiToUnicode);
+    type = 'moji';
+  }
+
+  return {
+    id: puzzleData.id,
+    title: puzzleData.title,
+    authors:
+      puzzleData.authors
+        ?.map((author: { name: { firstName: string; lastName: string } }) =>
+          author.name
+            ? `${author.name.firstName || ''} ${author.name.lastName || ''}`.trim()
+            : '',
+        )
+        .filter(Boolean) || [],
+    date: puzzleData.publishedAt ?? puzzleData.updatedAt,
+    previewState: 0,
+    slug: puzzleData.slug,
+    data,
+    svgSegments,
+    record: getCharacterRecord(data),
+    type,
+  };
+};
+
 const createWhereForType = (types: CrosscubeType[]) => {
   return types
     .map((type) => {
       switch (type) {
         case 'cube':
-          return '(@.dimensions.width == 8 && @.dimensions.height == 8)';
+          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 8 && @.dimensions.height == 8)" }';
         case 'mega':
-          return '(@.dimensions.width == 12 && @.dimensions.height == 12)';
+          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 12 && @.dimensions.height == 12)" }';
         case 'mini':
-          return '(@.dimensions.width == 5 && @.dimensions.height == 5)';
+          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 5 && @.dimensions.height == 5)" }';
         case 'moji':
-          return '(@.dimensions.width == 3 && @.dimensions.height == 3)';
+          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 3 && @.dimensions.height == 3)" }, { data_json_path_exists: "$.items" }';
         default:
           return '';
       }
     })
-    .join(' || ');
+    .join(', ');
 };
 
 export const getPuzzles = async (
@@ -76,18 +112,11 @@ export const getPuzzles = async (
       let after = null;
 
       while (hasNextPage) {
-        await setTimeout(100);
-        const result: any = await queryReadOnly<{
-          crosscubesConnection: {
-            edges: { node: any }[];
-            pageInfo: { hasNextPage: boolean; endCursor: string };
-          };
-        }>(
-          `
+        const query = `
           query Query($after: String) {
             crosscubesConnection(
               orderBy: publishedAt_DESC
-              where: { data_json_path_exists: "$[*] ? (${createWhereForType(types)})" }
+              where: { OR: [${createWhereForType(types)}] }
               first: 1000
               after: $after
             ) {
@@ -102,9 +131,15 @@ export const getPuzzles = async (
               }
             }
           }
-        `,
-          { after },
-        );
+        `;
+
+        await setTimeout(100);
+        const result: any = await queryReadOnly<{
+          crosscubesConnection: {
+            edges: { node: any }[];
+            pageInfo: { hasNextPage: boolean; endCursor: string };
+          };
+        }>(query, { after });
 
         const newCrosscubes = result?.crosscubesConnection.edges.map(
           (edge: any) => edge.node,
@@ -119,24 +154,11 @@ export const getPuzzles = async (
 
     const crosscubes = await fetchAllCrosscubes();
 
-    const puzzles: PuzzleType[] = crosscubes.map(
-      (puzzle: any) =>
-        ({
-          id: puzzle.id,
-          title: puzzle.title,
-          authors: [
-            puzzle.authors[0].name.firstName +
-              (puzzle.authors[0].name.lastName != null
-                ? ' ' + puzzle.authors[0].name.lastName
-                : ''),
-          ],
-          date: puzzle.publishedAt ?? puzzle.updatedAt,
-          previewState: 0,
-          slug: puzzle.slug,
-          data: puzzle.data,
-          record: getCharacterRecord(puzzle.data),
-        }) as PuzzleType,
-    );
+    const puzzles: PuzzleType[] = crosscubes
+      .filter(
+        (puzzleData: any) => puzzleData !== null && puzzleData !== undefined,
+      )
+      .map(convertPuzzleData);
 
     if (enrich === true) {
       const clerkUser = await currentUser();
@@ -209,28 +231,9 @@ export const getPuzzlesBySlugs = async (
 
     const puzzles: PuzzleType[] = crosscubes
       .filter(
-        (puzzleData): puzzleData is any =>
-          puzzleData !== null && puzzleData !== undefined,
+        (puzzleData: any) => puzzleData !== null && puzzleData !== undefined,
       )
-      .map((puzzleData) => ({
-        id: puzzleData.id,
-        title: puzzleData.title,
-        authors:
-          puzzleData.authors
-            ?.map(
-              (author: { name: { firstName: string; lastName: string } }) =>
-                author.name
-                  ? `${author.name.firstName || ''} ${author.name.lastName || ''}`.trim()
-                  : '',
-            )
-            .filter(Boolean) || [],
-        date: puzzleData.publishedAt ?? puzzleData.updatedAt,
-        previewState: 0,
-        slug: puzzleData.slug,
-        data: puzzleData.data,
-        svgSegments: puzzleData.svgSegments,
-        record: getCharacterRecord(puzzleData.data),
-      }));
+      .map(convertPuzzleData);
 
     if (enrich === true) {
       const clerkUser = await currentUser();

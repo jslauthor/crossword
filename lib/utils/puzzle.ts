@@ -2,7 +2,9 @@ import { ProgressEnum } from 'components/svg/PreviewCube';
 import {
   Clue,
   CrosscubeType,
+  CrossmojiData,
   GameState,
+  PuzzleCell,
   PuzzleData,
   SolutionCell,
   SolutionCellNumber,
@@ -578,6 +580,10 @@ export const getPuzzleLabelForType = (type: CrosscubeType): string[] => {
 };
 
 export const getPuzzleLabel = (puzzle: PuzzleType): string[] => {
+  if (puzzle.type != null) {
+    return getPuzzleLabelForType(puzzle.type);
+  }
+
   const { width, height } = puzzle.data[0].dimensions;
   const size = width * height;
   switch (size) {
@@ -622,7 +628,11 @@ export const getAltForType = (type: CrosscubeType) => {
   }
 };
 
-export const getTypeForSize = (puzzle: PuzzleType): CrosscubeType => {
+export const getType = (puzzle: PuzzleType): CrosscubeType => {
+  if (puzzle.type != null) {
+    return puzzle.type;
+  }
+
   const { width, height } = puzzle.data[0].dimensions;
   const size = width * height;
   switch (size) {
@@ -635,4 +645,153 @@ export const getTypeForSize = (puzzle: PuzzleType): CrosscubeType => {
     default:
       return 'cube';
   }
+};
+
+export const createBlankPuzzleData = (
+  width: number,
+  height: number,
+): PuzzleData => ({
+  dimensions: {
+    width,
+    height,
+  },
+  puzzle: Array.from({ length: height }, () =>
+    Array.from({ length: width }, () => '#'),
+  ),
+  solution: Array.from({ length: height }, () =>
+    Array.from({ length: width }, () => '#'),
+  ),
+  clues: {
+    Across: [],
+    Down: [],
+  },
+});
+
+export function emojiToUnicode(emoji: string): string {
+  const codePoints = Array.from(emoji).map(
+    (char) => char.codePointAt(0)?.toString(16).padStart(4, '0') || '',
+  );
+
+  return 'u' + codePoints.join('_');
+}
+
+// PLEASE NEVER CHANGE THE SEED LEST IT WILL BREAK ALL OF THE PUZZLES
+type Entry = [string, string | null];
+function deterministicSort(entries: Entry[], seed: number): Entry[] {
+  // Create a seeded random number generator
+  const seededRandom = (index: number): number => {
+    const x = Math.sin(seed + index) * 10000;
+    return x - Math.floor(x);
+  };
+
+  // Create an array of indices, sort it based on the seeded random values
+  const sortedIndices = [...entries.keys()].sort(
+    (a, b) => seededRandom(a) - seededRandom(b),
+  );
+
+  // Use the sorted indices to create a new array of entries in the determined order
+  return sortedIndices.map((index) => entries[index]);
+}
+
+export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
+  const width = data.grid[0].length;
+  const height = data.grid.length;
+
+  if (data.seed == null) {
+    throw new Error('Seed is required!');
+  }
+
+  const items = deterministicSort(Object.entries(data.items), data.seed);
+  const secondSidePuzzleData = createBlankPuzzleData(width, height);
+  const thirdSidePuzzleData = createBlankPuzzleData(width, height);
+  const fourthSidePuzzleData = createBlankPuzzleData(width, height);
+
+  // Check to make sure there are an equal number of 1s in the grid
+  // for every item with a value.
+  const itemsWithClues = items.filter(([_, clue]) => clue != null);
+  const numOnes = data.grid.flat().filter((cell) => cell === 1).length;
+  if (itemsWithClues.length !== numOnes) {
+    throw new Error('Number of items does not match number of 1s in the grid');
+  }
+
+  let cellNumber = 0;
+  const puzzle: PuzzleCell[][] = [];
+  const solution: SolutionCell[][] = [];
+  const clues: Clue[] = [];
+  data.grid.forEach((row, x) =>
+    row.forEach((cell, y) => {
+      if (puzzle[x] == null) {
+        puzzle[x] = [];
+      }
+      if (solution[x] == null) {
+        solution[x] = [];
+      }
+      if (cell === 1) {
+        cellNumber++;
+        puzzle[x].push(cellNumber);
+        const [emoji, clue] = itemsWithClues[cellNumber - 1];
+        const unicode = emojiToUnicode(emoji);
+        const value = {
+          value: unicode,
+          cell: cellNumber,
+        };
+        solution[x].push(value);
+
+        clues.push({
+          number: cellNumber,
+          clue: clue ?? '',
+          answer: unicode,
+        });
+
+        // Store the last column values in the solution
+        if (y === row.length - 1) {
+          secondSidePuzzleData.puzzle[x][0] = cellNumber;
+          secondSidePuzzleData.solution[x][0] = value;
+        }
+        if (y === 0) {
+          fourthSidePuzzleData.puzzle[x][row.length - 1] = cellNumber;
+          fourthSidePuzzleData.solution[x][row.length - 1] = value;
+        }
+      } else {
+        puzzle[x].push('#');
+        solution[x].push('#');
+        // Store the last column values in the solution
+        if (y === row.length - 1) {
+          secondSidePuzzleData.puzzle[x][0] = '#';
+          secondSidePuzzleData.solution[x][0] = '#';
+        }
+        if (y === 0) {
+          fourthSidePuzzleData.puzzle[x][row.length - 1] = '#';
+          fourthSidePuzzleData.solution[x][row.length - 1] = '#';
+        }
+      }
+    }),
+  );
+
+  // Convert CrossmojiData to PuzzleData
+  const puzzleData: PuzzleData = {
+    dimensions: {
+      width,
+      height,
+    },
+    puzzle,
+    solution,
+    clues: {
+      Across: [],
+      Down: [],
+    },
+  };
+
+  puzzleData.clues.Across = clues;
+  secondSidePuzzleData.clues.Across = clues;
+  thirdSidePuzzleData.clues.Across = clues;
+  fourthSidePuzzleData.clues.Across = clues;
+
+  // Convert PuzzleData to CharacterRecord
+  return [
+    puzzleData,
+    secondSidePuzzleData,
+    thirdSidePuzzleData,
+    fourthSidePuzzleData,
+  ];
 };

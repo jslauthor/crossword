@@ -1,17 +1,27 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ThreeEvent, extend, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
   RepeatWrapping,
   Vector3,
   Object3D,
-  Color,
   Euler,
   Texture,
   Vector4,
+  MeshBasicMaterial,
+  DoubleSide,
+  MeshLambertMaterial,
+  Mesh,
+  Quaternion,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
-import { InstancedMesh, MeshPhysicalMaterial } from 'three';
+import { InstancedMesh } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
 import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
@@ -21,7 +31,24 @@ import { hexToVector } from 'lib/utils/color';
 import { constrain } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
 import { AtlasType } from 'lib/utils/atlas';
+import { MeshTransmissionMaterial, useTexture } from '@react-three/drei';
+import { useSpring, animated } from '@react-spring/three';
+import PulsatingLight from '../PulsatingLight';
 extend({ RoundedBoxGeometry });
+
+export const BORDER_RADIUS = 0.08;
+export const CUBE_SIZE: [number, number, number] = [0.92, 0.92, 0.92];
+export const ROUNDED_CUBE_SIZE: [number, number, number, number, number] = [
+  ...CUBE_SIZE,
+  2,
+  BORDER_RADIUS,
+];
+
+export enum MatcapIndexEnum {
+  default = 0,
+  adjacent = 1,
+  blank = 2,
+}
 
 export enum CubeSidesEnum {
   one = 1 << 0,
@@ -37,7 +64,6 @@ const vertexShader = `
   attribute vec2 cellDraftMode;
   attribute vec2 characterPosition;
   attribute vec2 cellNumberPosition;
-  attribute vec3 cellColor;
   in ivec2 cubeSideDisplay;
   
   varying vec2 vUv;
@@ -45,8 +71,10 @@ const vertexShader = `
   varying vec2 vCellDraftMode;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
-  varying vec3 vCellColor;
   flat out ivec2 vCubeSideDisplay;
+
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
 
   void main()
   {
@@ -56,7 +84,9 @@ const vertexShader = `
       vCharacterPosition = characterPosition;
       vCellNumberPosition = cellNumberPosition;
       vCubeSideDisplay = cubeSideDisplay;
-      vCellColor = cellColor;
+
+      vWorldNormal = normalize(mat3(modelViewMatrix * instanceMatrix) * normal);
+      vWorldPosition = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
   }
 `;
 
@@ -73,35 +103,62 @@ const fragmentShader = `
   uniform float charactersGridSize;
   uniform float svgGridSize;
   uniform float borderRadius;
-  uniform vec4 borderColor;
   uniform float errorWidth;
   uniform vec4 errorColor;
   uniform vec4 correctColor;
   uniform vec4 fontColor;
   uniform vec4 fontDraftColor;
   
+  // Add a new uniform for the shrink factor
+  uniform float shrinkFactor;
+
   varying vec2 vUv;
   varying vec2 vCellValidation;
   varying vec2 vCellDraftMode;
   varying vec2 vCharacterPosition;
   varying vec2 vCellNumberPosition;
-  varying vec3 vCellColor;
+  varying float vFaceVisibility;
   flat varying ivec2 vCubeSideDisplay;
+
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
 
   vec4 applyColorChange(vec4 color, vec4 newColor) {
     return vec4(newColor.rgb, color.a); // Change white to the target color
   }
 
-  float borderSDF(vec2 uv, vec2 size, float radius, float width) {
-    uv = uv * 2.0 - 1.0;
-    vec2 d = abs(uv) - size + vec2(radius);
-    float dist = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0) - radius;
-    return smoothstep(width, width + fwidth(dist), dist);
+  float roundedRectangle(vec2 uv, vec2 size, float radius) {
+    vec2 q = abs(uv) - (size - 0.01) + radius;
+    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
   }
 
   void main(void)
   {
-    vec3 c = vCellColor.rgb;
+    vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+    float dotProduct = dot(normalize(vWorldNormal), viewDir);
+
+    // Discard fragment if face is not visible (close to 90 degrees from view)
+    if (abs(dotProduct) < 0.5) {
+      discard;
+    }
+
+    // Adjust UV coordinates to shrink the entire face
+    vec2 centeredUV = vUv - 0.5;
+    vec2 shrunkUV = centeredUV / shrinkFactor;
+    vec2 adjustedUV = shrunkUV + 0.5;
+
+    // Discard fragments outside the shrunk area
+    if (any(lessThan(adjustedUV, vec2(0.0))) || any(greaterThan(adjustedUV, vec2(1.0)))) {
+      discard;
+    }
+
+    // Discard fragments outside the rounded rectangle
+    float dist = roundedRectangle(adjustedUV - 0.5, vec2(0.5), borderRadius);
+    if (dist > 0.0) {
+      discard;
+    }
+
+    vec4 finalColor = vec4(0.0, 0.0, 0.0, 0.0);
     
     // Here we paint all of our textures
 
@@ -116,12 +173,12 @@ const fragmentShader = `
           // CanvasTexture uses a flipped coordinate system
           position = vec2(vCharacterPosition.x/svgGridSize, 1.0 - (vCharacterPosition.y/svgGridSize + 1.0/svgGridSize));
           size = vec2(1.0 / svgGridSize, 1.0 / svgGridSize);
-          coord = position + size * fract(vUv);
+          coord = position + size * fract(adjustedUV);
           Ca = texture2D(svgTexture, coord);
         } else {
           position = vec2(vCharacterPosition.x/charactersGridSize, -(vCharacterPosition.y/charactersGridSize + 1.0/charactersGridSize));
           size = vec2(1.0 / charactersGridSize, 1.0 / charactersGridSize);
-          coord = position + size * fract(vUv);
+          coord = position + size * fract(adjustedUV);
           Ca = texture2D(characterTexture, coord);
           // Apply color change to the texture color
           Ca = applyColorChange(Ca, fontColor);
@@ -129,8 +186,8 @@ const fragmentShader = `
 
         if (vCellValidation.x == 2.0) {
           // Draw the mark for a correct letter
-          if (vUv.y > (1.0 - vUv.x + 0.75)) {
-            c = correctColor.rgb;
+          if (vUv.y > (1.0 - vUv.x + 0.65)) {
+            finalColor = correctColor;
           } 
         } else {
           if (vCellDraftMode.x > 0.0) {
@@ -150,17 +207,15 @@ const fragmentShader = `
             // Calculate the distance to the diagonal line (y = x)
             float distance = abs(vUv.y - vUv.x);
             if (distance < errorWidth) {
-              c = errorColor.rgb * errorColor.a + c.rgb * (1.0 - errorColor.a);
+              finalColor = errorColor;
             } 
           } 
         }
 
-        c = Ca.rgb * Ca.a + c.rgb * (1.0 - Ca.a);  // blending equation
+        if (Ca.a > 0.4) { // gets rid of a nasty white border
+          finalColor = Ca; 
+        }
       }
-
-      // Draw the border with rounded corners
-      float sdf = borderSDF(vUv, vec2(0.94 - borderRadius), 0.02, borderRadius);
-      c = mix(c, borderColor.rgb, sdf * borderColor.a);
 
       // Draw the cell number
       // A coord of -1, -1 means do not paint
@@ -170,12 +225,9 @@ const fragmentShader = `
         vec2 size = vec2(1.0 / 17.0, 1.0 / 17.0);
 
         // Adjust UV coordinates to map the texture to the upper-left corner
-        vec2 scaledUV = vUv * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
+        vec2 scaledUV = adjustedUV * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
         vec2 offset = vec2(0.0, 0.0); // No additional offset needed for upper-left
         vec2 coord = position + size * (scaledUV + offset);
-
-        // // Clamp the coordinates to prevent wrapping
-        // coord = clamp(coord, position, position + size);
 
         // Check if the UV coordinates are within the [0, 1] bounds to avoid texture wrapping
         if (scaledUV.x >= 0.0 && scaledUV.x <= 1.0 && scaledUV.y >= 0.0 && scaledUV.y <= 1.0) {
@@ -185,15 +237,90 @@ const fragmentShader = `
             Cb = applyColorChange(Cb, fontColor);
 
             if (Cb.a > 0.2) { // gets rid of a nasty white border
-              c = Cb.rgb * Cb.a + c.rgb * (1.0 - Cb.a); // blending equation
+              finalColor = Cb; // blending equation
             }
         }
       }
-    } else {
-      c = vec3(0.07, 0.07, 0.07) * c.rgb;  // blending equation
     }
     
-    csm_DiffuseColor = vec4(c, 1.0);
+    csm_DiffuseColor = finalColor;
+  }
+`;
+
+const vertexCellShader = `
+  attribute float matcapIndex;
+  attribute float visibility;
+
+  varying vec2 vMatcapUV;
+  varying float vMatcapIndex;
+
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
+
+  void main() {
+    vMatcapIndex = matcapIndex;
+    vec4 pos = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+    
+    // Hide the instance if visibility is 0
+    if (visibility < 0.5) {
+      csm_Position = vec3(0.0, 0.0, 2.0); // Move off-screen
+    }
+
+    vec3 normalWorld = normalize(mat3(modelViewMatrix * instanceMatrix) * normal);
+    vec3 viewDir = normalize(pos.xyz);
+    vec3 x = normalize(vec3(viewDir.z, 0.0, -viewDir.x));
+    vec3 y = cross(viewDir, x);
+    vMatcapUV = vec2(dot(x, normalWorld), dot(y, normalWorld)) * 0.495 + 0.5;
+
+    vWorldNormal = normalWorld;
+    vWorldPosition = pos.xyz;
+  }
+`;
+
+const fragmentCellShader = `
+  #ifdef GL_ES
+  precision highp float;
+  #endif
+
+  uniform sampler2D cellTextureAtlas;
+  uniform sampler2D blankTextureAtlas;
+  uniform vec4 adjacentColor;
+
+  varying vec2 vMatcapUV;
+  varying float vMatcapIndex;  
+
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
+
+  void main(void) {
+    vec4 matcapColor = vec4(0.0, 0.0, 0.0, 0.0);
+    if (vMatcapIndex == 0.0 || vMatcapIndex == 1.0) { // cell color
+      matcapColor = texture2D(cellTextureAtlas, vMatcapUV);
+      // Increase brightness for white or near-white colors
+      float luminance = dot(matcapColor.rgb, vec3(0.299, 0.587, 0.114));
+      float brightnessFactor = smoothstep(0.65, 1.0, luminance);
+      if (vMatcapIndex == 1.) {
+        matcapColor.rgb = mix(matcapColor.rgb, adjacentColor.rgb, 0.9);
+      }
+      matcapColor.rgb = mix(matcapColor.rgb, matcapColor.rgb * 8., brightnessFactor);      
+
+      // Calculate the angle between face normal and view direction
+      vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+      float dotProduct = dot(normalize(vWorldNormal), viewDir);
+      
+      // Adjust this value to control the darkening effect
+      float darkeningFactor = 0.1;
+      
+      // Calculate darkening based on the angle
+      float darkening = mix(darkeningFactor, 1.0, abs(dotProduct));
+
+      // Apply darkening to the final color
+      matcapColor.rgb *= darkening;
+    } else if (vMatcapIndex == 2.0) { // blank color
+      matcapColor = texture2D(blankTextureAtlas, vMatcapUV);
+    }
+
+    csm_DiffuseColor = vec4(matcapColor.rgb, csm_DiffuseColor.a);
   }
 `;
 
@@ -214,11 +341,8 @@ export type LetterBoxesProps = {
   selectedSide: number;
   fontColor: number;
   fontDraftColor: number;
-  defaultColor: number;
   selectedColor: number;
-  adjacentColor: number;
   errorColor: number;
-  borderColor: number;
   correctColor: number;
   keyAndIndexOverride?: [string, number]; // For testing
   isVerticalOrientation: boolean;
@@ -246,29 +370,22 @@ export type LetterBoxesProps = {
   ) => void;
   theme?: string;
   isSpinning?: boolean;
+  isSingleSided?: boolean;
 };
 
 const tempObject = new Object3D();
-const tempColor = new Color();
 const uniformDefaults = {
-  borderRadius: { value: 0.05 },
-  errorWidth: { value: 0.035 },
+  borderRadius: { value: BORDER_RADIUS },
+  errorWidth: { value: 0.05 },
 };
 
 type Uniforms = Record<
   string,
-  { value: Texture | Vector4 | number | boolean | undefined }
+  { value: Texture | Vector4 | number | boolean | undefined | Vector3 }
 >;
-const materialConfig = {
-  baseMaterial: MeshPhysicalMaterial,
-  toneMapped: false,
-  fog: false,
-  vertexShader,
-  fragmentShader,
-};
-const materialMap: Map<CubeSidesEnum, CustomShaderMaterial> = new Map();
-const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
-  let material = materialMap.get(sideEnum);
+const basicMaterialMap: Map<CubeSidesEnum, CustomShaderMaterial> = new Map();
+const createBasicMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
+  let material = basicMaterialMap.get(sideEnum);
   if (material != null) {
     // Update uniforms
     Object.keys(uniforms).forEach((key) => {
@@ -288,14 +405,54 @@ const createMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
     return material;
   } else {
     material = new CustomShaderMaterial({
-      ...materialConfig,
+      baseMaterial: MeshBasicMaterial,
+      toneMapped: false,
+      fog: false,
+      vertexShader,
+      fragmentShader,
       uniforms: {
         sideIndex: { value: sideEnum },
         charactersGridSize: { value: 6.0 },
         ...uniforms,
       },
+      side: DoubleSide,
+      transparent: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -4,
     });
-    materialMap.set(sideEnum, material);
+    basicMaterialMap.set(sideEnum, material);
+    return material;
+  }
+};
+
+const cellsMaterialMap: Map<CubeSidesEnum, CustomShaderMaterial> = new Map();
+const createCellsMaterial = (uniforms: Uniforms, sideEnum: CubeSidesEnum) => {
+  let material = cellsMaterialMap.get(sideEnum);
+  if (material != null) {
+    // Update uniforms
+    Object.keys(uniforms).forEach((key) => {
+      if (material != null) {
+        if (material.uniforms[key]) {
+          material.uniforms[key].value = uniforms[key].value;
+        } else {
+          material.uniforms[key] = uniforms[key];
+        }
+      }
+    });
+    material.needsUpdate = true;
+    return material;
+  } else {
+    material = new CustomShaderMaterial({
+      baseMaterial: MeshLambertMaterial,
+      uniforms: {
+        ...uniforms,
+      },
+      fog: true,
+      vertexShader: vertexCellShader,
+      fragmentShader: fragmentCellShader,
+    });
+    cellsMaterialMap.set(sideEnum, material);
     return material;
   }
 };
@@ -331,11 +488,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   onSelectClue,
   fontColor,
   fontDraftColor,
-  defaultColor,
   selectedColor,
-  adjacentColor,
   errorColor,
-  borderColor,
   correctColor,
   onInitialize,
   cellValidationArray,
@@ -346,8 +500,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   turnRight,
   setGoToNextWord,
   theme,
-  isSpinning,
+  isSingleSided,
 }) => {
+  const [cellPositions, setCellPositions] = useState<Record<number, Vector3>>(
+    {},
+  );
+  const selectedCellRef = useRef<Mesh>(null);
+
+  const [lightPosition, setLightPosition] = useState(new Vector3(0, 0, 0));
+
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
     characterTextureAtlas.wrapS = RepeatWrapping;
@@ -360,7 +521,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     numberTextureAtlas.wrapT = RepeatWrapping;
   }, [numberTextureAtlas]);
 
-  const [ref, setRef] = useState<InstancedMesh | null>(null);
+  const [cellsDisplayRef, setCellsDisplayRef] = useState<InstancedMesh | null>(
+    null,
+  );
+  const [cellsRef, setCellsRef] = useState<InstancedMesh | null>(null);
   // const [isVerticalOrientation, setVerticalOrientation] =
   //   useState<boolean>(false);
   const [prevOrientation, setPrevOrientation] = useState<boolean>(
@@ -386,10 +550,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     () => hexToVector(errorColor),
     [errorColor],
   );
-  const convertedBorderColor = useMemo(
-    () => hexToVector(borderColor),
-    [borderColor],
-  );
   const convertedCorrectColor = useMemo(
     () => hexToVector(correctColor),
     [correctColor],
@@ -405,13 +565,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       fontColor: { value: convertedFontColor },
       fontDraftColor: { value: convertedFontDraftColor },
       errorColor: { value: convertedErrorColor },
-      borderColor: { value: convertedBorderColor },
       correctColor: { value: convertedCorrectColor },
+      shrinkFactor: { value: 0.9 }, // Adjust this value to control shrinking (e.g., 0.9 for 90% size)
       ...uniformDefaults,
     }),
     [
       characterTextureAtlas,
-      convertedBorderColor,
       convertedCorrectColor,
       convertedErrorColor,
       convertedFontColor,
@@ -425,9 +584,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
   useEffect(() => {
     if (setInstancedMesh) {
-      setInstancedMesh(ref);
+      setInstancedMesh(cellsDisplayRef);
     }
-  }, [ref, setInstancedMesh]);
+  }, [cellsDisplayRef, setInstancedMesh]);
 
   const [width, height, rowLength] = useMemo(() => {
     let { width, height } = puzzle.data[0].dimensions;
@@ -468,30 +627,40 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [size],
   );
 
-  useEffect(() => {
-    if (ref == null) return;
-    ref.geometry.attributes.cellValidation.needsUpdate = true;
-  }, [cellValidationArray, ref]);
-
-  useEffect(() => {
-    if (ref == null) return;
-    ref.geometry.attributes.cellDraftMode.needsUpdate = true;
-  }, [cellDraftModeArray, ref]);
-
-  useEffect(() => {
-    if (ref == null) return;
-    ref.geometry.attributes.characterPosition.needsUpdate = true;
-  }, [characterPositionArray, ref]);
-
-  const cellColorsArray = useMemo(
-    () =>
-      Float32Array.from(
-        new Array(size * 3)
-          .fill(0)
-          .flatMap(() => tempColor.set(defaultColor).toArray()),
-      ),
-    [defaultColor, size],
+  const matcapIndexArray = useMemo(
+    () => Float32Array.from(new Array(size).fill(0)),
+    [size],
   );
+
+  const visibilityArray = useMemo(
+    () => Float32Array.from(new Array(size).fill(1)),
+    [size],
+  );
+
+  const updateVisibility = useCallback(
+    (index: number, isVisible: boolean) => {
+      if (cellsRef) {
+        visibilityArray[index] = isVisible ? 1 : 0;
+        cellsRef.geometry.attributes.visibility.needsUpdate = true;
+      }
+    },
+    [cellsRef, visibilityArray],
+  );
+
+  useEffect(() => {
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.cellValidation.needsUpdate = true;
+  }, [cellValidationArray, cellsDisplayRef]);
+
+  useEffect(() => {
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.cellDraftMode.needsUpdate = true;
+  }, [cellDraftModeArray, cellsDisplayRef]);
+
+  useEffect(() => {
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
+  }, [characterPositionArray, cellsDisplayRef]);
 
   const cellBelongsOnSide = useCallback(
     (id?: number, side?: number) => {
@@ -532,16 +701,17 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     width,
     height,
     puzzle.data.length,
-    ref,
+    [cellsDisplayRef, cellsRef],
   );
 
-  const showScaleAnimation = useScaleAnimation(ref);
+  const showScaleAnimation = useScaleAnimation([cellsDisplayRef, cellsRef]);
 
   // Initial setup (orient the instanced boxes)
   useEffect(
     () => {
-      if (ref == null) return;
+      if (cellsDisplayRef == null || cellsRef == null) return;
 
+      const positions: Record<number, Vector3> = {};
       const rotations: Euler[] = [];
       const tempCellMapping: Record<number, number> = {};
 
@@ -602,20 +772,34 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           );
         }
 
-        // Hide blank cells
+        matcapIndexArray[j] = MatcapIndexEnum.default;
         if (cell === '#') {
-          tempObject.scale.set(0, 0, 0);
+          // hide all cells that aren't part of the single side
+          if (
+            isSingleSided === true &&
+            Math.floor((j % rowLength) / width) !== 0 // first side including last column
+          ) {
+            tempObject.scale.set(0, 0, 0);
+          }
+          matcapIndexArray[j] = MatcapIndexEnum.blank;
         }
 
         tempObject.updateMatrix();
-        ref.setMatrixAt(j, tempObject.matrix);
+        cellsDisplayRef.setMatrixAt(j, tempObject.matrix);
+        cellsRef.setMatrixAt(j, tempObject.matrix);
         rotations[j] = new Euler().copy(tempObject.rotation);
+        positions[j] = new Vector3().copy(tempObject.position);
       }
 
-      ref.geometry.attributes.characterPosition.needsUpdate = true;
-      ref.geometry.attributes.cellNumberPosition.needsUpdate = true;
-      ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
-      ref.instanceMatrix.needsUpdate = true;
+      setCellPositions(positions);
+
+      cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
+      cellsDisplayRef.geometry.attributes.cellNumberPosition.needsUpdate = true;
+      cellsDisplayRef.geometry.attributes.cubeSideDisplay.needsUpdate = true;
+      cellsDisplayRef.instanceMatrix.needsUpdate = true;
+
+      cellsRef.geometry.attributes.matcapIndex.needsUpdate = true;
+      cellsRef.instanceMatrix.needsUpdate = true;
       // setInitialRotations(rotations);
       // showIntroAnimation(true);
       if (onInitialize) {
@@ -625,33 +809,27 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     },
     // Only run once on load
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [ref],
+    [cellsDisplayRef],
   );
+
+  const lastPosition = useRef<Vector3>(new Vector3(0, 0, 0));
 
   // Need to rerender the letters if the character position changes 👆🏻
   useEffect(() => {
-    if (ref == null) return;
-    ref.geometry.attributes.characterPosition.needsUpdate = true;
-  }, [characterPositionArray, ref]);
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
+  }, [characterPositionArray, cellsDisplayRef]);
+
+  const [springs, api] = useSpring(() => ({
+    scale: [1, 1, 1],
+    config: { mass: 0.1, tension: 500, friction: 5, duration: 50 },
+  }));
 
   // This does all of the selection logic. Row/cell highlighting, etc.
   useFrame((state) => {
-    if (ref == null) return;
+    if (cellsDisplayRef == null || cellsRef == null) return;
     for (let id = 0; id < record.solution.length; id++) {
-      // We want to show the next sides as the cube is animating
-      const { x } = record.solution[id];
-      if (
-        isSpinning === true ||
-        cellBelongsOnSide(id, selectedSide) ||
-        cellBelongsOnSide(id, prevSelectedSide)
-      ) {
-        updateCubeSideDisplay(cubeSideDisplayArray, id, x);
-      } else {
-        // Zero means don't show a cube face
-        cubeSideDisplayArray[id * 2] = 0;
-      }
-      ref.geometry.attributes.cubeSideDisplay.needsUpdate = true;
-
+      updateVisibility(id, true);
       if (
         prevHover !== hovered ||
         prevSelected !== selected ||
@@ -671,10 +849,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setSelectedWordCell(undefined);
         setPrevTheme(theme);
 
-        (id === hovered || id === selected
-          ? tempColor.set(selectedColor)
-          : tempColor.set(defaultColor)
-        ).toArray(cellColorsArray, id * 3);
+        const { solution } = record;
+        const cell = solution[id];
+
+        if (cell.value !== '#' && id !== hovered && id !== selected) {
+          matcapIndexArray[id] = MatcapIndexEnum.default;
+        } else if (id === hovered) {
+          matcapIndexArray[id] = MatcapIndexEnum.adjacent;
+        }
 
         if (selected != null && isVisibleSide(selected) === true) {
           const { solution, wordSequences } = record;
@@ -697,15 +879,63 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               }
               range.forEach((index) => {
                 if (index === selected) return;
-                tempColor
-                  .set(adjacentColor)
-                  .toArray(cellColorsArray, index * 3);
+                matcapIndexArray[index] = MatcapIndexEnum.adjacent;
               });
             }
           }
         }
 
-        ref.geometry.attributes.cellColor.needsUpdate = true;
+        cellsRef.geometry.attributes.matcapIndex.needsUpdate = true;
+      }
+    }
+
+    if (selected != null) {
+      // Selected cell is no longer visible
+      updateVisibility(selected, false);
+
+      if (
+        lastPosition.current == null ||
+        cellPositions[selected] == null ||
+        lastPosition.current.equals(cellPositions[selected]) === false
+      ) {
+        const targetPosition = cellPositions[selected];
+        setLightPosition(targetPosition);
+
+        api.start({
+          to: async (next) => {
+            await next({ scale: [0.95, 0.95, 0.95] });
+            await next({
+              scale: [1, 1, 1],
+            });
+          },
+          onChange: function (state) {
+            cellsDisplayRef.getMatrixAt(selected, tempObject.matrix);
+
+            // Extract position, rotation, and scale from the original matrix
+            const position = new Vector3();
+            const quaternion = new Quaternion();
+            const scale = new Vector3();
+            tempObject.matrix.decompose(position, quaternion, scale);
+
+            // Update position
+            position.copy(targetPosition);
+
+            // Update scale
+            scale.set(
+              state.value.scale[0],
+              state.value.scale[1],
+              state.value.scale[2],
+            );
+
+            // Recompose the matrix with updated position and scale, but original rotation
+            tempObject.matrix.compose(position, quaternion, scale);
+
+            cellsDisplayRef.setMatrixAt(selected, tempObject.matrix);
+            cellsDisplayRef.instanceMatrix.needsUpdate = true;
+          },
+        });
+
+        lastPosition.current = targetPosition;
       }
     }
   });
@@ -801,7 +1031,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
 
       setSelected(nextSelected);
-      if (nextCell.side !== selectedSide) {
+      if (isSingleSided === false && nextCell.side !== selectedSide) {
         let numSides = 0;
         while (numSides < puzzle.data.length) {
           numSides++;
@@ -824,6 +1054,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     },
     [
       record,
+      isSingleSided,
       isVerticalOrientation,
       selectedSide,
       selectNextBlankEnabled,
@@ -857,7 +1088,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       ];
       if (
         selectedIndex != null &&
-        ref != null &&
+        cellsDisplayRef != null &&
         (coord != null || key === '' || key === 'BACKSPACE')
       ) {
         const x = key === '' || key === 'BACKSPACE' ? -1 : coord[0];
@@ -917,7 +1148,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       isVisibleSide,
       svgTextureAtlasLookup,
       characterTextureAtlasLookup,
-      ref,
+      cellsDisplayRef,
       updateCharacterPosition,
       record,
       showScaleAnimation,
@@ -950,31 +1181,51 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentKey]);
 
-  // Material setup
+  // Set up materials for the cube faces (letters, emojis, status, etc)
   const side0 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.one),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.one),
     [uniforms],
   );
   const side1 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.two),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.two),
     [uniforms],
   );
   const side2 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.three),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.three),
     [uniforms],
   );
   const side3 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.four),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.four),
     [uniforms],
   );
   const side4 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.five),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.five),
     [uniforms],
   );
   const side5 = useMemo(
-    () => createMaterial(uniforms, CubeSidesEnum.six),
+    () => createBasicMaterial(uniforms, CubeSidesEnum.six),
     [uniforms],
   );
+
+  const cellTextureAtlas = useTexture('/cell_matcap_512.png');
+  const blankTextureAtlas = useTexture('/blank_matcap_512.png');
+
+  const cellsUniforms: Uniforms = useMemo(
+    () => ({
+      cellTextureAtlas: { value: cellTextureAtlas },
+      blankTextureAtlas: { value: blankTextureAtlas },
+      adjacentColor: { value: hexToVector(selectedColor) },
+    }),
+    [blankTextureAtlas, cellTextureAtlas, selectedColor],
+  );
+
+  // Set up materials for the interactive cells
+  const cellsSide0 = useMemo(
+    () => createCellsMaterial(cellsUniforms, CubeSidesEnum.one),
+    [cellsUniforms],
+  );
+
+  // Set up materials for the blank cells
 
   const onPointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
@@ -1016,53 +1267,97 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   );
 
   return (
-    <instancedMesh
-      ref={setRef}
-      args={[undefined, undefined, size]}
-      onPointerMove={onPointerMove}
-      onPointerOut={onPointerOut}
-      onPointerDown={onPointerDown}
-      material={[side0, side1, side2, side3, side4, side5]}
-    >
-      <roundedBoxGeometry args={[1.05, 1.05, 1.05, 2, 0.08]}>
-        <instancedBufferAttribute
-          attach="attributes-characterPosition"
-          count={characterPositionArray.length}
-          itemSize={2}
-          array={characterPositionArray}
+    <>
+      <instancedMesh
+        ref={setCellsDisplayRef}
+        args={[undefined, undefined, size]}
+        renderOrder={1}
+        material={[side0, side1, side2, side3, side4, side5]}
+      >
+        <boxGeometry args={CUBE_SIZE}>
+          <instancedBufferAttribute
+            attach="attributes-characterPosition"
+            count={characterPositionArray.length}
+            itemSize={2}
+            array={characterPositionArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cellNumberPosition"
+            count={cellNumberPositionArray.length}
+            itemSize={2}
+            array={cellNumberPositionArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cubeSideDisplay"
+            count={cubeSideDisplayArray.length}
+            itemSize={2}
+            array={cubeSideDisplayArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cellValidation"
+            count={cellValidationArray.length}
+            itemSize={2}
+            array={cellValidationArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cellDraftMode"
+            count={cellDraftModeArray.length}
+            itemSize={2}
+            array={cellDraftModeArray}
+          />
+        </boxGeometry>
+      </instancedMesh>
+      <instancedMesh
+        ref={setCellsRef}
+        args={[undefined, undefined, size]}
+        onPointerMove={onPointerMove}
+        onPointerOut={onPointerOut}
+        onPointerDown={onPointerDown}
+        renderOrder={0}
+        material={cellsSide0}
+      >
+        <roundedBoxGeometry args={ROUNDED_CUBE_SIZE}>
+          <instancedBufferAttribute
+            attach="attributes-matcapIndex"
+            count={matcapIndexArray.length}
+            itemSize={1}
+            array={matcapIndexArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-visibility"
+            count={visibilityArray.length}
+            itemSize={1}
+            array={visibilityArray}
+          />
+        </roundedBoxGeometry>
+      </instancedMesh>
+      <PulsatingLight position={lightPosition} color={selectedColor} />
+      <animated.mesh
+        ref={selectedCellRef}
+        scale={springs.scale.to((x, y, z) => [x, y, z])}
+        position={lightPosition}
+      >
+        <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
+        <MeshTransmissionMaterial
+          color={selectedColor}
+          backside={true}
+          distortion={1}
+          chromaticAberration={1}
+          anisotropicBlur={1}
+          transmission={0.5}
+          backsideThickness={0.0}
+          thickness={0.2}
+          samples={4}
+          resolution={256}
+          roughness={0.33}
+          metalness={0.0}
+          anisotropy={1}
+          backsideResolution={256}
+          clearcoat={1}
+          clearcoatRoughness={0.1}
         />
-        <instancedBufferAttribute
-          attach="attributes-cellNumberPosition"
-          count={cellNumberPositionArray.length}
-          itemSize={2}
-          array={cellNumberPositionArray}
-        />
-        <instancedBufferAttribute
-          attach="attributes-cubeSideDisplay"
-          count={cubeSideDisplayArray.length}
-          itemSize={2}
-          array={cubeSideDisplayArray}
-        />
-        <instancedBufferAttribute
-          attach="attributes-cellColor"
-          count={cellColorsArray.length}
-          itemSize={3}
-          array={cellColorsArray}
-        />
-        <instancedBufferAttribute
-          attach="attributes-cellValidation"
-          count={cellValidationArray.length}
-          itemSize={2}
-          array={cellValidationArray}
-        />
-        <instancedBufferAttribute
-          attach="attributes-cellDraftMode"
-          count={cellDraftModeArray.length}
-          itemSize={2}
-          array={cellDraftModeArray}
-        />
-      </roundedBoxGeometry>
-    </instancedMesh>
+      </animated.mesh>
+    </>
   );
 };
 

@@ -39,9 +39,12 @@ const HeaderContainer = styled.div`
   padding: 0.75rem;
 `;
 
-const Container = styled.div`
+const Container = styled.div<{ $showBackground?: boolean }>`
   position: relative;
-  background-color: hsl(var(--background));
+  ${({ $showBackground = true }) =>
+    $showBackground
+      ? `background: hsl(var(--background));`
+      : 'background: transparent;'}
   width: 100vw;
   height: 100%;
   overflow-y: auto;
@@ -60,6 +63,7 @@ const ChildrenContainer = styled.div<{ $headerHeight: number }>`
   flex-direction: column;
   justify-items: stretch;
   max-width: var(--primary-app-width);
+  background: transparent;
   ${({ $headerHeight }) => `padding-top: ${$headerHeight}px;`}
 `;
 
@@ -202,6 +206,7 @@ export type MenuWrapperProps = {
   autocheckEnabled?: boolean;
   draftModeEnabled?: boolean;
   rotatingBoxProps?: RotatingBoxProps;
+  showBackground?: boolean;
   onAutocheckChanged?: (autocheckEnabled: boolean) => void;
   onDraftModeChanged?: (draftModeEnabled: boolean) => void;
   onSignInPressed: () => void;
@@ -216,6 +221,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
   autocheckEnabled,
   draftModeEnabled,
   rotatingBoxProps,
+  showBackground = true,
   onSignOutPressed,
   onSignInPressed,
   onAutocheckChanged,
@@ -292,7 +298,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
 
   return (
     <Main>
-      <Container>
+      <Container $showBackground={showBackground}>
         {height > 0 && (
           <ChildrenContainer $headerHeight={height}>
             {children}

@@ -45,8 +45,8 @@ export type Clue = {
 };
 
 export interface PuzzleData {
-  author: string;
-  copyright: string;
+  author?: string;
+  copyright?: string;
   dimensions: {
     width: number;
     height: number;
@@ -64,6 +64,20 @@ export interface SvgProps {
   height?: number;
   color?: string;
   className?: string;
+}
+
+export interface CrossmojiData {
+  title: string;
+  seed: number;
+  items: Record<string, string | null>;
+  grid: number[][];
+  metadata: Record<
+    string,
+    {
+      styles: string[];
+      related: number[];
+    }
+  >;
 }
 
 declare module '@react-three/fiber' {
@@ -84,6 +98,7 @@ export type PuzzleType = Omit<
   record: CharacterRecord;
   previewState: number;
   initialState?: string; // GZIP encoded YJS Uint8Array
+  type?: CrosscubeType;
 };
 
 export type CrosscubeType = 'moji' | 'mini' | 'cube' | 'mega';
