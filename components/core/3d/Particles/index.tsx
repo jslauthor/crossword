@@ -14,7 +14,7 @@ const Particles: React.FC<ParticlesProps> = ({ count, mouse }) => {
   const mesh = useRef<InstancedMesh | null>(null);
   const light = useRef<THREE.PointLight | null>(null);
   const { size, viewport } = useThree();
-  const aspect = size.width / viewport.width;
+  const aspect = useMemo(() => size.width / viewport.width, [size, viewport]);
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   // Generate some random positions, speed factors and timings
@@ -31,9 +31,11 @@ const Particles: React.FC<ParticlesProps> = ({ count, mouse }) => {
     }
     return temp;
   }, [count]);
+
   // The innards of this hook will run every frame
   useFrame((state) => {
     if (
+      count === 0 ||
       light.current == null ||
       mesh.current == null ||
       mouse.current == null
@@ -45,7 +47,7 @@ const Particles: React.FC<ParticlesProps> = ({ count, mouse }) => {
     light.current.position.set(
       mouse.current[0] / aspect,
       -mouse.current[1] / aspect,
-      0
+      0,
     );
     // Run through the randomized data to calculate some movement
     particles.forEach((particle, i) => {
@@ -74,7 +76,7 @@ const Particles: React.FC<ParticlesProps> = ({ count, mouse }) => {
         (particle.my / 10) * b +
           zFactor +
           Math.cos((t / 10) * factor) +
-          (Math.sin(t * 3) * factor) / 10
+          (Math.sin(t * 3) * factor) / 10,
       );
       dummy.scale.set(s, s, s);
       dummy.rotation.set(s * 5, s * 5, s * 5);
@@ -84,6 +86,11 @@ const Particles: React.FC<ParticlesProps> = ({ count, mouse }) => {
     });
     mesh.current.instanceMatrix.needsUpdate = true;
   });
+
+  if (count === 0) {
+    return null;
+  }
+
   return (
     <>
       <pointLight ref={light} distance={40} intensity={1} color="lightblue" />
