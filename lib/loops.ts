@@ -89,6 +89,7 @@ export const updateSubscription = async (
         },
         body: JSON.stringify({
           email,
+          subscribed: true,
           mailingLists: {
             clz6yziwv015y0ml1gf4b8beo: subscribed,
           },
