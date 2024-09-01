@@ -58,7 +58,7 @@ const Sparks: React.FC<SparksProps> = ({
         const pos = new THREE.Vector3(
           Math.sin(0) * radius * r(),
           Math.cos(0) * radius * r(),
-          0
+          0,
         );
         const points = new Array(30).fill(0).map((_, index) => {
           const angle = (index / 20) * Math.PI * 2;
@@ -67,8 +67,8 @@ const Sparks: React.FC<SparksProps> = ({
               new THREE.Vector3(
                 Math.sin(angle) * radius * r(),
                 Math.cos(angle) * radius * r(),
-                0
-              )
+                0,
+              ),
             )
             .clone();
         });
@@ -80,26 +80,31 @@ const Sparks: React.FC<SparksProps> = ({
           curve,
         };
       }),
-    [colors, count, radius]
+    [colors, count, radius],
   );
 
   const ref = useRef<THREE.Group | null>(null);
   const { size, viewport } = useThree();
-  const aspect = size.width / viewport.width;
+  const aspect = useMemo(() => size.width / viewport.width, [size, viewport]);
+
   useFrame(() => {
-    if (ref.current && mouse.current != null) {
+    if (count > 0 && ref.current && mouse.current != null) {
       ref.current.rotation.x = THREE.MathUtils.lerp(
         ref.current.rotation.x,
         0 + mouse.current[1] / aspect / 200,
-        0.1
+        0.1,
       );
       ref.current.rotation.y = THREE.MathUtils.lerp(
         ref.current.rotation.y,
         0 + mouse.current[0] / aspect / 400,
-        0.1
+        0.1,
       );
     }
   });
+
+  if (count === 0) {
+    return null;
+  }
 
   return (
     <group ref={ref}>
