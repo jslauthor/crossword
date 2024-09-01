@@ -251,6 +251,9 @@ export default createGlobalStyle/*css*/ `
     --blue500: #0E8AFF;
     --blue500-hsl: 209 100% 53%;
 
+    --orange500: #ff8800;
+    --orange500-hsl: 30 100% 50%;
+
     --blue-muted-400: #477AAA;
     --blue-muted-400-hsl: 209 41% 47%;
 
@@ -347,9 +350,9 @@ export default createGlobalStyle/*css*/ `
     --bg-success: 49, 100%, 16%;
 
     // Puzzle specific theme vars
-    ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--white);
-    ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--black);
-    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--light-grey900);
+    ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--true-black);
+    ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--light-grey-blue700);
+    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--orange500);
     ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--blue-muted-400);
     ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--purple-800);
     ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--blue500);
@@ -420,7 +423,7 @@ export default createGlobalStyle/*css*/ `
     // ONLY USE HEX COLORS HERE
     ${DEFAULT_FONT_COLOR_CSS_VARIABLE}: var(--true-black);
     ${DEFAULT_FONT_DRAFT_COLOR_CSS_VARIABLE}: var(--light-grey-blue700);    
-    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--true-white);
+    ${DEFAULT_COLOR_CSS_VARIABLE}: var(--orange500);
     ${DEFAULT_SELECTED_COLOR_CSS_VARIABLE}: var(--yellow400);
     ${DEFAULT_SELECTED_ADJACENT_COLOR_CSS_VARIABLE}: var(--light-grey-blue400);
     ${DEFAULT_CORRECT_COLOR_CSS_VARIABLE}: var(--blue500);
