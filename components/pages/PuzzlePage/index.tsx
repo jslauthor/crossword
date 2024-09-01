@@ -333,6 +333,7 @@ export default function Puzzle({
 
   const [fogNear, setFogNear] = useState(0);
   const [fogFar, setFogFar] = useState(100);
+  const [objectDepth, setsetObjectDepth] = useState(0);
 
   useEffect(() => {
     if (cameraRef == null || groupRef == null || isInitialized === false) {
@@ -350,6 +351,7 @@ export default function Puzzle({
     const fogNearDistance = (cameraZ - objectDepth / 2) * 1.02;
     const fogFarDistance = (cameraZ + objectDepth / 2) * 1.02;
 
+    setsetObjectDepth(objectDepth);
     setFogNear(fogNearDistance);
     setFogFar(fogFarDistance);
   }, [
@@ -543,7 +545,7 @@ export default function Puzzle({
     }
   }, [canvasWidth, introAnimation]);
 
-  const mouse = useRef([0, 0]);
+  const mouse = useRef([100, 3]);
   const toHex = useCallback(
     (color: number) => `#${color.toString(16).padStart(6, '0')}`,
     [],
@@ -869,9 +871,9 @@ export default function Puzzle({
                   updateCharacterPosition={updateCharacterPosition}
                   onLetterInput={onLetterInput}
                   onSelectClue={handleClueChange}
-                  fontColor={0x000000}
+                  fontColor={fontColor}
                   fontDraftColor={fontDraftColor}
-                  selectedColor={0xff8800}
+                  selectedColor={defaultColor}
                   errorColor={errorColor}
                   correctColor={correctColor}
                   onInitialize={onInitialize}
@@ -894,17 +896,12 @@ export default function Puzzle({
                 />
               </group>
             </SwipeControls>
-            {isPuzzleSolved === true && (
-              <>
-                <Sparks
-                  count={12}
-                  mouse={mouse}
-                  radius={1.5}
-                  colors={sparkColors}
-                />
-                <Particles count={2500} mouse={mouse} />
-              </>
-            )}
+            <Sparks
+              count={isPuzzleSolved === true ? 20 : 0}
+              mouse={mouse}
+              radius={objectDepth / 2}
+              colors={sparkColors}
+            />
           </Suspense>
         </Canvas>
         {isInitialized === true && (
