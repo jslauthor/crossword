@@ -30,13 +30,24 @@ export type SolutionCellNumber = {
 
 export type SolutionCell = BlankCell | SolutionCellValue;
 
-export type PuzzleCell =
-  | BlankCell
-  | StandardCell
-  | {
-      cell: StandardCell | BlankCell;
-      style: { barred: 'L' | 'T' | 'R' | 'B' };
-    };
+type BarDirection = 'T' | 'R' | 'B' | 'L';
+type BarredCombination =
+  | ''
+  | BarDirection
+  | `${BarDirection}${BarredCombination}`; // recursive any combination of barred directions
+
+export type CellStyle = {
+  barred?: BarredCombination;
+  shapebg?: 'circle';
+};
+
+export type PuzzleCellWithStyle = {
+  cell: StandardCell | BlankCell;
+  style?: CellStyle;
+  value?: string; // initial value
+};
+
+export type PuzzleCell = BlankCell | StandardCell | PuzzleCellWithStyle;
 
 export type Clue = {
   answer?: string;

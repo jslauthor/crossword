@@ -1,10 +1,12 @@
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import {
+  CellStyle,
   Clue,
   CrosscubeType,
   CrossmojiData,
   GameState,
   PuzzleCell,
+  PuzzleCellWithStyle,
   PuzzleData,
   SolutionCell,
   SolutionCellNumber,
@@ -33,6 +35,10 @@ export function isCellWithNumber(
   return (
     isSolutionCellValue(cell) && typeof cell.cell === 'number' && cell.cell > 0
   );
+}
+
+export function isCellWithStyle(cell: PuzzleCell): cell is PuzzleCellWithStyle {
+  return typeof cell === 'object' && 'style' in cell;
 }
 
 export type SequenceKeys = 'across' | 'down';
@@ -73,6 +79,7 @@ type SolutionType = {
   >; // [side]: word indices
   x: number;
   y: number;
+  style?: CellStyle;
 };
 
 // Invert the dictionary for faster lookups
@@ -152,28 +159,37 @@ export const updateAnswerIndex = (
 export const resequenceSolutionAndClues = (
   puzzleData: PuzzleData[],
 ): {
-  solution: SolutionCell[][];
+  solution: { cell: SolutionCell; style?: CellStyle }[][];
   across: Clue[];
   down: Clue[];
 } => {
-  const { width, height } = puzzleData[0].dimensions;
+  const { height } = puzzleData[0].dimensions;
 
   const original = puzzleData.map((p) => p.solution);
+  const puzzle = puzzleData.map((p) => p.puzzle);
   // Make a copy of the original so we can mutate it
   const solution: SolutionCell[][][] = JSON.parse(JSON.stringify(original));
   const acrossClues = puzzleData.map((p) => p.clues.Across);
   const downClues = puzzleData.map((p) => p.clues.Down);
 
   // Here we concatenate all of the rows into one array per row
-  const originalRowFirst: { cell: SolutionCell; side: number }[][] = [];
+  const originalRowFirst: {
+    cell: SolutionCell;
+    side: number;
+    style?: CellStyle;
+  }[][] = [];
   for (let x = 0; x < height; x++) {
     for (let y = 0; y < solution.length; y++) {
       originalRowFirst[x] = (originalRowFirst[x] ?? []).concat(
         solution[y][x]
           .slice(0, solution[y][x].length - 1)
-          .map((c: SolutionCell) => ({
+          .map((c: SolutionCell, index: number) => ({
             cell: c,
             side: y,
+            style:
+              isCellWithStyle(puzzle[y][x][index]) === true
+                ? (puzzle[y][x][index] as PuzzleCellWithStyle).style
+                : undefined,
           })),
       );
     }
@@ -217,7 +233,9 @@ export const resequenceSolutionAndClues = (
   }
 
   return {
-    solution: originalRowFirst.map((i) => i.map((i) => i.cell)),
+    solution: originalRowFirst.map((i) =>
+      i.map((i) => ({ cell: i.cell, style: i.style })),
+    ),
     across,
     down,
   };
@@ -242,18 +260,21 @@ export const getCharacterRecord = (
   // easily determine the words and sequences
   const rowFirstOrderFlat = resequenced
     .map((i) =>
-      i.reduce((acc, value, index) => {
-        if (index === i.length - 1) {
-          acc.push(value);
-          acc.push(i[0]);
-        } else if (index !== 0 && index % (width - 1) === 0) {
-          acc.push(value);
-          acc.push(value);
-        } else {
-          acc.push(value);
-        }
-        return acc;
-      }, [] as SolutionCell[]),
+      i.reduce(
+        (acc, value, index) => {
+          if (index === i.length - 1) {
+            acc.push(value);
+            acc.push(i[0]);
+          } else if (index !== 0 && index % (width - 1) === 0) {
+            acc.push(value);
+            acc.push(value);
+          } else {
+            acc.push(value);
+          }
+          return acc;
+        },
+        [] as { cell: SolutionCell; style?: CellStyle }[],
+      ),
     )
     .flatMap((i) => i);
 
@@ -266,7 +287,7 @@ export const getCharacterRecord = (
       // so it matches the the rendered cross cube
       const side = Math.floor(y / width);
       const index = x * rowLength + y;
-      const cell = rowFirstOrderFlat[index];
+      const { cell, style } = rowFirstOrderFlat[index];
       let finalIndex = index - side;
       // The final column needs to start from the beginning
       if (y === rowLength - 1) {
@@ -305,6 +326,7 @@ export const getCharacterRecord = (
               },
         x: -1, // we will set this later
         y: x,
+        style,
       };
     }
   }
@@ -316,7 +338,7 @@ export const getCharacterRecord = (
     const side = Math.floor(x / width);
     for (let y = 0; y < height; y++) {
       const index = x + rowLength * y;
-      const cell = rowFirstOrderFlat[index];
+      const { cell, style } = rowFirstOrderFlat[index];
       let finalIndex = index - side;
       // The final column needs to start from the beginning
       if (x === rowLength - 1) {
@@ -354,6 +376,7 @@ export const getCharacterRecord = (
                   downSequenceIndex: currentWord,
                 },
               },
+        // style,
       };
     }
   }

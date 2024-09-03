@@ -59,7 +59,17 @@ export enum CubeSidesEnum {
   six = 1 << 5,
 }
 
+export enum CellStyleEnum {
+  None = 0,
+  Circle = 1 << 0,
+  LeftBar = 1 << 1,
+  RightBar = 1 << 2,
+  TopBar = 1 << 3,
+  BottomBar = 1 << 4,
+}
+
 const vertexShader = `
+  attribute float cellStyle;
   attribute vec2 cellValidation;
   attribute vec2 cellDraftMode;
   attribute vec2 characterPosition;
@@ -75,6 +85,7 @@ const vertexShader = `
 
   varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
+  varying float vCellStyle;
 
   void main()
   {
@@ -84,6 +95,7 @@ const vertexShader = `
       vCharacterPosition = characterPosition;
       vCellNumberPosition = cellNumberPosition;
       vCubeSideDisplay = cubeSideDisplay;
+      vCellStyle = cellStyle;
 
       vWorldNormal = normalize(mat3(modelViewMatrix * instanceMatrix) * normal);
       vWorldPosition = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
@@ -122,6 +134,8 @@ const fragmentShader = `
 
   varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
+  
+  varying float vCellStyle;
 
   vec4 applyColorChange(vec4 color, vec4 newColor) {
     return vec4(newColor.rgb, color.a); // Change white to the target color
@@ -164,6 +178,22 @@ const fragmentShader = `
 
     // Show character when bitflag is on for the side
     if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
+
+      // Check if the Circle style is applied
+      if ((uint(vCellStyle) & 1u) == 1u) {
+        vec2 center = vec2(0.5, 0.43);
+        float distanceFromCenter = length(vUv - center);
+        float circleRadius = 0.35;
+        float circleEdgeWidth = 0.05;
+        
+        // Smooth step for anti-aliasing
+        float smoothEdge = smoothstep(circleRadius - circleEdgeWidth - 0.01, circleRadius - circleEdgeWidth, distanceFromCenter) -
+                           smoothstep(circleRadius - 0.01, circleRadius, distanceFromCenter);
+        
+        vec4 circleColor = vec4(fontColor.rgb, smoothEdge);
+        finalColor = mix(finalColor, circleColor, circleColor.a);
+      }
+
       // Draw the letter or emoji
       // A coord of -1, -1 means do not paint
       if (vCharacterPosition.x >= 0.0 && vCharacterPosition.y >= 0.0) {
@@ -627,6 +657,17 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [size],
   );
 
+  const cellStyleArray = useMemo(() => {
+    const arr = Uint8Array.from(new Array(size).fill(CellStyleEnum.None));
+    for (let x = 0; x < puzzle.record.solution.length; x++) {
+      const { style } = puzzle.record.solution[x];
+      if (style?.shapebg) {
+        arr[x] = CellStyleEnum.Circle;
+      }
+    }
+    return arr;
+  }, [size, puzzle.record.solution]);
+
   const matcapIndexArray = useMemo(
     () => Float32Array.from(new Array(size).fill(0)),
     [size],
@@ -646,6 +687,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     },
     [cellsRef, visibilityArray],
   );
+
+  useEffect(() => {
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.cellStyle.needsUpdate = true;
+  }, [cellStyleArray, cellsDisplayRef]);
 
   useEffect(() => {
     if (cellsDisplayRef == null) return;
@@ -793,6 +839,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
       setCellPositions(positions);
 
+      cellsDisplayRef.geometry.attributes.cellStyle.needsUpdate = true;
       cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
       cellsDisplayRef.geometry.attributes.cellNumberPosition.needsUpdate = true;
       cellsDisplayRef.geometry.attributes.cubeSideDisplay.needsUpdate = true;
@@ -1304,6 +1351,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             count={cellDraftModeArray.length}
             itemSize={2}
             array={cellDraftModeArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cellStyle"
+            count={cellStyleArray.length}
+            itemSize={1}
+            array={cellStyleArray}
           />
         </boxGeometry>
       </instancedMesh>
