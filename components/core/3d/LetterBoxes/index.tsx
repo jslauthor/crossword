@@ -278,11 +278,11 @@ const fragmentShader = `
             float cellNumberMask = smoothstep(cellNumberRadius + 0.01, cellNumberRadius - 0.01, distanceFromCellNumberCenter);
 
             // Blend the cell number with a semi-transparent background
-            vec4 cellNumberBg = vec4(0.0, 0.0, 0.0, 0.5); // Semi-transparent black background
+            vec4 cellNumberBg = vec4(0.0, 0.0, 0.0, 0.0); // Semi-transparent black background
             vec4 cellNumberWithBg = mix(cellNumberBg, Cb, Cb.a);
 
             // Apply the cell number and its background, making the area around it transparent
-            finalColor = mix(vec4(0.0), Cb, cellNumberMask);
+            finalColor = mix(vec4(0.0), cellNumberWithBg, cellNumberMask);
           }
 
         }
