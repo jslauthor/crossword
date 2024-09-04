@@ -668,6 +668,11 @@ export const createBlankPuzzleData = (
 });
 
 export function emojiToUnicode(emoji: string): string {
+  // If the emoji is already a unicode, return it
+  if (emoji.charAt(0).toLowerCase() === 'u') {
+    return emoji;
+  }
+
   const codePoints = Array.from(emoji).map(
     (char) => char.codePointAt(0)?.toString(16).padStart(4, '0') || '',
   );
