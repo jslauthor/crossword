@@ -181,10 +181,10 @@ const fragmentShader = `
 
       // Check if the Circle style is applied
       if ((uint(vCellStyle) & 1u) == 1u) {
-        vec2 center = vec2(0.5, 0.43);
+        vec2 center = vec2(0.5, 0.5);
         float distanceFromCenter = length(vUv - center);
-        float circleRadius = 0.35;
-        float circleEdgeWidth = 0.05;
+        float circleRadius = 0.45;
+        float circleEdgeWidth = 0.035;
         
         // Smooth step for anti-aliasing
         float smoothEdge = smoothstep(circleRadius - circleEdgeWidth - 0.01, circleRadius - circleEdgeWidth, distanceFromCenter) -
@@ -261,14 +261,30 @@ const fragmentShader = `
 
         // Check if the UV coordinates are within the [0, 1] bounds to avoid texture wrapping
         if (scaledUV.x >= 0.0 && scaledUV.x <= 1.0 && scaledUV.y >= 0.0 && scaledUV.y <= 1.0) {
-            vec4 Cb = texture2D(numberTexture, coord);
+          vec4 Cb = texture2D(numberTexture, coord);
 
-            // Apply color change to the cell number texture
-            Cb = applyColorChange(Cb, fontColor);
+          // Apply color change to the cell number texture
+          Cb = applyColorChange(Cb, fontColor);
 
-            if (Cb.a > 0.2) { // gets rid of a nasty white border
-              finalColor = Cb; // blending equation
-            }
+          if (Cb.a > 0.2) { // gets rid of a nasty white border
+            finalColor = Cb; // blending equation
+          } else {
+            // Create a circular background for the cell number
+            float cellNumberRadius = 0.15;
+            vec2 cellNumberCenter = vec2(0.15, 0.85); // Adjust this to position the circle
+            float distanceFromCellNumberCenter = length(adjustedUV - cellNumberCenter);
+            
+            // Create a smooth circular mask
+            float cellNumberMask = smoothstep(cellNumberRadius + 0.01, cellNumberRadius - 0.01, distanceFromCellNumberCenter);
+
+            // Blend the cell number with a semi-transparent background
+            vec4 cellNumberBg = vec4(0.0, 0.0, 0.0, 0.5); // Semi-transparent black background
+            vec4 cellNumberWithBg = mix(cellNumberBg, Cb, Cb.a);
+
+            // Apply the cell number and its background, making the area around it transparent
+            finalColor = mix(vec4(0.0), Cb, cellNumberMask);
+          }
+
         }
       }
     }
