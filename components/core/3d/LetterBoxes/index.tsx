@@ -193,7 +193,7 @@ const fragmentShader = `
 
         // Draw the background rectangle
         // Hard-coded size: 0.3 x 0.3
-        if (scaledUV.x >= -0.1 && scaledUV.x <= 0.6 && scaledUV.y >= 0.45 && scaledUV.y <= 1.1) {
+        if (scaledUV.x >= -0.1 && scaledUV.x <= 0.6 && scaledUV.y >= 0.45 && scaledUV.y <= 1.05) {
           isDrawingCellNumber = true;
         }
 
