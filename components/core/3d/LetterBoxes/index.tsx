@@ -173,14 +173,44 @@ const fragmentShader = `
     }
 
     vec4 finalColor = vec4(0.0, 0.0, 0.0, 0.0);
+    bool isDrawingCellNumber = false;
     
     // Here we paint all of our textures
 
     // Show character when bitflag is on for the side
     if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
 
+      // Draw the cell number
+      // A coord of -1, -1 means do not paint
+      if (vCellNumberPosition.x >= 0.0 && vCellNumberPosition.y >= 0.0) {
+        // 17.0 is the number of items per line on the texture map
+        vec2 position = vec2(vCellNumberPosition.x/17.0, -(vCellNumberPosition.y/17.0 + 1.0/17.0));
+        vec2 size = vec2(1.0 / 17.0, 1.0 / 17.0);
+
+        // Adjust UV coordinates to map the texture to the upper-left corner
+        vec2 scaledUV = adjustedUV * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
+        vec2 coord = position + size * scaledUV;
+
+        // Draw the background rectangle
+        // Hard-coded size: 0.3 x 0.3
+        if (scaledUV.x >= -0.1 && scaledUV.x <= 0.6 && scaledUV.y >= 0.45 && scaledUV.y <= 1.1) {
+          isDrawingCellNumber = true;
+        }
+
+        // Check if the UV coordinates are within the [0, 1] bounds to avoid texture wrapping
+        if (scaledUV.x >= 0.0 && scaledUV.x <= 1.0 && scaledUV.y >= 0.0 && scaledUV.y <= 1.0) {
+          vec4 Cb = texture2D(numberTexture, coord);
+          // Apply color change to the cell number texture
+          Cb = applyColorChange(Cb, fontColor);
+          if (Cb.a > 0.2) { // gets rid of a nasty white border
+            finalColor = Cb; // blending equation
+          }
+        }
+      }
+
       // Check if the Circle style is applied
-      if ((uint(vCellStyle) & 1u) == 1u) {
+      // Do not draw it if we are drawing the cell number
+      if ((uint(vCellStyle) & 1u) == 1u && !isDrawingCellNumber) {
         vec2 center = vec2(0.5, 0.5);
         float distanceFromCenter = length(vUv - center);
         float circleRadius = 0.45;
@@ -244,47 +274,6 @@ const fragmentShader = `
 
         if (Ca.a > 0.4) { // gets rid of a nasty white border
           finalColor = Ca; 
-        }
-      }
-
-      // Draw the cell number
-      // A coord of -1, -1 means do not paint
-      if (vCellNumberPosition.x >= 0.0 && vCellNumberPosition.y >= 0.0) {
-        // 17.0 is the number of items per line on the texture map
-        vec2 position = vec2(vCellNumberPosition.x/17.0, -(vCellNumberPosition.y/17.0 + 1.0/17.0));
-        vec2 size = vec2(1.0 / 17.0, 1.0 / 17.0);
-
-        // Adjust UV coordinates to map the texture to the upper-left corner
-        vec2 scaledUV = adjustedUV * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
-        vec2 offset = vec2(0.0, 0.0); // No additional offset needed for upper-left
-        vec2 coord = position + size * (scaledUV + offset);
-
-        // Check if the UV coordinates are within the [0, 1] bounds to avoid texture wrapping
-        if (scaledUV.x >= 0.0 && scaledUV.x <= 1.0 && scaledUV.y >= 0.0 && scaledUV.y <= 1.0) {
-          vec4 Cb = texture2D(numberTexture, coord);
-
-          // Apply color change to the cell number texture
-          Cb = applyColorChange(Cb, fontColor);
-
-          if (Cb.a > 0.2) { // gets rid of a nasty white border
-            finalColor = Cb; // blending equation
-          } else {
-            // Create a circular background for the cell number
-            float cellNumberRadius = 0.15;
-            vec2 cellNumberCenter = vec2(0.15, 0.85); // Adjust this to position the circle
-            float distanceFromCellNumberCenter = length(adjustedUV - cellNumberCenter);
-            
-            // Create a smooth circular mask
-            float cellNumberMask = smoothstep(cellNumberRadius + 0.01, cellNumberRadius - 0.01, distanceFromCellNumberCenter);
-
-            // Blend the cell number with a semi-transparent background
-            vec4 cellNumberBg = vec4(0.0, 0.0, 0.0, 0.0); // Semi-transparent black background
-            vec4 cellNumberWithBg = mix(cellNumberBg, Cb, Cb.a);
-
-            // Apply the cell number and its background, making the area around it transparent
-            finalColor = mix(vec4(0.0), cellNumberWithBg, cellNumberMask);
-          }
-
         }
       }
     }

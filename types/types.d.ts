@@ -82,7 +82,7 @@ export interface CrossmojiData {
   seed: number;
   items: Record<string, string | null>;
   grid: number[][];
-  metadata: Record<
+  metadata?: Record<
     string,
     {
       styles: string[];

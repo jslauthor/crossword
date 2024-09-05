@@ -743,6 +743,7 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
   }
 
   let cellNumber = 0;
+  let index = 0;
   const puzzle: PuzzleCell[][] = [];
   const solution: SolutionCell[][] = [];
   const clues: Clue[] = [];
@@ -756,7 +757,17 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
       }
       if (cell === 1) {
         cellNumber++;
-        puzzle[x].push(cellNumber);
+        const style: CellStyle | undefined = data.metadata?.[
+          index
+        ]?.styles.includes('circled')
+          ? {
+              shapebg: 'circle',
+            }
+          : undefined;
+        puzzle[x].push({
+          cell: cellNumber,
+          style,
+        });
         const [emoji, clue] = itemsWithClues[cellNumber - 1];
         const unicode = emojiToUnicode(emoji);
         const value = {
@@ -793,6 +804,7 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
           fourthSidePuzzleData.solution[x][row.length - 1] = '#';
         }
       }
+      index++;
     }),
   );
 
