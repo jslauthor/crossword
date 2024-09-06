@@ -193,8 +193,33 @@ const fragmentShader = `
 
         // Draw the background rectangle
         // Hard-coded size: 0.3 x 0.3
-        if (scaledUV.x >= -0.1 && scaledUV.x <= 0.6 && scaledUV.y >= 0.45 && scaledUV.y <= 1.05) {
-          isDrawingCellNumber = true;
+        if (scaledUV.x >= -0.1 && scaledUV.x <= 1.0 && scaledUV.y >= 0.45 && scaledUV.y <= 1.05) {
+          // Check for colored pixels near transparent ones
+          bool hasColoredPixel = false;
+          bool hasTransparentPixel = false;
+
+          // This searches for a colored pixel near a transparent one and tells us not to draw
+          // anything behind it (creates a transparent border around the cell number)
+          for (float dx = -1.75; dx <= 1.75; dx += 1.0) {
+            for (float dy = -1.75; dy <= 1.75; dy += 1.0) {
+              vec2 sampleCoord = coord + vec2(dx, dy) / 17.0 / 17.0;
+              vec4 sampleColor = texture2D(numberTexture, sampleCoord);
+              
+              if (sampleColor.a > 0.1) {
+                hasColoredPixel = true;
+              } else {
+                hasTransparentPixel = true;
+              }
+              
+              if (hasColoredPixel && hasTransparentPixel) {
+                isDrawingCellNumber = true;
+                hasColoredPixel = false;
+                hasTransparentPixel = false;
+                break;
+              }
+            }
+            if (isDrawingCellNumber) break;
+          }
         }
 
         // Check if the UV coordinates are within the [0, 1] bounds to avoid texture wrapping
