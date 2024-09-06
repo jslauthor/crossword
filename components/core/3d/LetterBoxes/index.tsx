@@ -174,6 +174,9 @@ const fragmentShader = `
 
     vec4 finalColor = vec4(0.0, 0.0, 0.0, 0.0);
     bool isDrawingCellNumber = false;
+
+    // Bitflag 1 is the circle
+    bool shouldDrawCircle = (uint(vCellStyle) & 1u) == 1u;
     
     // Here we paint all of our textures
 
@@ -191,9 +194,8 @@ const fragmentShader = `
         vec2 scaledUV = adjustedUV * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
         vec2 coord = position + size * scaledUV;
 
-        // Draw the background rectangle
-        // Hard-coded size: 0.3 x 0.3
-        if (scaledUV.x >= -0.1 && scaledUV.x <= 1.0 && scaledUV.y >= 0.45 && scaledUV.y <= 1.05) {
+        // Check if we are drawing the circle and remove the cell number background from it
+        if (shouldDrawCircle && scaledUV.x >= -0.1 && scaledUV.x <= 1.0 && scaledUV.y >= 0.45 && scaledUV.y <= 1.05) {
           // Check for colored pixels near transparent ones
           bool hasColoredPixel = false;
           bool hasTransparentPixel = false;
@@ -235,7 +237,7 @@ const fragmentShader = `
 
       // Check if the Circle style is applied
       // Do not draw it if we are drawing the cell number
-      if ((uint(vCellStyle) & 1u) == 1u && !isDrawingCellNumber) {
+      if (shouldDrawCircle && !isDrawingCellNumber) {
         vec2 center = vec2(0.5, 0.5);
         float distanceFromCenter = length(vUv - center);
         float circleRadius = 0.45;
