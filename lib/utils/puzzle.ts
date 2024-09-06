@@ -376,7 +376,7 @@ export const getCharacterRecord = (
                   downSequenceIndex: currentWord,
                 },
               },
-        // style,
+        style: style ?? solution[finalIndex]?.style,
       };
     }
   }
@@ -764,10 +764,11 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
               shapebg: 'circle',
             }
           : undefined;
-        puzzle[x].push({
+        const cellValue = {
           cell: cellNumber,
           style,
-        });
+        };
+        puzzle[x].push(cellValue);
         const [emoji, clue] = itemsWithClues[cellNumber - 1];
         const unicode = emojiToUnicode(emoji);
         const value = {
@@ -784,11 +785,11 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
 
         // Store the last column values in the solution
         if (y === row.length - 1) {
-          secondSidePuzzleData.puzzle[x][0] = cellNumber;
+          secondSidePuzzleData.puzzle[x][0] = cellValue;
           secondSidePuzzleData.solution[x][0] = value;
         }
         if (y === 0) {
-          fourthSidePuzzleData.puzzle[x][row.length - 1] = cellNumber;
+          fourthSidePuzzleData.puzzle[x][row.length - 1] = cellValue;
           fourthSidePuzzleData.solution[x][row.length - 1] = value;
         }
       } else {
