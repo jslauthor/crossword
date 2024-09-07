@@ -15,6 +15,7 @@ import {
 import memoizeOne from 'memoize-one';
 import { PuzzleType } from 'types/types';
 import * as Y from 'yjs';
+import { constrain } from './math';
 
 export const GAME_STATE_KEY = 'GAME_STATE_KEY';
 export const CHARACTER_POSITIONS_KEY = 'characterPositions';
@@ -183,14 +184,28 @@ export const resequenceSolutionAndClues = (
       originalRowFirst[x] = (originalRowFirst[x] ?? []).concat(
         solution[y][x]
           .slice(0, solution[y][x].length - 1)
-          .map((c: SolutionCell, index: number) => ({
-            cell: c,
-            side: y,
-            style:
+          .map((c: SolutionCell, index: number) => {
+            let style: CellStyle | undefined =
               isCellWithStyle(puzzle[y][x][index]) === true
                 ? (puzzle[y][x][index] as PuzzleCellWithStyle).style
-                : undefined,
-          })),
+                : undefined;
+
+            // If the correlative cell from the other side has a style, use it if the current cell does not
+            if (index === 0 && style == null) {
+              const prevSideIndex = constrain(0, puzzle.length - 1, y - 1);
+              const prevSide = puzzle[prevSideIndex][x];
+              const lastCellPrevSide = prevSide[prevSide.length - 1];
+              if (isCellWithStyle(lastCellPrevSide) === true) {
+                style = (lastCellPrevSide as PuzzleCellWithStyle).style;
+              }
+            }
+
+            return {
+              cell: c,
+              side: y,
+              style,
+            };
+          }),
       );
     }
     // Nice debug output showing all of the rows
