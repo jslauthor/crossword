@@ -1,10 +1,12 @@
 import { ProgressEnum } from 'components/svg/PreviewCube';
 import {
+  CellStyle,
   Clue,
   CrosscubeType,
   CrossmojiData,
   GameState,
   PuzzleCell,
+  PuzzleCellWithStyle,
   PuzzleData,
   SolutionCell,
   SolutionCellNumber,
@@ -13,6 +15,7 @@ import {
 import memoizeOne from 'memoize-one';
 import { PuzzleType } from 'types/types';
 import * as Y from 'yjs';
+import { constrain } from './math';
 
 export const GAME_STATE_KEY = 'GAME_STATE_KEY';
 export const CHARACTER_POSITIONS_KEY = 'characterPositions';
@@ -33,6 +36,10 @@ export function isCellWithNumber(
   return (
     isSolutionCellValue(cell) && typeof cell.cell === 'number' && cell.cell > 0
   );
+}
+
+export function isCellWithStyle(cell: PuzzleCell): cell is PuzzleCellWithStyle {
+  return typeof cell === 'object' && 'style' in cell;
 }
 
 export type SequenceKeys = 'across' | 'down';
@@ -73,6 +80,7 @@ type SolutionType = {
   >; // [side]: word indices
   x: number;
   y: number;
+  style?: CellStyle;
 };
 
 // Invert the dictionary for faster lookups
@@ -152,29 +160,52 @@ export const updateAnswerIndex = (
 export const resequenceSolutionAndClues = (
   puzzleData: PuzzleData[],
 ): {
-  solution: SolutionCell[][];
+  solution: { cell: SolutionCell; style?: CellStyle }[][];
   across: Clue[];
   down: Clue[];
 } => {
-  const { width, height } = puzzleData[0].dimensions;
+  const { height } = puzzleData[0].dimensions;
 
   const original = puzzleData.map((p) => p.solution);
+  const puzzle = puzzleData.map((p) => p.puzzle);
   // Make a copy of the original so we can mutate it
   const solution: SolutionCell[][][] = JSON.parse(JSON.stringify(original));
   const acrossClues = puzzleData.map((p) => p.clues.Across);
   const downClues = puzzleData.map((p) => p.clues.Down);
 
   // Here we concatenate all of the rows into one array per row
-  const originalRowFirst: { cell: SolutionCell; side: number }[][] = [];
+  const originalRowFirst: {
+    cell: SolutionCell;
+    side: number;
+    style?: CellStyle;
+  }[][] = [];
   for (let x = 0; x < height; x++) {
     for (let y = 0; y < solution.length; y++) {
       originalRowFirst[x] = (originalRowFirst[x] ?? []).concat(
         solution[y][x]
           .slice(0, solution[y][x].length - 1)
-          .map((c: SolutionCell) => ({
-            cell: c,
-            side: y,
-          })),
+          .map((c: SolutionCell, index: number) => {
+            let style: CellStyle | undefined =
+              isCellWithStyle(puzzle[y][x][index]) === true
+                ? (puzzle[y][x][index] as PuzzleCellWithStyle).style
+                : undefined;
+
+            // If the correlative cell from the other side has a style, use it if the current cell does not
+            if (index === 0 && style == null) {
+              const prevSideIndex = constrain(0, puzzle.length - 1, y - 1);
+              const prevSide = puzzle[prevSideIndex][x];
+              const lastCellPrevSide = prevSide[prevSide.length - 1];
+              if (isCellWithStyle(lastCellPrevSide) === true) {
+                style = (lastCellPrevSide as PuzzleCellWithStyle).style;
+              }
+            }
+
+            return {
+              cell: c,
+              side: y,
+              style,
+            };
+          }),
       );
     }
     // Nice debug output showing all of the rows
@@ -217,7 +248,9 @@ export const resequenceSolutionAndClues = (
   }
 
   return {
-    solution: originalRowFirst.map((i) => i.map((i) => i.cell)),
+    solution: originalRowFirst.map((i) =>
+      i.map((i) => ({ cell: i.cell, style: i.style })),
+    ),
     across,
     down,
   };
@@ -242,18 +275,21 @@ export const getCharacterRecord = (
   // easily determine the words and sequences
   const rowFirstOrderFlat = resequenced
     .map((i) =>
-      i.reduce((acc, value, index) => {
-        if (index === i.length - 1) {
-          acc.push(value);
-          acc.push(i[0]);
-        } else if (index !== 0 && index % (width - 1) === 0) {
-          acc.push(value);
-          acc.push(value);
-        } else {
-          acc.push(value);
-        }
-        return acc;
-      }, [] as SolutionCell[]),
+      i.reduce(
+        (acc, value, index) => {
+          if (index === i.length - 1) {
+            acc.push(value);
+            acc.push(i[0]);
+          } else if (index !== 0 && index % (width - 1) === 0) {
+            acc.push(value);
+            acc.push(value);
+          } else {
+            acc.push(value);
+          }
+          return acc;
+        },
+        [] as { cell: SolutionCell; style?: CellStyle }[],
+      ),
     )
     .flatMap((i) => i);
 
@@ -266,7 +302,7 @@ export const getCharacterRecord = (
       // so it matches the the rendered cross cube
       const side = Math.floor(y / width);
       const index = x * rowLength + y;
-      const cell = rowFirstOrderFlat[index];
+      const { cell, style } = rowFirstOrderFlat[index];
       let finalIndex = index - side;
       // The final column needs to start from the beginning
       if (y === rowLength - 1) {
@@ -305,6 +341,7 @@ export const getCharacterRecord = (
               },
         x: -1, // we will set this later
         y: x,
+        style,
       };
     }
   }
@@ -316,7 +353,7 @@ export const getCharacterRecord = (
     const side = Math.floor(x / width);
     for (let y = 0; y < height; y++) {
       const index = x + rowLength * y;
-      const cell = rowFirstOrderFlat[index];
+      const { cell, style } = rowFirstOrderFlat[index];
       let finalIndex = index - side;
       // The final column needs to start from the beginning
       if (x === rowLength - 1) {
@@ -354,6 +391,7 @@ export const getCharacterRecord = (
                   downSequenceIndex: currentWord,
                 },
               },
+        style: style ?? solution[finalIndex]?.style,
       };
     }
   }
@@ -720,6 +758,7 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
   }
 
   let cellNumber = 0;
+  let index = 0;
   const puzzle: PuzzleCell[][] = [];
   const solution: SolutionCell[][] = [];
   const clues: Clue[] = [];
@@ -733,7 +772,18 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
       }
       if (cell === 1) {
         cellNumber++;
-        puzzle[x].push(cellNumber);
+        const style: CellStyle | undefined = data.metadata?.[
+          index
+        ]?.styles.includes('circled')
+          ? {
+              shapebg: 'circle',
+            }
+          : undefined;
+        const cellValue = {
+          cell: cellNumber,
+          style,
+        };
+        puzzle[x].push(cellValue);
         const [emoji, clue] = itemsWithClues[cellNumber - 1];
         const unicode = emojiToUnicode(emoji);
         const value = {
@@ -750,11 +800,11 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
 
         // Store the last column values in the solution
         if (y === row.length - 1) {
-          secondSidePuzzleData.puzzle[x][0] = cellNumber;
+          secondSidePuzzleData.puzzle[x][0] = cellValue;
           secondSidePuzzleData.solution[x][0] = value;
         }
         if (y === 0) {
-          fourthSidePuzzleData.puzzle[x][row.length - 1] = cellNumber;
+          fourthSidePuzzleData.puzzle[x][row.length - 1] = cellValue;
           fourthSidePuzzleData.solution[x][row.length - 1] = value;
         }
       } else {
@@ -770,6 +820,7 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
           fourthSidePuzzleData.solution[x][row.length - 1] = '#';
         }
       }
+      index++;
     }),
   );
 
