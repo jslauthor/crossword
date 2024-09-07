@@ -59,7 +59,17 @@ export enum CubeSidesEnum {
   six = 1 << 5,
 }
 
+export enum CellStyleEnum {
+  None = 0,
+  Circle = 1 << 0,
+  LeftBar = 1 << 1,
+  RightBar = 1 << 2,
+  TopBar = 1 << 3,
+  BottomBar = 1 << 4,
+}
+
 const vertexShader = `
+  attribute float cellStyle;
   attribute vec2 cellValidation;
   attribute vec2 cellDraftMode;
   attribute vec2 characterPosition;
@@ -75,6 +85,7 @@ const vertexShader = `
 
   varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
+  varying float vCellStyle;
 
   void main()
   {
@@ -84,6 +95,7 @@ const vertexShader = `
       vCharacterPosition = characterPosition;
       vCellNumberPosition = cellNumberPosition;
       vCubeSideDisplay = cubeSideDisplay;
+      vCellStyle = cellStyle;
 
       vWorldNormal = normalize(mat3(modelViewMatrix * instanceMatrix) * normal);
       vWorldPosition = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
@@ -122,6 +134,8 @@ const fragmentShader = `
 
   varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
+  
+  varying float vCellStyle;
 
   vec4 applyColorChange(vec4 color, vec4 newColor) {
     return vec4(newColor.rgb, color.a); // Change white to the target color
@@ -159,11 +173,84 @@ const fragmentShader = `
     }
 
     vec4 finalColor = vec4(0.0, 0.0, 0.0, 0.0);
+    bool isDrawingCellNumber = false;
+
+    // Bitflag 1 is the circle
+    bool shouldDrawCircle = (uint(vCellStyle) & 1u) == 1u;
     
     // Here we paint all of our textures
 
     // Show character when bitflag is on for the side
     if ((uint(vCubeSideDisplay.x) & sideIndex) == sideIndex) {
+
+      // Draw the cell number
+      // A coord of -1, -1 means do not paint
+      if (vCellNumberPosition.x >= 0.0 && vCellNumberPosition.y >= 0.0) {
+        // 17.0 is the number of items per line on the texture map
+        vec2 position = vec2(vCellNumberPosition.x/17.0, -(vCellNumberPosition.y/17.0 + 1.0/17.0));
+        vec2 size = vec2(1.0 / 17.0, 1.0 / 17.0);
+
+        // Adjust UV coordinates to map the texture to the upper-left corner
+        vec2 scaledUV = adjustedUV * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
+        vec2 coord = position + size * scaledUV;
+
+        // Check if we are drawing the circle and remove the cell number background from it
+        if (shouldDrawCircle && scaledUV.x >= -0.1 && scaledUV.x <= 1.0 && scaledUV.y >= 0.45 && scaledUV.y <= 1.05) {
+          // Check for colored pixels near transparent ones
+          bool hasColoredPixel = false;
+          bool hasTransparentPixel = false;
+
+          // This searches for a colored pixel near a transparent one and tells us not to draw
+          // anything behind it (creates a transparent border around the cell number)
+          for (float dx = -1.75; dx <= 1.75; dx += 1.0) {
+            for (float dy = -1.75; dy <= 1.75; dy += 1.0) {
+              vec2 sampleCoord = coord + vec2(dx, dy) / 17.0 / 17.0;
+              vec4 sampleColor = texture2D(numberTexture, sampleCoord);
+              
+              if (sampleColor.a > 0.1) {
+                hasColoredPixel = true;
+              } else {
+                hasTransparentPixel = true;
+              }
+              
+              if (hasColoredPixel && hasTransparentPixel) {
+                isDrawingCellNumber = true;
+                hasColoredPixel = false;
+                hasTransparentPixel = false;
+                break;
+              }
+            }
+            if (isDrawingCellNumber) break;
+          }
+        }
+
+        // Check if the UV coordinates are within the [0, 1] bounds to avoid texture wrapping
+        if (scaledUV.x >= 0.0 && scaledUV.x <= 1.0 && scaledUV.y >= 0.0 && scaledUV.y <= 1.0) {
+          vec4 Cb = texture2D(numberTexture, coord);
+          // Apply color change to the cell number texture
+          Cb = applyColorChange(Cb, fontColor);
+          if (Cb.a > 0.2) { // gets rid of a nasty white border
+            finalColor = Cb; // blending equation
+          }
+        }
+      }
+
+      // Check if the Circle style is applied
+      // Do not draw it if we are drawing the cell number
+      if (shouldDrawCircle && !isDrawingCellNumber) {
+        vec2 center = vec2(0.5, 0.5);
+        float distanceFromCenter = length(vUv - center);
+        float circleRadius = 0.45;
+        float circleEdgeWidth = 0.035;
+        
+        // Smooth step for anti-aliasing
+        float smoothEdge = smoothstep(circleRadius - circleEdgeWidth - 0.01, circleRadius - circleEdgeWidth, distanceFromCenter) -
+                           smoothstep(circleRadius - 0.01, circleRadius, distanceFromCenter);
+        
+        vec4 circleColor = vec4(fontColor.rgb, smoothEdge);
+        finalColor = mix(finalColor, circleColor, circleColor.a);
+      }
+
       // Draw the letter or emoji
       // A coord of -1, -1 means do not paint
       if (vCharacterPosition.x >= 0.0 && vCharacterPosition.y >= 0.0) {
@@ -214,31 +301,6 @@ const fragmentShader = `
 
         if (Ca.a > 0.4) { // gets rid of a nasty white border
           finalColor = Ca; 
-        }
-      }
-
-      // Draw the cell number
-      // A coord of -1, -1 means do not paint
-      if (vCellNumberPosition.x >= 0.0 && vCellNumberPosition.y >= 0.0) {
-        // 17.0 is the number of items per line on the texture map
-        vec2 position = vec2(vCellNumberPosition.x/17.0, -(vCellNumberPosition.y/17.0 + 1.0/17.0));
-        vec2 size = vec2(1.0 / 17.0, 1.0 / 17.0);
-
-        // Adjust UV coordinates to map the texture to the upper-left corner
-        vec2 scaledUV = adjustedUV * 2.5 - vec2(0.2, 1.3); // Scale UV and shift to upper-left
-        vec2 offset = vec2(0.0, 0.0); // No additional offset needed for upper-left
-        vec2 coord = position + size * (scaledUV + offset);
-
-        // Check if the UV coordinates are within the [0, 1] bounds to avoid texture wrapping
-        if (scaledUV.x >= 0.0 && scaledUV.x <= 1.0 && scaledUV.y >= 0.0 && scaledUV.y <= 1.0) {
-            vec4 Cb = texture2D(numberTexture, coord);
-
-            // Apply color change to the cell number texture
-            Cb = applyColorChange(Cb, fontColor);
-
-            if (Cb.a > 0.2) { // gets rid of a nasty white border
-              finalColor = Cb; // blending equation
-            }
         }
       }
     }
@@ -627,6 +689,17 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [size],
   );
 
+  const cellStyleArray = useMemo(() => {
+    const arr = Uint8Array.from(new Array(size).fill(CellStyleEnum.None));
+    for (let x = 0; x < puzzle.record.solution.length; x++) {
+      const { style } = puzzle.record.solution[x];
+      if (style?.shapebg) {
+        arr[x] = CellStyleEnum.Circle;
+      }
+    }
+    return arr;
+  }, [size, puzzle.record.solution]);
+
   const matcapIndexArray = useMemo(
     () => Float32Array.from(new Array(size).fill(0)),
     [size],
@@ -646,6 +719,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     },
     [cellsRef, visibilityArray],
   );
+
+  useEffect(() => {
+    if (cellsDisplayRef == null) return;
+    cellsDisplayRef.geometry.attributes.cellStyle.needsUpdate = true;
+  }, [cellStyleArray, cellsDisplayRef]);
 
   useEffect(() => {
     if (cellsDisplayRef == null) return;
@@ -793,6 +871,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
 
       setCellPositions(positions);
 
+      cellsDisplayRef.geometry.attributes.cellStyle.needsUpdate = true;
       cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
       cellsDisplayRef.geometry.attributes.cellNumberPosition.needsUpdate = true;
       cellsDisplayRef.geometry.attributes.cubeSideDisplay.needsUpdate = true;
@@ -1304,6 +1383,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             count={cellDraftModeArray.length}
             itemSize={2}
             array={cellDraftModeArray}
+          />
+          <instancedBufferAttribute
+            attach="attributes-cellStyle"
+            count={cellStyleArray.length}
+            itemSize={1}
+            array={cellStyleArray}
           />
         </boxGeometry>
       </instancedMesh>
