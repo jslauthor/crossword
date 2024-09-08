@@ -693,7 +693,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     const arr = Uint8Array.from(new Array(size).fill(CellStyleEnum.None));
     for (let x = 0; x < puzzle.record.solution.length; x++) {
       const { style } = puzzle.record.solution[x];
-      if (style?.shapebg) {
+      if (style?.shapebg === 'circle') {
         arr[x] = CellStyleEnum.Circle;
       }
     }
