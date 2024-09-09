@@ -61,15 +61,36 @@ export default async function RootLayout({
 const prefix =
   process.env.VERCEL_ENV === 'development' ? 'http://' : 'https://';
 
+const APP_NAME = 'Crosscube';
+const APP_DEFAULT_TITLE = 'Crosscube';
+const APP_TITLE_TEMPLATE = '%s: 3D Crossword Puzzles';
+const APP_DESCRIPTION = 'Crossword puzzles in three dimensions!';
+
 export const metadata: Metadata = {
   metadataBase: new URL(`${prefix}${process.env.VERCEL_URL}`),
-  title: 'Crosscube',
-  description: 'A crossword puzzle in three dimensions',
+  applicationName: APP_NAME,
+  title: {
+    default: APP_DEFAULT_TITLE,
+    template: APP_TITLE_TEMPLATE,
+  },
+  description: APP_DESCRIPTION,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: APP_DEFAULT_TITLE,
+    // startUpImage: [],
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
-    title: 'Crosscube',
-    description: 'A crossword puzzle in three dimensions',
+    title: {
+      default: APP_DEFAULT_TITLE,
+      template: APP_TITLE_TEMPLATE,
+    },
+    description: APP_DESCRIPTION,
     url: 'https://crosscube.app',
-    siteName: 'Crosscube',
+    siteName: APP_NAME,
     images: [
       {
         url: 'https://crosscube.app/og.png',
@@ -82,8 +103,11 @@ export const metadata: Metadata = {
     type: 'website',
   },
   twitter: {
-    title: 'Crosscube',
-    description: 'A crossword puzzle in three dimensions',
+    title: {
+      default: APP_DEFAULT_TITLE,
+      template: APP_TITLE_TEMPLATE,
+    },
+    description: APP_DESCRIPTION,
     site: 'https://crosscube.app',
     images: [
       {
