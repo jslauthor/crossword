@@ -43,3 +43,4 @@ test.css*
 # Serwist
 public/sw*
 public/swe-worker*
+certificates
