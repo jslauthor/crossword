@@ -42,7 +42,7 @@ export default async function RootLayout({
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="white" />
           <meta name="apple-mobile-web-app-title" content="Crosscube" />
-          <link rel="apple-touch-icon" href="general_icon.png" />
+          <link rel="apple-touch-icon" href="general_icon@512.png" />
           <meta name="google" content="notranslate" />
         </head>
         <body>
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'default',
     title: APP_DEFAULT_TITLE,
-    // startUpImage: [],
+    startupImage: ['/general_icon@512.png'],
   },
   formatDetection: {
     telephone: false,
