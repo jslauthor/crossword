@@ -38,7 +38,7 @@ import Menu from 'components/containers/Menu';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
-import { createInitialState, getPuzzleLabel } from 'lib/utils/puzzle';
+import { createInitialState, getPuzzleLabel, getType } from 'lib/utils/puzzle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronCircleDown,
@@ -808,6 +808,22 @@ export default function Puzzle({
     router.push(`/signin?redirect_url=${window.location.href}`);
   }, [router]);
 
+  const nextPuzzleType = useMemo(() => {
+    const currentType = getType(puzzle);
+    switch (currentType) {
+      case 'moji':
+        return 'mini';
+      case 'mini':
+        return 'cube';
+      case 'cube':
+        return 'mega';
+      case 'mega':
+        return 'moji';
+      default:
+        return 'moji';
+    }
+  }, [puzzle]);
+
   return (
     <>
       <Menu
@@ -1002,6 +1018,7 @@ export default function Puzzle({
       />
       {puzzleStats != null && (
         <PuzzleShare
+          type={nextPuzzleType}
           isOpen={isShareOpen}
           onClose={handleShareClose}
           puzzleStats={puzzleStats}
