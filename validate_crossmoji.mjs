@@ -1,4 +1,4 @@
-import emojis from './emoji_list.mjs';
+import emojis from './lib/emoji_unicode_list.mjs';
 // import clipboardy from 'clipboardy';
 
 const schema = {
