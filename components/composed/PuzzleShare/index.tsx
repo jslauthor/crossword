@@ -12,6 +12,8 @@ import SaveProgressCard, { SaveProgressCardProps } from '../SaveProgressCard';
 import GetUpdatesCard from '../GetUpdatesCard';
 import { useUser } from '@clerk/nextjs';
 import { useUserConfigStore } from 'lib/providers/user-config-provider';
+import { CrosscubeType } from 'types/types';
+import PuzzleLatestCondensed from '../PuzzleLatestCondensed';
 
 const StarsContainer = styled.div`
   font-size: 5rem;
@@ -149,6 +151,7 @@ const shareContent = async (text: string, title: string): Promise<void> => {
 };
 
 interface PuzzleShareProps extends Partial<OverlayProps> {
+  type: CrosscubeType;
   puzzleLabel: string[];
   puzzleSubLabel: string;
   puzzleStats: PuzzleStats;
@@ -160,6 +163,7 @@ const noop = () => {};
 const PuzzleShare: React.FC<PuzzleShareProps> = ({
   title = 'Share',
   isOpen = false,
+  type,
   puzzleLabel,
   puzzleSubLabel,
   onClose = noop,
@@ -293,6 +297,8 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
         </div>
 
         <ShareButton onClick={handleShare} />
+
+        <PuzzleLatestCondensed type={type} />
 
         {isSignedIn === false && <SaveProgressCard onAuthClick={onAuthClick} />}
         {isSignedIn === true && isSubscribed === false && (

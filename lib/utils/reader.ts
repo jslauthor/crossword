@@ -104,6 +104,7 @@ const createWhereForType = (types: CrosscubeType[]) => {
 export const getPuzzles = async (
   enrich: boolean,
   types: CrosscubeType[] = ['cube', 'mega', 'mini', 'moji'],
+  limit?: number,
 ): Promise<PuzzleType[]> => {
   try {
     const fetchAllCrosscubes = async () => {
@@ -111,13 +112,15 @@ export const getPuzzles = async (
       let hasNextPage = true;
       let after = null;
 
-      while (hasNextPage) {
+      const fetchLimit = limit ? Math.min(limit, 1000) : 1000;
+
+      while (hasNextPage && (!limit || allCrosscubes.length < limit)) {
         const query = `
-          query Query($after: String) {
+          query Query($after: String, $first: Int) {
             crosscubesConnection(
               orderBy: publishedAt_DESC
               where: { OR: [${createWhereForType(types)}] }
-              first: 1000
+              first: $first
               after: $after
             ) {
               edges {
@@ -139,7 +142,7 @@ export const getPuzzles = async (
             edges: { node: any }[];
             pageInfo: { hasNextPage: boolean; endCursor: string };
           };
-        }>(query, { after });
+        }>(query, { after, first: fetchLimit });
 
         const newCrosscubes = result?.crosscubesConnection.edges.map(
           (edge: any) => edge.node,
@@ -147,9 +150,14 @@ export const getPuzzles = async (
         allCrosscubes = [...allCrosscubes, ...newCrosscubes];
         hasNextPage = result?.crosscubesConnection.pageInfo.hasNextPage;
         after = result?.crosscubesConnection.pageInfo.endCursor;
+
+        // If we've fetched the limit, stop querying
+        if (limit && allCrosscubes.length >= limit) {
+          break;
+        }
       }
 
-      return allCrosscubes;
+      return allCrosscubes.slice(0, limit);
     };
 
     const crosscubes = await fetchAllCrosscubes();

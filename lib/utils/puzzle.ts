@@ -705,6 +705,13 @@ export const createBlankPuzzleData = (
   },
 });
 
+// Function to convert Unicode string to emoji
+export function unicodeToEmoji(unicode: string) {
+  return String.fromCodePoint(
+    ...unicode.split('_').map((u) => parseInt(u, 16)),
+  );
+}
+
 export function emojiToUnicode(emoji: string): string {
   // If the emoji is already a unicode, return it
   if (emoji.charAt(0).toLowerCase() === 'u') {
