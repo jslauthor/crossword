@@ -41,28 +41,6 @@ const schema = {
   metadata: {},
 };
 
-function unicodeToEmoji(unicode) {
-  return String.fromCodePoint(
-    ...unicode
-      .replace(/^u/, '') // in case the unicode starts with u
-      .split('_')
-      .map((u) => parseInt(u, 16)),
-  );
-}
-
-function emojiToUnicode(emoji) {
-  // If the emoji is already a unicode, return it
-  if (emoji.charAt(0).toLowerCase() === 'u') {
-    return emoji;
-  }
-
-  const codePoints = Array.from(emoji).map(
-    (char) => char.codePointAt(0)?.toString(16).padStart(4, '0') || '',
-  );
-
-  return 'u' + codePoints.join('_');
-}
-
 // clipboardy.writeSync(JSON.stringify(emojis.map(unicodeToEmoji)));
 
 function validateCrossmojiSchema(schema) {
