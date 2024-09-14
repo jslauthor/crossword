@@ -58,44 +58,51 @@ export default async function RootLayout({
   );
 }
 
-const prefix =
-  process.env.VERCEL_ENV === 'development' ? 'http://' : 'https://';
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = headers();
+  const pathname = headersList.get('x-pathname') || '';
+  const host = headersList.get('x-host') || process.env.VERCEL_URL;
+  const canonicalUrl = `https://${host}${pathname}`;
 
-export const metadata: Metadata = {
-  metadataBase: new URL(`${prefix}${process.env.VERCEL_URL}`),
-  title: 'Crosscube',
-  description: 'A crossword puzzle in three dimensions',
-  openGraph: {
+  return {
+    metadataBase: new URL(`https://${host}`),
     title: 'Crosscube',
     description: 'A crossword puzzle in three dimensions',
-    url: 'https://crosscube.app',
-    siteName: 'Crosscube',
-    images: [
-      {
-        url: 'https://crosscube.app/og.png',
-        width: 800,
-        height: 600,
-        alt: 'Crosscube: A crossword puzzle in three dimensions',
-      },
-    ],
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    title: 'Crosscube',
-    description: 'A crossword puzzle in three dimensions',
-    site: 'https://crosscube.app',
-    images: [
-      {
-        url: 'https://crosscube.app/og.png',
-        width: 800,
-        height: 600,
-        alt: 'Crosscube: A crossword puzzle in three dimensions',
-      },
-    ],
-    creator: '@jslauthor',
-    card: 'summary',
-  },
-};
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: 'Crosscube',
+      description: 'A crossword puzzle in three dimensions',
+      url: 'https://crosscube.app',
+      siteName: 'Crosscube',
+      images: [
+        {
+          url: 'https://crosscube.app/og.png',
+          width: 800,
+          height: 600,
+          alt: 'Crosscube: A crossword puzzle in three dimensions',
+        },
+      ],
+      locale: 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      title: 'Crosscube',
+      description: 'A crossword puzzle in three dimensions',
+      site: 'https://crosscube.app',
+      images: [
+        {
+          url: 'https://crosscube.app/og.png',
+          width: 800,
+          height: 600,
+          alt: 'Crosscube: A crossword puzzle in three dimensions',
+        },
+      ],
+      creator: '@jslauthor',
+      card: 'summary',
+    },
+  };
+}
 
 export const dynamic = 'force-dynamic';
