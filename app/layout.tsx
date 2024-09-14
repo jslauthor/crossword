@@ -60,9 +60,8 @@ export default async function RootLayout({
 
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = headers();
-  const pathname = headersList.get('x-invoke-path') || '';
-  const host = headersList.get('host') || process.env.VERCEL_URL;
-
+  const pathname = headersList.get('x-pathname') || '';
+  const host = headersList.get('x-host') || process.env.VERCEL_URL;
   const canonicalUrl = `https://${host}${pathname}`;
 
   return {
