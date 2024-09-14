@@ -71,6 +71,13 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
+  // Set some useful headers
+  const url = new URL(req.url);
+  response.headers.set('x-url', req.url);
+  response.headers.set('x-origin', url.origin);
+  response.headers.set('x-host', url.host);
+  response.headers.set('x-pathname', url.pathname);
+
   return response;
 });
 
