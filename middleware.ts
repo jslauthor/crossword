@@ -10,6 +10,29 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId } = auth();
   const response = NextResponse.next();
 
+  // Handle redirects for crossmoji.app and its subdomains
+  const url = req.nextUrl.clone();
+  if (
+    url.hostname === 'crossmoji.app' ||
+    url.hostname.endsWith('.crossmoji.app')
+  ) {
+    const newHostname =
+      url.hostname === 'crossmoji.app'
+        ? 'crosscube.app'
+        : url.hostname.replace('.crossmoji.app', '.crosscube.app');
+
+    if (url.pathname === '/' || url.pathname === '') {
+      // Redirect root path to /crosscube/latest/moji
+      url.hostname = newHostname;
+      url.pathname = '/crosscube/latest/moji';
+      return NextResponse.redirect(url, 301);
+    } else {
+      // Redirect all other paths to the same path on crosscube.app
+      url.hostname = newHostname;
+      return NextResponse.redirect(url, 301);
+    }
+  }
+
   // Sync user to local DB
   if (userId != null) {
     const user = await clerkClient().users.getUser(userId);
@@ -70,6 +93,12 @@ export default clerkMiddleware(async (auth, req) => {
       }
     }
   }
+
+  // Set some useful headers
+  response.headers.set('x-url', req.url);
+  response.headers.set('x-origin', url.origin);
+  response.headers.set('x-host', url.host);
+  response.headers.set('x-pathname', url.pathname);
 
   return response;
 });
