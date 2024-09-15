@@ -4,32 +4,32 @@ import emojis from './lib/emoji_unicode_list.mjs';
 const schema = {
   seed: 840275,
   items: {
-    u1f3b6: 'Melodic puzzle piece',
-    u1f9ec: 'Double helix riddle',
-    u1f474: 'Wrinkled wisdom bearer',
-    u1fac1: 'Respiratory riddle',
-    u1f386: 'Ephemeral sky blooms',
-    u1f57a: 'Rhythmic motion enigma',
-    u1f004: 'Ancient tile conundrum',
-    u1f98a: "Vulpine trickster's disguise",
-    u1f390: "Wind's whisper catcher",
-    u1f515: 'Silent notification paradox',
-    u1f460: 'Elevated fashion enigma',
-    u1f54d: 'Sacred geometry puzzle',
-    u1fa7a: 'Heartbeat detective tool',
-    u1f3b5: null,
-    u1f3f4: null,
-    u1f9d1: null,
-    u1f9a0: null,
-    u1f3c6: null,
-    u1f30b: null,
-    u1f682: null,
-    u1f6f8: null,
-    u1f52e: null,
-    u1f433: null,
-    u1f3ad: null,
-    u1f9d9: null,
-    u1f9ed: null,
+    u1F688: 'Urban serpent, gliding on steel',
+    u1FAE2: 'Surprise silencer',
+    u2B55: 'Endless journey, no corners in sight',
+    u1F5FD: 'Torch-bearer of harbor dreams',
+    u1F43F: 'Nutty acrobat of park and wood',
+    u1FAC5: 'Crowned newcomer to emoji royalty',
+    u1F549: 'Eternal sound, sacred in Sanskrit',
+    u1F9C9: 'South American stimulant sipped through silver',
+    u1FAE3: 'Coy ocular revelation',
+    u1F684: 'Velocity vanguard on rails',
+    u1F416: "Bacon's origin, pre-sizzle",
+    u1F004: "Wind and dragon's tile tango",
+    u1F1FA_1F1F8: "Star-spangled banner's domain",
+    u1F96F: null,
+    u1FAE1: null,
+    u1FAB6: null,
+    u1F6D7: null,
+    u1FADA: null,
+    u1F9EC: null,
+    u1FABA: null,
+    u1FAF1: null,
+    u1F3B6: null,
+    u1F355: null,
+    u1F52D: null,
+    u1F0CF: null,
+    u1F1F3_1F1F4: null,
   },
   grid: [
     [1, 0, 1, 0, 1],
@@ -107,8 +107,10 @@ function validateCrossmojiSchema(schema) {
       return { isValid, message };
     }
 
+    const uppercaseEmojis = emojis.map((e) => e.toUpperCase());
+
     // Check if the emoji is in the list of valid emojis
-    if (!emojis.includes(key)) {
+    if (!uppercaseEmojis.includes(key.toUpperCase())) {
       isValid = false;
       message = `Invalid emoji key: ${key}`;
       return { isValid, message };
