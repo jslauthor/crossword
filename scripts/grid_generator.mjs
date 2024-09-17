@@ -28,17 +28,61 @@ async function processGrids(directoryPath) {
 }
 
 function processGrid(solution) {
-  return solution.map((row) =>
+  let counter = 1;
+  const grid = solution.map((row) =>
     row.map((cell) => {
       if (cell === '#') return 0;
-      if (cell === 0) return 1;
-      return cell; // In case there are other values, keep them as is
+      else return counter++;
     }),
   );
+
+  const sequences = {
+    across: {},
+    down: {},
+  };
+
+  // Process across sequences
+  grid.forEach((row, rowIndex) => {
+    let currentSequence = [];
+    row.forEach((cell, colIndex) => {
+      if (cell !== 0) {
+        currentSequence.push(cell);
+      }
+      if (cell === 0 || colIndex === row.length - 1) {
+        if (currentSequence.length > 0) {
+          sequences.across[currentSequence[0]] = currentSequence;
+          currentSequence = [];
+        }
+      }
+    });
+  });
+
+  // Process down sequences
+  for (let colIndex = 0; colIndex < grid[0].length; colIndex++) {
+    let currentSequence = [];
+    for (let rowIndex = 0; rowIndex < grid.length; rowIndex++) {
+      const cell = grid[rowIndex][colIndex];
+      if (cell !== 0) {
+        currentSequence.push(cell);
+      }
+      if (cell === 0 || rowIndex === grid.length - 1) {
+        if (currentSequence.length > 0) {
+          sequences.down[currentSequence[0]] = currentSequence;
+          currentSequence = [];
+        }
+      }
+    }
+  }
+
+  // Todo remove single across and down clues unless they are a sequence of 1
+  // Todo build a puzzle grid of clues with the correct cell values
+  // - be sure the sequences match the cell values
+
+  return { grid, sequences };
 }
 
 // Usage
-const directoryPath = '../data/single_moji_grids';
-processGrids(directoryPath).then((grids) => {
-  console.log(JSON.stringify(grids, null, 2));
+const directoryPath = '../data/multi-emoji-grids';
+processGrids(directoryPath).then((results) => {
+  console.log(JSON.stringify(results));
 });
