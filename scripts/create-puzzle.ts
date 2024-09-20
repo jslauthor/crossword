@@ -1,93 +1,65 @@
-type Cell = number | string;
-type Clues = { across: Map<number, number[]>; down: Map<number, number[]> };
-type Grid = Cell[][];
+import { promises as fs } from 'fs';
+import { createCrossmojiGrid, processGrid } from 'lib/utils/llm';
+import path from 'path';
 
-function createCrossmojiGrid(input: Grid): { grid: Grid; clues: Clues } {
-  const clues: Clues = { across: new Map(), down: new Map() };
-  const grid: Grid = [];
-  let cellNumber = 1;
+async function processGrids(directoryPath: string) {
+  const grids = [];
 
-  function shouldNumberCell(row: number, col: number): boolean {
-    const isStartOfAcross = col === 0 || input[row][col - 1] === 0;
-    const isStartOfDown = row === 0 || input[row - 1][col] === 0;
-    const hasAcrossContinuation =
-      col < input[row].length - 1 && input[row][col + 1] !== 0;
-    const hasDownContinuation =
-      row < input.length - 1 && input[row + 1][col] !== 0;
-    const isSingleCell =
-      (col === 0 || input[row][col - 1] === 0) &&
-      (col === input[row].length - 1 || input[row][col + 1] === 0) &&
-      (row === 0 || input[row - 1][col] === 0) &&
-      (row === input.length - 1 || input[row + 1][col] === 0);
+  try {
+    const files = await fs.readdir(directoryPath);
 
-    if ((isStartOfAcross && hasAcrossContinuation) || isSingleCell) {
-      clues.across.set(cellNumber, getConsecutiveNumbers(row, col, 'across'));
-    }
-    if (isStartOfDown && hasDownContinuation) {
-      clues.down.set(cellNumber, getConsecutiveNumbers(row, col, 'down'));
-    }
+    for (const file of files) {
+      if (path.extname(file) === '.ipuz') {
+        const filePath = path.join(directoryPath, file);
+        const content = await fs.readFile(filePath, 'utf-8');
+        const puzzleData = JSON.parse(content);
 
-    return (
-      (isStartOfAcross && hasAcrossContinuation) ||
-      (isStartOfDown && hasDownContinuation) ||
-      isSingleCell
-    );
-  }
-
-  function getConsecutiveNumbers(
-    row: number,
-    col: number,
-    direction: 'across' | 'down',
-  ): number[] {
-    const numbers: number[] = [];
-    let currentRow = row;
-    let currentCol = col;
-
-    while (
-      currentRow < input.length &&
-      currentCol < input[currentRow].length &&
-      input[currentRow][currentCol] !== 0
-    ) {
-      numbers.push(input[currentRow][currentCol] as number);
-      if (direction === 'across') {
-        currentCol++;
-      } else {
-        currentRow++;
+        if (puzzleData.solution) {
+          const processedGrid = processGrid(puzzleData.solution);
+          grids.push({
+            grid: processedGrid,
+            puzzle: createCrossmojiGrid(processedGrid),
+            filePath,
+          });
+        }
       }
     }
 
-    return numbers;
+    return grids;
+  } catch (error) {
+    console.error('Error processing grids:', error);
+    return [];
   }
-
-  for (let row = 0; row < input.length; row++) {
-    grid[row] = [];
-    for (let col = 0; col < input[row].length; col++) {
-      if (input[row][col] === 0) {
-        grid[row][col] = '#';
-      } else if (shouldNumberCell(row, col)) {
-        grid[row][col] = cellNumber++;
-      } else {
-        grid[row][col] = ':';
-      }
-    }
-  }
-
-  return { grid, clues };
 }
 
-// Example usage
-const inputGrid: Grid = [
-  [1, 17, 2, 0, 4],
-  [5, 8, 0, 0, 0],
-  [7, 0, 0, 0, 9],
-  [10, 0, 11, 0, 0],
-  [13, 14, 15, 0, 16],
-];
+// Usage
+const directoryPath = '../data/multi-emoji-grids';
+processGrids(directoryPath).then((results) => {
+  results.forEach((result) => {
+    if (
+      result.puzzle.grid.flatMap((row) => row).filter((cell) => cell !== '#')
+        .length > 26
+    ) {
+      console.log(
+        result.grid,
+        result.puzzle.grid,
+        result.puzzle.grid.flatMap((row) => row).filter((cell) => cell !== '#')
+          .length,
+      );
+    }
+    // console.log(
+    //   result.grid,
+    //   result.puzzle.grid,
+    //   result.puzzle.grid.flatMap((row) => row).filter((cell) => cell !== '#')
+    //     .length,
+    // );
+    // console.log(
+    //   result.grid,
+    //   result.puzzle.grid.map((row) => row.map((cell) => cell.toString())),
+    //   result.puzzle.clues.across,
+    //   result.puzzle.clues.down,
+    // );
+  });
+});
 
-const result = createCrossmojiGrid(inputGrid);
-console.log(
-  inputGrid,
-  result.grid.map((row) => row.map((cell) => cell.toString())),
-  result.clues.across.entries(),
-  result.clues.down.entries(),
-);
+//TODO Grids can't have more than 26 emojis?
