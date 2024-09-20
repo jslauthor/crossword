@@ -743,7 +743,9 @@ function deterministicSort(entries: Entry[], seed: number): Entry[] {
   return sortedIndices.map((index) => entries[index]);
 }
 
-export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
+export const convertSimpleCrossmojiData = (
+  data: CrossmojiData,
+): PuzzleData[] => {
   const width = data.grid[0].length;
   const height = data.grid.length;
 
