@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import { createCrossmojiGrid, processGrid } from 'lib/utils/llm';
 import path from 'path';
+import clipboardy from 'clipboardy';
 
 async function processGrids(directoryPath: string) {
   const grids = [];
@@ -33,33 +34,26 @@ async function processGrids(directoryPath: string) {
 }
 
 // Usage
-const directoryPath = '../data/multi-emoji-grids';
+const directoryPath = '../data/single-emoji-grids';
 processGrids(directoryPath).then((results) => {
-  results.forEach((result) => {
-    if (
-      result.puzzle.grid.flatMap((row) => row).filter((cell) => cell !== '#')
-        .length > 26
-    ) {
-      console.log(
-        result.grid,
-        result.puzzle.grid,
+  const valid = results
+    .filter(
+      (result) =>
         result.puzzle.grid.flatMap((row) => row).filter((cell) => cell !== '#')
-          .length,
-      );
-    }
-    // console.log(
-    //   result.grid,
-    //   result.puzzle.grid,
-    //   result.puzzle.grid.flatMap((row) => row).filter((cell) => cell !== '#')
-    //     .length,
-    // );
-    // console.log(
-    //   result.grid,
-    //   result.puzzle.grid.map((row) => row.map((cell) => cell.toString())),
-    //   result.puzzle.clues.across,
-    //   result.puzzle.clues.down,
-    // );
-  });
-});
+          .length <= 26,
+    )
+    .map((result) => {
+      const convertedPuzzle = {
+        grid: result.grid,
+        puzzle: result.puzzle.grid,
+        clues: {
+          across: Object.fromEntries(result.puzzle.clues.across),
+          down: Object.fromEntries(result.puzzle.clues.down),
+        },
+      };
+      return convertedPuzzle;
+    });
 
-//TODO Grids can't have more than 26 emojis?
+  console.log(JSON.stringify(valid, null, 2));
+  clipboardy.writeSync(JSON.stringify(valid, null, 2));
+});
