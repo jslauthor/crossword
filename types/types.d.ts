@@ -91,6 +91,42 @@ export interface CrossmojiData {
   >;
 }
 
+export interface CrossmojiDataV2 {
+  version: string;
+  seed: number;
+  svgSegments: string[];
+  response: {
+    title: string;
+    values: {
+      [key: number | string]: {
+        value: string;
+        styles?: CellStyle;
+      };
+    };
+    clues: {
+      across: {
+        [key: number | string]: string;
+      };
+      down: {
+        [key: number | string]: string;
+      };
+    };
+    solution: (string | 0)[][];
+  };
+  source: {
+    grid: number[][];
+    clues: {
+      down: {
+        [key: string]: number[];
+      };
+      across: {
+        [key: string]: number[];
+      };
+    };
+    puzzle: (BlankCell | StandardCell)[][];
+  };
+}
+
 declare module '@react-three/fiber' {
   interface ThreeElements {
     meshLineGeometry: Object3DNode<MeshLineGeometry, typeof MeshLineGeometry>;

@@ -3,7 +3,7 @@ import PuzzlePage from 'components/pages/PuzzlePage';
 import { notFound } from 'next/navigation';
 import { AtlasType, NUMBER_RECORD, TEXTURE_RECORD } from 'lib/utils/atlas';
 import { getPuzzlesBySlugs } from 'lib/utils/reader';
-import emojis from 'lib/emoji_unicode_list.mjs';
+import emojis from 'lib/emojiUnicodeList.mjs';
 
 export type PuzzleProps = {
   puzzle: PuzzleType;

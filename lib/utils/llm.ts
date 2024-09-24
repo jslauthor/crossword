@@ -84,5 +84,6 @@ export function createCrossmojiGrid(input: Grid): { grid: Grid; clues: Clues } {
     }
   }
 
+  // console.log(clues.across.size);
   return { grid, clues };
 }

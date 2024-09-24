@@ -13,6 +13,7 @@ import {
   createInitialYDoc,
   convertSimpleCrossmojiData,
   emojiToUnicode,
+  convertCrossmojiDataV2,
 } from './puzzle';
 import { TEXTURE_RECORD, buildSvgTextureAtlasLookup } from './atlas';
 import * as Y from 'yjs';
@@ -59,6 +60,14 @@ const convertPuzzleData = (puzzleData: any): PuzzleType => {
   if (puzzleData.data.items != null) {
     data = convertSimpleCrossmojiData(puzzleData.data);
     svgSegments = Object.keys(puzzleData.data.items).map(emojiToUnicode);
+    type = 'moji';
+  }
+
+  // If the data is v2.0 of the crosscube format, convert it to crossube
+  if (data.version === '2.0') {
+    const converted = convertCrossmojiDataV2(puzzleData.data);
+    data = converted.data;
+    svgSegments = converted.svgSegments; // 2.0 only supports unicode values
     type = 'moji';
   }
 

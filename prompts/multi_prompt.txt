@@ -1,0 +1,155 @@
+# Instructions
+
+USE THE UNICODE VALUE FOR EMOJIS WHEN REFERENCING AN EMOJI EXACTLY AS IN THE EMOJI ARRAY.
+
+You are creating words comprised only from the list of approved emojis. Look at the sequences in across and down. For every number, you will use that as an ID for a specific emoji and will swap the number for that emoji. For instance, 1 might be 🌊 and 5 might be 🐚, so in across, "1": will be [🌊] as the sequence and in down, "1" will be [🌊,🐚]. Give me sequences that make sense as words, and then clues for those sequences. A good clue for [🌊,🐚] would be "seashell". The clues do not need to be multiple words. In fact, clues that are one word made from several emojis are preferred, much like seashell. For instance, "hand peace" for ✋🏻☮️ is a bad clue since it's literal. You can also use phrases, e.g. 🙈🙉🙊 could be "see no evil, hear no evil, speak no evil". That is an example of a great clue as well as seashell. Make the clues tough but not frustrating (they should be fair). 
+
+Provide an emoji for each ID in the grid. That means that some IDs in the source grid could be the same emoji. Try not repeat an ID (emoji) more than once unless it is highly relevant to the clue.
+
+Clues should be unique where possible. It is okay to have identical (or similar) clues if it matches the theme of the puzzle. Try to keep this to a minimum.
+
+Clues should follow this convention (from NYT CROSSWORD PUZZLES):
+
+- Any time a clue contains the tag "Abbr." or an abbreviation more significant than "e.g.", the answer will be an abbreviation (e.g., [M.D. org.] for AMA).
+- Any time a clue ends in a question mark, the answer is a play on words (e.g., [Fitness center?] for CORE).
+- Occasionally, themed puzzles will require certain squares to be filled in with a symbol, multiple letters, or a word, rather than one letter (so-called "rebus" puzzles). This symbol/letters/word will be repeated in each themed entry. For example, the December 6, 2012, puzzle by Jeff Chen featured a rebus theme based on the chemical pH scale used for acids and bases, which required the letters "pH" to be written together in a single square in several entries (in the middle of entries such as "triumpH" or "sopHocles").
+- French-, Spanish-, or Latin-language answers, and more rarely answers from other languages are indicated either by a tag in the clue giving the answer language (e.g., [Summer: Fr.] for ETE) or by the use in the clue of a word from that language, often a personal or place name (e.g. [Friends of Pierre] for AMIS or [The ocean, e.g., in Orleans] for EAU).
+- Clues and answers must always match in part of speech, tense, number, and degree. Thus a plural clue always indicates a plural answer (and the same for singular), a clue in the past tense will always be matched by an answer in the same tense, and a clue containing a comparative or superlative will always be matched by an answer in the same degree.
+- The answer word (or any of the answer words, if it consists of multiple words) will not appear in the clue itself. Unlike in some easier puzzles in other outlets, the number of words in the answer is not given in the clue—so a one-word clue can have a multiple-word answer.
+- The theme, if any, will be applied consistently throughout the puzzle; e.g., if one of the theme entries is a particular variety of pun, all the theme entries will be of that type.
+- In general, any words that might appear elsewhere in the newspaper, such as well-known brand names, pop culture figures, or current phrases of the moment, are fair game.
+- No entries involving profanity, sad or disturbing topics, or overly explicit answers should be expected, though some have sneaked in. The April 3, 2006, puzzle contained the word SCUMBAG (a slang term for a condom), which had previously appeared in a Times article quoting people using the word. Shortz apologized and said the term would not appear again.[28][29] PENIS also appeared once in a Shortz-edited puzzle in 1995, clued as ["The __ mightier than the sword"].
+- Spoken phrases are always indicated by enclosure in quotation marks, e.g., ["Get out of here!"] for LEAVE NOW.
+- Short exclamations are sometimes clued by a phrase in square brackets, e.g., {[It's cold!]} for BRR.
+- When the answer can only be substituted for the clue when preceding a specific other word, this other word is indicated in parentheses. For example, [Think (over)] can be MULL, since "mull" only means "think" when preceding the word "over" (i.e., "think over" and "mull over" are synonymous, but "think" and "mull" are not necessarily synonymous otherwise). The point here is that the single word "think" can be replaced by the single word "mull", but only when the following word is "over".
+- When the answer needs an additional word in order to fit the clue, this other word is indicated with the use of "with". For example, [Become understood, with "in"] can be SINK, since "Sink in" (but not "Sink" alone) means "to become understood." The point here is that the single phrase "become understood" can be replaced with the single phrase "sink in", regardless of whether it is followed by anything else.
+- NY Times style is to always capitalize the first letter of a clue, regardless of whether the clue is a complete sentence or whether the first word is a proper noun. On occasion, this is used to deliberately create difficulties for the solver; e.g., in the clue [John, for one], it is ambiguous whether the clue is referring to the proper name John or to the slang term for a bathroom.
+
+Clues can not be longer than 70 characters.
+
+USE PLAY ON WORDS SPARINGLY. MAYBE ONLY 10% OF A PUZZLE. USE ABBREVIATIONS AT LEAST 10% OF THE TIME. AND WORDS THAT PRECEDE ANOTHER WORD LIKE "OVER", OR "WITH" WORDS AT LEAST 10% OF THE TIME.
+
+CLUES SHOULD BE CLEVER, PLAYFUL, AND VIBRANT. THEY MUST MAKE SENSE. TRIPLE CHECK YOUR WORK. THE ANSWER TO THE CLUES SHOULD "FEEL" FAIR, AND A PERSON OF AVERAGE INTELLIGENCE SHOULD BE ABLE TO SEE HOW THE ANSWER AND CLUE RELATE.
+
+You should be able to figure out the order of the emojis from the clues. For example, [🎸,🎹,🥁] "Band essentials" is a bad clue. While bands use those instruments, which is good, how can the user figure out their order? Avoid this or give more infomation in the clue.
+
+I'm going to give you a theme to work within. All of the clues do not need to be based on the theme, but at least 80% of them should. The theme is Pop Music.
+
+Here is the source:
+
+"grid": [
+  [
+    1,
+    0,
+    2,
+    0,
+    0
+  ],
+  [
+    3,
+    0,
+    0,
+    4,
+    5
+  ],
+  [
+    0,
+    6,
+    7,
+    0,
+    0
+  ],
+  [
+    8,
+    0,
+    0,
+    9,
+    0
+  ],
+  [
+    0,
+    10,
+    0,
+    11,
+    12
+  ]
+]
+
+"down": {
+  "1": [
+    1,
+    3
+  ],
+  "6": [
+    9,
+    11
+  ]
+},
+"across": {
+  "2": [
+    2
+  ],
+  "3": [
+    4,
+    5
+  ],
+  "4": [
+    6,
+    7
+  ],
+  "5": [
+    8
+  ],
+  "7": [
+    10
+  ],
+  "8": [
+    11,
+    12
+  ]
+}
+
+# Output
+
+Swap out all of the numbers for the emojis in this grid then return to me a populated format like:
+
+// EXAMPLE - YOU MUST THINK ABOUT HOW TO APPLY THE ABOVE TO THIS
+{
+  // Come up with an appropriate title for the theme (max 70 chars)
+  title: "<TITLE>", // Keep it clever. Don't refer to Emoji in the title unless absolutely necessary
+  // Emoji dictionary keyed by their ids in the grid
+  "values": {
+    1: { value: "UNICODE_STRING" }, // number found in grid
+    2: { value: "UNICODE_STRING" }, // number found in grid
+    3: { value: "UNICODE_STRING" }, // number found in grid
+    4: { value: "UNICODE_STRING" } // number found in grid
+    // and so on
+  },
+  // Across clues keyed by their cell number (root keys from "across" and "down")
+  // This is an example. Please create clues for ALL of the keys in each across/down array
+  // DO NOT SKIP ANY KEYS
+  "clues": {
+    "across": {
+      "2": "<CLUE>", // made from the array of emoji IDs [1,2,3,etc]
+      "3": "<CLUE>",    
+      // and so on
+    },
+    // Down clues
+    "down": {
+      "1": "<CLUE>",
+      "6": "<CLUE>",
+      // and so on
+    },
+  },
+  // example grid, replace with actual supplied grid above
+  "solution": [
+    ["<UNICODE_STRING>", 0, "<UNICODE_STRING>", "<UNICODE_STRING>", "<UNICODE_STRING>"],
+    ["<UNICODE_STRING>", 0, "<UNICODE_STRING>", 0, "<UNICODE_STRING>"],
+    [0, "<UNICODE_STRING>", 0, "<UNICODE_STRING>", 0],
+    ["<UNICODE_STRING>", 0, "<UNICODE_STRING>", 0, "<UNICODE_STRING>"],
+    ["<UNICODE_STRING>", "<UNICODE_STRING>", "<UNICODE_STRING>", 0, "<UNICODE_STRING>"]
+  ],
+}
+
+
+PRINT VALID JSON ONLY. DO NOT PROVIDE ANY OTHER INFORMATION BESIDES JSON.
