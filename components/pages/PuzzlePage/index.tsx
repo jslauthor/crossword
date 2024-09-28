@@ -38,7 +38,12 @@ import Menu from 'components/containers/Menu';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
-import { createInitialState, getPuzzleLabel, getType } from 'lib/utils/puzzle';
+import {
+  createInitialState,
+  getPuzzleLabel,
+  getType,
+  isSingleCell,
+} from 'lib/utils/puzzle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronCircleDown,
@@ -268,10 +273,6 @@ export default function Puzzle({
     }
   }, [puzzle.id, svgError]);
 
-  const disableOrientation = useMemo(
-    () => svgTextureAtlasLookup != null,
-    [svgTextureAtlasLookup],
-  );
   const [groupRef, setGroup] = useState<Object3D | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
   const [sideOffset, setSideOffset] = useState(0);
@@ -303,12 +304,26 @@ export default function Puzzle({
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
+  const selectedSide = useMemo(() => {
+    return rangeOperation(0, 3, 0, -sideOffset);
+  }, [sideOffset]);
+
+  const hideOrientation = useMemo(() => {
+    if (selected == null) return;
+    return isSingleCell(puzzle, selected, selectedSide, isVerticalOrientation);
+  }, [isVerticalOrientation, puzzle, selected, selectedSide]);
+
   const handleSetOrientation = useCallback(
     (orientation: boolean) => {
-      if (disableOrientation === true) return;
+      if (hideOrientation) {
+        setVerticalOrientation(true);
+        return;
+      }
+      // TODO: Check if selected is a single cell with the current
+      // orientation. If not, switch it to the right orientation
       setVerticalOrientation(orientation);
     },
-    [disableOrientation],
+    [hideOrientation],
   );
 
   const animatedClueText = useAnimatedText(clue, 60);
@@ -460,10 +475,6 @@ export default function Puzzle({
     [api, isSingleSided, sideOffset],
   );
 
-  const selectedSide = useMemo(() => {
-    return rangeOperation(0, 3, 0, -sideOffset);
-  }, [sideOffset]);
-
   // DEBUG FUNCTION
   // This will autocomplete the puzzle to test the success state
   const finishPuzzle = useCallback(() => {
@@ -561,9 +572,9 @@ export default function Puzzle({
 
   const onClueClick = useCallback(() => {
     // Only enable orientation if using the regular (non-emoji) keyboard
-    if (disableOrientation === true) return;
-    setVerticalOrientation(!isVerticalOrientation);
-  }, [isVerticalOrientation, disableOrientation]);
+    if (hideOrientation === true) return;
+    handleSetOrientation(!isVerticalOrientation);
+  }, [hideOrientation, handleSetOrientation, isVerticalOrientation]);
 
   const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
     return {
@@ -942,7 +953,7 @@ export default function Puzzle({
                   {cellNumber != null && (
                     <SelectedInfo $backgroundColor={toHex(selectedColor)}>
                       {`${cellNumber}`}
-                      {disableOrientation == false ? (
+                      {hideOrientation == false ? (
                         isVerticalOrientation ? (
                           <FontAwesomeIcon
                             icon={faChevronCircleDown}

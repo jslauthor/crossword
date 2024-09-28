@@ -1017,3 +1017,23 @@ export const convertCrossmojiDataV2 = (
     svgSegments: Array.from(svgSegments),
   };
 };
+
+export function isSingleCell(
+  puzzle: PuzzleType,
+  selected: number,
+  selectedSide: number,
+  isVerticalOrientation: boolean,
+): boolean {
+  const cell = puzzle.record.solution[selected];
+  const sequenceIndex = isVerticalOrientation
+    ? cell?.mapping?.[selectedSide]?.downSequenceIndex
+    : cell?.mapping?.[selectedSide]?.acrossSequenceIndex;
+
+  if (sequenceIndex != null) {
+    // Only cells with clues can be single
+    const isClueCell = isCellWithNumber(cell.value);
+    const sequence = puzzle.record.wordSequences[sequenceIndex];
+    return sequence.length === 1 && isClueCell === true;
+  }
+  return false;
+}
