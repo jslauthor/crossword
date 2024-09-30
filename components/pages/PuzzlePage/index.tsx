@@ -327,7 +327,7 @@ export default function Puzzle({
         selectedSide,
         isVerticalOrientation,
       );
-      if (range.length > 1) {
+      if (range.length > 0) {
         const {
           clues: { across, down },
           solution,
@@ -375,7 +375,7 @@ export default function Puzzle({
   const handleSelectedChange = useCallback(
     (id: InstancedMesh['id'] | undefined) => {
       setSelected(id);
-      if (id == null) return;
+      if (id == null || isSelectedSingleCell === true) return;
 
       // We change the orientation if the cell is part of a range
       // that is not the same orientation
@@ -395,7 +395,13 @@ export default function Puzzle({
         handleSetOrientation(true);
       }
     },
-    [handleSetOrientation, isVerticalOrientation, puzzle, selectedSide],
+    [
+      handleSetOrientation,
+      isSelectedSingleCell,
+      isVerticalOrientation,
+      puzzle,
+      selectedSide,
+    ],
   );
 
   const animatedClueText = useAnimatedText(clue, 60);
