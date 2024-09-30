@@ -1037,3 +1037,21 @@ export function isSingleCell(
   }
   return false;
 }
+
+export function getRangeForCell(
+  puzzle: PuzzleType,
+  selected: number,
+  selectedSide: number,
+  isVerticalOrientation: boolean,
+): number[] {
+  const { solution, wordSequences } = puzzle.record;
+  const cell = solution[selected];
+  const sequenceIndex =
+    isVerticalOrientation === false
+      ? cell?.mapping?.[selectedSide]?.acrossSequenceIndex
+      : cell?.mapping?.[selectedSide]?.downSequenceIndex;
+  if (sequenceIndex != null) {
+    return wordSequences[sequenceIndex];
+  }
+  return [];
+}

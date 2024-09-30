@@ -17,8 +17,8 @@ import {
   PerspectiveCamera as PerspectiveCameraType,
   Vector3,
   Object3D,
-  HemisphereLight,
   Color,
+  InstancedMesh,
 } from 'three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
@@ -41,7 +41,9 @@ import { fitCameraToCenteredObject } from 'lib/utils/three';
 import {
   createInitialState,
   getPuzzleLabel,
+  getRangeForCell,
   getType,
+  isCellWithNumber,
   isSingleCell,
 } from 'lib/utils/puzzle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -280,7 +282,7 @@ export default function Puzzle({
     useState<[string, number]>();
   const [clue, setClue] = useState<string | undefined>();
   const [cellNumber, setCellNumber] = useState<number | undefined>();
-  const [selected, setSelected] = useState<number | undefined>();
+  const [selected, setSelected] = useState<InstancedMesh['id'] | undefined>(0);
   const [selectedCharacter, setSelectedCharacter] = useState<
     string | undefined
   >();
@@ -308,22 +310,92 @@ export default function Puzzle({
     return rangeOperation(0, 3, 0, -sideOffset);
   }, [sideOffset]);
 
-  const hideOrientation = useMemo(() => {
-    if (selected == null) return;
+  const isSelectedSingleCell = useMemo(() => {
+    if (selected == null) return false;
     return isSingleCell(puzzle, selected, selectedSide, isVerticalOrientation);
   }, [isVerticalOrientation, puzzle, selected, selectedSide]);
 
+  // Update the clue and cell number when the selected cell changes
+  useEffect(() => {
+    if (selected == null) {
+      setClue(undefined);
+      setCellNumber(undefined);
+    } else {
+      const range = getRangeForCell(
+        puzzle,
+        selected,
+        selectedSide,
+        isVerticalOrientation,
+      );
+      if (range.length > 1) {
+        const {
+          clues: { across, down },
+          solution,
+        } = puzzle.record;
+        const clues =
+          isSelectedSingleCell || isVerticalOrientation === false
+            ? across
+            : down;
+        // Select the clue. It will always be the first cell in the sequence
+        const rootWord = solution[range[0]];
+        if (
+          isCellWithNumber(rootWord.value) &&
+          typeof rootWord.value.cell === 'number'
+        ) {
+          const { cell: cellNumber } = rootWord.value;
+          setCellNumber(cellNumber);
+          setClue(clues.find((c) => c.number === cellNumber)?.clue);
+        }
+      }
+    }
+  }, [
+    isSelectedSingleCell,
+    isVerticalOrientation,
+    puzzle,
+    selected,
+    selectedSide,
+  ]);
+
   const handleSetOrientation = useCallback(
     (orientation: boolean) => {
-      if (hideOrientation) {
-        setVerticalOrientation(true);
-        return;
+      if (selected == null || isSelectedSingleCell === true) return;
+      const range = getRangeForCell(
+        puzzle,
+        selected,
+        selectedSide,
+        orientation,
+      );
+      if (range.length > 1) {
+        setVerticalOrientation(orientation);
       }
-      // TODO: Check if selected is a single cell with the current
-      // orientation. If not, switch it to the right orientation
-      setVerticalOrientation(orientation);
     },
-    [hideOrientation],
+    [isSelectedSingleCell, puzzle, selected, selectedSide],
+  );
+
+  const handleSelectedChange = useCallback(
+    (id: InstancedMesh['id'] | undefined) => {
+      setSelected(id);
+      if (id == null) return;
+
+      // We change the orientation if the cell is part of a range
+      // that is not the same orientation
+      const verticalRange = getRangeForCell(puzzle, id, selectedSide, true);
+      const horizontalRange = getRangeForCell(puzzle, id, selectedSide, false);
+      if (
+        isVerticalOrientation === true &&
+        verticalRange.length < 2 &&
+        horizontalRange.length > 1
+      ) {
+        handleSetOrientation(false);
+      } else if (
+        isVerticalOrientation === false &&
+        horizontalRange.length < 2 &&
+        verticalRange.length > 1
+      ) {
+        handleSetOrientation(true);
+      }
+    },
+    [handleSetOrientation, isVerticalOrientation, puzzle, selectedSide],
   );
 
   const animatedClueText = useAnimatedText(clue, 60);
@@ -336,15 +408,6 @@ export default function Puzzle({
     const totalPerSide = width * height;
     return [width, height, totalPerSide];
   }, [puzzle]);
-
-  const handleClueChange = useCallback<SelectClueFn>(
-    (clue, cellNumber, selected) => {
-      setClue(clue);
-      setCellNumber(cellNumber);
-      setSelected(selected);
-    },
-    [],
-  );
 
   const [fogNear, setFogNear] = useState(0);
   const [fogFar, setFogFar] = useState(100);
@@ -571,10 +634,8 @@ export default function Puzzle({
   );
 
   const onClueClick = useCallback(() => {
-    // Only enable orientation if using the regular (non-emoji) keyboard
-    if (hideOrientation === true) return;
     handleSetOrientation(!isVerticalOrientation);
-  }, [hideOrientation, handleSetOrientation, isVerticalOrientation]);
+  }, [handleSetOrientation, isVerticalOrientation]);
 
   const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
     return {
@@ -892,12 +953,13 @@ export default function Puzzle({
                   svgGridSize={svgGridSize}
                   characterTextureAtlasLookup={characterTextureAtlasLookup}
                   cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
+                  selected={selected}
+                  onSelectedChange={handleSelectedChange}
                   selectedSide={selectedSide}
                   keyAndIndexOverride={keyAndIndexOverride}
                   currentKey={selectedCharacter}
                   updateCharacterPosition={updateCharacterPosition}
                   onLetterInput={onLetterInput}
-                  onSelectClue={handleClueChange}
                   fontColor={fontColor}
                   fontDraftColor={fontDraftColor}
                   selectedColor={defaultColor}
@@ -953,7 +1015,7 @@ export default function Puzzle({
                   {cellNumber != null && (
                     <SelectedInfo $backgroundColor={toHex(selectedColor)}>
                       {`${cellNumber}`}
-                      {hideOrientation == false ? (
+                      {isSelectedSingleCell == false ? (
                         isVerticalOrientation ? (
                           <FontAwesomeIcon
                             icon={faChevronCircleDown}

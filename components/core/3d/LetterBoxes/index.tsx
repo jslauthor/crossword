@@ -23,7 +23,11 @@ import {
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { InstancedMesh } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
-import { SequenceKeys, isCellWithNumber } from '../../../../lib/utils/puzzle';
+import {
+  SequenceKeys,
+  getRangeForCell,
+  isCellWithNumber,
+} from '../../../../lib/utils/puzzle';
 import { useScaleRippleAnimation } from '../../../../lib/utils/hooks/animations/useScaleRippleAnimation';
 import { PuzzleType } from 'types/types';
 import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation';
@@ -400,6 +404,8 @@ export type LetterBoxesProps = {
   svgTextureAtlas?: Texture;
   svgGridSize?: number;
   currentKey?: string | undefined;
+  selected: number | undefined;
+  onSelectedChange: (selected: InstancedMesh['id'] | undefined) => void;
   selectedSide: number;
   fontColor: number;
   fontDraftColor: number;
@@ -423,7 +429,6 @@ export type LetterBoxesProps = {
   onVerticalOrientationChange: (isVerticalOrientation: boolean) => void;
   setInstancedMesh?: (instancedMesh: InstancedMesh | null) => void;
   onLetterInput?: () => void;
-  onSelectClue?: SelectClueFn;
   onInitialize?: () => void;
   turnLeft: (offset?: number) => void;
   turnRight: (offset?: number) => void;
@@ -536,6 +541,8 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   svgTextureAtlasLookup,
   svgTextureAtlas,
   svgGridSize,
+  selected,
+  onSelectedChange,
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
   isVerticalOrientation = false,
@@ -547,7 +554,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   updateCharacterPosition,
   characterPositionArray,
   onLetterInput,
-  onSelectClue,
   fontColor,
   fontDraftColor,
   selectedColor,
@@ -592,10 +598,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [prevOrientation, setPrevOrientation] = useState<boolean>(
     isVerticalOrientation,
   );
-  const [selected, setSelected] = useState<InstancedMesh['id'] | undefined>(0);
-  const [selectedWordCell, setSelectedWordCell] = useState<
-    number | undefined
-  >();
+
   const [hovered, setHovered] = useState<InstancedMesh['id']>();
   const [prevHover, setPrevHovered] = useState<InstancedMesh['id']>();
   const [prevTheme, setPrevTheme] = useState<string>();
@@ -658,26 +661,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   const [record, size] = useMemo(() => {
     return [puzzle.record, puzzle.record.solution.length];
   }, [puzzle.record]);
-
-  useEffect(() => {
-    if (onSelectClue != null) {
-      if (!selected) onSelectClue(undefined);
-      const { clues } = record;
-      if (isVerticalOrientation === true) {
-        onSelectClue(
-          clues.down.find((c) => c.number === selectedWordCell)?.clue,
-          selectedWordCell,
-          selected,
-        );
-      } else {
-        onSelectClue(
-          clues.across.find((c) => c.number === selectedWordCell)?.clue,
-          selectedWordCell,
-          selected,
-        );
-      }
-    }
-  }, [isVerticalOrientation, onSelectClue, record, selected, selectedWordCell]);
 
   const cellNumberPositionArray = useMemo(
     () => Float32Array.from(new Array(size * 2).fill(-1)),
@@ -805,7 +788,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         if (isCellWithNumber(cell)) {
           // select first cell
           if (cell.cell === 1) {
-            setSelected(j);
+            onSelectedChange(j);
           }
           cellNumberPositionArray[j * 2] =
             cellNumberTextureAtlasLookup[cell.cell][0];
@@ -925,7 +908,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         setPrevSelected(selected);
         setPrevSelectedSide(selectedSide);
         setPrevOrientation(isVerticalOrientation);
-        setSelectedWordCell(undefined);
         setPrevTheme(theme);
 
         const { solution } = record;
@@ -938,29 +920,17 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         }
 
         if (selected != null && isVisibleSide(selected) === true) {
-          const { solution, wordSequences } = record;
-          const cell = solution[selected];
-
-          if (cell?.mapping != null) {
-            const sequenceIndex = isVerticalOrientation
-              ? cell?.mapping[selectedSide].downSequenceIndex
-              : cell?.mapping[selectedSide].acrossSequenceIndex;
-
-            if (sequenceIndex != null) {
-              const range = wordSequences[sequenceIndex];
-              // Select the clue. It will always be the first cell in the sequence
-              const rootWord = solution[range[0]];
-              if (
-                isCellWithNumber(rootWord.value) &&
-                typeof rootWord.value.cell === 'number'
-              ) {
-                setSelectedWordCell(rootWord.value.cell);
-              }
-              range.forEach((index) => {
-                if (index === selected) return;
-                matcapIndexArray[index] = MatcapIndexEnum.adjacent;
-              });
-            }
+          const range = getRangeForCell(
+            puzzle,
+            selected,
+            selectedSide,
+            isVerticalOrientation,
+          );
+          if (range.length > 1) {
+            range.forEach((index) => {
+              if (index === selected) return;
+              matcapIndexArray[index] = MatcapIndexEnum.adjacent;
+            });
           }
         }
 
@@ -1109,7 +1079,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         }
       }
 
-      setSelected(nextSelected);
+      onSelectedChange(nextSelected);
       if (isSingleSided === false && nextCell.side !== selectedSide) {
         let numSides = 0;
         while (numSides < puzzle.data.length) {
@@ -1133,10 +1103,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     },
     [
       record,
-      isSingleSided,
       isVerticalOrientation,
       selectedSide,
       selectNextBlankEnabled,
+      onSelectedChange,
+      isSingleSided,
       characterPositionArray,
       puzzle.data.length,
       turnRight,
@@ -1202,7 +1173,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               if (sIndex > -1 && sIndex < range.length - 1) {
                 // Update letter and move to the next cell
                 const nextCell = range[sIndex + 1];
-                setSelected(nextCell);
+                onSelectedChange(nextCell);
               } else if (autoNextEnabled === true) {
                 goToNextWord(selectedIndex, 1);
               }
@@ -1212,7 +1183,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               if (sIndex > 0) {
                 // Update letter and move to the previous cell
                 const nextCell = range[sIndex - 1];
-                setSelected(nextCell);
+                onSelectedChange(nextCell);
               } else if (autoNextEnabled === true) {
                 goToNextWord(selectedIndex, -1);
               }
@@ -1234,6 +1205,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       isVerticalOrientation,
       selectedSide,
       autoNextEnabled,
+      onSelectedChange,
       goToNextWord,
     ],
   );
@@ -1335,11 +1307,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
 
       e.stopPropagation();
-      setSelected(e.instanceId);
+      onSelectedChange(e.instanceId);
     },
     [
       isVerticalOrientation,
       isVisibleSide,
+      onSelectedChange,
       onVerticalOrientationChange,
       selected,
     ],
