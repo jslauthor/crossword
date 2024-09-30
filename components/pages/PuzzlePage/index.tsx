@@ -310,10 +310,8 @@ export default function Puzzle({
     return rangeOperation(0, 3, 0, -sideOffset);
   }, [sideOffset]);
 
-  const isSelectedSingleCell = useMemo(() => {
-    if (selected == null) return false;
-    return isSingleCell(puzzle, selected, selectedSide, isVerticalOrientation);
-  }, [isVerticalOrientation, puzzle, selected, selectedSide]);
+  const [isSelectedSingleCell, setIsSelectedSingleCell] =
+    useState<boolean>(false);
 
   // Update the clue and cell number when the selected cell changes
   useEffect(() => {
@@ -357,14 +355,13 @@ export default function Puzzle({
   ]);
 
   const handleSetOrientation = useCallback(
-    (orientation: boolean) => {
-      if (selected == null || isSelectedSingleCell === true) return;
-      const range = getRangeForCell(
-        puzzle,
-        selected,
-        selectedSide,
-        orientation,
-      );
+    (
+      orientation: boolean,
+      id: InstancedMesh['id'] | undefined = selected,
+      isSingle: boolean = isSelectedSingleCell,
+    ) => {
+      if (id == null || isSingle === true) return;
+      const range = getRangeForCell(puzzle, id, selectedSide, orientation);
       if (range.length > 1) {
         setVerticalOrientation(orientation);
       }
@@ -375,10 +372,19 @@ export default function Puzzle({
   const handleSelectedChange = useCallback(
     (id: InstancedMesh['id'] | undefined) => {
       setSelected(id);
-      if (id == null || isSelectedSingleCell === true) return;
+      if (id == null) return;
 
-      // We change the orientation if the cell is part of a range
-      // that is not the same orientation
+      const isSingle = isSingleCell(
+        puzzle,
+        id,
+        selectedSide,
+        isVerticalOrientation,
+      );
+      setIsSelectedSingleCell(isSingle);
+      if (isSingle === true) return;
+
+      // We change the orientation if the cell is single in one orientation
+      // but part of a sequence in another orientation
       const verticalRange = getRangeForCell(puzzle, id, selectedSide, true);
       const horizontalRange = getRangeForCell(puzzle, id, selectedSide, false);
       if (
@@ -386,22 +392,16 @@ export default function Puzzle({
         verticalRange.length < 2 &&
         horizontalRange.length > 1
       ) {
-        handleSetOrientation(false);
+        handleSetOrientation(false, id, isSingle);
       } else if (
         isVerticalOrientation === false &&
         horizontalRange.length < 2 &&
         verticalRange.length > 1
       ) {
-        handleSetOrientation(true);
+        handleSetOrientation(true, id, isSingle);
       }
     },
-    [
-      handleSetOrientation,
-      isSelectedSingleCell,
-      isVerticalOrientation,
-      puzzle,
-      selectedSide,
-    ],
+    [handleSetOrientation, isVerticalOrientation, puzzle, selectedSide],
   );
 
   const animatedClueText = useAnimatedText(clue, 60);

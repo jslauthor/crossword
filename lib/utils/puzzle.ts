@@ -1025,15 +1025,21 @@ export function isSingleCell(
   isVerticalOrientation: boolean,
 ): boolean {
   const cell = puzzle.record.solution[selected];
-  const sequenceIndex = isVerticalOrientation
-    ? cell?.mapping?.[selectedSide]?.downSequenceIndex
-    : cell?.mapping?.[selectedSide]?.acrossSequenceIndex;
 
-  if (sequenceIndex != null) {
+  const downSequenceIndex = cell?.mapping?.[selectedSide]?.downSequenceIndex;
+  const acrossSequenceIndex =
+    cell?.mapping?.[selectedSide]?.acrossSequenceIndex;
+
+  if (downSequenceIndex != null && acrossSequenceIndex != null) {
     // Only cells with clues can be single
     const isClueCell = isCellWithNumber(cell.value);
-    const sequence = puzzle.record.wordSequences[sequenceIndex];
-    return sequence.length === 1 && isClueCell === true;
+    const downSequence = puzzle.record.wordSequences[downSequenceIndex];
+    const acrossSequence = puzzle.record.wordSequences[acrossSequenceIndex];
+    return (
+      downSequence.length === 1 &&
+      acrossSequence.length === 1 &&
+      isClueCell === true
+    );
   }
   return false;
 }

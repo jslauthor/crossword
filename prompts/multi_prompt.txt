@@ -127,7 +127,7 @@ Swap out all of the numbers for the emojis in this grid then return to me a popu
   },
   // Across clues keyed by their cell number (root keys from "across" and "down")
   // This is an example. Please create clues for ALL of the keys in each across/down array
-  // DO NOT SKIP ANY KEYS
+  // DO NOT SKIP ANY KEYS AND DO NOT ADD ANY KEYS
   "clues": {
     "across": {
       "2": "<CLUE>", // made from the array of emoji IDs [1,2,3,etc]
