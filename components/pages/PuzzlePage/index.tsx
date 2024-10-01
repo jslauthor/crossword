@@ -469,7 +469,7 @@ export default function Puzzle({
     autoCheckEnabled,
     addAutocheckEnabled,
     addSelectNextBlankEnabled,
-    selectNextBlankEnabled,
+    selectNextBlankEnabled: selectNextBlankStored,
     draftModeEnabled,
     addDraftModeEnabled,
     hasRetrievedState,
@@ -479,6 +479,14 @@ export default function Puzzle({
     isInitialized === true,
     setIsPromptOpen,
   );
+
+  const disableNextBlankEnabled = useMemo(() => {
+    return isSingleSided === true && svgTextureAtlas != null;
+  }, [isSingleSided, svgTextureAtlas]);
+
+  const selectNextBlankEnabled = useMemo(() => {
+    return disableNextBlankEnabled === false && selectNextBlankStored;
+  }, [disableNextBlankEnabled, selectNextBlankStored]);
 
   const [_, api] = useSpring(() => ({
     singleSidedOffset: 0,
@@ -1093,6 +1101,7 @@ export default function Puzzle({
         autoNextEnabled={autoNextEnabled}
         onAutoNextChanged={addAutoNextEnabled}
         selectNextBlank={selectNextBlankEnabled}
+        hideNextBlank={disableNextBlankEnabled}
         onSelectNextBlankChanged={addSelectNextBlankEnabled}
       />
       {puzzleStats != null && (
