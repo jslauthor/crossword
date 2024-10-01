@@ -4,7 +4,7 @@ import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
 import { Stats, PerspectiveCamera, Html, Environment } from '@react-three/drei';
-import LetterBoxes, { SelectClueFn } from 'components/core/3d/LetterBoxes';
+import LetterBoxes from 'components/core/3d/LetterBoxes';
 import {
   Suspense,
   useCallback,

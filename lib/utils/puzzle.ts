@@ -12,7 +12,6 @@ import {
   SolutionCell,
   SolutionCellNumber,
   SolutionCellValue,
-  StandardCell,
 } from '../../types/types';
 import memoizeOne from 'memoize-one';
 import { PuzzleType } from 'types/types';
