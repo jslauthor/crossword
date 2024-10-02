@@ -315,7 +315,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     width,
     height,
     puzzle.data.length,
-    [cellsDisplayRef, cellsRef, selectedCellRef.current],
+    [cellsDisplayRef, cellsRef],
   );
 
   const showScaleAnimation = useScaleAnimation([
