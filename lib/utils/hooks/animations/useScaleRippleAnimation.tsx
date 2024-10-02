@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
 import {
-  Euler,
   InstancedMesh,
   Matrix4,
+  Mesh,
   Object3D,
   Quaternion,
   Vector3,
@@ -21,38 +21,42 @@ export const applyScaleAnimation = ({
   index,
   value,
 }: {
-  meshes: (InstancedMesh | null)[];
+  meshes: (InstancedMesh | Mesh | null)[];
   index: number;
   value: number;
 }) => {
   meshes.forEach((mesh) => {
     if (mesh == null) return;
 
-    const matrix: Matrix4 = new Matrix4();
-    mesh.getMatrixAt(index, matrix);
-    const position: Vector3 = new Vector3();
-    const rotation: Quaternion = new Quaternion();
-    const scale: Vector3 = new Vector3();
-    matrix.decompose(position, rotation, scale);
+    if (mesh instanceof InstancedMesh) {
+      const matrix = new Matrix4();
+      mesh.getMatrixAt(index, matrix);
+      const position = new Vector3();
+      const rotation = new Quaternion();
+      const scale = new Vector3();
+      matrix.decompose(position, rotation, scale);
 
-    // Validate the quaternion before applying it
-    if (
-      isNaN(rotation.x) ||
-      isNaN(rotation.y) ||
-      isNaN(rotation.z) ||
-      isNaN(rotation.w)
-    ) {
-      // Cannot apply a NaN quaternion -- likely from an
-      // object with a scale of 0 (the blank squares)
-      return;
+      // Validate the quaternion before applying it
+      if (
+        isNaN(rotation.x) ||
+        isNaN(rotation.y) ||
+        isNaN(rotation.z) ||
+        isNaN(rotation.w)
+      ) {
+        // Cannot apply a NaN quaternion -- likely from an
+        // object with a scale of 0 (the blank squares)
+        return;
+      }
+
+      tempObject.position.copy(position);
+      tempObject.quaternion.copy(rotation);
+      tempObject.scale.set(value, value, value);
+      tempObject.updateMatrix();
+      mesh.setMatrixAt(index, tempObject.matrix);
+      mesh.instanceMatrix.needsUpdate = true;
+    } else if (mesh instanceof Mesh) {
+      mesh.scale.set(value, value, value);
     }
-
-    tempObject.position.copy(position);
-    tempObject.quaternion.copy(rotation); // Directly copy the quaternion
-    tempObject.scale.set(value, value, value);
-    tempObject.updateMatrix();
-    mesh.setMatrixAt(index, tempObject.matrix);
-    mesh.instanceMatrix.needsUpdate = true;
   });
 };
 
@@ -62,7 +66,7 @@ export const useScaleRippleAnimation = (
   width: number,
   height: number,
   numSides: number,
-  refs: (InstancedMesh | null)[], // Allow null refs
+  refs: (InstancedMesh | Mesh | null)[], // Allow null refs
   onComplete?: () => void,
 ) => {
   const { scale: scaleAnimation } = useSpring({
@@ -85,7 +89,9 @@ export const useScaleRippleAnimation = (
 
   // Animation effect
   const showRippleAnimation = useCallback(() => {
-    const validRefs = refs.filter((ref): ref is InstancedMesh => ref !== null);
+    const validRefs = refs.filter(
+      (ref): ref is InstancedMesh | Mesh => ref !== null,
+    );
     if (validRefs.length === 0) return;
 
     // Holy quadratic batman!

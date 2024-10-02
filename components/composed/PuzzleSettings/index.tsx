@@ -83,7 +83,6 @@ const PuzzleSettings: React.FC<PuzzleSettingsProps> = ({
   const handleAutoNextTogglePressed = useCallback(() => {
     onAutoNextChanged(!autoNextEnabled);
   }, [autoNextEnabled, onAutoNextChanged]);
-  console.log(hideNextBlank);
   return (
     <Overlay title={title} onClose={onClose} isOpen={isOpen}>
       <SettingsContainer>
