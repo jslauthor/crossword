@@ -9,101 +9,66 @@ import clipboardy from 'clipboardy';
 const data: CrossmojiDataV2 = {
   version: '2.0',
   svgSegments: [],
-  seed: 640599,
+  seed: 634034,
   response: {
-    title: 'Symbolic Associations',
+    title: 'Iconic Mix-up',
     values: {
-      '1': {
-        value: 'u2600',
-      },
-      '2': {
-        value: 'u1f60d',
-      },
-      '3': {
-        value: 'u1f453',
-      },
-      '4': {
-        value: 'u1f333',
-      },
-      '5': {
-        value: 'u1f3e0',
-      },
-      '6': {
-        value: 'u1f442',
-      },
-      '7': {
-        value: 'u1f48d',
-      },
-      '8': {
-        value: 'u1f60e',
-      },
-      '9': {
-        value: 'u1f451',
-      },
-      '10': {
-        value: 'u1f4a1',
-      },
-      '11': {
-        value: 'u1f934',
-      },
-      '12': {
-        value: 'u1f478',
-      },
+      '1': { value: 'u1f431' },
+      '2': { value: 'u2708' },
+      '3': { value: 'u1f352' },
+      '4': { value: 'u1f436' },
+      '5': { value: 'u1f353' },
+      '6': { value: 'u1f4de' },
+      '7': { value: 'u1f34f' },
+      '8': { value: 'u1f697' },
+      '9': { value: 'u2615' },
+      '10': { value: 'u1f6e3' },
+      '11': { value: 'u1f511' },
+      '12': { value: 'u1f369' },
     },
     clues: {
       across: {
-        '2': 'Smitten expression',
-        '3': 'Elevated lodging for kids',
-        '4': 'Stud or hoop for a lobe',
-        '5': 'Cool customer',
-        '7': 'Symbol of inspiration',
-        '8': 'Royal offspring',
+        '2': 'Frequent flyer',
+        '4': 'It rings when you call',
+        '5': 'Forbidden fruit',
+        '8': 'It unlocks things',
       },
       down: {
-        '1': 'Bright accessory',
-        '6': 'Heir apparent',
+        '1': 'Popular pets',
+        '3': 'Red fruit duo',
+        '6': 'On the road',
+        '7': 'Morning treat',
       },
     },
     solution: [
-      ['u2600', 0, 'u1f60d', 0, 0],
-      ['u1f453', 0, 0, 'u1f333', 'u1f3e0'],
-      [0, 'u1f442', 'u1f48d', 0, 0],
-      ['u1f60e', 0, 0, 'u1f451', 0],
-      [0, 'u1f4a1', 0, 'u1f934', 'u1f478'],
+      ['u1f431', 0, 'u2708', 0, 'u1f352'],
+      ['u1f436', 0, 0, 0, 'u1f353'],
+      [0, 'u1f4de', 0, 'u1f34f', 0],
+      ['u1f697', 0, 0, 0, 'u2615'],
+      ['u1f6e3', 0, 'u1f511', 0, 'u1f369'],
     ],
   },
   source: {
     grid: [
-      [1, 0, 2, 0, 0],
-      [3, 0, 0, 4, 5],
-      [0, 6, 7, 0, 0],
-      [8, 0, 0, 9, 0],
-      [0, 10, 0, 11, 12],
+      [1, 0, 2, 0, 3],
+      [4, 0, 0, 0, 5],
+      [0, 6, 0, 7, 0],
+      [8, 0, 0, 0, 9],
+      [10, 0, 11, 0, 12],
     ],
     clues: {
-      down: {
-        '1': [1, 3],
-        '6': [9, 11],
-      },
-      across: {
-        '2': [2],
-        '3': [4, 5],
-        '4': [6, 7],
-        '5': [8],
-        '7': [10],
-        '8': [11, 12],
-      },
+      down: { '1': [1, 4], '3': [3, 5], '6': [8, 10], '7': [9, 12] },
+      across: { '2': [2], '4': [6], '5': [7], '8': [11] },
     },
     puzzle: [
-      [1, '#', 2, '#', '#'],
-      [':', '#', '#', 3, ':'],
-      ['#', 4, ':', '#', '#'],
-      [5, '#', '#', 6, '#'],
-      ['#', 7, '#', 8, ':'],
+      [1, '#', 2, '#', 3],
+      [':', '#', '#', '#', ':'],
+      ['#', 4, '#', 5, '#'],
+      [6, '#', '#', '#', 7],
+      [':', '#', 8, '#', ':'],
     ],
   },
 };
-
 data.svgSegments = createUniqueEmojiList(
   Object.values(data.response.values).map(({ value }) => value),
   emojiUnicodeList,
