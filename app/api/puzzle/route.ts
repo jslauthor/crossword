@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  createUniqueEmojiList,
-  convertCrossmojiDataV2,
-} from 'lib/utils/puzzle';
+import { convert } from 'url-slug';
+import { createUniqueEmojiList } from 'lib/utils/puzzle';
 import emojiUnicodeList from 'lib/emojiUnicodeList.mjs';
 import { CrossmojiDataV2 } from 'types/types';
 
@@ -38,33 +36,37 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         query: `
-          mutation CreateCrossmoji($data: CrossmojiCreateInput!) {
-            createCrossmoji(data: $data) {
+          mutation CreateCrosscube($input: CrosscubeCreateInput!) {
+            createCrosscube(data: $input) {
               id
               title
+              slug
             }
           }
         `,
         variables: {
-          title: data.response.title,
-          data,
-          authors: { connect: [{ id: 'clyc3wx0ru09807lmuveswsel' }] },
+          input: {
+            title: data.response.title,
+            slug: convert(data.response.title),
+            data,
+            authors: { connect: [{ id: 'clyc3wx0ru09807lmuveswsel' }] },
+          },
         },
       }),
     });
 
     if (!hygraphResponse.ok) {
-      throw new Error('Failed to create Crossmoji in Hygraph');
+      const errorMessage = await hygraphResponse.json();
+      throw new Error(
+        `Failed to create Crossmoji in Hygraph: ${JSON.stringify(errorMessage)}`,
+      );
     }
 
     const result = await hygraphResponse.json();
 
     return NextResponse.json(result, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error processing Crossmoji data:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
