@@ -56,7 +56,10 @@ export type LetterBoxesProps = {
   svgGridSize?: number;
   currentKey?: string | undefined;
   selected: number | undefined;
-  onSelectedChange: (selected: InstancedMesh['id'] | undefined) => void;
+  onSelectedChange: (
+    selected: InstancedMesh['id'] | undefined,
+    source?: 'keyboard' | 'mouse',
+  ) => void;
   selectedSide: number;
   fontColor: number;
   fontDraftColor: number;
@@ -566,9 +569,19 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   // Much simpler navigation for single-sided emoji based puzzles.
   // We only go to the next numbered cell in order no matter the orientation.
   const goToNextCell = useCallback(
-    (selected: number, polarity: 1 | -1 = 1) => {
+    (
+      selected: number,
+      polarity: 1 | -1 = 1,
+      source: 'letterChange' | undefined = undefined,
+    ) => {
       // Always default to horizontal when using emojis
-      const range = getRangeForCell(puzzle, selected, selectedSide, false);
+      const range = getRangeForCell(
+        puzzle,
+        selected,
+        selectedSide,
+        isVerticalOrientation,
+      );
+      const isDelete = source === 'letterChange' && polarity === -1;
       const { solution } = puzzle.record;
       const rootWord = solution[range[0]];
       if (
@@ -576,6 +589,10 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         isCellWithNumber(rootWord.value) &&
         typeof rootWord.value.cell === 'number'
       ) {
+        // If deleting a numbered cell, don't do anything
+        if (isDelete && selected === range[0]) {
+          return;
+        }
         const { cell: cellNumber } = rootWord.value;
         const nextSequenceIndex = rangeOperation(
           1,
@@ -583,17 +600,28 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           cellNumber,
           polarity,
         );
-        onSelectedChange(clueMap[nextSequenceIndex]);
+        onSelectedChange(clueMap[nextSequenceIndex], 'mouse');
       }
     },
-    [clueMap, numClues, onSelectedChange, puzzle, selectedSide],
+    [
+      clueMap,
+      numClues,
+      onSelectedChange,
+      puzzle,
+      selectedSide,
+      isVerticalOrientation,
+    ],
   );
 
   const goToNextWord = useCallback(
-    (selected: number, polarity: 1 | -1 = 1) => {
+    (
+      selected: number,
+      polarity: 1 | -1 = 1,
+      source: 'letterChange' | undefined = undefined,
+    ) => {
       // Only use simple selection method for single-sided emoji puzzles
       if (isSingleSided === true && svgTextureAtlas != null) {
-        goToNextCell(selected, polarity);
+        goToNextCell(selected, polarity, source);
         return;
       }
 
@@ -685,7 +713,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         }
       }
 
-      onSelectedChange(nextSelected);
+      onSelectedChange(nextSelected, 'mouse');
       if (isSingleSided === false && nextCell.side !== selectedSide) {
         let numSides = 0;
         while (numSides < puzzle.data.length) {
@@ -781,9 +809,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               if (sIndex > -1 && sIndex < range.length - 1) {
                 // Update letter and move to the next cell
                 const nextCell = range[sIndex + 1];
-                onSelectedChange(nextCell);
+                onSelectedChange(nextCell, 'keyboard');
               } else if (autoNextEnabled === true) {
-                goToNextWord(selectedIndex, 1);
+                goToNextWord(selectedIndex, 1, 'letterChange');
               }
             } else {
               // Delete letter and move to the previous cell
@@ -791,9 +819,9 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
               if (sIndex > 0) {
                 // Update letter and move to the previous cell
                 const nextCell = range[sIndex - 1];
-                onSelectedChange(nextCell);
+                onSelectedChange(nextCell, 'keyboard');
               } else if (autoNextEnabled === true) {
-                goToNextWord(selectedIndex, -1);
+                goToNextWord(selectedIndex, -1, 'letterChange');
               }
             }
           }
@@ -915,7 +943,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
 
       e.stopPropagation();
-      onSelectedChange(e.instanceId);
+      onSelectedChange(e.instanceId, 'mouse');
     },
     [
       isVerticalOrientation,

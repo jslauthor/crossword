@@ -31,7 +31,6 @@ import TurnArrow from 'components/svg/TurnArrow';
 import { SwipeControls } from 'components/core/3d/SwipeControls';
 import { rangeOperation } from 'lib/utils/math';
 import { useAnimatedText } from 'lib/utils/hooks/useAnimatedText';
-import Particles from 'components/core/3d/Particles';
 import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
 import Menu from 'components/containers/Menu';
@@ -40,6 +39,7 @@ import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
 import {
   createInitialState,
+  getBlanksForIds,
   getPuzzleLabel,
   getRangeForCell,
   getType,
@@ -354,58 +354,6 @@ export default function Puzzle({
     selectedSide,
   ]);
 
-  const handleSetOrientation = useCallback(
-    (
-      orientation: boolean,
-      id: InstancedMesh['id'] | undefined = selected,
-      isSingle: boolean = isSelectedSingleCell,
-    ) => {
-      if (id == null || isSingle === true) return;
-      const range = getRangeForCell(puzzle, id, selectedSide, orientation);
-      if (range.length > 1) {
-        setVerticalOrientation(orientation);
-      }
-    },
-    [isSelectedSingleCell, puzzle, selected, selectedSide],
-  );
-
-  const handleSelectedChange = useCallback(
-    (id: InstancedMesh['id'] | undefined) => {
-      setSelected(id);
-      if (id == null) return;
-
-      const isSingle = isSingleCell(
-        puzzle,
-        id,
-        selectedSide,
-        isVerticalOrientation,
-      );
-      setIsSelectedSingleCell(isSingle);
-      if (isSingle === true) return;
-
-      // We change the orientation if the cell is single in one orientation
-      // but part of a sequence in another orientation
-      const verticalRange = getRangeForCell(puzzle, id, selectedSide, true);
-      const horizontalRange = getRangeForCell(puzzle, id, selectedSide, false);
-      if (
-        isVerticalOrientation === true &&
-        verticalRange.length < 2 &&
-        horizontalRange.length > 1
-      ) {
-        handleSetOrientation(false, id, isSingle);
-      } else if (
-        isVerticalOrientation === false &&
-        horizontalRange.length < 2 &&
-        verticalRange.length > 1
-      ) {
-        handleSetOrientation(true, id, isSingle);
-      }
-    },
-    [handleSetOrientation, isVerticalOrientation, puzzle, selectedSide],
-  );
-
-  const animatedClueText = useAnimatedText(clue, 60);
-
   const [puzzleWidth] = useMemo(() => {
     if (puzzle == null || puzzle.data.length < 1) {
       return [8]; // default to 8
@@ -414,38 +362,6 @@ export default function Puzzle({
     const totalPerSide = width * height;
     return [width, height, totalPerSide];
   }, [puzzle]);
-
-  const [fogNear, setFogNear] = useState(0);
-  const [fogFar, setFogFar] = useState(100);
-  const [objectDepth, setsetObjectDepth] = useState(0);
-
-  useEffect(() => {
-    if (cameraRef == null || groupRef == null || isInitialized === false) {
-      return undefined;
-    }
-
-    const { boundingBox, cameraZ } = fitCameraToCenteredObject(
-      cameraRef,
-      groupRef,
-      new Vector3(puzzleWidth, puzzleWidth, puzzleWidth),
-      1.02,
-    );
-
-    const objectDepth = boundingBox.max.z - boundingBox.min.z;
-    const fogNearDistance = (cameraZ - objectDepth / 2) * 1.02;
-    const fogFarDistance = (cameraZ + objectDepth / 2) * 1.02;
-
-    setsetObjectDepth(objectDepth);
-    setFogNear(fogNearDistance);
-    setFogFar(fogFarDistance);
-  }, [
-    cameraRef,
-    groupRef,
-    puzzleWidth,
-    canvasHeight,
-    canvasWidth,
-    isInitialized,
-  ]);
 
   const groupRefPosition: Vector3 = useMemo(() => {
     const multiplier = (puzzleWidth - 1) / 2;
@@ -480,9 +396,120 @@ export default function Puzzle({
     setIsPromptOpen,
   );
 
-  const disableNextBlankEnabled = useMemo(() => {
+  const isSingleSidedEmojiPuzzle = useMemo(() => {
     return isSingleSided === true && svgTextureAtlas != null;
   }, [isSingleSided, svgTextureAtlas]);
+
+  const handleSetOrientation = useCallback(
+    (
+      orientation: boolean,
+      id: InstancedMesh['id'] | undefined = selected,
+      isSingle: boolean = isSelectedSingleCell,
+    ) => {
+      if (id == null || isSingle === true) return;
+      const range = getRangeForCell(puzzle, id, selectedSide, orientation);
+      if (range.length > 1) {
+        setVerticalOrientation(orientation);
+      }
+    },
+    [isSelectedSingleCell, puzzle, selected, selectedSide],
+  );
+
+  const handleSelectedChange = useCallback(
+    (id: InstancedMesh['id'] | undefined, source?: 'keyboard' | 'mouse') => {
+      setSelected(id);
+      if (
+        source === 'keyboard' ||
+        id == null ||
+        isSingleSidedEmojiPuzzle === false
+      )
+        return;
+
+      const isSingle = isSingleCell(puzzle, id, selectedSide);
+      setIsSelectedSingleCell(isSingle);
+      if (isSingle === true) return;
+
+      const verticalRange = getRangeForCell(puzzle, id, selectedSide, true);
+      const horizontalRange = getRangeForCell(puzzle, id, selectedSide, false);
+      const cell = puzzle.record.solution[id];
+      if (isCellWithNumber(cell.value)) {
+        const hasVertical = verticalRange.length > 1 && verticalRange[0] === id;
+        const hasHorizontal =
+          horizontalRange.length > 1 && horizontalRange[0] === id;
+
+        // If both directions have multiple cells, prefer the one with blanks
+        if (hasVertical === true && hasHorizontal === true) {
+          if (getBlanksForIds(verticalRange, characterPositions).length > 0) {
+            handleSetOrientation(true, id, false);
+          } else {
+            handleSetOrientation(false, id, false);
+          }
+        } else if (hasVertical === true) {
+          handleSetOrientation(true, id, false);
+        } else if (hasHorizontal === true) {
+          handleSetOrientation(false, id, false);
+        }
+      } else if (
+        isVerticalOrientation === true &&
+        verticalRange.length < 2 &&
+        horizontalRange.length > 1
+      ) {
+        handleSetOrientation(false, id, isSingle);
+      } else if (
+        isVerticalOrientation === false &&
+        horizontalRange.length < 2 &&
+        verticalRange.length > 1
+      ) {
+        handleSetOrientation(true, id, isSingle);
+      }
+    },
+    [
+      characterPositions,
+      handleSetOrientation,
+      isSingleSidedEmojiPuzzle,
+      isVerticalOrientation,
+      puzzle,
+      selectedSide,
+    ],
+  );
+
+  const animatedClueText = useAnimatedText(clue, 60);
+
+  const [fogNear, setFogNear] = useState(0);
+  const [fogFar, setFogFar] = useState(100);
+  const [objectDepth, setsetObjectDepth] = useState(0);
+
+  useEffect(() => {
+    if (cameraRef == null || groupRef == null || isInitialized === false) {
+      return undefined;
+    }
+
+    const { boundingBox, cameraZ } = fitCameraToCenteredObject(
+      cameraRef,
+      groupRef,
+      new Vector3(puzzleWidth, puzzleWidth, puzzleWidth),
+      1.02,
+    );
+
+    const objectDepth = boundingBox.max.z - boundingBox.min.z;
+    const fogNearDistance = (cameraZ - objectDepth / 2) * 1.02;
+    const fogFarDistance = (cameraZ + objectDepth / 2) * 1.02;
+
+    setsetObjectDepth(objectDepth);
+    setFogNear(fogNearDistance);
+    setFogFar(fogFarDistance);
+  }, [
+    cameraRef,
+    groupRef,
+    puzzleWidth,
+    canvasHeight,
+    canvasWidth,
+    isInitialized,
+  ]);
+
+  const disableNextBlankEnabled = useMemo(() => {
+    return isSingleSidedEmojiPuzzle === true;
+  }, [isSingleSidedEmojiPuzzle]);
 
   const selectNextBlankEnabled = useMemo(() => {
     return disableNextBlankEnabled === false && selectNextBlankStored;

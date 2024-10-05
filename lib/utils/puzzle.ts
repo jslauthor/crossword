@@ -1021,7 +1021,6 @@ export function isSingleCell(
   puzzle: PuzzleType,
   selected: number,
   selectedSide: number,
-  isVerticalOrientation: boolean,
 ): boolean {
   const cell = puzzle.record.solution[selected];
 
@@ -1045,12 +1044,12 @@ export function isSingleCell(
 
 export function getRangeForCell(
   puzzle: PuzzleType,
-  selected: number,
+  id: number,
   selectedSide: number,
   isVerticalOrientation: boolean,
 ): number[] {
   const { solution, wordSequences } = puzzle.record;
-  const cell = solution[selected];
+  const cell = solution[id];
   const sequenceIndex =
     isVerticalOrientation === false
       ? cell?.mapping?.[selectedSide]?.acrossSequenceIndex
@@ -1059,4 +1058,19 @@ export function getRangeForCell(
     return wordSequences[sequenceIndex];
   }
   return [];
+}
+
+export function getBlanksForIds(
+  ids: number[],
+  characterPositionArray: Float32Array | undefined,
+): number[] {
+  if (characterPositionArray == null) {
+    return [];
+  }
+  return ids.filter((id) => {
+    return (
+      characterPositionArray[id * 2] === -1 &&
+      characterPositionArray[id * 2 + 1] === -1
+    );
+  });
 }
