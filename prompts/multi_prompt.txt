@@ -119,6 +119,7 @@ Swap out all of the numbers for the emojis in this grid then return to me a popu
 {
   // Come up with an appropriate title for the theme (max 70 chars)
   title: "<TITLE>", // Keep it clever. Don't refer to Emoji in the title unless absolutely necessary
+  theme: "<PROVIDED THEME>", // Omit this field if there is no theme, otherwise pass through the provided theme
   // Emoji dictionary keyed by their ids in the grid
   "values": {
     1: { value: "UNICODE_STRING" }, // number found in grid

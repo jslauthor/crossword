@@ -97,6 +97,7 @@ export interface CrossmojiDataV2 {
   svgSegments: string[];
   response: {
     title: string;
+    theme?: string;
     values: {
       [key: number | string]: {
         value: string;

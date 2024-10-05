@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
               id
               title
               slug
+              theme
             }
           }
         `,
@@ -49,6 +50,7 @@ export async function POST(request: NextRequest) {
             title: data.response.title,
             slug: convert(data.response.title),
             data,
+            theme: data.response.theme,
             authors: { connect: [{ id: 'clyc3wx0ru09807lmuveswsel' }] },
           },
         },
