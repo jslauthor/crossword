@@ -127,30 +127,29 @@ const SolvedContainer = styled.div`
   margin: 0 auto;
 `;
 
-const TurnButton = styled.div<{ $side: 'left' | 'right'; $color: string }>`
+const TurnButton = styled.div<{ $color: string }>`
   padding: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   ${({ $color }) =>
     `background-color: #${tinycolor($color).darken(15).toHex()};`}
-  ${({ $side }) => {
-    if ($side === 'left') {
-      return 'border-right: none; border-radius: 0.25rem 0 0 0.25rem;';
-    } else {
-      return 'border-left: none; border-radius: 0 0.25rem 0.25rem 0;';
-    }
-  }}
+`;
+
+const InfoBarWrapper = styled.div`
+  max-width: var(--primary-app-width);
+  width: 100%;
+  margin-bottom: 0.125rem;
 `;
 
 const InfoBar = styled.div`
   position: relative;
   display: grid;
   grid-template-columns: min-content 1fr min-content;
-  max-width: var(--primary-app-width);
   width: 100%;
   height: min-content;
-  margin-bottom: 0.125rem;
+  border-radius: 0.25rem;
+  overflow: hidden;
 `;
 
 const ClueContainer = styled.div<{ $backgroundColor: string }>`
@@ -1036,71 +1035,71 @@ export default function Puzzle({
         </Canvas>
         {isInitialized === true && (
           <>
-            <InfoBar>
-              <TurnButton
-                onClick={handleTurnLeft}
-                $side="left"
-                $color={toHex(adjacentColor)}
-              >
-                <TurnArrow
-                  width={20}
-                  height={20}
-                  color={toHex(turnArrowColor)}
-                />
-              </TurnButton>
-              <ClueContainer
-                $backgroundColor={toHex(adjacentColor)}
-                onClick={onClueClick}
-              >
-                <ClueTextContainer>
-                  {cellNumber != null && (
-                    <SelectedInfo $backgroundColor={toHex(selectedColor)}>
-                      {`${cellNumber}`}
-                      {isSelectedSingleCell == false ? (
-                        isVerticalOrientation ? (
-                          <FontAwesomeIcon
-                            icon={faChevronCircleDown}
-                            width={10}
-                          />
-                        ) : (
-                          <FontAwesomeIcon
-                            icon={faChevronCircleRight}
-                            width={10}
-                          />
-                        )
-                      ) : null}
-                    </SelectedInfo>
-                  )}
-                  &nbsp;
-                  <ClueLabel
-                    dangerouslySetInnerHTML={{ __html: animatedClueText }}
-                  />{' '}
-                </ClueTextContainer>
-                <BackNextButtonsContainer
-                  $backgroundColor={toHex(adjacentColor)}
+            <InfoBarWrapper>
+              <InfoBar>
+                <TurnButton
+                  onClick={handleTurnLeft}
+                  $color={toHex(adjacentColor)}
                 >
-                  <IconContainer onClick={handlePrevWord(selected)}>
-                    <FontAwesomeIcon icon={faChevronLeft} width={20} />
-                  </IconContainer>
-                  <VRule />
-                  <IconContainer onClick={handleNextWord(selected)}>
-                    <FontAwesomeIcon icon={faChevronRight} width={20} />
-                  </IconContainer>
-                </BackNextButtonsContainer>
-              </ClueContainer>
-              <TurnButton
-                onClick={handleTurnRight}
-                $side="right"
-                $color={toHex(adjacentColor)}
-              >
-                <TurnArrow
-                  width={20}
-                  height={20}
-                  flipped
-                  color={toHex(turnArrowColor)}
-                />
-              </TurnButton>
-            </InfoBar>
+                  <TurnArrow
+                    width={20}
+                    height={20}
+                    color={toHex(turnArrowColor)}
+                  />
+                </TurnButton>
+                <ClueContainer
+                  $backgroundColor={toHex(adjacentColor)}
+                  onClick={onClueClick}
+                >
+                  <ClueTextContainer>
+                    {cellNumber != null && (
+                      <SelectedInfo $backgroundColor={toHex(selectedColor)}>
+                        {`${cellNumber}`}
+                        {isSelectedSingleCell == false ? (
+                          isVerticalOrientation ? (
+                            <FontAwesomeIcon
+                              icon={faChevronCircleDown}
+                              width={10}
+                            />
+                          ) : (
+                            <FontAwesomeIcon
+                              icon={faChevronCircleRight}
+                              width={10}
+                            />
+                          )
+                        ) : null}
+                      </SelectedInfo>
+                    )}
+                    &nbsp;
+                    <ClueLabel
+                      dangerouslySetInnerHTML={{ __html: animatedClueText }}
+                    />{' '}
+                  </ClueTextContainer>
+                  <BackNextButtonsContainer
+                    $backgroundColor={toHex(adjacentColor)}
+                  >
+                    <IconContainer onClick={handlePrevWord(selected)}>
+                      <FontAwesomeIcon icon={faChevronLeft} width={20} />
+                    </IconContainer>
+                    <VRule />
+                    <IconContainer onClick={handleNextWord(selected)}>
+                      <FontAwesomeIcon icon={faChevronRight} width={20} />
+                    </IconContainer>
+                  </BackNextButtonsContainer>
+                </ClueContainer>
+                <TurnButton
+                  onClick={handleTurnRight}
+                  $color={toHex(adjacentColor)}
+                >
+                  <TurnArrow
+                    width={20}
+                    height={20}
+                    flipped
+                    color={toHex(turnArrowColor)}
+                  />
+                </TurnButton>
+              </InfoBar>
+            </InfoBarWrapper>
             <KeyboardContainer $svgCssMap={svgCssMap}>
               {isPuzzleSolved && (
                 <SolvedContainer>
