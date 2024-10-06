@@ -584,8 +584,8 @@ export default function Puzzle({
   // This will autocomplete the puzzle to test the success state
   const finishPuzzle = useCallback(() => {
     if (
-      location.hostname === 'localhost' ||
-      location.hostname === '127.0.0.1'
+      process.env.NEXT_PUBLIC_VERCEL_ENV === 'development' ||
+      process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview'
     ) {
       const { solution } = puzzle.record;
       for (let x = 0; x < solution.length; x++) {
