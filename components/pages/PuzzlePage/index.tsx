@@ -184,7 +184,7 @@ const ClueTextContainer = styled.div`
   gap: 0.15rem;
 `;
 
-const BackNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
+const BackNextButtonsContainer = styled.div`
   position: relative;
   display: flex;
   right: -0.5rem;
@@ -228,6 +228,8 @@ function Loader() {
     </Html>
   );
 }
+
+const noop = () => {};
 
 export default function Puzzle({
   puzzle,
@@ -727,6 +729,15 @@ export default function Puzzle({
     [],
   );
 
+  const handleRightButtonClick = useCallback(
+    () => (isSingleSided ? handleNextWord(selected)() : turnRight()),
+    [isSingleSided, handleNextWord, selected, turnRight],
+  );
+  const handleLeftButtonClick = useCallback(
+    () => (isSingleSided ? handlePrevWord(selected)() : turnLeft()),
+    [isSingleSided, handlePrevWord, selected, turnLeft],
+  );
+
   const {
     characterPositions: defaultCharacterPositions,
     draftModes: defaultDraftModes,
@@ -749,15 +760,6 @@ export default function Puzzle({
   const handleShareClose = useCallback(() => {
     setIsShareOpen(false);
   }, []);
-
-  const handleNext = useCallback(
-    () => handleNextWord(selected)(undefined),
-    [handleNextWord, selected],
-  );
-  const handlePrev = useCallback(
-    () => handlePrevWord(selected)(undefined),
-    [handlePrevWord, selected],
-  );
 
   // Update page title with puzzle title
   useEffect(() => {
@@ -809,16 +811,13 @@ export default function Puzzle({
     }
   }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
-  const handleTurnRight = useCallback(() => turnRight(), [turnRight]);
-  const handleTurnLeft = useCallback(() => turnLeft(), [turnLeft]);
-
   // Keyboard shortcuts
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
-  useKeyDown(handlePrev, ['ARROWLEFT']);
-  useKeyDown(handleNext, ['ARROWRIGHT']);
-  useKeyDown(handleNext, ['TAB'], true, false, true);
-  useKeyDown(handleTurnRight, ['ARROWUP']);
-  useKeyDown(handleTurnLeft, ['ARROWDOWN']);
+  useKeyDown(() => handlePrevWord(selected)(), ['ARROWLEFT']);
+  useKeyDown(() => handleNextWord(selected)(), ['ARROWRIGHT']);
+  useKeyDown(() => handleNextWord(selected)(), ['TAB'], true, false, true);
+  useKeyDown(isSingleSided ? noop : handleRightButtonClick, ['ARROWUP']);
+  useKeyDown(isSingleSided ? noop : handleLeftButtonClick, ['ARROWDOWN']);
   useKeyDown(onClueClick, [' ']);
   useKeyDown(finishPuzzle, ['`']);
 
@@ -936,6 +935,30 @@ export default function Puzzle({
     }
   }, [puzzle]);
 
+  const leftChevronIcon = useMemo(() => {
+    return <FontAwesomeIcon icon={faChevronLeft} width={20} />;
+  }, []);
+
+  const rightChevronIcon = useMemo(() => {
+    return <FontAwesomeIcon icon={faChevronRight} width={20} />;
+  }, []);
+
+  const leftChevronButton = useMemo(() => {
+    return (
+      <IconContainer onClick={handlePrevWord(selected)}>
+        {leftChevronIcon}
+      </IconContainer>
+    );
+  }, [handlePrevWord, leftChevronIcon, selected]);
+
+  const rightChevronButton = useMemo(() => {
+    return (
+      <IconContainer onClick={handleNextWord(selected)}>
+        {rightChevronIcon}
+      </IconContainer>
+    );
+  }, [handleNextWord, rightChevronIcon, selected]);
+
   return (
     <>
       <Menu
@@ -1038,14 +1061,18 @@ export default function Puzzle({
             <InfoBarWrapper>
               <InfoBar>
                 <TurnButton
-                  onClick={handleTurnLeft}
+                  onClick={handleLeftButtonClick}
                   $color={toHex(adjacentColor)}
                 >
-                  <TurnArrow
-                    width={20}
-                    height={20}
-                    color={toHex(turnArrowColor)}
-                  />
+                  {isSingleSided === false ? (
+                    <TurnArrow
+                      width={20}
+                      height={20}
+                      color={toHex(turnArrowColor)}
+                    />
+                  ) : (
+                    leftChevronIcon
+                  )}
                 </TurnButton>
                 <ClueContainer
                   $backgroundColor={toHex(adjacentColor)}
@@ -1075,28 +1102,28 @@ export default function Puzzle({
                       dangerouslySetInnerHTML={{ __html: animatedClueText }}
                     />{' '}
                   </ClueTextContainer>
-                  <BackNextButtonsContainer
-                    $backgroundColor={toHex(adjacentColor)}
-                  >
-                    <IconContainer onClick={handlePrevWord(selected)}>
-                      <FontAwesomeIcon icon={faChevronLeft} width={20} />
-                    </IconContainer>
-                    <VRule />
-                    <IconContainer onClick={handleNextWord(selected)}>
-                      <FontAwesomeIcon icon={faChevronRight} width={20} />
-                    </IconContainer>
-                  </BackNextButtonsContainer>
+                  {isSingleSided === false && (
+                    <BackNextButtonsContainer>
+                      {leftChevronButton}
+                      <VRule />
+                      {rightChevronButton}
+                    </BackNextButtonsContainer>
+                  )}
                 </ClueContainer>
                 <TurnButton
-                  onClick={handleTurnRight}
+                  onClick={handleRightButtonClick}
                   $color={toHex(adjacentColor)}
                 >
-                  <TurnArrow
-                    width={20}
-                    height={20}
-                    flipped
-                    color={toHex(turnArrowColor)}
-                  />
+                  {isSingleSided === false ? (
+                    <TurnArrow
+                      width={20}
+                      height={20}
+                      flipped
+                      color={toHex(turnArrowColor)}
+                    />
+                  ) : (
+                    rightChevronIcon
+                  )}
                 </TurnButton>
               </InfoBar>
             </InfoBarWrapper>
