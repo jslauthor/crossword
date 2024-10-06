@@ -103,7 +103,11 @@ const createWhereForType = (types: CrosscubeType[]) => {
         case 'mini':
           return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 5 && @.dimensions.height == 5)" }';
         case 'moji':
-          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 3 && @.dimensions.height == 3)" }, { data_json_path_exists: "$.items" }';
+          return `
+            { data_json_path_exists: "$[*] ? (@.dimensions.width == 3 && @.dimensions.height == 3)" }, 
+            { data_json_path_exists: "$.items" },
+            { data_json_path_exists: "$[*] ? (@.version == \\"2.0\\" && @.svgSegments != null && @.source != null && @.response != null)" }
+          `;
         default:
           return '';
       }

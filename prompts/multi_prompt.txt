@@ -2,7 +2,9 @@
 
 USE THE UNICODE VALUE FOR EMOJIS WHEN REFERENCING AN EMOJI EXACTLY AS IN THE EMOJI ARRAY.
 
-You are creating words comprised only from the list of approved emojis. Look at the sequences in across and down. For every number, you will use that as an ID for a specific emoji and will swap the number for that emoji. For instance, 1 might be 🌊 and 5 might be 🐚, so in across, "1": will be [🌊] as the sequence and in down, "1" will be [🌊,🐚]. Give me sequences that make sense as words, and then clues for those sequences. A good clue for [🌊,🐚] would be "seashell". The clues do not need to be multiple words. In fact, clues that are one word made from several emojis are preferred, much like seashell. For instance, "hand peace" for ✋🏻☮️ is a bad clue since it's literal. You can also use phrases, e.g. 🙈🙉🙊 could be "see no evil, hear no evil, speak no evil". That is an example of a great clue as well as seashell. Make the clues tough but not frustrating (they should be fair). 
+You are creating words comprised only from the list of approved emojis. Look at the sequences in across and down in the source below. For every number, you will use that as an ID for a specific emoji and will swap the number for that emoji. For instance, 1 might be 🌊 and 5 might be 🐚, so in across, "1": will be [🌊] as the sequence and in down, "1" will be [🌊,🐚]. Give me sequences that make sense as words, and then clues for those sequences. A good clue for [🌊,🐚] would be "seashell". The clues do not need to be multiple words. In fact, clues that are one word made from several emojis are preferred, much like seashell. For instance, "hand peace" for ✋🏻☮️ is a bad clue since it's literal. You can also use phrases, e.g. 🙈🙉🙊 could be "see no evil, hear no evil, speak no evil". That is an example of a great clue as well as seashell. Make the clues tough but not frustrating (they should be fair). 
+
+Do not use emojis that could be interpreted as the same lower-level concept. For instance, there are several emojis that contain a plain house. Only choose one house emoji in that case. Select from a wide range of different emoji concepts. 
 
 Provide an emoji for each ID in the grid. That means that some IDs in the source grid could be the same emoji. Try not repeat an ID (emoji) more than once unless it is highly relevant to the clue.
 
@@ -33,7 +35,7 @@ CLUES SHOULD BE CLEVER, PLAYFUL, AND VIBRANT. THEY MUST MAKE SENSE. TRIPLE CHECK
 
 IF AN EMOJI IS A PICTURE OF A COMPUTER, DON'T USE "PERSONAL COMPUTING DEVICE." BE MORE CLEVER THAN THAT. SOMETHING LIKE "One's own silicon sidekick" IS FUN AND INDIRECT BUT OBVIOUS WHEN YOU THINK ABOUT IT. THIS IS AN EXAMPLE CLUE -- DO NOT USE IT.
 
-You should be able to figure out the order of the emojis from the clues. For example, [🎸,🎹,🥁] "Band essentials" is a bad clue. While bands use those instruments, which is good, how can the user figure out their order? Avoid this or give more infomation in the clue.
+You should be able to figure out the order of the emojis from the clues. For example, [🎸,🎹,🥁] "Band essentials" is a bad clue. While bands use those instruments, which is good, how can the user figure out their order? Avoid this or give more information in the clue.
 
 I'm going to give you a theme to work within. All of the clues do not need to be based on the theme, but at least 80% of them should. The theme is Pop Music.
 
@@ -111,48 +113,50 @@ Here is the source:
   ]
 }
 
-# Output
+# Output pure JSON
 
-Swap out all of the numbers for the emojis in this grid then return to me a populated format like:
+When selecting a title, look at all of the emojis and come up with a theme across them all. Do not refer include "emoji" or "crossword" in the title. Make the title about the concepts in the puzzle and not about the puzzle itself. The title can be no longer than 70 characters.
 
-// EXAMPLE - YOU MUST THINK ABOUT HOW TO APPLY THE ABOVE TO THIS
+Omit the "theme" field if there is no theme, otherwise pass through the provided theme.
+
+Clues:
+  Across clues are keyed by their cell number (root keys from "across" and "down")
+  Create clues for ALL of the keys in each across/down array
+  DO NOT SKIP ANY KEYS AND DO NOT ADD ANY KEYS
+  <CLUE> is made from the array of emoji IDs [1,2,3,etc]
+
+Solution: 
+  This is example soltuion, replace with actual supplied grid above
+
+Below is an example of the JSON schema. Use the above grid to swap out all of the numbers for the emojis in the grid then return to me a populated format like:
+
 {
-  // Come up with an appropriate title for the theme (max 70 chars)
-  title: "<TITLE>", // Keep it clever. Don't refer to Emoji in the title unless absolutely necessary
-  theme: "<PROVIDED THEME>", // Omit this field if there is no theme, otherwise pass through the provided theme
-  // Emoji dictionary keyed by their ids in the grid
+  title: "<TITLE>", 
+  theme: "<PROVIDED THEME>",
   "values": {
-    1: { value: "UNICODE_STRING" }, // number found in grid
-    2: { value: "UNICODE_STRING" }, // number found in grid
-    3: { value: "UNICODE_STRING" }, // number found in grid
-    4: { value: "UNICODE_STRING" } // number found in grid
-    // and so on
+    1: { value: "UNICODE_STRING" },
+    2: { value: "UNICODE_STRING" },
+    3: { value: "UNICODE_STRING" },
+    4: { value: "UNICODE_STRING" }
   },
-  // Across clues keyed by their cell number (root keys from "across" and "down")
-  // This is an example. Please create clues for ALL of the keys in each across/down array
-  // DO NOT SKIP ANY KEYS AND DO NOT ADD ANY KEYS
+
   "clues": {
     "across": {
-      "2": "<CLUE>", // made from the array of emoji IDs [1,2,3,etc]
-      "3": "<CLUE>",    
-      // and so on
+      "2": "<CLUE>",
+      "3": "<CLUE>"   
     },
-    // Down clues
     "down": {
       "1": "<CLUE>",
       "6": "<CLUE>",
-      // and so on
     },
   },
-  // example grid, replace with actual supplied grid above
   "solution": [
     ["<UNICODE_STRING>", 0, "<UNICODE_STRING>", "<UNICODE_STRING>", "<UNICODE_STRING>"],
     ["<UNICODE_STRING>", 0, "<UNICODE_STRING>", 0, "<UNICODE_STRING>"],
     [0, "<UNICODE_STRING>", 0, "<UNICODE_STRING>", 0],
     ["<UNICODE_STRING>", 0, "<UNICODE_STRING>", 0, "<UNICODE_STRING>"],
     ["<UNICODE_STRING>", "<UNICODE_STRING>", "<UNICODE_STRING>", 0, "<UNICODE_STRING>"]
-  ],
+  ]
 }
 
-
-PRINT VALID JSON ONLY. DO NOT PROVIDE ANY OTHER INFORMATION BESIDES JSON.
+PRINT VALID JSON ONLY. DO NOT PROVIDE ANY OTHER INFORMATION BESIDES PURE JSON. IT SHOULD VALIDATE IN A JSON VALIDATOR. DO NOT SURROUND IT WITH ```. DO NOT ADD COMMENTS TO THE JSON. JSON.PARSE SHOULD BE ABLE TO PARSE THE JSON YOU PROVIDE.
