@@ -16,7 +16,7 @@ interface PuzzlePromptProps {
 
 const PuzzlePrompt: React.FC<PuzzlePromptProps> = ({ isOpen, onClose }) => {
   return (
-    <Drawer open={isOpen} onClose={onClose}>
+    <Drawer open={isOpen} onClose={onClose} setBackgroundColorOnScale={false}>
       <DrawerContent className="mb-8">
         <DrawerHeader className="flex flex-col justify-center items-center max-w-22 w-full my-6 p-0 gap-1">
           <Image
@@ -33,12 +33,10 @@ const PuzzlePrompt: React.FC<PuzzlePromptProps> = ({ isOpen, onClose }) => {
             The puzzle is filled but,
             <br /> at least one square is amiss.
           </DrawerDescription>
-        </DrawerHeader>
-        <div className="w-full flex flex-row items-center justify-center mb-1">
-          <Button className="max-w-64 w-full" onClick={onClose}>
+          <Button className="max-w-64 w-full mt-4" onClick={onClose}>
             Keep Trying
           </Button>
-        </div>
+        </DrawerHeader>
       </DrawerContent>
     </Drawer>
   );
