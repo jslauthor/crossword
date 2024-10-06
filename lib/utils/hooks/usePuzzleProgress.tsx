@@ -91,6 +91,17 @@ export const usePuzzleProgress = (
   const [answerIndex, setAnswerIndex] = useState<number[]>([]);
   const [characterPositions, setCharacterPositionArray] =
     useState<Float32Array>();
+  const [dontShowTryAgain, setDontShowTryAgain] = useState<boolean>(false);
+
+  const handleDontShowTryAgain = useCallback(
+    (val: boolean) => {
+      setDontShowTryAgain(val);
+      if (val === true) {
+        openPrompt?.(false);
+      }
+    },
+    [openPrompt],
+  );
 
   // This can be one of three values:
   // 0 = default
@@ -559,6 +570,7 @@ export const usePuzzleProgress = (
 
         // Control how the almost done prompt appears
         if (
+          dontShowTryAgain === false &&
           newPositionIsNotBlank === true &&
           openPrompt != null &&
           numEntries >= numberOfCells &&
@@ -583,6 +595,7 @@ export const usePuzzleProgress = (
       puzzle.record.solution,
       numberOfCells,
       guesses,
+      dontShowTryAgain,
       openPrompt,
       prevSelectedIndex,
       addCharacterPosition,
@@ -613,5 +626,7 @@ export const usePuzzleProgress = (
     characterPositions,
     hasRetrievedState,
     puzzleStats,
+    handleDontShowTryAgain,
+    dontShowTryAgain,
   };
 };

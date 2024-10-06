@@ -390,6 +390,7 @@ export default function Puzzle({
     draftModeEnabled,
     addDraftModeEnabled,
     hasRetrievedState,
+    handleDontShowTryAgain,
   } = usePuzzleProgress(
     puzzle,
     svgTextureAtlasLookup ?? characterTextureAtlasLookup,
@@ -1168,7 +1169,11 @@ export default function Puzzle({
           onAuthClick={onSignIn}
         />
       )}
-      <PuzzlePrompt isOpen={isPromptOpen} onClose={handleClosePrompt} />
+      <PuzzlePrompt
+        isOpen={isPromptOpen}
+        onClose={handleClosePrompt}
+        onDontShowAgain={handleDontShowTryAgain}
+      />
     </>
   );
 }
