@@ -4,7 +4,7 @@ import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
 import { Stats, PerspectiveCamera, Html, Environment } from '@react-three/drei';
-import LetterBoxes, { SelectClueFn } from 'components/core/3d/LetterBoxes';
+import LetterBoxes from 'components/core/3d/LetterBoxes';
 import {
   Suspense,
   useCallback,
@@ -17,8 +17,8 @@ import {
   PerspectiveCamera as PerspectiveCameraType,
   Vector3,
   Object3D,
-  HemisphereLight,
   Color,
+  InstancedMesh,
 } from 'three';
 import Keyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
@@ -31,14 +31,21 @@ import TurnArrow from 'components/svg/TurnArrow';
 import { SwipeControls } from 'components/core/3d/SwipeControls';
 import { rangeOperation } from 'lib/utils/math';
 import { useAnimatedText } from 'lib/utils/hooks/useAnimatedText';
-import Particles from 'components/core/3d/Particles';
 import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
 import Menu from 'components/containers/Menu';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
-import { createInitialState, getPuzzleLabel, getType } from 'lib/utils/puzzle';
+import {
+  createInitialState,
+  getBlanksForIds,
+  getPuzzleLabel,
+  getRangeForCell,
+  getType,
+  isCellWithNumber,
+  isSingleCell,
+} from 'lib/utils/puzzle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronCircleDown,
@@ -120,30 +127,29 @@ const SolvedContainer = styled.div`
   margin: 0 auto;
 `;
 
-const TurnButton = styled.div<{ $side: 'left' | 'right'; $color: string }>`
+const TurnButton = styled.div<{ $color: string }>`
   padding: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   ${({ $color }) =>
     `background-color: #${tinycolor($color).darken(15).toHex()};`}
-  ${({ $side }) => {
-    if ($side === 'left') {
-      return 'border-right: none; border-radius: 0.25rem 0 0 0.25rem;';
-    } else {
-      return 'border-left: none; border-radius: 0 0.25rem 0.25rem 0;';
-    }
-  }}
+`;
+
+const InfoBarWrapper = styled.div`
+  max-width: var(--primary-app-width);
+  width: 100%;
+  margin-bottom: 0.125rem;
 `;
 
 const InfoBar = styled.div`
   position: relative;
   display: grid;
   grid-template-columns: min-content 1fr min-content;
-  max-width: var(--primary-app-width);
   width: 100%;
   height: min-content;
-  margin-bottom: 0.125rem;
+  border-radius: 0.25rem;
+  overflow: hidden;
 `;
 
 const ClueContainer = styled.div<{ $backgroundColor: string }>`
@@ -178,7 +184,7 @@ const ClueTextContainer = styled.div`
   gap: 0.15rem;
 `;
 
-const BackNextButtonsContainer = styled.div<{ $backgroundColor: string }>`
+const BackNextButtonsContainer = styled.div`
   position: relative;
   display: flex;
   right: -0.5rem;
@@ -222,6 +228,8 @@ function Loader() {
     </Html>
   );
 }
+
+const noop = () => {};
 
 export default function Puzzle({
   puzzle,
@@ -268,10 +276,6 @@ export default function Puzzle({
     }
   }, [puzzle.id, svgError]);
 
-  const disableOrientation = useMemo(
-    () => svgTextureAtlasLookup != null,
-    [svgTextureAtlasLookup],
-  );
   const [groupRef, setGroup] = useState<Object3D | null>();
   const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
   const [sideOffset, setSideOffset] = useState(0);
@@ -279,7 +283,7 @@ export default function Puzzle({
     useState<[string, number]>();
   const [clue, setClue] = useState<string | undefined>();
   const [cellNumber, setCellNumber] = useState<number | undefined>();
-  const [selected, setSelected] = useState<number | undefined>();
+  const [selected, setSelected] = useState<InstancedMesh['id'] | undefined>(0);
   const [selectedCharacter, setSelectedCharacter] = useState<
     string | undefined
   >();
@@ -303,15 +307,53 @@ export default function Puzzle({
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
-  const handleSetOrientation = useCallback(
-    (orientation: boolean) => {
-      if (disableOrientation === true) return;
-      setVerticalOrientation(orientation);
-    },
-    [disableOrientation],
-  );
+  const selectedSide = useMemo(() => {
+    return rangeOperation(0, 3, 0, -sideOffset);
+  }, [sideOffset]);
 
-  const animatedClueText = useAnimatedText(clue, 60);
+  const [isSelectedSingleCell, setIsSelectedSingleCell] =
+    useState<boolean>(false);
+
+  // Update the clue and cell number when the selected cell changes
+  useEffect(() => {
+    if (selected == null) {
+      setClue(undefined);
+      setCellNumber(undefined);
+    } else {
+      const range = getRangeForCell(
+        puzzle,
+        selected,
+        selectedSide,
+        isVerticalOrientation,
+      );
+      if (range.length > 0) {
+        const {
+          clues: { across, down },
+          solution,
+        } = puzzle.record;
+        const clues =
+          isSelectedSingleCell || isVerticalOrientation === false
+            ? across
+            : down;
+        // Select the clue. It will always be the first cell in the sequence
+        const rootWord = solution[range[0]];
+        if (
+          isCellWithNumber(rootWord.value) &&
+          typeof rootWord.value.cell === 'number'
+        ) {
+          const { cell: cellNumber } = rootWord.value;
+          setCellNumber(cellNumber);
+          setClue(clues.find((c) => c.number === cellNumber)?.clue);
+        }
+      }
+    }
+  }, [
+    isSelectedSingleCell,
+    isVerticalOrientation,
+    puzzle,
+    selected,
+    selectedSide,
+  ]);
 
   const [puzzleWidth] = useMemo(() => {
     if (puzzle == null || puzzle.data.length < 1) {
@@ -322,14 +364,118 @@ export default function Puzzle({
     return [width, height, totalPerSide];
   }, [puzzle]);
 
-  const handleClueChange = useCallback<SelectClueFn>(
-    (clue, cellNumber, selected) => {
-      setClue(clue);
-      setCellNumber(cellNumber);
-      setSelected(selected);
-    },
-    [],
+  const groupRefPosition: Vector3 = useMemo(() => {
+    const multiplier = (puzzleWidth - 1) / 2;
+    return new Vector3(-multiplier, -multiplier, multiplier);
+  }, [puzzleWidth]);
+
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
+  const {
+    hasInteractedWithPuzzle,
+    isPuzzleSolved,
+    addTime,
+    elapsedTime,
+    guesses,
+    puzzleStats,
+    updateCharacterPosition,
+    characterPositions,
+    validations,
+    draftModes,
+    autoNextEnabled,
+    addAutoNextEnabled,
+    autoCheckEnabled,
+    addAutocheckEnabled,
+    addSelectNextBlankEnabled,
+    selectNextBlankEnabled: selectNextBlankStored,
+    draftModeEnabled,
+    addDraftModeEnabled,
+    hasRetrievedState,
+    handleDontShowTryAgain,
+  } = usePuzzleProgress(
+    puzzle,
+    svgTextureAtlasLookup ?? characterTextureAtlasLookup,
+    isInitialized === true,
+    setIsPromptOpen,
   );
+
+  const isSingleSidedEmojiPuzzle = useMemo(() => {
+    return isSingleSided === true && svgTextureAtlas != null;
+  }, [isSingleSided, svgTextureAtlas]);
+
+  const handleSetOrientation = useCallback(
+    (
+      orientation: boolean,
+      id: InstancedMesh['id'] | undefined = selected,
+      isSingle: boolean = isSelectedSingleCell,
+    ) => {
+      if (id == null || isSingle === true) return;
+      const range = getRangeForCell(puzzle, id, selectedSide, orientation);
+      if (range.length > 1) {
+        setVerticalOrientation(orientation);
+      }
+    },
+    [isSelectedSingleCell, puzzle, selected, selectedSide],
+  );
+
+  const handleSelectedChange = useCallback(
+    (id: InstancedMesh['id'] | undefined, source?: 'keyboard' | 'mouse') => {
+      setSelected(id);
+      if (
+        source === 'keyboard' ||
+        id == null ||
+        isSingleSidedEmojiPuzzle === false
+      )
+        return;
+
+      const isSingle = isSingleCell(puzzle, id, selectedSide);
+      setIsSelectedSingleCell(isSingle);
+      if (isSingle === true) return;
+
+      const verticalRange = getRangeForCell(puzzle, id, selectedSide, true);
+      const horizontalRange = getRangeForCell(puzzle, id, selectedSide, false);
+      const cell = puzzle.record.solution[id];
+      if (isCellWithNumber(cell.value)) {
+        const hasVertical = verticalRange.length > 1 && verticalRange[0] === id;
+        const hasHorizontal =
+          horizontalRange.length > 1 && horizontalRange[0] === id;
+
+        // If both directions have multiple cells, prefer the one with blanks
+        if (hasVertical === true && hasHorizontal === true) {
+          if (getBlanksForIds(verticalRange, characterPositions).length > 0) {
+            handleSetOrientation(true, id, false);
+          } else {
+            handleSetOrientation(false, id, false);
+          }
+        } else if (hasVertical === true) {
+          handleSetOrientation(true, id, false);
+        } else if (hasHorizontal === true) {
+          handleSetOrientation(false, id, false);
+        }
+      } else if (
+        isVerticalOrientation === true &&
+        verticalRange.length < 2 &&
+        horizontalRange.length > 1
+      ) {
+        handleSetOrientation(false, id, isSingle);
+      } else if (
+        isVerticalOrientation === false &&
+        horizontalRange.length < 2 &&
+        verticalRange.length > 1
+      ) {
+        handleSetOrientation(true, id, isSingle);
+      }
+    },
+    [
+      characterPositions,
+      handleSetOrientation,
+      isSingleSidedEmojiPuzzle,
+      isVerticalOrientation,
+      puzzle,
+      selectedSide,
+    ],
+  );
+
+  const animatedClueText = useAnimatedText(clue, 60);
 
   const [fogNear, setFogNear] = useState(0);
   const [fogFar, setFogFar] = useState(100);
@@ -363,38 +509,13 @@ export default function Puzzle({
     isInitialized,
   ]);
 
-  const groupRefPosition: Vector3 = useMemo(() => {
-    const multiplier = (puzzleWidth - 1) / 2;
-    return new Vector3(-multiplier, -multiplier, multiplier);
-  }, [puzzleWidth]);
+  const disableNextBlankEnabled = useMemo(() => {
+    return isSingleSidedEmojiPuzzle === true;
+  }, [isSingleSidedEmojiPuzzle]);
 
-  const [isPromptOpen, setIsPromptOpen] = useState(false);
-  const {
-    hasInteractedWithPuzzle,
-    isPuzzleSolved,
-    addTime,
-    elapsedTime,
-    guesses,
-    puzzleStats,
-    updateCharacterPosition,
-    characterPositions,
-    validations,
-    draftModes,
-    autoNextEnabled,
-    addAutoNextEnabled,
-    autoCheckEnabled,
-    addAutocheckEnabled,
-    addSelectNextBlankEnabled,
-    selectNextBlankEnabled,
-    draftModeEnabled,
-    addDraftModeEnabled,
-    hasRetrievedState,
-  } = usePuzzleProgress(
-    puzzle,
-    svgTextureAtlasLookup ?? characterTextureAtlasLookup,
-    isInitialized === true,
-    setIsPromptOpen,
-  );
+  const selectNextBlankEnabled = useMemo(() => {
+    return disableNextBlankEnabled === false && selectNextBlankStored;
+  }, [disableNextBlankEnabled, selectNextBlankStored]);
 
   const [_, api] = useSpring(() => ({
     singleSidedOffset: 0,
@@ -460,16 +581,12 @@ export default function Puzzle({
     [api, isSingleSided, sideOffset],
   );
 
-  const selectedSide = useMemo(() => {
-    return rangeOperation(0, 3, 0, -sideOffset);
-  }, [sideOffset]);
-
   // DEBUG FUNCTION
   // This will autocomplete the puzzle to test the success state
   const finishPuzzle = useCallback(() => {
     if (
-      location.hostname === 'localhost' ||
-      location.hostname === '127.0.0.1'
+      process.env.NEXT_PUBLIC_VERCEL_ENV === 'development' ||
+      process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview'
     ) {
       const { solution } = puzzle.record;
       for (let x = 0; x < solution.length; x++) {
@@ -560,10 +677,8 @@ export default function Puzzle({
   );
 
   const onClueClick = useCallback(() => {
-    // Only enable orientation if using the regular (non-emoji) keyboard
-    if (disableOrientation === true) return;
-    setVerticalOrientation(!isVerticalOrientation);
-  }, [isVerticalOrientation, disableOrientation]);
+    handleSetOrientation(!isVerticalOrientation);
+  }, [handleSetOrientation, isVerticalOrientation]);
 
   const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
     return {
@@ -615,6 +730,15 @@ export default function Puzzle({
     [],
   );
 
+  const handleRightButtonClick = useCallback(
+    () => (isSingleSided ? handleNextWord(selected)() : turnRight()),
+    [isSingleSided, handleNextWord, selected, turnRight],
+  );
+  const handleLeftButtonClick = useCallback(
+    () => (isSingleSided ? handlePrevWord(selected)() : turnLeft()),
+    [isSingleSided, handlePrevWord, selected, turnLeft],
+  );
+
   const {
     characterPositions: defaultCharacterPositions,
     draftModes: defaultDraftModes,
@@ -637,15 +761,6 @@ export default function Puzzle({
   const handleShareClose = useCallback(() => {
     setIsShareOpen(false);
   }, []);
-
-  const handleNext = useCallback(
-    () => handleNextWord(selected)(undefined),
-    [handleNextWord, selected],
-  );
-  const handlePrev = useCallback(
-    () => handlePrevWord(selected)(undefined),
-    [handlePrevWord, selected],
-  );
 
   // Update page title with puzzle title
   useEffect(() => {
@@ -697,16 +812,13 @@ export default function Puzzle({
     }
   }, [elapsedTime, hasRetrievedState, reset, shouldStartTimer]);
 
-  const handleTurnRight = useCallback(() => turnRight(), [turnRight]);
-  const handleTurnLeft = useCallback(() => turnLeft(), [turnLeft]);
-
   // Keyboard shortcuts
   useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
-  useKeyDown(handlePrev, ['ARROWLEFT']);
-  useKeyDown(handleNext, ['ARROWRIGHT']);
-  useKeyDown(handleNext, ['TAB'], true, false, true);
-  useKeyDown(handleTurnRight, ['ARROWUP']);
-  useKeyDown(handleTurnLeft, ['ARROWDOWN']);
+  useKeyDown(() => handlePrevWord(selected)(), ['ARROWLEFT']);
+  useKeyDown(() => handleNextWord(selected)(), ['ARROWRIGHT']);
+  useKeyDown(() => handleNextWord(selected)(), ['TAB'], true, false, true);
+  useKeyDown(isSingleSided ? noop : handleRightButtonClick, ['ARROWUP']);
+  useKeyDown(isSingleSided ? noop : handleLeftButtonClick, ['ARROWDOWN']);
   useKeyDown(onClueClick, [' ']);
   useKeyDown(finishPuzzle, ['`']);
 
@@ -824,6 +936,30 @@ export default function Puzzle({
     }
   }, [puzzle]);
 
+  const leftChevronIcon = useMemo(() => {
+    return <FontAwesomeIcon icon={faChevronLeft} width={20} />;
+  }, []);
+
+  const rightChevronIcon = useMemo(() => {
+    return <FontAwesomeIcon icon={faChevronRight} width={20} />;
+  }, []);
+
+  const leftChevronButton = useMemo(() => {
+    return (
+      <IconContainer onClick={handlePrevWord(selected)}>
+        {leftChevronIcon}
+      </IconContainer>
+    );
+  }, [handlePrevWord, leftChevronIcon, selected]);
+
+  const rightChevronButton = useMemo(() => {
+    return (
+      <IconContainer onClick={handleNextWord(selected)}>
+        {rightChevronIcon}
+      </IconContainer>
+    );
+  }, [handleNextWord, rightChevronIcon, selected]);
+
   return (
     <>
       <Menu
@@ -881,12 +1017,13 @@ export default function Puzzle({
                   svgGridSize={svgGridSize}
                   characterTextureAtlasLookup={characterTextureAtlasLookup}
                   cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
+                  selected={selected}
+                  onSelectedChange={handleSelectedChange}
                   selectedSide={selectedSide}
                   keyAndIndexOverride={keyAndIndexOverride}
                   currentKey={selectedCharacter}
                   updateCharacterPosition={updateCharacterPosition}
                   onLetterInput={onLetterInput}
-                  onSelectClue={handleClueChange}
                   fontColor={fontColor}
                   fontDraftColor={fontDraftColor}
                   selectedColor={defaultColor}
@@ -922,71 +1059,75 @@ export default function Puzzle({
         </Canvas>
         {isInitialized === true && (
           <>
-            <InfoBar>
-              <TurnButton
-                onClick={handleTurnLeft}
-                $side="left"
-                $color={toHex(adjacentColor)}
-              >
-                <TurnArrow
-                  width={20}
-                  height={20}
-                  color={toHex(turnArrowColor)}
-                />
-              </TurnButton>
-              <ClueContainer
-                $backgroundColor={toHex(adjacentColor)}
-                onClick={onClueClick}
-              >
-                <ClueTextContainer>
-                  {cellNumber != null && (
-                    <SelectedInfo $backgroundColor={toHex(selectedColor)}>
-                      {`${cellNumber}`}
-                      {disableOrientation == false ? (
-                        isVerticalOrientation ? (
-                          <FontAwesomeIcon
-                            icon={faChevronCircleDown}
-                            width={10}
-                          />
-                        ) : (
-                          <FontAwesomeIcon
-                            icon={faChevronCircleRight}
-                            width={10}
-                          />
-                        )
-                      ) : null}
-                    </SelectedInfo>
-                  )}
-                  &nbsp;
-                  <ClueLabel
-                    dangerouslySetInnerHTML={{ __html: animatedClueText }}
-                  />{' '}
-                </ClueTextContainer>
-                <BackNextButtonsContainer
-                  $backgroundColor={toHex(adjacentColor)}
+            <InfoBarWrapper>
+              <InfoBar>
+                <TurnButton
+                  onClick={handleLeftButtonClick}
+                  $color={toHex(adjacentColor)}
                 >
-                  <IconContainer onClick={handlePrevWord(selected)}>
-                    <FontAwesomeIcon icon={faChevronLeft} width={20} />
-                  </IconContainer>
-                  <VRule />
-                  <IconContainer onClick={handleNextWord(selected)}>
-                    <FontAwesomeIcon icon={faChevronRight} width={20} />
-                  </IconContainer>
-                </BackNextButtonsContainer>
-              </ClueContainer>
-              <TurnButton
-                onClick={handleTurnRight}
-                $side="right"
-                $color={toHex(adjacentColor)}
-              >
-                <TurnArrow
-                  width={20}
-                  height={20}
-                  flipped
-                  color={toHex(turnArrowColor)}
-                />
-              </TurnButton>
-            </InfoBar>
+                  {isSingleSided === false ? (
+                    <TurnArrow
+                      width={20}
+                      height={20}
+                      color={toHex(turnArrowColor)}
+                    />
+                  ) : (
+                    leftChevronIcon
+                  )}
+                </TurnButton>
+                <ClueContainer
+                  $backgroundColor={toHex(adjacentColor)}
+                  onClick={onClueClick}
+                >
+                  <ClueTextContainer>
+                    {cellNumber != null && (
+                      <SelectedInfo $backgroundColor={toHex(selectedColor)}>
+                        {`${cellNumber}`}
+                        {isSelectedSingleCell == false ? (
+                          isVerticalOrientation ? (
+                            <FontAwesomeIcon
+                              icon={faChevronCircleDown}
+                              width={10}
+                            />
+                          ) : (
+                            <FontAwesomeIcon
+                              icon={faChevronCircleRight}
+                              width={10}
+                            />
+                          )
+                        ) : null}
+                      </SelectedInfo>
+                    )}
+                    &nbsp;
+                    <ClueLabel
+                      dangerouslySetInnerHTML={{ __html: animatedClueText }}
+                    />{' '}
+                  </ClueTextContainer>
+                  {isSingleSided === false && (
+                    <BackNextButtonsContainer>
+                      {leftChevronButton}
+                      <VRule />
+                      {rightChevronButton}
+                    </BackNextButtonsContainer>
+                  )}
+                </ClueContainer>
+                <TurnButton
+                  onClick={handleRightButtonClick}
+                  $color={toHex(adjacentColor)}
+                >
+                  {isSingleSided === false ? (
+                    <TurnArrow
+                      width={20}
+                      height={20}
+                      flipped
+                      color={toHex(turnArrowColor)}
+                    />
+                  ) : (
+                    rightChevronIcon
+                  )}
+                </TurnButton>
+              </InfoBar>
+            </InfoBarWrapper>
             <KeyboardContainer $svgCssMap={svgCssMap}>
               {isPuzzleSolved && (
                 <SolvedContainer>
@@ -1014,6 +1155,7 @@ export default function Puzzle({
         autoNextEnabled={autoNextEnabled}
         onAutoNextChanged={addAutoNextEnabled}
         selectNextBlank={selectNextBlankEnabled}
+        hideNextBlank={disableNextBlankEnabled}
         onSelectNextBlankChanged={addSelectNextBlankEnabled}
       />
       {puzzleStats != null && (
@@ -1027,7 +1169,11 @@ export default function Puzzle({
           onAuthClick={onSignIn}
         />
       )}
-      <PuzzlePrompt isOpen={isPromptOpen} onClose={handleClosePrompt} />
+      <PuzzlePrompt
+        isOpen={isPromptOpen}
+        onClose={handleClosePrompt}
+        onDontShowAgain={handleDontShowTryAgain}
+      />
     </>
   );
 }

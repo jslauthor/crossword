@@ -78,6 +78,7 @@
     "three-custom-shader-material": "^5.4.0",
     "tinycolor2": "^1.6.0",
     "typescript": "5.2.2",
+    "url-slug": "^4.0.1",
     "use-elapsed-time": "^3.0.4",
     "usehooks-ts": "^2.15.1",
     "vaul": "^0.9.1",
