@@ -4,6 +4,7 @@ import {
   Clue,
   CrosscubeType,
   CrossmojiData,
+  CrossmojiDataV2,
   GameState,
   PuzzleCell,
   PuzzleCellWithStyle,
@@ -688,6 +689,7 @@ export const getType = (puzzle: PuzzleType): CrosscubeType => {
 export const createBlankPuzzleData = (
   width: number,
   height: number,
+  clues?: PuzzleData['clues'],
 ): PuzzleData => ({
   dimensions: {
     width,
@@ -699,7 +701,7 @@ export const createBlankPuzzleData = (
   solution: Array.from({ length: height }, () =>
     Array.from({ length: width }, () => '#'),
   ),
-  clues: {
+  clues: clues ?? {
     Across: [],
     Down: [],
   },
@@ -743,7 +745,9 @@ function deterministicSort(entries: Entry[], seed: number): Entry[] {
   return sortedIndices.map((index) => entries[index]);
 }
 
-export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
+export const convertSimpleCrossmojiData = (
+  data: CrossmojiData,
+): PuzzleData[] => {
   const width = data.grid[0].length;
   const height = data.grid.length;
 
@@ -858,3 +862,215 @@ export const convertCrossmojiData = (data: CrossmojiData): PuzzleData[] => {
     fourthSidePuzzleData,
   ];
 };
+
+const convertToNumber = (key: string | number) =>
+  typeof key === 'string' ? parseInt(key, 10) : key;
+
+// Function to check if arrays are the same size and contain the same items (can be out of order)
+const arraysHaveSameItems = (arr1: any[], arr2: any[]): boolean => {
+  if (arr1.length !== arr2.length) return false;
+  const set1 = new Set(arr1);
+  const set2 = new Set(arr2);
+  return (
+    arr1.every((item) => set2.has(item)) && arr2.every((item) => set1.has(item))
+  );
+};
+
+const clueFormatter = ([key, value]: [string | number, string]) => {
+  return {
+    number: typeof key === 'string' ? parseInt(key, 10) : key,
+    clue: value,
+  };
+};
+
+function deterministicSortStrings(strings: string[], seed: number): string[] {
+  // Create a seeded random number generator
+  const seededRandom = (index: number): number => {
+    const x = Math.sin(seed + index) * 10000;
+    return x - Math.floor(x);
+  };
+
+  // Create an array of indices, sort it based on the seeded random values
+  const sortedIndices = [...strings.keys()].sort(
+    (a, b) => seededRandom(a) - seededRandom(b),
+  );
+
+  // Use the sorted indices to create a new array of strings in the determined order
+  return sortedIndices.map((index) => strings[index]);
+}
+
+const mapToNumber = (object: { [key: number | string]: number[] | string }) =>
+  Object.keys(object).map(convertToNumber);
+
+export const createUniqueEmojiList = (
+  initialList: string[],
+  emojiList: string[],
+  numberOfItems: number = 26,
+) => {
+  const uniqueEmojis = new Set(initialList);
+  while (uniqueEmojis.size < numberOfItems) {
+    uniqueEmojis.add(emojiList[Math.floor(Math.random() * emojiList.length)]);
+  }
+  return Array.from(uniqueEmojis);
+};
+
+export const convertCrossmojiDataV2 = (
+  data: CrossmojiDataV2,
+): {
+  data: PuzzleData[];
+  svgSegments: string[];
+} => {
+  if (data.version !== '2.0') {
+    throw new Error('Invalid version!');
+  }
+
+  const width = data.source.grid[0].length;
+  const height = data.source.grid.length;
+
+  const svgSegments = new Set(
+    Object.values(deterministicSortStrings(data.svgSegments, data.seed)),
+  );
+  const numEmojis = svgSegments.size;
+
+  if (numEmojis !== data.svgSegments.length) {
+    throw new Error('Duplicate emojis found in the grid');
+  }
+
+  const sourceCluesDownKeys = mapToNumber(data.source.clues.down);
+  const sourceCluesAcrossKeys = mapToNumber(data.source.clues.across);
+  const responseCluesDownKeys = mapToNumber(data.response.clues.down);
+  const responseCluesAcrossKeys = mapToNumber(data.response.clues.across);
+
+  if (!arraysHaveSameItems(sourceCluesDownKeys, responseCluesDownKeys)) {
+    throw new Error('Down clues do not match source clues');
+  }
+  if (!arraysHaveSameItems(sourceCluesAcrossKeys, responseCluesAcrossKeys)) {
+    throw new Error('Across clues do not match source clues');
+  }
+
+  // Check to make sure there are an equal number of items in the grid
+  // for every LLM supplied value.
+  const numItems = data.source.grid.flat().filter((cell) => cell != 0).length;
+  // LLM supplied values for each entry in the grid
+  const numValues = Object.values(data.response.values).length;
+  if (numValues !== numItems) {
+    throw new Error('Number of values does not match number cells in the grid');
+  }
+
+  const clues: PuzzleData['clues'] = {
+    Across: Object.entries(data.response.clues.across).map(clueFormatter),
+    Down: Object.entries(data.response.clues.down).map(clueFormatter),
+  };
+
+  const firstSidePuzzleData = createBlankPuzzleData(width, height, clues);
+  const secondSidePuzzleData = createBlankPuzzleData(width, height, clues);
+  const thirdSidePuzzleData = createBlankPuzzleData(width, height, clues);
+  const fourthSidePuzzleData = createBlankPuzzleData(width, height, clues);
+
+  data.source.puzzle.forEach((row, x) => {
+    row.forEach((cell, y) => {
+      if (firstSidePuzzleData.puzzle[x] == null) {
+        firstSidePuzzleData.puzzle[x] = [];
+      }
+      if (firstSidePuzzleData.solution[x] == null) {
+        firstSidePuzzleData.solution[x] = [];
+      }
+      firstSidePuzzleData.puzzle[x][y] = {
+        cell,
+        style:
+          typeof cell === 'number'
+            ? data.response.values[cell].styles
+            : undefined,
+      };
+      const value = data.response.solution[x][y];
+      firstSidePuzzleData.solution[x][y] =
+        value === 0 || cell === '#'
+          ? '#'
+          : {
+              value,
+              cell: typeof cell === 'number' ? cell : 0,
+            };
+
+      // Store the last column values in the solution
+      if (y === row.length - 1) {
+        secondSidePuzzleData.puzzle[x][0] = firstSidePuzzleData.puzzle[x][y];
+        secondSidePuzzleData.solution[x][0] =
+          firstSidePuzzleData.solution[x][y];
+      }
+      if (y === 0) {
+        fourthSidePuzzleData.puzzle[x][row.length - 1] =
+          firstSidePuzzleData.puzzle[x][y];
+        fourthSidePuzzleData.solution[x][row.length - 1] =
+          firstSidePuzzleData.solution[x][y];
+      }
+    });
+  });
+
+  return {
+    data: [
+      firstSidePuzzleData,
+      secondSidePuzzleData,
+      thirdSidePuzzleData,
+      fourthSidePuzzleData,
+    ],
+    svgSegments: Array.from(svgSegments),
+  };
+};
+
+export function isSingleCell(
+  puzzle: PuzzleType,
+  selected: number,
+  selectedSide: number,
+): boolean {
+  const cell = puzzle.record.solution[selected];
+
+  const downSequenceIndex = cell?.mapping?.[selectedSide]?.downSequenceIndex;
+  const acrossSequenceIndex =
+    cell?.mapping?.[selectedSide]?.acrossSequenceIndex;
+
+  if (downSequenceIndex != null && acrossSequenceIndex != null) {
+    // Only cells with clues can be single
+    const isClueCell = isCellWithNumber(cell.value);
+    const downSequence = puzzle.record.wordSequences[downSequenceIndex];
+    const acrossSequence = puzzle.record.wordSequences[acrossSequenceIndex];
+    return (
+      downSequence.length === 1 &&
+      acrossSequence.length === 1 &&
+      isClueCell === true
+    );
+  }
+  return false;
+}
+
+export function getRangeForCell(
+  puzzle: PuzzleType,
+  id: number,
+  selectedSide: number,
+  isVerticalOrientation: boolean,
+): number[] {
+  const { solution, wordSequences } = puzzle.record;
+  const cell = solution[id];
+  const sequenceIndex =
+    isVerticalOrientation === false
+      ? cell?.mapping?.[selectedSide]?.acrossSequenceIndex
+      : cell?.mapping?.[selectedSide]?.downSequenceIndex;
+  if (sequenceIndex != null) {
+    return wordSequences[sequenceIndex];
+  }
+  return [];
+}
+
+export function getBlanksForIds(
+  ids: number[],
+  characterPositionArray: Float32Array | undefined,
+): number[] {
+  if (characterPositionArray == null) {
+    return [];
+  }
+  return ids.filter((id) => {
+    return (
+      characterPositionArray[id * 2] === -1 &&
+      characterPositionArray[id * 2 + 1] === -1
+    );
+  });
+}

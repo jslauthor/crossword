@@ -1,10 +1,10 @@
-import { InstancedMesh } from 'three';
+import { InstancedMesh, Mesh } from 'three';
 import { useCallback, useState } from 'react';
-import { applyScaleAnimation } from './useScaleRippleAnimation';
 import anime, { AnimeInstance } from 'animejs';
+import { applyScaleAnimation } from './useScaleRippleAnimation';
 
 export const useScaleAnimation = (
-  refs: (InstancedMesh | null)[], // Change to accept an array of potentially null InstancedMesh
+  refs: (InstancedMesh | Mesh | null)[],
   onComplete?: () => void,
 ) => {
   const [animations] = useState<Record<number, AnimeInstance>>({});
@@ -12,7 +12,7 @@ export const useScaleAnimation = (
   const showScaleAnimation = useCallback(
     (index: number) => {
       const validRefs = refs.filter(
-        (ref): ref is InstancedMesh => ref !== null,
+        (ref): ref is InstancedMesh | Mesh => ref !== null,
       );
       if (validRefs.length === 0) return;
 
