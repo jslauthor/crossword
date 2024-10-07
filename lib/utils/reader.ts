@@ -11,8 +11,9 @@ import {
   initializeAnswerIndex,
   GAME_STATE_KEY,
   createInitialYDoc,
-  convertCrossmojiData,
+  convertSimpleCrossmojiData,
   emojiToUnicode,
+  convertCrossmojiDataV2,
 } from './puzzle';
 import { TEXTURE_RECORD, buildSvgTextureAtlasLookup } from './atlas';
 import * as Y from 'yjs';
@@ -52,12 +53,21 @@ const convertPuzzleData = (puzzleData: any): PuzzleType => {
   let data = puzzleData.data;
   let svgSegments = puzzleData.svgSegments;
   let type: CrosscubeType | undefined = undefined;
+
   // If the data is the crossmoji data format, convert it to a crosscube
   // Crossmoji data has items and grid, while crosscube has puzzle and solution
   // You can also create a 3d crossmoji which uses the crosscube data format
   if (puzzleData.data.items != null) {
-    data = convertCrossmojiData(puzzleData.data);
+    data = convertSimpleCrossmojiData(puzzleData.data);
     svgSegments = Object.keys(puzzleData.data.items).map(emojiToUnicode);
+    type = 'moji';
+  }
+
+  // If the data is v2.0 of the crosscube format, convert it to crossube
+  if (data.version === '2.0') {
+    const converted = convertCrossmojiDataV2(puzzleData.data);
+    data = converted.data;
+    svgSegments = converted.svgSegments; // 2.0 only supports unicode values
     type = 'moji';
   }
 
@@ -93,7 +103,11 @@ const createWhereForType = (types: CrosscubeType[]) => {
         case 'mini':
           return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 5 && @.dimensions.height == 5)" }';
         case 'moji':
-          return '{ data_json_path_exists: "$[*] ? (@.dimensions.width == 3 && @.dimensions.height == 3)" }, { data_json_path_exists: "$.items" }';
+          return `
+            { data_json_path_exists: "$[*] ? (@.dimensions.width == 3 && @.dimensions.height == 3)" }, 
+            { data_json_path_exists: "$.items" },
+            { data_json_path_exists: "$[*] ? (@.version == \\"2.0\\" && @.svgSegments != null && @.source != null && @.response != null)" }
+          `;
         default:
           return '';
       }
