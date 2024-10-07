@@ -9,8 +9,8 @@ import {
 } from 'three';
 import { useSpring } from '@react-spring/core';
 import { rangeOperation } from '../../math';
-import { CubeSidesEnum } from '../../../../components/core/3d/LetterBoxes';
-import { Clue, SolutionCell } from '../../../../types/types';
+import { CubeSidesEnum } from 'components/core/3d/LetterBoxes/utils';
+import { Clue, SolutionCell } from 'types/types';
 
 const tempObject = new Object3D();
 
@@ -43,9 +43,9 @@ const applyFlipAnimation = ({
     new Euler().setFromQuaternion(
       rotation.setFromAxisAngle(
         yAxis,
-        elapsed * (Math.PI * 2) + (rotations[index]?.y ?? 0)
-      )
-    )
+        elapsed * (Math.PI * 2) + (rotations[index]?.y ?? 0),
+      ),
+    ),
   );
 
   tempObject.scale.copy(scale);
@@ -70,7 +70,7 @@ export const useIntroAnimation = (
     };
   },
   ref: InstancedMesh | null,
-  onComplete?: () => void
+  onComplete?: () => void,
 ) => {
   const { flipAnimation } = useSpring({
     flipAnimation: 1,
@@ -103,7 +103,7 @@ export const useIntroAnimation = (
                     0,
                     size,
                     totalPerSide * selectedSide,
-                    index - width + 1
+                    index - width + 1,
                   );
           }
           // We must normalize the position of the first row
@@ -112,7 +112,7 @@ export const useIntroAnimation = (
           for (let x = 0; x < firstRow.length; x++) {
             const subset = indices.slice(
               firstRow.length + x * width,
-              firstRow.length + x * width + width
+              firstRow.length + x * width + width,
             );
             elements[x] = [firstRow[x], ...subset];
           }
@@ -165,7 +165,7 @@ export const useIntroAnimation = (
       initialRotations,
       onComplete,
       record.solution.length,
-    ]
+    ],
   );
 
   return showIntroAnimation;

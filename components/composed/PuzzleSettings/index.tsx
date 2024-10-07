@@ -49,6 +49,7 @@ export const SettingsItem = styled.div`
 interface PuzzleSettingsProps extends Partial<OverlayProps> {
   autoNextEnabled?: boolean;
   selectNextBlank?: boolean;
+  hideNextBlank?: boolean;
   onAutoNextChanged?: (autoNextEnabled: boolean) => void;
   onSelectNextBlankChanged?: (enabled: boolean) => void;
   onThemChange?: (theme: string) => void;
@@ -62,6 +63,7 @@ const PuzzleSettings: React.FC<PuzzleSettingsProps> = ({
   onClose = noop,
   autoNextEnabled = false,
   selectNextBlank = false,
+  hideNextBlank = false,
   onAutoNextChanged = noop,
   onSelectNextBlankChanged = noop,
 }) => {
@@ -81,7 +83,6 @@ const PuzzleSettings: React.FC<PuzzleSettingsProps> = ({
   const handleAutoNextTogglePressed = useCallback(() => {
     onAutoNextChanged(!autoNextEnabled);
   }, [autoNextEnabled, onAutoNextChanged]);
-
   return (
     <Overlay title={title} onClose={onClose} isOpen={isOpen}>
       <SettingsContainer>
@@ -96,14 +97,18 @@ const PuzzleSettings: React.FC<PuzzleSettingsProps> = ({
             />
           </SettingsItem>
           <HRule />
-          <SettingsItem>
-            <div>Select next blank</div>
-            <Switch
-              checked={selectNextBlank}
-              onCheckedChange={handleSelectNextBlankTogglePressed}
-            />
-          </SettingsItem>
-          <HRule />
+          {hideNextBlank === false && (
+            <>
+              <SettingsItem>
+                <div>Select next blank</div>
+                <Switch
+                  checked={selectNextBlank}
+                  onCheckedChange={handleSelectNextBlankTogglePressed}
+                />
+              </SettingsItem>
+              <HRule />
+            </>
+          )}
         </SettingsSection>
         <SettingsSection>
           <SettingsTitle>Other</SettingsTitle>
