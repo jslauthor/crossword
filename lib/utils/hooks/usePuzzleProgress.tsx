@@ -160,6 +160,7 @@ export const usePuzzleProgress = (
 
       let initialDoc = new Y.Doc();
       // iniitalState is only set if the user is logged in
+      console.log(puzzle.initialState);
       if (puzzle.initialState != null && user?.id != null) {
         try {
           const compressedData = toUint8Array(puzzle.initialState);
@@ -174,6 +175,7 @@ export const usePuzzleProgress = (
 
       let doc = new Y.Doc();
       const localState = await db.data.get(cacheId);
+      console.log('localState', localState);
       if (localState?.data instanceof Uint8Array) {
         try {
           let decompressedData: Uint8Array;
