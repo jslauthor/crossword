@@ -10,7 +10,6 @@ import {
   invertAtlas,
   initializeAnswerIndex,
   GAME_STATE_KEY,
-  createInitialYDoc,
   convertSimpleCrossmojiData,
   emojiToUnicode,
   convertCrossmojiDataV2,
@@ -283,14 +282,6 @@ export const enrichPuzzles = async (
         user.id,
         puzzles.map((p) => p.id),
       );
-
-      // Add default YJS state to each puzzle
-      for (const puzzle of puzzles) {
-        const compressed = await gzipAsync(
-          Y.encodeStateAsUpdateV2(createInitialYDoc(puzzle)),
-        );
-        puzzle.initialState = fromUint8Array(compressed);
-      }
 
       // Update the previewState for each puzzle
       for (const progress of progresses) {

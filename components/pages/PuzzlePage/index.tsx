@@ -393,7 +393,7 @@ export default function Puzzle({
     handleDontShowTryAgain,
   } = usePuzzleProgress(
     puzzle,
-    svgTextureAtlasLookup ?? characterTextureAtlasLookup,
+    puzzle.svgSegments ? svgTextureAtlasLookup : characterTextureAtlasLookup,
     isInitialized === true,
     setIsPromptOpen,
   );
