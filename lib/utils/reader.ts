@@ -10,7 +10,6 @@ import {
   invertAtlas,
   initializeAnswerIndex,
   GAME_STATE_KEY,
-  createInitialYDoc,
   convertSimpleCrossmojiData,
   emojiToUnicode,
   convertCrossmojiDataV2,
