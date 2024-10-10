@@ -284,14 +284,6 @@ export const enrichPuzzles = async (
         puzzles.map((p) => p.id),
       );
 
-      // Add default YJS state to each puzzle
-      for (const puzzle of puzzles) {
-        const compressed = await gzipAsync(
-          Y.encodeStateAsUpdateV2(createInitialYDoc(puzzle)),
-        );
-        puzzle.initialState = fromUint8Array(compressed);
-      }
-
       // Update the previewState for each puzzle
       for (const progress of progresses) {
         const puzzle = puzzles.find((p) => p.id === progress.puzzleId);

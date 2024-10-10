@@ -150,7 +150,7 @@ export const usePuzzleProgress = (
 
   // Grab local cache and merge it with server cache
   useEffect(() => {
-    if (atlas == null) {
+    if (atlas == null || Object.keys(atlas).length === 0) {
       return;
     }
 
