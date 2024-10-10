@@ -146,8 +146,14 @@ export const usePuzzleProgress = (
     [puzzle.record.solution],
   );
 
+  const isInitializingLocalCache = useRef(false);
+
   // Grab local cache and merge it with server cache
   useEffect(() => {
+    if (atlas == null || Object.keys(atlas).length === 0) {
+      return;
+    }
+
     const initializeLocalCache = async () => {
       const autoNext = await localforage.getItem<boolean>(AUTO_NEXT_KEY);
       setAutoNextEnabled(autoNext ?? true);
@@ -158,21 +164,19 @@ export const usePuzzleProgress = (
       const cacheId = await getLocalCacheId(puzzle.id);
       setCacheId(cacheId);
 
-      let initialDoc = new Y.Doc();
+      let doc = new Y.Doc();
       // iniitalState is only set if the user is logged in
-      if (puzzle.initialState != null && user?.id != null) {
+      if (puzzle.initialState != null) {
         try {
           const compressedData = toUint8Array(puzzle.initialState);
           const decompressedArrayBuffer = await decompressData(compressedData);
           const state = new Uint8Array(decompressedArrayBuffer);
-          Y.applyUpdateV2(initialDoc, state);
+          Y.applyUpdateV2(doc, state);
         } catch (e) {
-          initialDoc = createInitialYDoc(puzzle);
           console.error('Failed to apply update to YDoc', e);
         }
       }
 
-      let doc = new Y.Doc();
       const localState = await db.data.get(cacheId);
       if (localState?.data instanceof Uint8Array) {
         try {
@@ -186,41 +190,34 @@ export const usePuzzleProgress = (
           }
           Y.applyUpdateV2(doc, decompressedData);
         } catch (e) {
-          doc = createInitialYDoc(puzzle);
           console.error('Failed to apply update to YDoc', e);
         }
       }
 
-      // If the local state is null or the game state is corrupted,
-      // then we need to create the initial state
-      if (
-        localState?.data == null ||
-        doc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) == null
-      ) {
+      // If the game state isn't initialized, then we need to create the initial state
+      if (doc.getMap(GAME_STATE_KEY).get(CHARACTER_POSITIONS_KEY) == null) {
         doc = createInitialYDoc(puzzle);
       }
 
-      // Merge the local state with the store puzzle state
-      const localUpdate = Y.encodeStateAsUpdateV2(doc);
-      initialDoc.transact(() => {
-        Y.applyUpdateV2(initialDoc, localUpdate);
-      });
+      // Initialize the state
+      initState(doc, atlas);
 
       // Saved merged state to indexeddb
-      const stateUpdate = Y.encodeStateAsUpdateV2(initialDoc);
+      const stateUpdate = Y.encodeStateAsUpdateV2(doc);
       const compressedState = await compressData(stateUpdate);
       await db.data.put({
         id: cacheId,
         data: compressedState,
       });
-      setYDoc(initialDoc);
-
-      if (atlas != null) {
-        initState(initialDoc, atlas);
-      }
+      setYDoc(doc);
+      isInitializingLocalCache.current = false;
     };
 
-    initializeLocalCache();
+    // Call the async function to initialize the state
+    if (isInitializingLocalCache.current === false) {
+      isInitializingLocalCache.current = true;
+      initializeLocalCache();
+    }
   }, [atlas, puzzle, puzzle.id, initState, user?.id]);
 
   // Initialize the server after local cache is synced

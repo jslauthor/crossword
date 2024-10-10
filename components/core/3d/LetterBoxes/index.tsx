@@ -499,13 +499,12 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     }
 
-    if (selected != null) {
+    if (selected != null && cellPositions[selected] != null) {
       // Selected cell is no longer visible
       updateVisibility(selected, false);
 
       if (
         lastPosition.current == null ||
-        cellPositions[selected] == null ||
         lastPosition.current.equals(cellPositions[selected]) === false
       ) {
         const targetPosition = cellPositions[selected];
