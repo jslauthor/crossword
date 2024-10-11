@@ -165,7 +165,6 @@ function useSvgAtlas(unicodeValues?: string[]) {
 
           // Apply shadow if the average lightness is above the threshold
           if (avgLightness > LIGHTNESS_THRESHOLD) {
-            console.log(avgLightness);
             ctx.shadowColor = SHADOW_COLOR;
             ctx.shadowBlur = SHADOW_BLUR;
           }
