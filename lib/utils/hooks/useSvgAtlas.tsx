@@ -12,6 +12,9 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 200;
 const SCALE_FACTOR = 0.7; // Scale the emoji to 80% of its bounding box
 const VERTICAL_OFFSET_FACTOR = 0.1; // Move the emoji down by 10% of its bounding box
+const LIGHTNESS_THRESHOLD = 0.85; // Adjust this value as needed (0-1 range)
+const SHADOW_COLOR = 'rgba(0, 0, 0, 1)';
+const SHADOW_BLUR = 8;
 
 // Fallback emoji SVG
 const FALLBACK_SVG = `
@@ -156,7 +159,21 @@ function useSvgAtlas(unicodeValues?: string[]) {
           // Ensure the emoji stays within its bounding box
           const adjustedOffsetY = Math.min(offsetY, svgSize - height);
           ctx.drawImage(img, x + offsetX, y + adjustedOffsetY, width, height);
+
+          // Calculate average lightness
+          const avgLightness = calculateAverageLightness(img);
+
+          // Apply shadow if the average lightness is above the threshold
+          if (avgLightness > LIGHTNESS_THRESHOLD) {
+            ctx.shadowColor = SHADOW_COLOR;
+            ctx.shadowBlur = SHADOW_BLUR;
+          }
+
           ctx.drawImage(img, x + offsetX, y + offsetY, width, height);
+
+          // Reset shadow
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
         });
 
         const texture = new THREE.CanvasTexture(canvas);
@@ -201,6 +218,40 @@ function useSvgAtlas(unicodeValues?: string[]) {
     error,
     svgContentMap,
   };
+}
+
+function calculateLightness(r: number, g: number, b: number): number {
+  // Using the perceived brightness formula
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+function calculateAverageLightness(img: HTMLImageElement): number {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return 0;
+
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.drawImage(img, 0, 0);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let totalLightness = 0;
+  let pixelCount = 0;
+
+  for (let i = 0; i < imageData.data.length; i += 4) {
+    const r = imageData.data[i];
+    const g = imageData.data[i + 1];
+    const b = imageData.data[i + 2];
+    const a = imageData.data[i + 3];
+
+    if (a > 0) {
+      const lightness = calculateLightness(r, g, b);
+      totalLightness += lightness;
+      pixelCount++;
+    }
+  }
+
+  return pixelCount > 0 ? totalLightness / pixelCount : 0;
 }
 
 export default useSvgAtlas;
