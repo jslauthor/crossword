@@ -12,7 +12,6 @@ import {
   Vector3,
   Euler,
   Mesh,
-  Quaternion,
   Texture,
 } from 'three';
 import { InstancedMesh } from 'three';
@@ -28,7 +27,6 @@ import { hexToVector } from 'lib/utils/color';
 import { constrain, rangeOperation } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
 import { MeshTransmissionMaterial, useTexture } from '@react-three/drei';
-import { useSpring, animated } from '@react-spring/three';
 import PulsatingLight from '../PulsatingLight';
 import { PuzzleType } from 'types/types';
 import { AtlasType } from 'lib/utils/atlas';
@@ -443,11 +441,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     cellsDisplayRef.geometry.attributes.characterPosition.needsUpdate = true;
   }, [characterPositionArray, cellsDisplayRef]);
 
-  const [springs, api] = useSpring(() => ({
-    scale: [1, 1, 1],
-    config: { mass: 0.1, tension: 500, friction: 5, duration: 50 },
-  }));
-
   // This does all of the selection logic. Row/cell highlighting, etc.
   useFrame(() => {
     if (cellsDisplayRef == null || cellsRef == null) return;
@@ -509,40 +502,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       ) {
         const targetPosition = cellPositions[selected];
         setLightPosition(targetPosition);
-
-        api.start({
-          to: async (next) => {
-            await next({ scale: [0.95, 0.95, 0.95] });
-            await next({
-              scale: [1, 1, 1],
-            });
-          },
-          onChange: function (state) {
-            cellsDisplayRef.getMatrixAt(selected, tempObject.matrix);
-
-            // Extract position, rotation, and scale from the original matrix
-            const position = new Vector3();
-            const quaternion = new Quaternion();
-            const scale = new Vector3();
-            tempObject.matrix.decompose(position, quaternion, scale);
-
-            // Update position
-            position.copy(targetPosition);
-
-            // Update scale
-            scale.set(
-              state.value.scale[0],
-              state.value.scale[1],
-              state.value.scale[2],
-            );
-
-            // Recompose the matrix with updated position and scale, but original rotation
-            tempObject.matrix.compose(position, quaternion, scale);
-
-            cellsDisplayRef.setMatrixAt(selected, tempObject.matrix);
-            cellsDisplayRef.instanceMatrix.needsUpdate = true;
-          },
-        });
+        showScaleAnimation(selected);
 
         lastPosition.current = targetPosition;
       }
@@ -1025,11 +985,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         </roundedBoxGeometry>
       </instancedMesh>
       <PulsatingLight position={lightPosition} color={selectedColor} />
-      <animated.mesh
-        ref={selectedCellRef}
-        scale={springs.scale.to((x, y, z) => [x, y, z])}
-        position={lightPosition}
-      >
+      <mesh ref={selectedCellRef} position={lightPosition}>
         <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
         <MeshTransmissionMaterial
           color={selectedColor}
@@ -1049,7 +1005,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
           clearcoat={1}
           clearcoatRoughness={0.1}
         />
-      </animated.mesh>
+      </mesh>
     </>
   );
 };
