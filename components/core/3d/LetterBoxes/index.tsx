@@ -449,7 +449,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   }));
 
   // This does all of the selection logic. Row/cell highlighting, etc.
-  useFrame((state) => {
+  useFrame(() => {
     if (cellsDisplayRef == null || cellsRef == null) return;
     for (let id = 0; id < record.solution.length; id++) {
       updateVisibility(id, true);
