@@ -720,9 +720,9 @@ export function emojiToUnicode(emoji: string): string {
     return emoji;
   }
 
-  const codePoints = Array.from(emoji).map(
-    (char) => char.codePointAt(0)?.toString(16).padStart(4, '0') || '',
-  );
+  const codePoints = Array.from(emoji)
+    .map((char) => char.codePointAt(0)?.toString(16).padStart(4, '0') || '')
+    .filter((code) => code !== 'fe0f'); // Filter out the VS16 selector;
 
   return 'u' + codePoints.join('_');
 }

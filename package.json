@@ -45,6 +45,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "dexie": "^4.0.8",
+    "emoji-picker-element": "^1.22.8",
     "eslint": "8.53.0",
     "framer-motion": "^10.18.0",
     "i": "^0.3.7",

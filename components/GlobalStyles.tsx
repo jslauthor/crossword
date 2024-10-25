@@ -317,7 +317,7 @@ export default createGlobalStyle/*css*/ `
     --destructive-foreground: 0 85.7% 97.3%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 142.4 71.8% 29.2%;
+    --ring: var(--blue500-hsl);
 
     --medium-difficulty-text: var(--yellow500);
     --hard-difficulty-text: var(--red500);
@@ -386,7 +386,7 @@ export default createGlobalStyle/*css*/ `
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --ring: var(--blue500-hsl);
     --radius: 0.3rem;
 
     --medium-difficulty-text: var(--yellow500);

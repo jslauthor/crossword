@@ -107,6 +107,9 @@ importers:
       dexie:
         specifier: ^4.0.8
         version: 4.0.8
+      emoji-picker-element:
+        specifier: ^1.22.8
+        version: 1.22.8
       eslint:
         specifier: 8.53.0
         version: 8.53.0
@@ -2241,6 +2244,9 @@ packages:
 
   electron-to-chromium@1.4.680:
     resolution: {integrity: sha512-4nToZ5jlPO14W82NkF32wyjhYqQByVaDmLy4J2/tYcAbJfgO2TKJC780Az1V13gzq4l73CJ0yuyalpXvxXXD9A==}
+
+  emoji-picker-element@1.22.8:
+    resolution: {integrity: sha512-EFgRjrlIcdA1ilyMH/f9KjB0Pi/vynrojNgMDZfU1Jv2YLrhdLJWx6xCehizPyxm4/NUuB8DfFvIT4v+1njjPQ==}
 
   emoji-regex@10.3.0:
     resolution: {integrity: sha512-QpLs9D9v9kArv4lfDEgg1X/gN5XLnf/A6l9cs8SPZLRZR3ZkY9+kwIQTxm+fsSej5UMYGE8fdoaZVIBlqG0XTw==}
@@ -6266,6 +6272,8 @@ snapshots:
   eastasianwidth@0.2.0: {}
 
   electron-to-chromium@1.4.680: {}
+
+  emoji-picker-element@1.22.8: {}
 
   emoji-regex@10.3.0: {}
 

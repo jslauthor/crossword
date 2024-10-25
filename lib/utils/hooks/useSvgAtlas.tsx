@@ -7,7 +7,7 @@ import { encode } from 'js-base64';
 import { trimLeadingZeros } from 'lib/utils';
 
 const ATLAS_SIZE = 2048;
-const SVG_BASE_PATH = '/noto/svg/emoji_';
+export const SVG_BASE_PATH = '/noto/svg/emoji_';
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 200;
 const SCALE_FACTOR = 0.7; // Scale the emoji to 80% of its bounding box
