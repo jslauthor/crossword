@@ -3,6 +3,7 @@
 import Database from 'emoji-picker-element/database';
 import type { NativeEmoji } from 'emoji-picker-element/shared';
 import { useEffect, useState } from 'react';
+import { emojiToUnicode } from '../puzzle';
 
 let database: Database | undefined;
 if (typeof window !== 'undefined') {
@@ -27,10 +28,25 @@ export const CATEGORIES: Category[] = [
   { label: 'Flags', unicode: 'u1f3c1', group: 9 },
 ];
 
-const useEmojiDatabase = (searchQuery: string, group: number) => {
+const useEmojiDatabase = (searchQuery: string) => {
   const [queryResult, setResult] = useState<NativeEmoji[]>([]);
+  const [emojiGroups, setEmojiGroups] = useState<Record<number, NativeEmoji[]>>(
+    {},
+  );
 
-  console.log(group);
+  useEffect(() => {
+    const query = async () => {
+      const emojiGroups: Record<number, NativeEmoji[]> = {};
+      for (const category of CATEGORIES) {
+        const result = (await database?.getEmojiByGroup(
+          category.group,
+        )) as NativeEmoji[];
+        emojiGroups[category.group] = result;
+      }
+      setEmojiGroups(emojiGroups);
+    };
+    query();
+  }, []);
 
   useEffect(() => {
     const query = async () => {
@@ -40,17 +56,15 @@ const useEmojiDatabase = (searchQuery: string, group: number) => {
         )) as NativeEmoji[];
         setResult(result);
       } else {
-        const result = (await database?.getEmojiByGroup(
-          group,
-        )) as NativeEmoji[];
-        setResult(result);
+        setResult([]);
       }
     };
     query();
-  }, [searchQuery, group]);
+  }, [searchQuery]);
 
   return {
     queryResult,
+    emojiGroups,
   };
 };
 

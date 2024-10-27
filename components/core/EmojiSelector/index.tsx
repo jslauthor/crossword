@@ -6,6 +6,8 @@ import React, {
   useMemo,
   forwardRef,
   ReactNode,
+  useRef,
+  useEffect,
 } from 'react';
 import useEmojiDatabase, { CATEGORIES } from 'lib/utils/hooks/useEmojiDatabase';
 import { Input } from 'components/core/ui/input';
@@ -17,6 +19,7 @@ import { SVG_BASE_PATH } from 'lib/utils/hooks/useSvgAtlas';
 import { HRule } from '../Dividers';
 import styled from 'styled-components';
 import { cn } from 'lib/utils';
+import { NativeEmoji } from 'emoji-picker-element/shared';
 
 const Underline = styled.div`
   background-color: hsl(var(--primary));
@@ -83,6 +86,35 @@ const GridList = forwardRef<
   );
 });
 
+const EmojiList: React.FC<{
+  emojis: string[];
+  handleEmojiClick: (emoji: string) => void;
+  queryResult: NativeEmoji[];
+}> = ({ emojis, handleEmojiClick, queryResult }) => (
+  <GridList>
+    {emojis.map((emoji, index) => {
+      const handleClick = () => handleEmojiClick(emoji);
+      const path = SVG_BASE_PATH + emoji + '.svg';
+      return (
+        <Button
+          key={emoji}
+          onClick={handleClick}
+          className="h-[50px] w-[50px] p-0 m-0"
+          variant="ghost"
+        >
+          <Image
+            alt={queryResult[index].name ?? 'Emoji'}
+            width={30}
+            height={30}
+            src={path}
+            unoptimized
+          />
+        </Button>
+      );
+    })}
+  </GridList>
+);
+
 interface EmojiSelectorProps {
   onEmojiSelect?: (emoji: string) => void;
   className?: string;
@@ -94,11 +126,41 @@ export function EmojiSelector({
 }: EmojiSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [group, setGroup] = useState<number>(0);
-  const { queryResult } = useEmojiDatabase(searchQuery, group);
+  const { queryResult, emojiGroups } = useEmojiDatabase(searchQuery);
+  const emojiListCacheRef = useRef<Record<number, ReactNode>>({});
+  const [emojiListItem, setEmojiListItem] = useState<ReactNode>();
 
-  const emojis: string[] = useMemo(() => {
-    return queryResult.map((emoji) => emojiToUnicode(emoji.unicode));
-  }, [queryResult]);
+  useEffect(() => {
+    if (
+      Object.keys(emojiGroups).length === 0 ||
+      Object.keys(emojiListCacheRef.current).length > 0
+    )
+      return;
+    console.log('hi');
+    for (const [emojiGroup, emojis] of Object.entries(emojiGroups)) {
+      emojiListCacheRef.current[parseInt(emojiGroup, 10)] = (
+        <EmojiList
+          emojis={emojis.map((emoji) => emojiToUnicode(emoji.unicode))}
+          handleEmojiClick={handleEmojiClick}
+          queryResult={emojiGroups[parseInt(emojiGroup, 10)]}
+        />
+      );
+    }
+  }, [emojiGroups, group]);
+
+  useEffect(() => {
+    if (searchQuery.length > 0) {
+      setEmojiListItem(
+        <EmojiList
+          emojis={queryResult.map((emoji) => emojiToUnicode(emoji.unicode))}
+          handleEmojiClick={handleEmojiClick}
+          queryResult={queryResult}
+        />,
+      );
+    } else {
+      setEmojiListItem(emojiListCacheRef.current[group]);
+    }
+  }, [queryResult, group, searchQuery]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,34 +177,11 @@ export function EmojiSelector({
     [onEmojiSelect],
   );
 
-  const onSelectGroup = useCallback((group: number) => setGroup(group), []);
-
-  const EmojiList: ReactNode = useMemo(
-    () => (
-      <GridList>
-        {emojis.map((emoji, index) => {
-          const handleClick = () => handleEmojiClick(emoji);
-          const path = `${SVG_BASE_PATH}${emoji}.svg`;
-          return (
-            <Button
-              key={emoji}
-              onClick={handleClick}
-              className="h-[50px] w-[50px] p-0 m-0"
-              variant="ghost"
-            >
-              <Image
-                alt={queryResult[index].name ?? 'Emoji'}
-                width={30}
-                height={30}
-                src={path}
-                unoptimized
-              />
-            </Button>
-          );
-        })}
-      </GridList>
-    ),
-    [emojis, handleEmojiClick, queryResult],
+  const onSelectGroup = useCallback(
+    (group: number) => {
+      setGroup(group);
+    },
+    [group],
   );
 
   return (
@@ -158,7 +197,7 @@ export function EmojiSelector({
       </CardHeader>
       <CategoryList onSelectGroup={onSelectGroup} selectedGroup={group} />
       <HRule className="mb-2" />
-      {EmojiList}
+      {emojiListItem}
     </Card>
   );
 }
