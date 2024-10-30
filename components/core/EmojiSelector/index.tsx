@@ -5,8 +5,6 @@ import React, {
   useCallback,
   useMemo,
   forwardRef,
-  ReactNode,
-  useRef,
   useEffect,
 } from 'react';
 import useEmojiDatabase, { CATEGORIES } from 'lib/utils/hooks/useEmojiDatabase';
@@ -23,6 +21,7 @@ import { NativeEmoji } from 'emoji-picker-element/shared';
 import { VirtuosoGrid } from 'react-virtuoso';
 import useEmojiCache from 'lib/utils/hooks/useEmojiCache';
 import useDimensions from 'react-cool-dimensions';
+import { CircleX } from 'lucide-react';
 
 const Underline = styled.div`
   background-color: hsl(var(--primary));
@@ -203,23 +202,28 @@ export function EmojiSelector({
     [onEmojiSelect],
   );
 
+  const clearSearch = useCallback(() => {
+    setSearchQuery('');
+  }, []);
+
   const onSelectGroup = useCallback(
     (group: number) => {
       setGroup(group);
-      setSearchQuery('');
+      clearSearch();
     },
-    [group],
+    [group, clearSearch],
   );
 
   return (
     <Card className={cn('relative w-full p-0 flex flex-col gap-0', className)}>
-      <CardHeader className="relative w-full p-4 pb-0">
+      <CardHeader className="relative w-full p-4 pb-0 mb-4">
         <Input
           type="text"
           value={searchQuery}
           onChange={handleSearchChange}
           placeholder="Search emojis..."
-          className="mb-4"
+          endIcon={searchQuery.length > 0 ? CircleX : undefined}
+          onEndIconClick={clearSearch}
         />
       </CardHeader>
       <CategoryList onSelectGroup={onSelectGroup} selectedGroup={group} />
