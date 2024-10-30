@@ -20,6 +20,9 @@ import { HRule } from '../Dividers';
 import styled from 'styled-components';
 import { cn } from 'lib/utils';
 import { NativeEmoji } from 'emoji-picker-element/shared';
+import { VirtuosoGrid } from 'react-virtuoso';
+import useEmojiCache from 'lib/utils/hooks/useEmojiCache';
+import useDimensions from 'react-cool-dimensions';
 
 const Underline = styled.div`
   background-color: hsl(var(--primary));
@@ -70,50 +73,85 @@ const CategoryList: React.FC<CategoryListType> = ({
   );
 };
 
-const GridList = forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(function GridList({ style, children, ...props }, ref) {
+const gridComponents = {
+  List: forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+    ({ style, children, ...props }, ref) => (
+      <div
+        ref={ref}
+        {...props}
+        className="grid grid-cols-[repeat(auto-fill,minmax(50px,1fr))] gap-2 w-full relative"
+        style={{ ...style }}
+      >
+        {children}
+      </div>
+    ),
+  ),
+  Item: forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+    ({ children, ...props }, ref) => (
+      <div ref={ref} {...props} className="flex items-center justify-center">
+        {children}
+      </div>
+    ),
+  ),
+};
+
+const GridItem: React.FC<{
+  emoji: string;
+  name: string;
+  onClick: () => void;
+}> = ({ emoji, name, onClick }) => {
+  const { cachedEmoji, isLoading } = useEmojiCache(emoji);
+  const disabled = useMemo(() => {
+    return cachedEmoji == null || isLoading === true;
+  }, [cachedEmoji, isLoading]);
   return (
-    <div
-      ref={ref}
-      {...props}
-      className="grid grid-cols-[repeat(auto-fill,minmax(50px,1fr))] gap-2 w-full relative overflow-y-auto"
-      style={{ ...style }}
+    <Button
+      onClick={onClick}
+      className="h-[50px] w-[50px] p-0 m-0"
+      variant="ghost"
+      disabled={disabled}
     >
-      {children}
-    </div>
+      {!disabled && (
+        <img
+          alt={name ?? 'Emoji'}
+          width={30}
+          height={30}
+          src={cachedEmoji ?? ''}
+        />
+      )}
+    </Button>
   );
-});
+};
 
 const EmojiList: React.FC<{
   emojis: string[];
   handleEmojiClick: (emoji: string) => void;
   queryResult: NativeEmoji[];
-}> = ({ emojis, handleEmojiClick, queryResult }) => (
-  <GridList>
-    {emojis.map((emoji, index) => {
-      const handleClick = () => handleEmojiClick(emoji);
-      const path = SVG_BASE_PATH + emoji + '.svg';
+  height: number;
+}> = ({ emojis, handleEmojiClick, queryResult, height }) => {
+  const itemContent = useCallback(
+    (index: number) => {
+      const emoji = emojis[index];
       return (
-        <Button
-          key={emoji}
-          onClick={handleClick}
-          className="h-[50px] w-[50px] p-0 m-0"
-          variant="ghost"
-        >
-          <Image
-            alt={queryResult[index].name ?? 'Emoji'}
-            width={30}
-            height={30}
-            src={path}
-            unoptimized
-          />
-        </Button>
+        <GridItem
+          emoji={emoji}
+          name={queryResult[index].name ?? 'Emoji'}
+          onClick={() => handleEmojiClick(emoji)}
+        />
       );
-    })}
-  </GridList>
-);
+    },
+    [emojis, handleEmojiClick, queryResult],
+  );
+
+  return (
+    <VirtuosoGrid
+      style={{ height }}
+      totalCount={emojis.length}
+      components={gridComponents}
+      itemContent={itemContent}
+    />
+  );
+};
 
 interface EmojiSelectorProps {
   onEmojiSelect?: (emoji: string) => void;
@@ -127,40 +165,28 @@ export function EmojiSelector({
   const [searchQuery, setSearchQuery] = useState('');
   const [group, setGroup] = useState<number>(0);
   const { queryResult, emojiGroups } = useEmojiDatabase(searchQuery);
-  const emojiListCacheRef = useRef<Record<number, ReactNode>>({});
-  const [emojiListItem, setEmojiListItem] = useState<ReactNode>();
 
-  useEffect(() => {
-    if (
-      Object.keys(emojiGroups).length === 0 ||
-      Object.keys(emojiListCacheRef.current).length > 0
-    )
-      return;
-    console.log('hi');
-    for (const [emojiGroup, emojis] of Object.entries(emojiGroups)) {
-      emojiListCacheRef.current[parseInt(emojiGroup, 10)] = (
-        <EmojiList
-          emojis={emojis.map((emoji) => emojiToUnicode(emoji.unicode))}
-          handleEmojiClick={handleEmojiClick}
-          queryResult={emojiGroups[parseInt(emojiGroup, 10)]}
-        />
-      );
-    }
-  }, [emojiGroups, group]);
+  const [currentEmojis, setCurrentEmojis] = useState<string[]>([]);
+  const [currentGroupEmojis, setCurrentGroupEmojis] = useState<NativeEmoji[]>(
+    [],
+  );
+
+  const { observe: containerRef, height: emojiListHeight } = useDimensions();
 
   useEffect(() => {
     if (searchQuery.length > 0) {
-      setEmojiListItem(
-        <EmojiList
-          emojis={queryResult.map((emoji) => emojiToUnicode(emoji.unicode))}
-          handleEmojiClick={handleEmojiClick}
-          queryResult={queryResult}
-        />,
+      setCurrentEmojis(
+        queryResult.map((emoji) => emojiToUnicode(emoji.unicode)),
       );
+      setCurrentGroupEmojis(queryResult);
     } else {
-      setEmojiListItem(emojiListCacheRef.current[group]);
+      const currentGroupEmojis = emojiGroups[group] || [];
+      setCurrentEmojis(
+        currentGroupEmojis.map((emoji) => emojiToUnicode(emoji.unicode)),
+      );
+      setCurrentGroupEmojis(currentGroupEmojis);
     }
-  }, [queryResult, group, searchQuery]);
+  }, [queryResult, group, searchQuery, emojiGroups]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,6 +206,7 @@ export function EmojiSelector({
   const onSelectGroup = useCallback(
     (group: number) => {
       setGroup(group);
+      setSearchQuery('');
     },
     [group],
   );
@@ -197,7 +224,14 @@ export function EmojiSelector({
       </CardHeader>
       <CategoryList onSelectGroup={onSelectGroup} selectedGroup={group} />
       <HRule className="mb-2" />
-      {emojiListItem}
+      <div className="h-full w-full" ref={containerRef}>
+        <EmojiList
+          height={emojiListHeight}
+          emojis={currentEmojis}
+          handleEmojiClick={handleEmojiClick}
+          queryResult={currentGroupEmojis}
+        />
+      </div>
     </Card>
   );
 }

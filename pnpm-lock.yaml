@@ -182,6 +182,9 @@ importers:
       react-simple-keyboard:
         specifier: ^3.7.86
         version: 3.7.86(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      react-virtuoso:
+        specifier: ^4.12.0
+        version: 4.12.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
       satori:
         specifier: ^0.10.13
         version: 0.10.13
@@ -3623,6 +3626,13 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  react-virtuoso@4.12.0:
+    resolution: {integrity: sha512-oHrKlU7xHsrnBQ89ecZoMPAK0tHnI9s1hsFW3KKg5ZGeZ5SWvbGhg/QFJFY4XETAzoCUeu+Xaxn1OUb/PGtPlA==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: '>=16 || >=17 || >= 18'
+      react-dom: '>=16 || >=17 || >= 18'
 
   react@18.2.0:
     resolution: {integrity: sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==}
@@ -7679,6 +7689,11 @@ snapshots:
       tslib: 2.6.2
     optionalDependencies:
       '@types/react': 18.2.37
+
+  react-virtuoso@4.12.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0):
+    dependencies:
+      react: 18.2.0
+      react-dom: 18.2.0(react@18.2.0)
 
   react@18.2.0:
     dependencies:

@@ -3,7 +3,6 @@
 import Database from 'emoji-picker-element/database';
 import type { NativeEmoji } from 'emoji-picker-element/shared';
 import { useEffect, useState } from 'react';
-import { emojiToUnicode } from '../puzzle';
 
 let database: Database | undefined;
 if (typeof window !== 'undefined') {

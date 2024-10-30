@@ -70,6 +70,7 @@
     "react-dom": "^18.2.0",
     "react-error-boundary": "^4.0.13",
     "react-simple-keyboard": "^3.7.86",
+    "react-virtuoso": "^4.12.0",
     "satori": "^0.10.13",
     "sharp": "^0.32.6",
     "styled-components": "^6.1.8",
