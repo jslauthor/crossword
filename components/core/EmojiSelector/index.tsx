@@ -50,6 +50,7 @@ const CategoryList: React.FC<CategoryListType> = ({
             className="flex justify-center items-center h-[50px] w-[50px] p-0 m-0"
             onClick={() => onSelectGroup(category.group)}
             variant="ghost"
+            title={category.label}
           >
             <Image
               alt={category.label ?? 'Emoji'}
