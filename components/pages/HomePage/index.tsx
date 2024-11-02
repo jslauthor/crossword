@@ -16,7 +16,6 @@ import {
 import { HRule } from 'components/core/Dividers';
 import { usePreviewState } from 'lib/utils/hooks/usePreviewState';
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 
 const Container = styled.div`
   position: relative;
@@ -64,7 +63,6 @@ export interface HomePageProps {
 }
 
 const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
-  const router = useRouter();
   const { user } = useUser();
   const slugs = useMemo(() => puzzles.map((puzzle) => puzzle.slug), [puzzles]);
   const previewStates = usePreviewState(slugs, user?.id);
@@ -94,10 +92,6 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
     [puzzles],
   );
 
-  const onSignIn = useCallback(() => {
-    router.push(`/signin?redirect_url=${window.location.href}`);
-  }, [router]);
-
   const formattedLabel = useMemo(() => {
     if (type == null) return 'Puzzles';
     return getPuzzleLabelForType(type).map((label, index) => `${label} `);
@@ -105,7 +99,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
 
   if (type == 'mega' && puzzles.length === 0) {
     return (
-      <Menu onSignInPressed={onSignIn}>
+      <Menu>
         <Container>
           <MegaPreview />
         </Container>
@@ -115,7 +109,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
 
   if (puzzles.length === 0) {
     return (
-      <Menu onSignInPressed={onSignIn}>
+      <Menu>
         <Container>
           <ErrorContainer>
             <h2>
@@ -130,7 +124,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
   }
 
   return (
-    <Menu onSignInPressed={onSignIn}>
+    <Menu>
       <Container>
         <div className="flex flex-col gap-3">
           <h1 className="text-base capitalize">

@@ -63,9 +63,9 @@ import TimerAndGuesses from 'components/composed/Timer';
 import PuzzleShare from 'components/composed/PuzzleShare';
 import ShareButton from 'components/core/ShareButton';
 import PuzzlePrompt from 'components/composed/PuzzlePrompt';
-import { useRouter } from 'next/navigation';
 import { usePageVisibility } from 'lib/utils/hooks/usePageVisibility';
 import posthog from 'posthog-js';
+import PuzzleHeaderSettings from 'components/composed/PuzzleHeaderSettings';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -252,7 +252,6 @@ export default function Puzzle({
     return true;
   }, [puzzle.record.solution, rowLength, width]);
 
-  const router = useRouter();
   const { theme } = useTheme();
   const layout = useMemo<keyof KeyboardLayoutType>(
     () => (puzzle.svgSegments != null ? 'emoji' : 'default'),
@@ -916,10 +915,6 @@ export default function Puzzle({
     setIsPromptOpen(false);
   }, []);
 
-  const onSignIn = useCallback(() => {
-    router.push(`/signin?redirect_url=${window.location.href}`);
-  }, [router]);
-
   const nextPuzzleType = useMemo(() => {
     const currentType = getType(puzzle);
     switch (currentType) {
@@ -966,14 +961,17 @@ export default function Puzzle({
         centerLabel={
           <TimerAndGuesses elapsedTime={elapsedTime ?? 0} guesses={guesses} />
         }
-        rotatingBoxProps={rotatingBoxProps}
-        autocheckEnabled={autoCheckEnabled}
-        draftModeEnabled={draftModeEnabled}
-        onAutocheckChanged={handleAutocheckChanged}
-        onDraftModeChanged={handleDraftModeChanged}
-        onSettingsPressed={handleSettingsPressed}
+        rightContent={
+          <PuzzleHeaderSettings
+            rotatingBoxProps={rotatingBoxProps}
+            autocheckEnabled={autoCheckEnabled}
+            draftModeEnabled={draftModeEnabled}
+            onAutocheckChanged={handleAutocheckChanged}
+            onDraftModeChanged={handleDraftModeChanged}
+            onSettingsPressed={handleSettingsPressed}
+          />
+        }
         onDisplayChange={setIsMenuOpen}
-        onSignInPressed={onSignIn}
         showBackground={false}
       >
         <Canvas
@@ -1166,7 +1164,6 @@ export default function Puzzle({
           puzzleStats={puzzleStats}
           puzzleLabel={getPuzzleLabel(puzzle)}
           puzzleSubLabel={puzzle.title}
-          onAuthClick={onSignIn}
         />
       )}
       <PuzzlePrompt

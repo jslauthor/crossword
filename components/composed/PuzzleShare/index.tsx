@@ -8,7 +8,7 @@ import { formatTime } from 'lib/utils/date';
 import { HRule } from 'components/core/Dividers';
 import Image from 'next/image';
 import { PuzzleStats } from 'lib/utils/puzzle';
-import SaveProgressCard, { SaveProgressCardProps } from '../SaveProgressCard';
+import SaveProgressCard from '../SaveProgressCard';
 import GetUpdatesCard from '../GetUpdatesCard';
 import { useUser } from '@clerk/nextjs';
 import { useUserConfigStore } from 'lib/providers/user-config-provider';
@@ -155,7 +155,6 @@ interface PuzzleShareProps extends Partial<OverlayProps> {
   puzzleLabel: string[];
   puzzleSubLabel: string;
   puzzleStats: PuzzleStats;
-  onAuthClick?: SaveProgressCardProps['onAuthClick'];
 }
 
 const noop = () => {};
@@ -168,7 +167,6 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
   puzzleSubLabel,
   onClose = noop,
   puzzleStats,
-  onAuthClick,
 }) => {
   const isSubscribed = useUserConfigStore((store) => store.isSubscribed);
   const subcribe = useUserConfigStore((store) => store.subcribe);
@@ -300,7 +298,7 @@ const PuzzleShare: React.FC<PuzzleShareProps> = ({
 
         <PuzzleLatestCondensed type={type} />
 
-        {isSignedIn === false && <SaveProgressCard onAuthClick={onAuthClick} />}
+        {isSignedIn === false && <SaveProgressCard />}
         {isSignedIn === true && isSubscribed === false && (
           <GetUpdatesCard onSignUp={subcribe} />
         )}

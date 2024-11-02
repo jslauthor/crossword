@@ -5,7 +5,6 @@ import { styled } from 'styled-components';
 import RotatingBox, { RotatingBoxProps } from '../3d/Box';
 import Link from 'next/link';
 import LightBulb from 'components/svg/LightBulb';
-import Pencil from 'components/svg/Pencil';
 import { getColorHex } from 'lib/utils/color';
 import Gear from 'components/svg/Gear';
 import { Button } from '../ui/button';
@@ -50,13 +49,8 @@ const RightContentContainer = styled.div`
 interface HeaderProps {
   showCloseButton: boolean;
   centerLabel?: string | ReactNode;
+  rightContent?: string | ReactNode;
   onMenuPressed: () => void;
-  onSettingsPressed?: () => void;
-  rotatingBoxProps?: RotatingBoxProps;
-  autocheckEnabled?: boolean;
-  draftModeEnabled?: boolean;
-  onAutocheckChanged?: (autocheckEnabled: boolean) => void;
-  onDraftModeChanged?: (draftModeEnabled: boolean) => void;
   className?: string;
 }
 
@@ -64,16 +58,9 @@ const Header: React.FC<HeaderProps> = ({
   showCloseButton,
   centerLabel,
   onMenuPressed,
-  rotatingBoxProps,
-  autocheckEnabled,
-  onAutocheckChanged,
-  onDraftModeChanged,
-  draftModeEnabled,
-  onSettingsPressed,
+  rightContent,
   className,
 }) => {
-  const { colors } = useTheme();
-
   const hasCenterLabel = useMemo(
     () =>
       centerLabel != null &&
@@ -81,26 +68,6 @@ const Header: React.FC<HeaderProps> = ({
         typeof centerLabel !== 'string'),
     [centerLabel],
   );
-
-  const handleAutocheckChanged = useCallback(() => {
-    if (onAutocheckChanged) {
-      onAutocheckChanged(!autocheckEnabled);
-    }
-  }, [autocheckEnabled, onAutocheckChanged]);
-
-  const handleDraftModeChanged = useCallback(() => {
-    if (onDraftModeChanged) {
-      onDraftModeChanged(!draftModeEnabled);
-    }
-  }, [draftModeEnabled, onDraftModeChanged]);
-
-  const draftColor = useMemo(() => {
-    return draftModeEnabled ? getColorHex(colors.correct) : undefined;
-  }, [colors.correct, draftModeEnabled]);
-
-  const correctColor = useMemo(() => {
-    return autocheckEnabled ? getColorHex(colors.correct) : undefined;
-  }, [autocheckEnabled, colors.correct]);
 
   return (
     <Container $hasCenterLabel={hasCenterLabel} className={className}>
@@ -119,34 +86,7 @@ const Header: React.FC<HeaderProps> = ({
       {hasCenterLabel === true && (
         <CenterLabelContainer>{centerLabel}</CenterLabelContainer>
       )}
-      <RightContentContainer>
-        {rotatingBoxProps && (
-          <>
-            <Button
-              onClick={handleDraftModeChanged}
-              variant={draftModeEnabled ? 'outline' : 'ghost'}
-              size="icon"
-            >
-              <Pencil fill={draftColor} width={16} height={16} />
-            </Button>
-            <Button
-              onClick={handleAutocheckChanged}
-              variant={autocheckEnabled ? 'outline' : 'ghost'}
-              size="icon"
-            >
-              <LightBulb fill={correctColor} width={16} height={16} />
-            </Button>
-            <Button onClick={onSettingsPressed} variant="ghost" size="icon">
-              <Gear width={16} height={16} />
-            </Button>
-            <RotatingBox
-              side={rotatingBoxProps.side}
-              color={rotatingBoxProps.color}
-              textColor={rotatingBoxProps.textColor}
-            />
-          </>
-        )}
-      </RightContentContainer>
+      <RightContentContainer>{rightContent}</RightContentContainer>
     </Container>
   );
 };

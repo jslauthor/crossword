@@ -2,8 +2,7 @@
 
 import Menu from 'components/containers/Menu';
 import { Button } from 'components/core/ui/button';
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import styled from 'styled-components';
 
 const Container = styled.div`
@@ -32,13 +31,8 @@ export default function Error({
     console.error(error);
   }, [error]);
 
-  const router = useRouter();
-  const onSignIn = useCallback(() => {
-    router.push(`/signin?redirect_url=${window.location.href}`);
-  }, [router]);
-
   return (
-    <Menu onSignInPressed={onSignIn}>
+    <Menu>
       <Container>
         <ErrorContainer>
           <h2>

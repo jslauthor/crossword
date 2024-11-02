@@ -1,15 +1,19 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button } from 'components/core/ui/button';
 import Image from 'next/image';
 import { OutlineCard } from '../OutlineCard';
+import { useRouter } from 'next/navigation';
 
-export interface SaveProgressCardProps {
-  onAuthClick?: () => void;
-}
+export interface SaveProgressCardProps {}
 
-const SaveProgressCard: React.FC<SaveProgressCardProps> = ({ onAuthClick }) => {
+const SaveProgressCard: React.FC<SaveProgressCardProps> = () => {
+  const router = useRouter();
+  const onSignIn = useCallback(() => {
+    router.push(`/signin?redirect_url=${window.location.href}`);
+  }, [router]);
+
   return (
     <OutlineCard>
       <>
@@ -31,7 +35,7 @@ const SaveProgressCard: React.FC<SaveProgressCardProps> = ({ onAuthClick }) => {
           variant="inverted"
           className="w-full"
           size="share"
-          onClick={onAuthClick}
+          onClick={onSignIn}
         >
           Sign in or Sign Up{' '}
           <FontAwesomeIcon icon={faUser} size="sm" className="ml-2" />

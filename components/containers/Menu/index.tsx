@@ -1,22 +1,22 @@
 import React, { useCallback } from 'react';
 import MenuWrapper, { MenuWrapperProps } from 'components/core/Menu';
 import { useClerk } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
-interface MenuProps extends MenuWrapperProps {}
+interface MenuProps extends Omit<MenuWrapperProps, 'onSignInPressed'> {}
 
 const Menu: React.FC<MenuProps> = ({
   centerLabel,
-  autocheckEnabled,
-  onAutocheckChanged,
-  draftModeEnabled,
-  onDraftModeChanged,
-  rotatingBoxProps,
+  rightContent,
   children,
-  onSettingsPressed,
   onDisplayChange,
-  onSignInPressed,
   showBackground = true,
 }) => {
+  const router = useRouter();
+  const onSignIn = useCallback(() => {
+    router.push(`/signin?redirect_url=${window.location.href}`);
+  }, [router]);
+
   const { signOut } = useClerk();
   const onSignOut = useCallback(() => {
     signOut({ redirectUrl: '/' });
@@ -26,14 +26,9 @@ const Menu: React.FC<MenuProps> = ({
     <MenuWrapper
       showBackground={showBackground}
       centerLabel={centerLabel}
-      autocheckEnabled={autocheckEnabled}
-      onAutocheckChanged={onAutocheckChanged}
+      rightContent={rightContent}
       onSignOutPressed={onSignOut}
-      onSignInPressed={onSignInPressed}
-      rotatingBoxProps={rotatingBoxProps}
-      draftModeEnabled={draftModeEnabled}
-      onDraftModeChanged={onDraftModeChanged}
-      onSettingsPressed={onSettingsPressed}
+      onSignInPressed={onSignIn}
       onDisplayChange={onDisplayChange}
     >
       {children}

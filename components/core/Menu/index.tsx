@@ -203,30 +203,20 @@ const PointerLink = styled.a`
 export type MenuWrapperProps = {
   children?: ReactNode;
   centerLabel?: string | ReactNode;
-  autocheckEnabled?: boolean;
-  draftModeEnabled?: boolean;
-  rotatingBoxProps?: RotatingBoxProps;
+  rightContent?: string | ReactNode;
   showBackground?: boolean;
-  onAutocheckChanged?: (autocheckEnabled: boolean) => void;
-  onDraftModeChanged?: (draftModeEnabled: boolean) => void;
   onSignInPressed: () => void;
   onSignOutPressed?: () => void;
-  onSettingsPressed?: () => void;
   onDisplayChange?: (isMenuOpen: boolean) => void;
 };
 
 const MenuWrapper: React.FC<MenuWrapperProps> = ({
   children,
   centerLabel,
-  autocheckEnabled,
-  draftModeEnabled,
-  rotatingBoxProps,
+  rightContent,
   showBackground = true,
   onSignOutPressed,
   onSignInPressed,
-  onAutocheckChanged,
-  onDraftModeChanged,
-  onSettingsPressed,
   onDisplayChange,
 }) => {
   const isSubscribed = useUserConfigStore((store) => store.isSubscribed);
@@ -316,12 +306,7 @@ const MenuWrapper: React.FC<MenuWrapperProps> = ({
             onMenuPressed={handleMenuPressed}
             showCloseButton={isMenuOpen}
             centerLabel={centerLabel}
-            rotatingBoxProps={rotatingBoxProps}
-            autocheckEnabled={autocheckEnabled}
-            onAutocheckChanged={onAutocheckChanged}
-            draftModeEnabled={draftModeEnabled}
-            onDraftModeChanged={onDraftModeChanged}
-            onSettingsPressed={onSettingsPressed}
+            rightContent={rightContent}
           />
         </HeaderContainer>
         <AnimatePresence>
