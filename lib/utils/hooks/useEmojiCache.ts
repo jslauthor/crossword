@@ -7,7 +7,7 @@ interface Base64Cache {
 }
 
 // Add a concurrency limit (e.g., 3 requests at a time)
-const limit = pLimit(10);
+const limit = pLimit(20);
 const base64Cache: Base64Cache = {};
 const pendingRequests: Map<string, Promise<string>> = new Map();
 

@@ -134,6 +134,7 @@ const GridItem: React.FC<{
           width={30}
           height={30}
           src={cachedEmoji ?? ''}
+          loading="eager"
         />
       )}
     </Button>
@@ -166,6 +167,8 @@ const EmojiList: React.FC<{
       totalCount={emojis.length}
       components={gridComponents}
       itemContent={itemContent}
+      overscan={1000}
+      increaseViewportBy={1000}
     />
   );
 };
