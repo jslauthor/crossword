@@ -22,6 +22,12 @@ import { VirtuosoGrid } from 'react-virtuoso';
 import useEmojiCache from 'lib/utils/hooks/useEmojiCache';
 import useDimensions from 'react-cool-dimensions';
 import { CircleX } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from 'components/core/ui/dropdown';
 
 const Underline = styled.div`
   background-color: hsl(var(--primary));
@@ -38,7 +44,7 @@ const CategoryList: React.FC<CategoryListType> = ({
   onSelectGroup,
   selectedGroup,
 }) => {
-  const items = useMemo(() => {
+  const Items = useMemo(() => {
     return CATEGORIES.map((category) => {
       const imgPath = `${SVG_BASE_PATH}${category.unicode}.svg`;
       return (
@@ -68,31 +74,37 @@ const CategoryList: React.FC<CategoryListType> = ({
   }, [onSelectGroup, selectedGroup]);
   return (
     <div className="flex flex-row justify-between items-center w-full">
-      {items}
+      {Items}
     </div>
   );
 };
 
+const ListComponent = forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ style, children, ...props }, ref) => (
+  <div
+    ref={ref}
+    {...props}
+    className="grid grid-cols-[repeat(auto-fill,minmax(50px,1fr))] gap-2 w-full relative"
+    style={{ ...style }}
+  >
+    {children}
+  </div>
+));
+
+const ItemComponent = forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ children, ...props }, ref) => (
+  <div ref={ref} {...props} className="flex items-center justify-center">
+    {children}
+  </div>
+));
+
 const gridComponents = {
-  List: forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-    ({ style, children, ...props }, ref) => (
-      <div
-        ref={ref}
-        {...props}
-        className="grid grid-cols-[repeat(auto-fill,minmax(50px,1fr))] gap-2 w-full relative"
-        style={{ ...style }}
-      >
-        {children}
-      </div>
-    ),
-  ),
-  Item: forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-    ({ children, ...props }, ref) => (
-      <div ref={ref} {...props} className="flex items-center justify-center">
-        {children}
-      </div>
-    ),
-  ),
+  List: ListComponent,
+  Item: ItemComponent,
 };
 
 const GridItem: React.FC<{
@@ -164,29 +176,81 @@ export function EmojiSelector({
 }: EmojiSelectorProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [group, setGroup] = useState<number>(0);
-  const { queryResult, emojiGroups } = useEmojiDatabase(searchQuery);
-
+  const { queryResult, emojiGroups, database } = useEmojiDatabase(searchQuery);
   const [currentEmojis, setCurrentEmojis] = useState<string[]>([]);
   const [currentGroupEmojis, setCurrentGroupEmojis] = useState<NativeEmoji[]>(
     [],
   );
+  const [emojiToneCodes, setEmojiToneCodes] = useState<string[]>([]);
+  const [selectedEmojiToneIndex, setSelectedEmojiToneIndex] =
+    useState<number>(-1);
 
   const { observe: containerRef, height: emojiListHeight } = useDimensions();
 
   useEffect(() => {
+    const query = async () => {
+      const emoji = (await database?.getEmojiByShortcode(
+        'wave',
+      )) as NativeEmoji;
+      const tones = [
+        emojiToUnicode(emoji?.unicode),
+        ...(emoji?.skins ?? []).map((skin) => emojiToUnicode(skin.unicode)),
+      ];
+      setEmojiToneCodes(tones);
+    };
+    query();
+  }, [database]);
+
+  const dropdownMenu = useMemo(() => {
+    // +1 because the first index is the base emoji
+    const selected = emojiToneCodes[selectedEmojiToneIndex + 1];
+    const imgPath = `${SVG_BASE_PATH}${selected}.svg`;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger className="ml-2" asChild>
+          <img alt={'Wave Emoji'} width={30} height={30} src={imgPath} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="flex flex-col gap-2">
+          {emojiToneCodes.map((tone, index) => {
+            const imgPath = SVG_BASE_PATH + tone + '.svg';
+            return (
+              <DropdownMenuItem
+                key={tone}
+                onClick={() => setSelectedEmojiToneIndex(index - 1)}
+              >
+                <img alt={tone} width={30} height={30} src={imgPath} />
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }, [emojiToneCodes, selectedEmojiToneIndex, setSelectedEmojiToneIndex]);
+
+  const getUnicode = useCallback(
+    (emoji: NativeEmoji) => {
+      if (
+        selectedEmojiToneIndex > -1 &&
+        emoji.skins &&
+        selectedEmojiToneIndex < emoji.skins.length
+      ) {
+        return emojiToUnicode(emoji.skins[selectedEmojiToneIndex].unicode);
+      }
+      return emojiToUnicode(emoji.unicode);
+    },
+    [selectedEmojiToneIndex],
+  );
+
+  useEffect(() => {
     if (searchQuery.length > 0) {
-      setCurrentEmojis(
-        queryResult.map((emoji) => emojiToUnicode(emoji.unicode)),
-      );
+      setCurrentEmojis(queryResult.map((emoji) => getUnicode(emoji)));
       setCurrentGroupEmojis(queryResult);
     } else {
       const currentGroupEmojis = emojiGroups[group] || [];
-      setCurrentEmojis(
-        currentGroupEmojis.map((emoji) => emojiToUnicode(emoji.unicode)),
-      );
+      setCurrentEmojis(currentGroupEmojis.map((emoji) => getUnicode(emoji)));
       setCurrentGroupEmojis(currentGroupEmojis);
     }
-  }, [queryResult, group, searchQuery, emojiGroups]);
+  }, [queryResult, group, searchQuery, emojiGroups, getUnicode]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -217,7 +281,7 @@ export function EmojiSelector({
 
   return (
     <Card className={cn('relative w-full p-0 flex flex-col gap-0', className)}>
-      <CardHeader className="relative w-full p-4 pb-0 mb-4">
+      <CardHeader className="relative w-full p-4 pb-0 mb-4 flex flex-row justify-center items-center gap-2">
         <Input
           type="text"
           value={searchQuery}
@@ -226,6 +290,7 @@ export function EmojiSelector({
           endIcon={searchQuery.length > 0 ? CircleX : undefined}
           onEndIconClick={clearSearch}
         />
+        {dropdownMenu}
       </CardHeader>
       <CategoryList onSelectGroup={onSelectGroup} selectedGroup={group} />
       <HRule className="mb-2" />

@@ -40,7 +40,7 @@ const useEmojiCache = (emoji: string) => {
 
     setIsLoading(true);
     loadEmoji();
-  }, [emoji, base64Cache]);
+  }, [emoji]);
 
   return { cachedEmoji, isLoading };
 };

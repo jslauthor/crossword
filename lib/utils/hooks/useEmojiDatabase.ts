@@ -64,6 +64,7 @@ const useEmojiDatabase = (searchQuery: string) => {
   return {
     queryResult,
     emojiGroups,
+    database,
   };
 };
 
