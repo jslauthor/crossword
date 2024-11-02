@@ -93,6 +93,8 @@ const ListComponent = forwardRef<
   </div>
 ));
 
+ListComponent.displayName = 'ListComponent';
+
 const ItemComponent = forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -101,6 +103,8 @@ const ItemComponent = forwardRef<
     {children}
   </div>
 ));
+
+ItemComponent.displayName = 'ItemComponent';
 
 const gridComponents = {
   List: ListComponent,
@@ -276,7 +280,7 @@ export function EmojiSelector({
       setGroup(group);
       clearSearch();
     },
-    [group, clearSearch],
+    [clearSearch],
   );
 
   return (
