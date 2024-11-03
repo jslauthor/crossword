@@ -1,5 +1,6 @@
 'use client';
 
+import Keyboard from 'components/composed/Keyboard';
 import Menu from 'components/containers/Menu';
 import EmojiSelector from 'components/core/EmojiSelector';
 import { Button } from 'components/core/ui/button';
@@ -7,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from 'components/core/ui/tabs';
 import Crossword from 'components/svg/Crossword';
 import Gear from 'components/svg/Gear';
 import Symmetry from 'components/svg/Symmetry';
-import { Keyboard, List } from 'lucide-react';
+import { Keyboard as KeyboardIcon, List } from 'lucide-react';
 import React, { useCallback, useMemo, useState } from 'react';
 
 enum TabsEnum {
@@ -53,8 +54,8 @@ export function PuzzleEditor() {
         centerLabel={<div className="min-w-[200px]">{centerLabel}</div>}
         rightContent={rightContent}
       >
-        <div className="flex flex-col gap-0 justify-center items-center w-full">
-          <EmojiSelector className="h-[500px]" />
+        <div className="relative h-full w-full grid grid-rows-[auto_auto_auto]">
+          <EmojiSelector />
           <Tabs
             defaultValue="puzzle"
             className="w-full"
@@ -69,10 +70,11 @@ export function PuzzleEditor() {
                 <List width={16} height={16} />
               </TabsTrigger>
               <TabsTrigger value={TabsEnum.Keyboard}>
-                <Keyboard width={16} height={16} />
+                <KeyboardIcon width={16} height={16} />
               </TabsTrigger>
             </TabsList>
           </Tabs>
+          <Keyboard layout="default" svgContentMap={{}} />
         </div>
       </Menu>
     </>

@@ -288,7 +288,12 @@ export function EmojiSelector({
   );
 
   return (
-    <Card className={cn('relative w-full p-0 flex flex-col gap-0', className)}>
+    <Card
+      className={cn(
+        'relative w-full grid grid-rows-[auto_auto_auto_1fr]',
+        className,
+      )}
+    >
       <CardHeader className="relative w-full p-4 pb-0 mb-4 flex flex-row justify-center items-center gap-2">
         <Input
           type="text"
@@ -302,7 +307,7 @@ export function EmojiSelector({
       </CardHeader>
       <CategoryList onSelectGroup={onSelectGroup} selectedGroup={group} />
       <HRule className="mb-2" />
-      <div className="h-full w-full" ref={containerRef}>
+      <div className="w-full" ref={containerRef}>
         <EmojiList
           height={emojiListHeight}
           emojis={currentEmojis}
