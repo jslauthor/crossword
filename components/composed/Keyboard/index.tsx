@@ -23,7 +23,6 @@ const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
     if ($svgCssMap) {
       return Object.entries($svgCssMap).map(([key, [, data]]) => {
         return `
-
           .${key} {
             span {
               font-size: 0;
@@ -35,7 +34,6 @@ const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
               width: 92%;
             }
           }
-
         `;
       });
     }

@@ -10,7 +10,17 @@ export type PuzzleEditorState = {
   type: PuzzleDimensionType;
   size: PuzzleSizeType;
   showSettings: boolean;
+  // Empty Map to hold all 26 keys and their corresponding emojis
+  keyMap: Map<number, [string, string]>;
 };
+
+function generateKeyMap(): Map<number, [string, string]> {
+  const map = new Map<number, [string, string]>();
+  for (let i = 0; i < 26; i++) {
+    map.set(i, ['', '']);
+  }
+  return map;
+}
 
 export type PuzzleEditorActions = {
   updateTitle: (title: string | undefined) => void;
@@ -29,6 +39,7 @@ export const createPuzzleEditorStore = (
     type: '2d',
     size: 5,
     showSettings: false,
+    keyMap: generateKeyMap(),
   },
 ) => {
   return createStore<PuzzleEditorStore>((set) => ({
