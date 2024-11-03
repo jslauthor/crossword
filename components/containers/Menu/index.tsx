@@ -3,9 +3,7 @@ import MenuWrapper, { MenuWrapperProps } from 'components/core/Menu';
 import { useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
-interface MenuProps extends Omit<MenuWrapperProps, 'onSignInPressed'> {}
-
-const Menu: React.FC<MenuProps> = ({
+const Menu: React.FC<Omit<MenuWrapperProps, 'onSignInPressed'>> = ({
   centerLabel,
   rightContent,
   children,

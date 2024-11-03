@@ -19,7 +19,7 @@ export function constrain(start: number, end: number, num: number): number {
   const rangeLength = end - start + 1;
 
   // Normalize the number to the range
-  let normalizedNum =
+  const normalizedNum =
     ((((num - start) % rangeLength) + rangeLength) % rangeLength) + start;
 
   return normalizedNum;

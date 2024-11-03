@@ -1,8 +1,6 @@
 import React, { FunctionComponent } from 'react';
 import { SvgProps } from 'types/types';
 
-const NAME = 'icon-hamburger';
-
 const IconHamburger: FunctionComponent<SvgProps> = ({
   width = 18,
   height = 16,

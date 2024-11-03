@@ -204,7 +204,6 @@ const saveElementToDisk = async (
       'yoga.wasm',
     ),
   );
-  // @ts-ignore
   const yoga = await Yoga(wasm);
   init(yoga);
   const svg = await satori(element, {

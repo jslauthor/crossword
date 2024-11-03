@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 
 export const useKeyDown = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   callBack: (pressedKey: string) => any,
   key: string | string[],
   caseInsensitive: boolean = true,

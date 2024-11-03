@@ -1,5 +1,7 @@
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export async function queryReadOnly<T = {}>(
   query: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   variables: Record<string, any> = {},
 ): Promise<T> {
   const res = await fetch(

@@ -5,7 +5,7 @@ import Menu from 'components/containers/Menu';
 import PuzzlePreview from 'components/composed/PuzzlePreview';
 import { CrosscubeType, PuzzleType, ValidCrosscubeArray } from 'types/types';
 import Link from 'next/link';
-import { useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 import PuzzleLatest from 'components/composed/PuzzleLatest';
 import {
   getPuzzleLabel,
@@ -94,7 +94,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
 
   const formattedLabel = useMemo(() => {
     if (type == null) return 'Puzzles';
-    return getPuzzleLabelForType(type).map((label, index) => `${label} `);
+    return getPuzzleLabelForType(type).map((label) => `${label} `);
   }, [type]);
 
   if (type == 'mega' && puzzles.length === 0) {
@@ -130,7 +130,7 @@ const Page: React.FC<HomePageProps> = ({ puzzles, type }) => {
           <h1 className="text-base capitalize">
             Latest <LatestTitle $type={type}>{formattedLabel}</LatestTitle>
           </h1>
-          {latestPuzzles.map((puzzle, index) => (
+          {latestPuzzles.map((puzzle) => (
             <Link key={puzzle.slug} href={`/puzzle/${puzzle.slug}`}>
               <PuzzleLatest
                 type={getType(puzzle)}

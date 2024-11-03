@@ -235,6 +235,7 @@ export const usePuzzleProgress = (
       let token: string | null = null;
       try {
         token = await getToken();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         return;
       }
@@ -256,6 +257,7 @@ export const usePuzzleProgress = (
 
       ypartyProvider.on(
         'connection-error',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (_e: any, provider: YPartyKitProvider) => {
           if (provider.wsUnsuccessfulReconnects > 5) {
             // We need to do this so we refresh the token
@@ -303,6 +305,7 @@ export const usePuzzleProgress = (
     });
 
     const updateState = (event: Y.YMapEvent<unknown>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       event.keysChanged.forEach((key: any) => {
         switch (key) {
           case CHARACTER_POSITIONS_KEY:

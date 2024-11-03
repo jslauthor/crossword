@@ -208,7 +208,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   }, [cellsDisplayRef, setInstancedMesh]);
 
   const [width, height, rowLength] = useMemo(() => {
-    let { width, height } = puzzle.data[0].dimensions;
+    const { width, height } = puzzle.data[0].dimensions;
     return [width, height, width * puzzle.data.length - puzzle.data.length];
   }, [puzzle.data]);
 
@@ -596,7 +596,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         ? cell?.mapping[selectedSide]?.downSequenceIndex
         : cell?.mapping[selectedSide]?.acrossSequenceIndex;
 
-      let sequences = wordSequencesBySideFlat[direction];
+      const sequences = wordSequencesBySideFlat[direction];
 
       const currentIndex = sequences.findIndex(
         (i) => i.index == sequenceIndex && i.side == selectedSide,

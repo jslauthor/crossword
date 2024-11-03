@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import {
@@ -37,7 +38,7 @@ const MEDIA = '(prefers-color-scheme: dark)';
 const isServer = typeof window === 'undefined';
 const ThemeContext = createContext<UseThemeProps | undefined>(undefined);
 const defaultContext: UseThemeProps = {
-  setTheme: (_) => {},
+  setTheme: () => {},
   themes: [],
   colors: {
     font: DEFAULT_FONT_COLOR,
@@ -101,6 +102,7 @@ export const Script = (
       const isSystem = enableSystem && themeName === 'system';
       const theme = isSystem ? getSystemTheme() : themeName;
       updateDOM(theme);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       //
     }
@@ -181,7 +183,7 @@ const Theme = ({
         const colorScheme = colorSchemes.includes(resolved)
           ? resolved
           : fallback;
-        // @ts-ignore
+        // @ts-expect-error -- colorScheme is a valid CSS property
         d.style.colorScheme = colorScheme;
       }
 
@@ -224,6 +226,7 @@ const Theme = ({
       // Save to storage
       try {
         localStorage.setItem(storageKey, value);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         // Unsupported
       }
@@ -351,6 +354,7 @@ const getTheme = (key: string, fallback?: string) => {
   let theme;
   try {
     theme = localStorage.getItem(key) || undefined;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     // Unsupported
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ReactNode, use, useEffect, useRef } from 'react';
+import React, { ReactNode, useEffect, useRef } from 'react';
 import md5 from 'md5';
 import Header from 'components/core/Header';
 import styled from 'styled-components';
@@ -9,7 +9,6 @@ import { useUser } from '@clerk/nextjs';
 import { useOnClickOutside, useResizeObserver } from 'usehooks-ts';
 import UserInfo from 'components/composed/UserInfo';
 import { AnimatePresence, motion } from 'framer-motion';
-import { RotatingBoxProps } from '../3d/Box';
 import TurnArrow from 'components/svg/TurnArrow';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClose, faHome } from '@fortawesome/free-solid-svg-icons';

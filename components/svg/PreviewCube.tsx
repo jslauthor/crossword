@@ -38,7 +38,7 @@ const getArrayforProgress = (
 ) => {
   switch (progress) {
     case ProgressEnum.ZeroPercent:
-      return Array.from({ length: 24 }, (_, i) => getColorHex(colors[0]));
+      return Array.from({ length: 24 }, () => getColorHex(colors[0]));
     case ProgressEnum.TwentyFivePercent:
       return Array.from({ length: 24 }, (_, i) => {
         const index = twentyFivePercentIndices.includes(i) ? 1 : 0;

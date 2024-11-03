@@ -575,7 +575,7 @@ export const getPuzzleStats = (
         : 1;
   }
   // For every word length over 3, we add 10% to the goal time
-  let scalingFactor = 1 + Math.max(0, (avgWordLength - baseLength) * 0.1);
+  const scalingFactor = 1 + Math.max(0, (avgWordLength - baseLength) * 0.1);
   // Base is 20 seconds per word times a scaling factor
   const goalTime = roundUpToNearestFive(numberOfWords * 20 * scalingFactor);
 
@@ -762,7 +762,7 @@ export const convertSimpleCrossmojiData = (
 
   // Check to make sure there are an equal number of 1s in the grid
   // for every item with a value.
-  const itemsWithClues = items.filter(([_, clue]) => clue != null);
+  const itemsWithClues = items.filter(([, clue]) => clue != null);
   const numOnes = data.grid.flat().filter((cell) => cell === 1).length;
   if (itemsWithClues.length !== numOnes) {
     throw new Error('Number of items does not match number of 1s in the grid');
@@ -867,6 +867,7 @@ const convertToNumber = (key: string | number) =>
   typeof key === 'string' ? parseInt(key, 10) : key;
 
 // Function to check if arrays are the same size and contain the same items (can be out of order)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const arraysHaveSameItems = (arr1: any[], arr2: any[]): boolean => {
   if (arr1.length !== arr2.length) return false;
   const set1 = new Set(arr1);

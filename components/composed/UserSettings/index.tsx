@@ -8,7 +8,6 @@ import {
 import React from 'react';
 import { SettingsItem, SettingsTitle } from '../PuzzleSettings';
 import { Switch } from 'components/core/ui/switch';
-import { Loader } from 'lucide-react';
 import { Spinner } from 'components/core/ui/spinner';
 
 interface UserSettingsProps {

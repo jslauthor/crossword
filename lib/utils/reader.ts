@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { gzip, gunzip } from 'zlib';
 import { promisify } from 'util';
 import { currentUser } from '@clerk/nextjs/server';

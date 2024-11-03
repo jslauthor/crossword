@@ -14,19 +14,19 @@ export const computeBoxForObject = function (object: Mesh) {
 
   object.updateWorldMatrix(false, false);
 
-  var geometry = object.geometry;
+  const geometry = object.geometry;
 
   if (geometry !== undefined) {
     if (geometry.boundingBox === null) {
       geometry.computeBoundingBox();
     }
 
-    // @ts-ignore - isInstanceMesh isn't typed correctly
+    // @ts-expect-error - isInstanceMesh isn't typed correctly
     if (object.isInstancedMesh) {
-      // @ts-ignore
+      // @ts-expect-error - instanceMatrix isn't typed correctly
       const matrix4Array = object.instanceMatrix.array;
       const arrayLength = matrix4Array.length;
-      for (var posOffset = 12; posOffset < arrayLength; posOffset += 16) {
+      for (let posOffset = 12; posOffset < arrayLength; posOffset += 16) {
         tempVector.set(
           matrix4Array[posOffset],
           matrix4Array[1 + posOffset],
@@ -43,9 +43,9 @@ export const computeBoxForObject = function (object: Mesh) {
     box.expandByPoint(tempBox.max);
   }
 
-  var children = object.children;
+  const children = object.children;
 
-  for (var i = 0, l = children.length; i < l; i++) {
+  for (let i = 0, l = children.length; i < l; i++) {
     box.expandByObject(children[i]);
   }
 
@@ -218,8 +218,8 @@ export const fitCameraToCenteredObject = function (
 
   const fov = camera.fov * (Math.PI / 180);
   const fovh = 2 * Math.atan(Math.tan(fov / 2) * camera.aspect);
-  let dx = size.z / 2 + Math.abs(size.x / 2 / Math.tan(fovh / 2));
-  let dy = size.z / 2 + Math.abs(size.y / 2 / Math.tan(fov / 2));
+  const dx = size.z / 2 + Math.abs(size.x / 2 / Math.tan(fovh / 2));
+  const dy = size.z / 2 + Math.abs(size.y / 2 / Math.tan(fov / 2));
   let cameraZ = Math.max(dx, dy);
 
   // offset the camera, if desired (to avoid filling the whole canvas)

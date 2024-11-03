@@ -1,14 +1,11 @@
 import React, { FunctionComponent, useMemo } from 'react';
 import { SvgProps } from 'types/types';
-import { getColorHex } from 'lib/utils/color';
 
 export enum DifficultyEnum {
   Easy = 'easy',
   Medium = 'medium',
   Hard = 'hard',
 }
-
-const NAME = 'icon-star';
 
 interface StarProps extends SvgProps {
   difficulty: DifficultyEnum;

@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
     const result = await hygraphResponse.json();
 
     return NextResponse.json(result, { status: 201 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error processing Crossmoji data:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

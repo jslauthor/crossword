@@ -15,7 +15,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let defaultConfig: UserConfigState = {
+  const defaultConfig: UserConfigState = {
     isSubscribed: false,
     showSettings: false,
   };

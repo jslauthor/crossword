@@ -6,9 +6,7 @@ import Image from 'next/image';
 import { OutlineCard } from '../OutlineCard';
 import { useRouter } from 'next/navigation';
 
-export interface SaveProgressCardProps {}
-
-const SaveProgressCard: React.FC<SaveProgressCardProps> = () => {
+const SaveProgressCard: React.FC = () => {
   const router = useRouter();
   const onSignIn = useCallback(() => {
     router.push(`/signin?redirect_url=${window.location.href}`);

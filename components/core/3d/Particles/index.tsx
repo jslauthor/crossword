@@ -33,7 +33,7 @@ const Particles: React.FC<ParticlesProps> = ({ count, mouse }) => {
   }, [count]);
 
   // The innards of this hook will run every frame
-  useFrame((state) => {
+  useFrame(() => {
     if (
       count === 0 ||
       light.current == null ||
@@ -55,7 +55,8 @@ const Particles: React.FC<ParticlesProps> = ({ count, mouse }) => {
         return;
       }
 
-      let { t, factor, speed, xFactor, yFactor, zFactor } = particle;
+      let { t } = particle;
+      const { factor, speed, xFactor, yFactor, zFactor } = particle;
       // There is no sense or reason to any of this, just messing around with trigonometric functions
       t = particle.t += speed / 2;
       const a = Math.cos(t) + Math.sin(t * 1) / 10;

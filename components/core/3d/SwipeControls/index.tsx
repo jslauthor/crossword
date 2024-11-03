@@ -18,7 +18,7 @@ function getProgress(from: number, to: number, current: number): number {
 }
 
 export type SwipeControlProps = {
-  snap?: Boolean | SpringConfig;
+  snap?: boolean | SpringConfig;
   global?: boolean;
   cursor?: boolean;
   speed?: number;
@@ -26,6 +26,7 @@ export type SwipeControlProps = {
   rotation?: [number, number, number];
   polar?: [number, number];
   azimuth?: [number, number];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   config?: any;
   dragEnabled?: boolean;
   children?: React.ReactNode;
@@ -145,6 +146,7 @@ export function SwipeControls({
     { target: global ? explDomElement : undefined },
   );
   return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     <a.group {...bind?.()} {...(spring as any)}>
       {children}
     </a.group>

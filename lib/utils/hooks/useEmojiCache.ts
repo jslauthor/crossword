@@ -38,7 +38,7 @@ export async function getBase64Image(url: string): Promise<string> {
 }
 
 const useEmojiCache = (emoji: string) => {
-  let [cachedEmoji, setCachedEmoji] = useState<string | null>(null);
+  const [cachedEmoji, setCachedEmoji] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {

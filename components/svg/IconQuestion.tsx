@@ -1,8 +1,6 @@
 import React from 'react';
 import { SvgProps } from 'types/types';
 
-const NAME = 'icon-question';
-
 const IconQuestion: React.FC<SvgProps> = ({
   width = 18,
   height = 16,

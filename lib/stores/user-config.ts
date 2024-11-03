@@ -1,5 +1,4 @@
 import { Toast } from 'components/core/ui/use-toast';
-import debounce from 'lodash.debounce';
 import { createStore } from 'zustand/vanilla';
 
 export type UserConfigState = {
