@@ -51,18 +51,18 @@ const CategoryList: React.FC<CategoryListType> = ({
       return (
         <div
           key={category.label}
-          className="flex flex-col gap-0 justify-center items-center"
+          className="flex flex-col gap-0 justify-center items-center w-full"
         >
           <Button
-            className="flex justify-center items-center h-[50px] w-[50px] p-0 m-0"
+            className="flex justify-center items-center h-[30px] w-[30px] p-0 m-0"
             onClick={() => onSelectGroup(category.group)}
             variant="ghost"
             title={category.label}
           >
             <Image
               alt={category.label ?? 'Emoji'}
-              width={30}
-              height={30}
+              width={25}
+              height={25}
               src={imgPath}
               unoptimized
               priority

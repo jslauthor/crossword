@@ -51,7 +51,7 @@ export function PuzzleEditor() {
   return (
     <>
       <Menu
-        centerLabel={<div className="min-w-[200px]">{centerLabel}</div>}
+        centerLabel={<div className="min-w-[100px]">{centerLabel}</div>}
         rightContent={rightContent}
       >
         <div className="relative h-full w-full grid grid-rows-[auto_auto_auto]">
