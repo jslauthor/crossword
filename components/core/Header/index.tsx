@@ -1,14 +1,8 @@
 import IconHamburger from 'components/svg/IconHamburger';
 import IconX from 'components/svg/IconX';
-import { ReactNode, useCallback, useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { styled } from 'styled-components';
-import RotatingBox, { RotatingBoxProps } from '../3d/Box';
 import Link from 'next/link';
-import LightBulb from 'components/svg/LightBulb';
-import { getColorHex } from 'lib/utils/color';
-import Gear from 'components/svg/Gear';
-import { Button } from '../ui/button';
-import { useTheme } from 'lib/utils/hooks/theme';
 
 const Container = styled.nav<{ $hasCenterLabel: boolean }>`
   display: grid;

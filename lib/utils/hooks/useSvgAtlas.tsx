@@ -109,6 +109,7 @@ function useSvgAtlas(unicodeValues?: string[]) {
           setSvgContentMap((prev) => ({ ...prev, [unicodeValue]: base64 }));
           img.src = base64;
         });
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         if (retries < MAX_RETRIES) {
           await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));

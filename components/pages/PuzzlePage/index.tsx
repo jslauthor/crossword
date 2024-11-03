@@ -3,7 +3,7 @@
 import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { Canvas } from '@react-three/fiber';
-import { Stats, PerspectiveCamera, Html, Environment } from '@react-three/drei';
+import { PerspectiveCamera, Html } from '@react-three/drei';
 import LetterBoxes from 'components/core/3d/LetterBoxes';
 import {
   Suspense,
@@ -20,8 +20,6 @@ import {
   Color,
   InstancedMesh,
 } from 'three';
-import Keyboard from 'react-simple-keyboard';
-import 'react-simple-keyboard/build/css/index.css';
 import useDimensions from 'react-cool-dimensions';
 import { useKeyDown } from 'lib/utils/hooks/useKeyDown';
 import { useSpring } from '@react-spring/core';
@@ -66,6 +64,7 @@ import PuzzlePrompt from 'components/composed/PuzzlePrompt';
 import { usePageVisibility } from 'lib/utils/hooks/usePageVisibility';
 import posthog from 'posthog-js';
 import PuzzleHeaderSettings from 'components/composed/PuzzleHeaderSettings';
+import Keyboard, { KeyboardLayoutType } from 'components/composed/Keyboard';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -78,37 +77,6 @@ for (let x = 0; x <= 1000; x++) {
   SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
 }
 SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
-
-type KeyboardLayoutType = Record<'default' | 'emoji', string[]>;
-type CssMapType = Record<string, [string, string]>;
-
-const KeyboardContainer = styled.div<{ $svgCssMap?: CssMapType }>`
-  width: 100%;
-  height: max-content;
-  position: relative;
-
-  ${({ $svgCssMap }) => {
-    if ($svgCssMap) {
-      return Object.entries($svgCssMap).map(([key, [, data]]) => {
-        return `
-
-          .${key} {
-            span {
-              font-size: 0;
-            }
-            &::before {
-              content: url('${data}');
-              display: block;
-              aspect-ratio: 1;
-              width: 92%;
-            }
-          }
-
-        `;
-      });
-    }
-  }}
-`;
 
 const SolvedContainer = styled.div`
   position: absolute;
@@ -237,7 +205,7 @@ export default function Puzzle({
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
   const [width, rowLength] = useMemo(() => {
-    let { width } = puzzle.data[0].dimensions;
+    const { width } = puzzle.data[0].dimensions;
     return [width, width * puzzle.data.length - puzzle.data.length];
   }, [puzzle.data]);
 
@@ -257,7 +225,6 @@ export default function Puzzle({
     () => (puzzle.svgSegments != null ? 'emoji' : 'default'),
     [puzzle.svgSegments],
   );
-  const [svgCssMap, setSvgCssMap] = useState<CssMapType>({});
 
   const {
     svgTextureAtlas,
@@ -358,7 +325,7 @@ export default function Puzzle({
     if (puzzle == null || puzzle.data.length < 1) {
       return [8]; // default to 8
     }
-    let { width, height } = puzzle.data[0].dimensions;
+    const { width, height } = puzzle.data[0].dimensions;
     const totalPerSide = width * height;
     return [width, height, totalPerSide];
   }, [puzzle]);
@@ -516,7 +483,7 @@ export default function Puzzle({
     return disableNextBlankEnabled === false && selectNextBlankStored;
   }, [disableNextBlankEnabled, selectNextBlankStored]);
 
-  const [_, api] = useSpring(() => ({
+  const [, api] = useSpring(() => ({
     singleSidedOffset: 0,
   }));
   const turnAnimationPlaying = useRef(false);
@@ -624,7 +591,6 @@ export default function Puzzle({
       selectedAdjacent: adjacentColor,
       correct: correctColor,
       error: errorColor,
-      border: borderColor,
       turnArrow: turnArrowColor,
     },
   } = useTheme();
@@ -838,72 +804,6 @@ export default function Puzzle({
     },
     [isPuzzleSolved, turnLeft, turnRight],
   );
-
-  // Keyboard mappings
-  const displayKeyMap = useMemo(() => {
-    return {
-      '{bksp}': '⌫',
-      '{sp}': ' ',
-      '{tl}': '<<<',
-      '{tr}': '>>>',
-      MORE: ' ',
-    };
-  }, []);
-
-  const buttonTheme = useMemo(() => {
-    const cssMap = Object.keys(svgContentMap).reduce((acc, key, index) => {
-      const svgBase64 = svgContentMap[key];
-      if (svgBase64 == null) {
-        return acc;
-      } else {
-        acc[`svg-${index}`] = [key, svgBase64];
-      }
-      return acc;
-    }, {} as CssMapType);
-    setSvgCssMap(cssMap);
-    return [
-      {
-        class: 'more-button',
-        buttons: 'MORE',
-      },
-      {
-        class: 'spacer-button',
-        buttons: '{sp}',
-      },
-      {
-        class: 'turn-left-button',
-        buttons: '{tl}',
-      },
-      {
-        class: 'turn-right-button',
-        buttons: '{tr}',
-      },
-      {
-        class: 'backspace-button',
-        buttons: '{bksp}',
-      },
-      ...Object.entries(cssMap).map(([key, value]) => ({
-        class: key,
-        buttons: value[0],
-      })),
-    ];
-  }, [svgContentMap]);
-
-  const keyLayout: KeyboardLayoutType = useMemo(() => {
-    const emojiKeys = Object.keys(svgContentMap).sort();
-    return {
-      default: [
-        'Q W E R T Y U I O P',
-        '{sp} A S D F G H J K L {sp}',
-        'MORE Z X C V B N M {bksp}',
-      ],
-      emoji: [
-        `${emojiKeys.slice(0, 9).join(' ')}`,
-        `${emojiKeys.slice(9, 18).join(' ')}`,
-        `${emojiKeys.slice(18, 26).join(' ')} {bksp}`,
-      ],
-    };
-  }, [svgContentMap]);
 
   useEffect(() => {
     if (isPuzzleSolved === true && hasInteractedWithPuzzle === true) {
@@ -1126,23 +1026,19 @@ export default function Puzzle({
                 </TurnButton>
               </InfoBar>
             </InfoBarWrapper>
-            <KeyboardContainer $svgCssMap={svgCssMap}>
+            <div className="w-full h-max relative">
+              <Keyboard
+                layout={layout}
+                svgContentMap={svgContentMap}
+                onKeyPress={onKeyPress}
+              />
               {isPuzzleSolved && (
                 <SolvedContainer>
                   &ldquo;You did it!&rdquo;
                   <ShareButton onClick={handleSharePressed} />
                 </SolvedContainer>
               )}
-              <Keyboard
-                layoutName={layout}
-                theme="hg-theme-default keyboardTheme"
-                onKeyPress={onKeyPress}
-                mergeDisplay
-                display={displayKeyMap}
-                buttonTheme={buttonTheme}
-                layout={keyLayout}
-              />
-            </KeyboardContainer>
+            </div>
           </>
         )}
         {/* <Stats /> */}
