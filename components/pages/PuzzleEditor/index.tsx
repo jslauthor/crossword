@@ -36,10 +36,21 @@ export function PuzzleEditor() {
     );
   }, []);
 
+  const centerLabel = useMemo(() => {
+    switch (selectedTab) {
+      case TabsEnum.Puzzle:
+        return 'Edit Cells';
+      case TabsEnum.Clues:
+        return 'Edit Clues';
+      case TabsEnum.Keyboard:
+        return 'Edit Keyboard';
+    }
+  }, [selectedTab]);
+
   return (
     <>
       <Menu
-        centerLabel={<div className="min-w-[200px]">Puzzle Editor</div>}
+        centerLabel={<div className="min-w-[200px]">{centerLabel}</div>}
         rightContent={rightContent}
       >
         <div className="flex flex-col gap-0 justify-center items-center w-full">
