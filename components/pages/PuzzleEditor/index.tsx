@@ -56,11 +56,11 @@ export function PuzzleEditor() {
   const centerLabel = useMemo(() => {
     switch (selectedTab) {
       case TabsEnum.Puzzle:
-        return 'Edit Cells';
+        return <span className="opacity-50">Edit Cells</span>;
       case TabsEnum.Clues:
-        return 'Edit Clues';
+        return <span className="opacity-50">Edit Clues</span>;
       case TabsEnum.Keyboard:
-        return 'Edit Keyboard';
+        return <span className="opacity-50">Edit Keyboard</span>;
     }
   }, [selectedTab]);
 
@@ -90,7 +90,7 @@ export function PuzzleEditor() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Keyboard layout="default" svgContentMap={{}} />
+          <Keyboard layout={style} svgContentMap={{}} />
         </div>
       </Menu>
       <PuzzleEditorSettings
