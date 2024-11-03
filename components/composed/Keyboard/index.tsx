@@ -1,9 +1,12 @@
+'use client';
+
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import SimpleKeyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
+import { PuzzleLayout } from 'lib/stores/puzzle-editor';
 
-export type KeyboardLayoutType = Record<'default' | 'emoji', string[]>;
+export type KeyboardLayoutType = Record<PuzzleLayout, string[]>;
 export type CssMapType = Record<string, [string, string]>;
 export type KeyboardProps = {
   onKeyPress?: (button: string) => void;
