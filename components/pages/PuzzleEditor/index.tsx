@@ -5,6 +5,7 @@ import PuzzleEditorSettings from 'components/composed/PuzzleEditorSettings';
 import Menu from 'components/containers/Menu';
 import EmojiSelector from 'components/core/EmojiSelector';
 import { Button } from 'components/core/ui/button';
+import { Carousel } from 'components/core/ui/carousel';
 import { Tabs, TabsList, TabsTrigger } from 'components/core/ui/tabs';
 import Crossword from 'components/svg/Crossword';
 import Gear from 'components/svg/Gear';
@@ -12,7 +13,7 @@ import Symmetry from 'components/svg/Symmetry';
 import { usePuzzleEditorStore } from 'lib/providers/puzzle-editor-provider';
 import { cn } from 'lib/utils';
 import { Keyboard as KeyboardIcon, List } from 'lucide-react';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 enum TabsEnum {
   Puzzle = 'puzzle',
@@ -36,10 +37,24 @@ export function PuzzleEditor() {
     toggleSettings(!isSettingsOpen);
   }, [isSettingsOpen, toggleSettings]);
 
+  const [shouldResetTabs, setShouldResetTabs] = useState(false);
   const [selectedTab, setSelectedTab] = useState<TabsEnum>(TabsEnum.Puzzle);
   const handleTabChange = useCallback((value: string) => {
     setSelectedTab(value as TabsEnum);
   }, []);
+
+  useEffect(() => {
+    if (style === 'default' && selectedTab === TabsEnum.Keyboard) {
+      setShouldResetTabs(true);
+    }
+  }, [selectedTab, style]);
+
+  useEffect(() => {
+    if (shouldResetTabs) {
+      setShouldResetTabs(false);
+      setSelectedTab(TabsEnum.Puzzle);
+    }
+  }, [shouldResetTabs]);
 
   const svgContentMap: Record<string, string> = useMemo(() => {
     const svgMap: Record<string, string> = {};
@@ -78,14 +93,31 @@ export function PuzzleEditor() {
     }
   }, [selectedTab]);
 
+  const carouselIndex = useMemo(() => {
+    switch (selectedTab) {
+      case TabsEnum.Puzzle:
+        return 0;
+      case TabsEnum.Clues:
+        return 1;
+      case TabsEnum.Keyboard:
+        return style === 'emoji' ? 2 : 0;
+      default:
+        return 0;
+    }
+  }, [selectedTab, style]);
+
   return (
     <>
       <Menu
         centerLabel={<div className="min-w-[100px]">{centerLabel}</div>}
         rightContent={rightContent}
       >
-        <div className="relative h-full w-full grid grid-rows-[auto_auto_auto]">
-          <EmojiSelector />
+        <div className="relative h-full w-full grid grid-rows-[1fr_auto_auto]">
+          <Carousel currentIndex={carouselIndex}>
+            <div>Puzzle</div>
+            <div>Clues</div>
+            {style === 'emoji' && <EmojiSelector className="h-full" />}
+          </Carousel>
           <Tabs
             defaultValue="puzzle"
             className="w-full"

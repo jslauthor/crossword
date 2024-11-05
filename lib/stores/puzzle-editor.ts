@@ -35,7 +35,7 @@ export type PuzzleEditorStore = PuzzleEditorState & PuzzleEditorActions;
 export const createPuzzleEditorStore = (
   initialState: PuzzleEditorState = {
     title: undefined,
-    style: 'default',
+    style: 'emoji',
     type: '2d',
     size: 5,
     showSettings: false,
