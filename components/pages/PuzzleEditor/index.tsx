@@ -1,5 +1,6 @@
 'use client';
 
+import { CellPreview } from 'components/composed/CellPreview';
 import Keyboard from 'components/composed/Keyboard';
 import PuzzleEditorSettings from 'components/composed/PuzzleEditorSettings';
 import Menu from 'components/containers/Menu';
@@ -115,7 +116,14 @@ export function PuzzleEditor() {
         <div className="relative h-full w-full grid grid-rows-[1fr_auto_auto]">
           <Carousel currentIndex={carouselIndex}>
             <div>Puzzle</div>
-            <div>Clues</div>
+            <div className="flex flex-row gap-1">
+              <CellPreview style={{ showValid: false }}>W</CellPreview>
+              <CellPreview></CellPreview>
+              <CellPreview style={{ showDraft: true }}>O</CellPreview>
+              <CellPreview style={{ showValid: true }}>D</CellPreview>
+              <CellPreview>b</CellPreview>
+              <CellPreview>l</CellPreview>
+            </div>
             {style === 'emoji' && <EmojiSelector className="h-full" />}
           </Carousel>
           <Tabs

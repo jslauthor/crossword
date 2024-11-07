@@ -4,6 +4,7 @@ import { PuzzlePreviewProps } from 'components/composed/PuzzlePreview';
 import { CharacterRecord, CrosscubeType } from 'lib/utils/puzzle';
 
 declare global {
+  // eslint-disable-next-line no-var
   var prisma: PrismaClient;
 }
 
