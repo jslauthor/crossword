@@ -6,6 +6,7 @@ import { SVG_BASE_PATH } from 'lib/utils/hooks/useSvgAtlas';
 import { SettingsTitle } from '../PuzzleSettings';
 import { HRule } from 'components/core/Dividers';
 import { AutosizeTextarea } from 'components/core/ui/autotextarea';
+import { decode } from 'html-entities';
 
 interface ClueEditorProps {
   puzzle: PuzzleType;
@@ -80,7 +81,7 @@ export function ClueEditor({ puzzle, onUpdateClue }: ClueEditorProps) {
               </div>
               <div className="flex flex-col gap-1 flex-1 pr-4">
                 <AutosizeTextarea
-                  value={clue.clue}
+                  value={decode(clue.clue)}
                   placeholder="Enter clue here..."
                   onChange={(e) =>
                     handleClueChange(direction, index, e.target.value)

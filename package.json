@@ -50,6 +50,7 @@
     "emoji-picker-element": "^1.22.8",
     "eslint": "8.53.0",
     "framer-motion": "^10.18.0",
+    "html-entities": "^2.5.2",
     "i": "^0.3.7",
     "is-gzip": "^2.0.0",
     "js-base64": "^3.7.7",
