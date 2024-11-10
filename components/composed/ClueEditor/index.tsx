@@ -65,10 +65,12 @@ export function ClueEditor({ puzzle, onUpdateClue }: ClueEditorProps) {
   const renderClues = useCallback(
     (clues: Clue[], direction: keyof CharacterRecord['clues']) => (
       <div className="flex flex-col gap-4 relative h-auto w-full">
-        <SettingsTitle>
-          {direction.charAt(0).toUpperCase() + direction.slice(1)} Clues
-        </SettingsTitle>
-        <HRule />
+        <div className="sticky top-0 bg-background z-10 pt-4 flex flex-col gap-4">
+          <SettingsTitle>
+            {direction.charAt(0).toUpperCase() + direction.slice(1)} Clues
+          </SettingsTitle>
+          <HRule />
+        </div>
         {clues.map((clue, index) => {
           const wordSequence = getWordSequence(clue, direction);
           return (
@@ -125,7 +127,7 @@ export function ClueEditor({ puzzle, onUpdateClue }: ClueEditorProps) {
   );
 
   return (
-    <div className="relative h-full w-full overflow-y-auto flex flex-col gap-4 py-4">
+    <div className="relative h-full w-full overflow-y-auto flex flex-col gap-4">
       {acrossClues.length > 0 && renderClues(acrossClues, 'across')}
       {downClues.length > 0 && renderClues(downClues, 'down')}
     </div>
