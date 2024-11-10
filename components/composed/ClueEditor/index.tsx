@@ -1,11 +1,11 @@
 import React, { useCallback, useState } from 'react';
 import { PuzzleType, Clue, SolutionCell } from 'types/types';
 import { CellPreview } from 'components/composed/CellPreview';
-import { Input } from 'components/core/ui/input';
 import { CharacterRecord, isSolutionCellValue } from 'lib/utils/puzzle';
 import { SVG_BASE_PATH } from 'lib/utils/hooks/useSvgAtlas';
 import { SettingsTitle } from '../PuzzleSettings';
 import { HRule } from 'components/core/Dividers';
+import { AutosizeTextarea } from 'components/core/ui/autotextarea';
 
 interface ClueEditorProps {
   puzzle: PuzzleType;
@@ -64,7 +64,7 @@ export function ClueEditor({ puzzle, onUpdateClue }: ClueEditorProps) {
 
   const renderClues = useCallback(
     (clues: Clue[], direction: keyof CharacterRecord['clues']) => (
-      <div className="flex flex-col gap-4 relative h-auto w-full">
+      <div className="flex flex-col gap-5 relative h-auto w-full">
         <div className="sticky top-0 bg-background z-10 pt-4 flex flex-col gap-4">
           <SettingsTitle>
             {direction.charAt(0).toUpperCase() + direction.slice(1)} Clues
@@ -79,15 +79,17 @@ export function ClueEditor({ puzzle, onUpdateClue }: ClueEditorProps) {
                 {clue.number}
               </div>
               <div className="flex flex-col gap-1 flex-1 pr-4">
-                <Input
-                  type="text"
+                <AutosizeTextarea
                   value={clue.clue}
                   placeholder="Enter clue here..."
                   onChange={(e) =>
                     handleClueChange(direction, index, e.target.value)
                   }
-                  // TODO: On mouse over show the pencil icon
-                  className="w-full text-[16px] h-auto p-0 m-0"
+                  minHeight={32}
+                  maxHeight={64}
+                  rows={1}
+                  maxLength={100}
+                  className="resize-none w-full text-[16px] focus:outline-none focus-visible:ring-1 mb-1 overflow-auto"
                 />
                 <div className="flex flex-row gap-1">
                   {wordSequence.map((index) => {
