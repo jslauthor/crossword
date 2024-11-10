@@ -164,6 +164,7 @@ export type ValidCrosscubeArray = AllUnionsPresent extends true
   ? typeof crosscubeTypes
   : never;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface DebouncedFunc<T extends (...args: any[]) => any> {
   /**
    * Call the original function, but applying the debounce rules.

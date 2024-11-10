@@ -1,6 +1,7 @@
 'use client';
 
-import { CellPreview } from 'components/composed/CellPreview';
+import { PuzzleEditorProps } from 'app/puzzle/editor/[[...slug]]/page';
+import { ClueEditor } from 'components/composed/ClueEditor';
 import Keyboard from 'components/composed/Keyboard';
 import PuzzleEditorSettings from 'components/composed/PuzzleEditorSettings';
 import Menu from 'components/containers/Menu';
@@ -22,7 +23,17 @@ enum TabsEnum {
   Keyboard = 'keyboard',
 }
 
-export function PuzzleEditor() {
+export function PuzzleEditor({
+  puzzle,
+  // characterTextureAtlasLookup,
+  // cellNumberTextureAtlasLookup,
+}: PuzzleEditorProps) {
+  // console.log(
+  //   puzzle,
+  //   characterTextureAtlasLookup,
+  //   cellNumberTextureAtlasLookup,
+  // );
+
   const title = usePuzzleEditorStore((store) => store.title);
   const style = usePuzzleEditorStore((store) => store.style);
   const type = usePuzzleEditorStore((store) => store.type);
@@ -116,14 +127,7 @@ export function PuzzleEditor() {
         <div className="relative h-full w-full grid grid-rows-[1fr_auto_auto]">
           <Carousel currentIndex={carouselIndex}>
             <div>Puzzle</div>
-            <div className="flex flex-row gap-1">
-              <CellPreview style={{ showValid: false }}>W</CellPreview>
-              <CellPreview></CellPreview>
-              <CellPreview style={{ showDraft: true }}>O</CellPreview>
-              <CellPreview style={{ showValid: true }}>D</CellPreview>
-              <CellPreview>b</CellPreview>
-              <CellPreview>l</CellPreview>
-            </div>
+            <ClueEditor puzzle={puzzle} />
             {style === 'emoji' && <EmojiSelector className="h-full" />}
           </Carousel>
           <Tabs
