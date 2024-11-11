@@ -1,4 +1,4 @@
-import React, { Suspense, useRef } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Canvas } from '@react-three/fiber';
 import { PerspectiveCamera, Html } from '@react-three/drei';
@@ -13,6 +13,10 @@ import {
 import { SwipeControls } from 'components/core/3d/SwipeControls';
 import LetterBoxes, { LetterBoxesProps } from 'components/core/3d/LetterBoxes';
 import Sparks from 'components/core/3d/Sparks';
+import useDimensions from 'react-cool-dimensions';
+import { fitCameraToCenteredObject } from 'lib/utils/three';
+import { useSpring } from '@react-spring/core';
+import { easings } from '@react-spring/web';
 
 function Loader() {
   return (
@@ -22,37 +26,25 @@ function Loader() {
   );
 }
 
+const mousePosition = [100, 3];
+
 interface PuzzleCanvasProps
   extends Omit<LetterBoxesProps, 'turnLeft' | 'turnRight'> {
-  fogNear: number;
-  fogFar: number;
-  objectDepth: number;
-  rotation: number;
-  sideOffset: number;
-  groupPosition: Vector3;
+  isInitialized: boolean;
   isPuzzleSolved: boolean;
+  sideOffset: number;
   sparkColors: string[];
-  canvasRef: (element?: HTMLCanvasElement | null) => void;
-  cameraRef: (element?: PerspectiveCameraType | null) => void;
-  groupRef: (element?: Object3D | null) => void;
   onRotationProgress: (progress: number) => void;
   onSwipeLeft: (offset?: number) => void;
   onSwipeRight: (offset?: number) => void;
 }
 
 function PuzzleCanvas({
-  canvasRef,
-  cameraRef,
-  groupRef,
-  fogNear,
-  fogFar,
-  objectDepth,
-  rotation,
+  isInitialized,
   sideOffset,
   onRotationProgress,
   onSwipeLeft,
   onSwipeRight,
-  groupPosition,
   puzzle,
   svgTextureAtlas,
   svgTextureAtlasLookup,
@@ -87,7 +79,83 @@ function PuzzleCanvas({
   isPuzzleSolved,
   sparkColors,
 }: PuzzleCanvasProps) {
-  const mouse = useRef([100, 3]);
+  const [puzzleWidth] = useMemo(() => {
+    if (puzzle == null || puzzle.data.length < 1) {
+      return [8]; // default to 8
+    }
+    const { width, height } = puzzle.data[0].dimensions;
+    const totalPerSide = width * height;
+    return [width, height, totalPerSide];
+  }, [puzzle]);
+
+  const groupPosition: Vector3 = useMemo(() => {
+    const multiplier = (puzzleWidth - 1) / 2;
+    return new Vector3(-multiplier, -multiplier, multiplier);
+  }, [puzzleWidth]);
+
+  const {
+    observe: canvasRef,
+    height: canvasHeight,
+    width: canvasWidth,
+  } = useDimensions<HTMLCanvasElement>();
+
+  const [groupRef, setGroup] = useState<Object3D | null>();
+  const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
+
+  const [fogNear, setFogNear] = useState(0);
+  const [fogFar, setFogFar] = useState(100);
+  const [objectDepth, setObjectDepth] = useState(0);
+
+  useEffect(() => {
+    if (cameraRef == null || groupRef == null || isInitialized === false) {
+      return undefined;
+    }
+
+    const { boundingBox, cameraZ } = fitCameraToCenteredObject(
+      cameraRef,
+      groupRef,
+      new Vector3(puzzleWidth, puzzleWidth, puzzleWidth),
+      1.02,
+    );
+
+    const objectDepth = boundingBox.max.z - boundingBox.min.z;
+    const fogNearDistance = (cameraZ - objectDepth / 2) * 1.02;
+    const fogFarDistance = (cameraZ + objectDepth / 2) * 1.02;
+
+    setObjectDepth(objectDepth);
+    setFogNear(fogNearDistance);
+    setFogFar(fogFarDistance);
+  }, [
+    cameraRef,
+    groupRef,
+    puzzleWidth,
+    canvasHeight,
+    canvasWidth,
+    isInitialized,
+  ]);
+
+  const animationStarted = useRef(false);
+  // Intro spinny animation
+  const [rotation, setRotation] = useState(0);
+  const { rotation: introAnimation } = useSpring({
+    rotation: 1,
+    config: {
+      duration: 500,
+      easing: easings.easeInBack,
+    },
+  });
+  useEffect(() => {
+    if (canvasWidth != null && animationStarted.current === false) {
+      animationStarted.current = true;
+      introAnimation.start({
+        from: 0,
+        to: 1,
+        onChange: (props, spring) => {
+          setRotation(spring.get());
+        },
+      });
+    }
+  }, [canvasWidth, introAnimation]);
 
   return (
     <Canvas
@@ -105,7 +173,7 @@ function PuzzleCanvas({
           far={fogFar}
         />
         <PerspectiveCamera
-          ref={cameraRef}
+          ref={setCameraRef}
           makeDefault
           position={[0, 0, 0]}
           fov={50}
@@ -119,7 +187,7 @@ function PuzzleCanvas({
           rotation={[0, rotation * (Math.PI + Math.PI * (sideOffset / 2)), 0]}
           onRotationYProgress={onRotationProgress}
         >
-          <group ref={groupRef} position={groupPosition}>
+          <group ref={setGroup} position={groupPosition}>
             <LetterBoxes
               puzzle={puzzle}
               svgTextureAtlas={svgTextureAtlas}
@@ -159,7 +227,7 @@ function PuzzleCanvas({
         </SwipeControls>
         <Sparks
           count={isPuzzleSolved === true ? 20 : 0}
-          mouse={mouse}
+          mouse={mousePosition}
           radius={objectDepth / 2}
           colors={sparkColors}
         />

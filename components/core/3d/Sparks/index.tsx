@@ -1,13 +1,13 @@
 'use client';
 
 import * as THREE from 'three';
-import React, { useRef, useMemo, RefObject } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { extend, useFrame, useThree } from '@react-three/fiber';
 import { MeshLineGeometry, MeshLineMaterial, raycast } from 'meshline';
 
 type SparksProps = {
   count: number;
-  mouse: RefObject<Array<number>>;
+  mouse: Array<number>;
   colors: Array<string>;
   radius?: number;
 };
@@ -88,15 +88,15 @@ const Sparks: React.FC<SparksProps> = ({
   const aspect = useMemo(() => size.width / viewport.width, [size, viewport]);
 
   useFrame(() => {
-    if (count > 0 && ref.current && mouse.current != null) {
+    if (count > 0 && ref.current && mouse != null) {
       ref.current.rotation.x = THREE.MathUtils.lerp(
         ref.current.rotation.x,
-        0 + mouse.current[1] / aspect / 200,
+        0 + mouse[1] / aspect / 200,
         0.1,
       );
       ref.current.rotation.y = THREE.MathUtils.lerp(
         ref.current.rotation.y,
-        0 + mouse.current[0] / aspect / 400,
+        0 + mouse[0] / aspect / 400,
         0.1,
       );
     }

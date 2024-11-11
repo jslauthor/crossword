@@ -3,16 +3,9 @@
 import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  PerspectiveCamera as PerspectiveCameraType,
-  Vector3,
-  Object3D,
-  InstancedMesh,
-} from 'three';
-import useDimensions from 'react-cool-dimensions';
+import { InstancedMesh } from 'three';
 import { useKeyDown } from 'lib/utils/hooks/useKeyDown';
 import { useSpring } from '@react-spring/core';
-import { easings } from '@react-spring/web';
 import tinycolor from 'tinycolor2';
 import TurnArrow from 'components/svg/TurnArrow';
 import { rangeOperation } from 'lib/utils/math';
@@ -21,7 +14,6 @@ import { useElapsedTime } from 'use-elapsed-time';
 import Menu from 'components/containers/Menu';
 import { RotatingBoxProps } from 'components/core/3d/Box';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
-import { fitCameraToCenteredObject } from 'lib/utils/three';
 import {
   createInitialState,
   getBlanksForIds,
@@ -221,8 +213,6 @@ export default function Puzzle({
     }
   }, [puzzle.id, svgError]);
 
-  const [groupRef, setGroup] = useState<Object3D | null>();
-  const [cameraRef, setCameraRef] = useState<PerspectiveCameraType | null>();
   const [sideOffset, setSideOffset] = useState(0);
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
     useState<[string, number]>();
@@ -232,11 +222,6 @@ export default function Puzzle({
   const [selectedCharacter, setSelectedCharacter] = useState<
     string | undefined
   >();
-  const {
-    observe: containerRef,
-    height: canvasHeight,
-    width: canvasWidth,
-  } = useDimensions<HTMLCanvasElement>();
 
   const [isPuzzleReady, setPuzzleReady] = useState(false);
   const onInitialize = useCallback(() => {
@@ -299,20 +284,6 @@ export default function Puzzle({
     selected,
     selectedSide,
   ]);
-
-  const [puzzleWidth] = useMemo(() => {
-    if (puzzle == null || puzzle.data.length < 1) {
-      return [8]; // default to 8
-    }
-    const { width, height } = puzzle.data[0].dimensions;
-    const totalPerSide = width * height;
-    return [width, height, totalPerSide];
-  }, [puzzle]);
-
-  const groupRefPosition: Vector3 = useMemo(() => {
-    const multiplier = (puzzleWidth - 1) / 2;
-    return new Vector3(-multiplier, -multiplier, multiplier);
-  }, [puzzleWidth]);
 
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const {
@@ -421,38 +392,6 @@ export default function Puzzle({
   );
 
   const animatedClueText = useAnimatedText(clue, 60);
-
-  const [fogNear, setFogNear] = useState(0);
-  const [fogFar, setFogFar] = useState(100);
-  const [objectDepth, setObjectDepth] = useState(0);
-
-  useEffect(() => {
-    if (cameraRef == null || groupRef == null || isInitialized === false) {
-      return undefined;
-    }
-
-    const { boundingBox, cameraZ } = fitCameraToCenteredObject(
-      cameraRef,
-      groupRef,
-      new Vector3(puzzleWidth, puzzleWidth, puzzleWidth),
-      1.02,
-    );
-
-    const objectDepth = boundingBox.max.z - boundingBox.min.z;
-    const fogNearDistance = (cameraZ - objectDepth / 2) * 1.02;
-    const fogFarDistance = (cameraZ + objectDepth / 2) * 1.02;
-
-    setObjectDepth(objectDepth);
-    setFogNear(fogNearDistance);
-    setFogFar(fogFarDistance);
-  }, [
-    cameraRef,
-    groupRef,
-    puzzleWidth,
-    canvasHeight,
-    canvasWidth,
-    isInitialized,
-  ]);
 
   const disableNextBlankEnabled = useMemo(() => {
     return isSingleSidedEmojiPuzzle === true;
@@ -582,29 +521,6 @@ export default function Puzzle({
     // side faces when the animation is mostly complete (not fully) to prevent flickering
     setIsSpinning(progress <= 0.98);
   }, []);
-
-  const animationStarted = useRef(false);
-  // Intro spinny animation
-  const [rotation, setRotation] = useState(0);
-  const { rotation: introAnimation } = useSpring({
-    rotation: 1,
-    config: {
-      duration: 500,
-      easing: easings.easeInBack,
-    },
-  });
-  useEffect(() => {
-    if (canvasWidth != null && animationStarted.current === false) {
-      animationStarted.current = true;
-      introAnimation.start({
-        from: 0,
-        to: 1,
-        onChange: (props, spring) => {
-          setRotation(spring.get());
-        },
-      });
-    }
-  }, [canvasWidth, introAnimation]);
 
   const toHex = useCallback(
     (color: number) => `#${color.toString(16).padStart(6, '0')}`,
@@ -853,18 +769,12 @@ export default function Puzzle({
         showBackground={false}
       >
         <PuzzleCanvas
-          canvasRef={containerRef}
-          cameraRef={setCameraRef}
-          groupRef={setGroup}
-          fogNear={fogNear}
-          fogFar={fogFar}
-          objectDepth={objectDepth}
+          isInitialized={isInitialized}
+          onInitialize={onInitialize}
           sideOffset={sideOffset}
-          rotation={rotation}
           onSwipeLeft={turnLeft}
           onSwipeRight={turnRight}
           onRotationProgress={updateRotationProgress}
-          groupPosition={groupRefPosition}
           puzzle={puzzle}
           svgTextureAtlas={svgTextureAtlas}
           svgTextureAtlasLookup={svgTextureAtlasLookup}
@@ -883,7 +793,6 @@ export default function Puzzle({
           selectedColor={defaultColor}
           errorColor={errorColor}
           correctColor={correctColor}
-          onInitialize={onInitialize}
           isVerticalOrientation={isVerticalOrientation}
           onVerticalOrientationChange={handleSetOrientation}
           autoCheckEnabled={autoCheckEnabled}
