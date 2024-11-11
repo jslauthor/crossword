@@ -1,5 +1,6 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useCallback, useState } from 'react';
-import { PuzzleType, Clue, SolutionCell } from 'types/types';
+import { PuzzleType, Clue } from 'types/types';
 import { CellPreview } from 'components/composed/CellPreview';
 import { CharacterRecord, isSolutionCellValue } from 'lib/utils/puzzle';
 import { SVG_BASE_PATH } from 'lib/utils/hooks/useSvgAtlas';
@@ -30,7 +31,7 @@ export function ClueEditor({ puzzle, onUpdateClue }: ClueEditorProps) {
           // since that will always be the final answer for that cell
           const values = Object.entries(mapping)
             .sort(([key]) => parseInt(key)) // Sort by the clue number
-            .map(([_, value]) => value); // Get the values
+            .map(([, value]) => value); // Get the values
           const sequenceIndex =
             values[values.length - 1][
               direction === 'across'
@@ -126,7 +127,7 @@ export function ClueEditor({ puzzle, onUpdateClue }: ClueEditorProps) {
         <HRule />
       </div>
     ),
-    [handleClueChange],
+    [getWordSequence, handleClueChange, puzzle.record.solution],
   );
 
   return (
