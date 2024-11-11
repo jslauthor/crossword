@@ -2,22 +2,11 @@
 
 import React, { MouseEvent } from 'react';
 import styled from 'styled-components';
-import { Canvas } from '@react-three/fiber';
-import { PerspectiveCamera, Html } from '@react-three/drei';
-import LetterBoxes from 'components/core/3d/LetterBoxes';
-import {
-  Suspense,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   PerspectiveCamera as PerspectiveCameraType,
   Vector3,
   Object3D,
-  Color,
   InstancedMesh,
 } from 'three';
 import useDimensions from 'react-cool-dimensions';
@@ -26,10 +15,8 @@ import { useSpring } from '@react-spring/core';
 import { easings } from '@react-spring/web';
 import tinycolor from 'tinycolor2';
 import TurnArrow from 'components/svg/TurnArrow';
-import { SwipeControls } from 'components/core/3d/SwipeControls';
 import { rangeOperation } from 'lib/utils/math';
 import { useAnimatedText } from 'lib/utils/hooks/useAnimatedText';
-import Sparks from 'components/core/3d/Sparks';
 import { useElapsedTime } from 'use-elapsed-time';
 import Menu from 'components/containers/Menu';
 import { RotatingBoxProps } from 'components/core/3d/Box';
@@ -54,7 +41,6 @@ import {
 import { useTheme } from 'lib/utils/hooks/theme';
 import { VRule } from 'components/core/Dividers';
 import PuzzleSettings from 'components/composed/PuzzleSettings';
-import { Spinner } from 'components/core/ui/spinner';
 import useSvgAtlas from 'lib/utils/hooks/useSvgAtlas';
 import { PuzzleProps } from 'app/puzzle/[slug]/page';
 import TimerAndGuesses from 'components/composed/Timer';
@@ -65,6 +51,7 @@ import { usePageVisibility } from 'lib/utils/hooks/usePageVisibility';
 import posthog from 'posthog-js';
 import PuzzleHeaderSettings from 'components/composed/PuzzleHeaderSettings';
 import Keyboard, { KeyboardLayoutType } from 'components/composed/Keyboard';
+import PuzzleCanvas from 'components/composed/PuzzleCanvas';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -188,14 +175,6 @@ const IconContainer = styled.div`
   width: 100%;
   height: 100%;
 `;
-
-function Loader() {
-  return (
-    <Html center>
-      <Spinner show />
-    </Html>
-  );
-}
 
 const noop = () => {};
 
@@ -445,7 +424,7 @@ export default function Puzzle({
 
   const [fogNear, setFogNear] = useState(0);
   const [fogFar, setFogFar] = useState(100);
-  const [objectDepth, setsetObjectDepth] = useState(0);
+  const [objectDepth, setObjectDepth] = useState(0);
 
   useEffect(() => {
     if (cameraRef == null || groupRef == null || isInitialized === false) {
@@ -463,7 +442,7 @@ export default function Puzzle({
     const fogNearDistance = (cameraZ - objectDepth / 2) * 1.02;
     const fogFarDistance = (cameraZ + objectDepth / 2) * 1.02;
 
-    setsetObjectDepth(objectDepth);
+    setObjectDepth(objectDepth);
     setFogNear(fogNearDistance);
     setFogFar(fogFarDistance);
   }, [
@@ -627,7 +606,6 @@ export default function Puzzle({
     }
   }, [canvasWidth, introAnimation]);
 
-  const mouse = useRef([100, 3]);
   const toHex = useCallback(
     (color: number) => `#${color.toString(16).padStart(6, '0')}`,
     [],
@@ -874,87 +852,55 @@ export default function Puzzle({
         onDisplayChange={setIsMenuOpen}
         showBackground={false}
       >
-        <Canvas
-          gl={{ antialias: false }}
-          style={{
-            touchAction: 'none',
-          }}
-          ref={containerRef}
-        >
-          <Suspense fallback={<Loader />}>
-            <fog
-              attach="fog"
-              color={new Color(0x222222)}
-              near={fogNear}
-              far={fogFar}
-            />
-            <PerspectiveCamera
-              ref={setCameraRef}
-              makeDefault
-              position={[0, 0, 0]}
-              fov={50}
-            />
-            <ambientLight intensity={1} />
-            <SwipeControls
-              global
-              dragEnabled={false}
-              onSwipeLeft={turnLeft}
-              onSwipeRight={turnRight}
-              rotation={[
-                0,
-                rotation * (Math.PI + Math.PI * (sideOffset / 2)),
-                0,
-              ]}
-              onRotationYProgress={updateRotationProgress}
-            >
-              <group ref={setGroup} position={groupRefPosition}>
-                <LetterBoxes
-                  puzzle={puzzle}
-                  svgTextureAtlas={svgTextureAtlas}
-                  svgTextureAtlasLookup={svgTextureAtlasLookup}
-                  svgGridSize={svgGridSize}
-                  characterTextureAtlasLookup={characterTextureAtlasLookup}
-                  cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
-                  selected={selected}
-                  onSelectedChange={handleSelectedChange}
-                  selectedSide={selectedSide}
-                  keyAndIndexOverride={keyAndIndexOverride}
-                  currentKey={selectedCharacter}
-                  updateCharacterPosition={updateCharacterPosition}
-                  onLetterInput={onLetterInput}
-                  fontColor={fontColor}
-                  fontDraftColor={fontDraftColor}
-                  selectedColor={defaultColor}
-                  errorColor={errorColor}
-                  correctColor={correctColor}
-                  onInitialize={onInitialize}
-                  isVerticalOrientation={isVerticalOrientation}
-                  onVerticalOrientationChange={handleSetOrientation}
-                  autoCheckEnabled={autoCheckEnabled}
-                  selectNextBlankEnabled={selectNextBlankEnabled}
-                  characterPositionArray={
-                    characterPositions ?? defaultCharacterPositions
-                  }
-                  cellValidationArray={validations ?? defaultValidations}
-                  cellDraftModeArray={draftModes ?? defaultDraftModes}
-                  autoNextEnabled={autoNextEnabled}
-                  turnLeft={turnLeft}
-                  turnRight={turnRight}
-                  setGoToNextWord={setGoToNextWord}
-                  theme={theme}
-                  isSpinning={isSpinning}
-                  isSingleSided={isSingleSided}
-                />
-              </group>
-            </SwipeControls>
-            <Sparks
-              count={isPuzzleSolved === true ? 20 : 0}
-              mouse={mouse}
-              radius={objectDepth / 2}
-              colors={sparkColors}
-            />
-          </Suspense>
-        </Canvas>
+        <PuzzleCanvas
+          canvasRef={containerRef}
+          cameraRef={setCameraRef}
+          groupRef={setGroup}
+          fogNear={fogNear}
+          fogFar={fogFar}
+          objectDepth={objectDepth}
+          sideOffset={sideOffset}
+          rotation={rotation}
+          onSwipeLeft={turnLeft}
+          onSwipeRight={turnRight}
+          onRotationProgress={updateRotationProgress}
+          groupPosition={groupRefPosition}
+          puzzle={puzzle}
+          svgTextureAtlas={svgTextureAtlas}
+          svgTextureAtlasLookup={svgTextureAtlasLookup}
+          svgGridSize={svgGridSize}
+          characterTextureAtlasLookup={characterTextureAtlasLookup}
+          cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
+          selected={selected}
+          onSelectedChange={handleSelectedChange}
+          selectedSide={selectedSide}
+          keyAndIndexOverride={keyAndIndexOverride}
+          currentKey={selectedCharacter}
+          updateCharacterPosition={updateCharacterPosition}
+          onLetterInput={onLetterInput}
+          fontColor={fontColor}
+          fontDraftColor={fontDraftColor}
+          selectedColor={defaultColor}
+          errorColor={errorColor}
+          correctColor={correctColor}
+          onInitialize={onInitialize}
+          isVerticalOrientation={isVerticalOrientation}
+          onVerticalOrientationChange={handleSetOrientation}
+          autoCheckEnabled={autoCheckEnabled}
+          selectNextBlankEnabled={selectNextBlankEnabled}
+          characterPositionArray={
+            characterPositions ?? defaultCharacterPositions
+          }
+          cellValidationArray={validations ?? defaultValidations}
+          cellDraftModeArray={draftModes ?? defaultDraftModes}
+          autoNextEnabled={autoNextEnabled}
+          setGoToNextWord={setGoToNextWord}
+          theme={theme}
+          isSpinning={isSpinning}
+          isSingleSided={isSingleSided}
+          isPuzzleSolved={isPuzzleSolved}
+          sparkColors={sparkColors}
+        />
         {isInitialized === true && (
           <>
             <InfoBarWrapper>
