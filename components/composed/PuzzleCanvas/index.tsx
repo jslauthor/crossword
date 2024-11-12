@@ -1,4 +1,11 @@
-import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Canvas } from '@react-three/fiber';
 import { PerspectiveCamera, Html } from '@react-three/drei';
@@ -17,6 +24,7 @@ import useDimensions from 'react-cool-dimensions';
 import { fitCameraToCenteredObject } from 'lib/utils/three';
 import { useSpring } from '@react-spring/core';
 import { easings } from '@react-spring/web';
+import { rangeOperation } from 'lib/utils/math';
 
 function Loader() {
   return (
@@ -29,22 +37,21 @@ function Loader() {
 const mousePosition = [100, 3];
 
 interface PuzzleCanvasProps
-  extends Omit<LetterBoxesProps, 'turnLeft' | 'turnRight'> {
+  extends Omit<
+    LetterBoxesProps,
+    'turnLeft' | 'turnRight' | 'isSpinning' | 'selectedSide'
+  > {
   isInitialized: boolean;
   isPuzzleSolved: boolean;
-  sideOffset: number;
   sparkColors: string[];
-  onRotationProgress: (progress: number) => void;
-  onSwipeLeft: (offset?: number) => void;
-  onSwipeRight: (offset?: number) => void;
+  onSelectedSideChange?: (side: number) => void;
+  onSideOffsetChange?: (offset: number) => void;
+  shouldTurn?: 'left' | 'right' | null;
+  onTurnReset?: () => void;
 }
 
 function PuzzleCanvas({
   isInitialized,
-  sideOffset,
-  onRotationProgress,
-  onSwipeLeft,
-  onSwipeRight,
   puzzle,
   svgTextureAtlas,
   svgTextureAtlasLookup,
@@ -53,7 +60,6 @@ function PuzzleCanvas({
   cellNumberTextureAtlasLookup,
   selected,
   onSelectedChange,
-  selectedSide,
   keyAndIndexOverride,
   currentKey,
   updateCharacterPosition,
@@ -74,10 +80,13 @@ function PuzzleCanvas({
   autoNextEnabled,
   setGoToNextWord,
   theme,
-  isSpinning,
   isSingleSided,
   isPuzzleSolved,
   sparkColors,
+  onSelectedSideChange,
+  onSideOffsetChange,
+  shouldTurn,
+  onTurnReset,
 }: PuzzleCanvasProps) {
   const [puzzleWidth] = useMemo(() => {
     if (puzzle == null || puzzle.data.length < 1) {
@@ -156,6 +165,93 @@ function PuzzleCanvas({
       });
     }
   }, [canvasWidth, introAnimation]);
+
+  const [selectedSide, setSelectedSide] = useState(0);
+
+  const [, api] = useSpring(() => ({
+    singleSidedOffset: 0,
+  }));
+  const turnAnimationPlaying = useRef(false);
+  const [sideOffset, setSideOffset] = useState(0);
+  const updateSideOffset = useCallback(
+    (offset: number) => {
+      setSideOffset(offset);
+      onSideOffsetChange?.(offset);
+
+      // Update side
+      const side = rangeOperation(0, 3, 0, -offset);
+      onSelectedSideChange?.(side);
+      setSelectedSide(side);
+    },
+    [onSideOffsetChange, onSelectedSideChange],
+  );
+
+  const animateCannotTurn = useCallback(
+    (offset: number) => {
+      if (turnAnimationPlaying.current === true) return;
+      api.start({
+        config: {
+          duration: 30,
+        },
+        from: { singleSidedOffset: sideOffset },
+        to: [
+          { singleSidedOffset: sideOffset + offset },
+          { singleSidedOffset: sideOffset },
+        ],
+        onResolve: ({ finished }) => {
+          if (finished === true) {
+            turnAnimationPlaying.current = false;
+          }
+        },
+        onChange: (_, spring) => {
+          turnAnimationPlaying.current = true;
+          updateSideOffset(spring.get().singleSidedOffset);
+        },
+      });
+    },
+    [api, onTurnReset, updateSideOffset],
+  );
+
+  const onSwipeLeft = useCallback(
+    (offset?: number) => {
+      if (isSingleSided === true) {
+        animateCannotTurn(0.2);
+      } else {
+        updateSideOffset(sideOffset + (offset ?? 1));
+      }
+    },
+    [api, isSingleSided, sideOffset, updateSideOffset, animateCannotTurn],
+  );
+
+  const onSwipeRight = useCallback(
+    (offset?: number) => {
+      if (isSingleSided === true) {
+        animateCannotTurn(-0.2);
+      } else {
+        updateSideOffset(sideOffset - (offset ?? 1));
+      }
+    },
+    [api, isSingleSided, sideOffset, updateSideOffset, animateCannotTurn],
+  );
+
+  // Track rotation so we can update the shader in letterboxes
+  const [isSpinning, setIsSpinning] = useState(false);
+  const onRotationProgress = useCallback((progress: number) => {
+    // So, this is kind of weird
+    // We only want isSpinning to be true in a more limited range because we want to hide the
+    // side faces when the animation is mostly complete (not fully) to prevent flickering
+    setIsSpinning(progress <= 0.98);
+  }, []);
+
+  useEffect(() => {
+    if (shouldTurn === 'left') {
+      onSwipeLeft();
+      onTurnReset?.();
+    } else if (shouldTurn === 'right') {
+      onSwipeRight();
+      onTurnReset?.();
+    }
+  }, [shouldTurn, onTurnReset, onSwipeLeft, onSwipeRight]);
 
   return (
     <Canvas

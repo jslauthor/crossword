@@ -5,14 +5,11 @@ import styled from 'styled-components';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InstancedMesh } from 'three';
 import { useKeyDown } from 'lib/utils/hooks/useKeyDown';
-import { useSpring } from '@react-spring/core';
 import tinycolor from 'tinycolor2';
 import TurnArrow from 'components/svg/TurnArrow';
-import { rangeOperation } from 'lib/utils/math';
 import { useAnimatedText } from 'lib/utils/hooks/useAnimatedText';
 import { useElapsedTime } from 'use-elapsed-time';
 import Menu from 'components/containers/Menu';
-import { RotatingBoxProps } from 'components/core/3d/Box';
 import { usePuzzleProgress } from 'lib/utils/hooks/usePuzzleProgress';
 import {
   createInitialState,
@@ -44,6 +41,7 @@ import posthog from 'posthog-js';
 import PuzzleHeaderSettings from 'components/composed/PuzzleHeaderSettings';
 import Keyboard, { KeyboardLayoutType } from 'components/composed/Keyboard';
 import PuzzleCanvas from 'components/composed/PuzzleCanvas';
+import { RotatingBoxProps } from 'components/core/3d/Box';
 
 const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
 for (let x = 0; x < 10; x++) {
@@ -213,7 +211,6 @@ export default function Puzzle({
     }
   }, [puzzle.id, svgError]);
 
-  const [sideOffset, setSideOffset] = useState(0);
   const [keyAndIndexOverride, setKeyAndIndexOverride] =
     useState<[string, number]>();
   const [clue, setClue] = useState<string | undefined>();
@@ -237,12 +234,22 @@ export default function Puzzle({
   const [isVerticalOrientation, setVerticalOrientation] =
     useState<boolean>(false);
 
-  const selectedSide = useMemo(() => {
-    return rangeOperation(0, 3, 0, -sideOffset);
-  }, [sideOffset]);
-
   const [isSelectedSingleCell, setIsSelectedSingleCell] =
     useState<boolean>(false);
+
+  const [selectedSide, setSelectedSide] = useState<number>(0);
+  const [sideOffset, setSideOffset] = useState<number>(0);
+  const [shouldTurn, setShouldTurn] = useState<'left' | 'right' | null>(null);
+
+  const turnLeft = useCallback(() => {
+    setShouldTurn('left');
+  }, []);
+  const turnRight = useCallback(() => {
+    setShouldTurn('right');
+  }, []);
+  const onTurnComplete = useCallback(() => {
+    setShouldTurn(null);
+  }, []);
 
   // Update the clue and cell number when the selected cell changes
   useEffect(() => {
@@ -401,70 +408,6 @@ export default function Puzzle({
     return disableNextBlankEnabled === false && selectNextBlankStored;
   }, [disableNextBlankEnabled, selectNextBlankStored]);
 
-  const [, api] = useSpring(() => ({
-    singleSidedOffset: 0,
-  }));
-  const turnAnimationPlaying = useRef(false);
-
-  const turnLeft = useCallback(
-    (offset?: number) => {
-      if (turnAnimationPlaying.current === true) return;
-      if (isSingleSided === true) {
-        api.start({
-          config: {
-            duration: 30,
-          },
-          from: { singleSidedOffset: sideOffset },
-          to: [
-            { singleSidedOffset: sideOffset + 0.2 },
-            { singleSidedOffset: sideOffset },
-          ],
-          onResolve: ({ finished }) => {
-            if (finished === true) {
-              turnAnimationPlaying.current = false;
-            }
-          },
-          onChange: (_, spring) => {
-            turnAnimationPlaying.current = true;
-            setSideOffset(spring.get().singleSidedOffset);
-          },
-        });
-        return;
-      }
-      setSideOffset(sideOffset + (offset ?? 1));
-    },
-    [api, isSingleSided, sideOffset],
-  );
-  const turnRight = useCallback(
-    (offset?: number) => {
-      if (turnAnimationPlaying.current === true) return;
-      if (isSingleSided === true) {
-        api.start({
-          config: {
-            duration: 30,
-          },
-          from: { singleSidedOffset: sideOffset },
-          to: [
-            { singleSidedOffset: sideOffset - 0.2 },
-            { singleSidedOffset: sideOffset },
-          ],
-          onResolve: ({ finished }) => {
-            if (finished === true) {
-              turnAnimationPlaying.current = false;
-            }
-          },
-          onChange: (_, spring) => {
-            turnAnimationPlaying.current = true;
-            setSideOffset(spring.get().singleSidedOffset);
-          },
-        });
-        return;
-      }
-      setSideOffset(sideOffset - (offset ?? 1));
-    },
-    [api, isSingleSided, sideOffset],
-  );
-
   // DEBUG FUNCTION
   // This will autocomplete the puzzle to test the success state
   const finishPuzzle = useCallback(() => {
@@ -513,15 +456,6 @@ export default function Puzzle({
     },
   } = useTheme();
 
-  // Track rotation so we can update the shader in letterboxes
-  const [isSpinning, setIsSpinning] = useState(false);
-  const updateRotationProgress = useCallback((progress: number) => {
-    // So, this is kind of weird
-    // We only want isSpinning to be true in a more limited range because we want to hide the
-    // side faces when the animation is mostly complete (not fully) to prevent flickering
-    setIsSpinning(progress <= 0.98);
-  }, []);
-
   const toHex = useCallback(
     (color: number) => `#${color.toString(16).padStart(6, '0')}`,
     [],
@@ -538,14 +472,6 @@ export default function Puzzle({
   const onClueClick = useCallback(() => {
     handleSetOrientation(!isVerticalOrientation);
   }, [handleSetOrientation, isVerticalOrientation]);
-
-  const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
-    return {
-      color: selectedColor,
-      textColor: fontColor,
-      side: sideOffset,
-    };
-  }, [fontColor, selectedColor, sideOffset]);
 
   const handleAutocheckChanged = useCallback(
     (autocheckEnabled: boolean) => {
@@ -749,6 +675,14 @@ export default function Puzzle({
     );
   }, [handleNextWord, rightChevronIcon, selected]);
 
+  const rotatingBoxProps: RotatingBoxProps = useMemo(() => {
+    return {
+      color: selectedColor,
+      textColor: fontColor,
+      side: sideOffset,
+    };
+  }, [fontColor, selectedColor, sideOffset]);
+
   return (
     <>
       <Menu
@@ -771,10 +705,6 @@ export default function Puzzle({
         <PuzzleCanvas
           isInitialized={isInitialized}
           onInitialize={onInitialize}
-          sideOffset={sideOffset}
-          onSwipeLeft={turnLeft}
-          onSwipeRight={turnRight}
-          onRotationProgress={updateRotationProgress}
           puzzle={puzzle}
           svgTextureAtlas={svgTextureAtlas}
           svgTextureAtlasLookup={svgTextureAtlasLookup}
@@ -783,7 +713,6 @@ export default function Puzzle({
           cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
           selected={selected}
           onSelectedChange={handleSelectedChange}
-          selectedSide={selectedSide}
           keyAndIndexOverride={keyAndIndexOverride}
           currentKey={selectedCharacter}
           updateCharacterPosition={updateCharacterPosition}
@@ -805,10 +734,13 @@ export default function Puzzle({
           autoNextEnabled={autoNextEnabled}
           setGoToNextWord={setGoToNextWord}
           theme={theme}
-          isSpinning={isSpinning}
           isSingleSided={isSingleSided}
           isPuzzleSolved={isPuzzleSolved}
           sparkColors={sparkColors}
+          onSelectedSideChange={setSelectedSide}
+          onSideOffsetChange={setSideOffset}
+          shouldTurn={shouldTurn}
+          onTurnReset={onTurnComplete}
         />
         {isInitialized === true && (
           <>
