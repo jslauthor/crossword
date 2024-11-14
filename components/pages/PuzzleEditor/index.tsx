@@ -2,7 +2,10 @@
 
 import { PuzzleEditorProps } from 'app/puzzle/editor/[[...slug]]/page';
 import { ClueEditor } from 'components/composed/ClueEditor';
-import Keyboard from 'components/composed/Keyboard';
+import Keyboard, {
+  SUPPORTED_KEYBOARD_CHARACTERS,
+} from 'components/composed/Keyboard';
+import PuzzleCanvas from 'components/composed/PuzzleCanvas';
 import PuzzleEditorSettings from 'components/composed/PuzzleEditorSettings';
 import Menu from 'components/containers/Menu';
 import EmojiSelector from 'components/core/EmojiSelector';
@@ -14,8 +17,18 @@ import Gear from 'components/svg/Gear';
 import Symmetry from 'components/svg/Symmetry';
 import { usePuzzleEditorStore } from 'lib/providers/puzzle-editor-provider';
 import { cn } from 'lib/utils';
+import useSvgAtlas from 'lib/utils/hooks/useSvgAtlas';
 import { Keyboard as KeyboardIcon, List } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import posthog from 'posthog-js';
+import { InstancedMesh } from 'three';
+import { useKeyDown } from 'lib/utils/hooks/useKeyDown';
+import { useTheme } from 'lib/utils/hooks/theme';
+import tinycolor from 'tinycolor2';
+import { isPuzzleSingleSided } from 'lib/utils/puzzle';
+
+const noopArray = new Int16Array();
+const noop = () => {};
 
 enum TabsEnum {
   Puzzle = 'puzzle',
@@ -25,26 +38,50 @@ enum TabsEnum {
 
 export function PuzzleEditor({
   puzzle,
-  // characterTextureAtlasLookup,
-  // cellNumberTextureAtlasLookup,
+  characterTextureAtlasLookup,
+  cellNumberTextureAtlasLookup,
 }: PuzzleEditorProps) {
-  // console.log(
-  //   puzzle,
-  //   characterTextureAtlasLookup,
-  //   cellNumberTextureAtlasLookup,
-  // );
+  const {
+    svgTextureAtlas,
+    svgTextureAtlasLookup,
+    svgGridSize,
+    svgContentMap,
+    error: svgError,
+  } = useSvgAtlas(puzzle.svgSegments);
+
+  useEffect(() => {
+    if (svgError === true) {
+      console.error('Failed to load emojis in the SVG texture atlas!');
+      posthog.capture('puzzle_svg_error', { puzzleId: puzzle.id });
+    }
+  }, [puzzle.id, svgError]);
 
   const title = usePuzzleEditorStore((store) => store.title);
   const style = usePuzzleEditorStore((store) => store.style);
   const type = usePuzzleEditorStore((store) => store.type);
   const size = usePuzzleEditorStore((store) => store.size);
-  const keyMap = usePuzzleEditorStore((store) => store.keyMap);
+  // const keyMap = usePuzzleEditorStore((store) => store.keyMap);
   const isSettingsOpen = usePuzzleEditorStore((store) => store.showSettings);
   const updateTitle = usePuzzleEditorStore((store) => store.updateTitle);
   const updateStyle = usePuzzleEditorStore((store) => store.updateStyle);
   const updateType = usePuzzleEditorStore((store) => store.updateType);
   const updateSize = usePuzzleEditorStore((store) => store.updateSize);
   const toggleSettings = usePuzzleEditorStore((store) => store.toggleSettings);
+  const characterPositions = usePuzzleEditorStore(
+    (store) => store.characterPositions,
+  );
+
+  const initializeCharacterPositions = usePuzzleEditorStore(
+    (store) => store.initializeCharacterPositions,
+  );
+  const updateCharacterPosition = usePuzzleEditorStore(
+    (store) => store.updateCharacterPosition,
+  );
+
+  useEffect(() => {
+    initializeCharacterPositions(puzzle);
+  }, [initializeCharacterPositions, puzzle]);
+
   const handleSettingsPressed = useCallback(() => {
     toggleSettings(!isSettingsOpen);
   }, [isSettingsOpen, toggleSettings]);
@@ -68,13 +105,13 @@ export function PuzzleEditor({
     }
   }, [shouldResetTabs]);
 
-  const svgContentMap: Record<string, string> = useMemo(() => {
-    const svgMap: Record<string, string> = {};
-    for (const item of keyMap) {
-      svgMap[item[0]] = item[1][1];
-    }
-    return svgMap;
-  }, [keyMap]);
+  // const svgContentMap: Record<string, string> = useMemo(() => {
+  //   const svgMap: Record<string, string> = {};
+  //   for (const item of keyMap) {
+  //     svgMap[item[0]] = item[1][1];
+  //   }
+  //   return svgMap;
+  // }, [keyMap]);
 
   const handleKeyPress = useCallback((key: string) => {
     console.log(key);
@@ -118,6 +155,51 @@ export function PuzzleEditor({
     }
   }, [selectedTab, style]);
 
+  const themeProvider = useTheme();
+  const {
+    theme,
+    colors: {
+      font: fontColor,
+      fontDraft: fontDraftColor,
+      default: defaultColor,
+      selected: selectedColor,
+      selectedAdjacent: adjacentColor,
+      correct: correctColor,
+      error: errorColor,
+      // turnArrow: turnArrowColor,
+    },
+  } = themeProvider;
+
+  const toHex = useCallback(
+    (color: number) => `#${color.toString(16).padStart(6, '0')}`,
+    [],
+  );
+  const sparkColors = useMemo(
+    () => [
+      tinycolor(toHex(defaultColor)).brighten(10).toHexString(),
+      tinycolor(toHex(selectedColor)).brighten(10).toHexString(),
+      tinycolor(toHex(adjacentColor)).brighten(10).toHexString(),
+    ],
+    [adjacentColor, defaultColor, selectedColor, toHex],
+  );
+
+  const isSingleSided = useMemo(() => isPuzzleSingleSided(puzzle), [puzzle]);
+
+  const [selected, setSelected] = useState<InstancedMesh['id'] | undefined>(0);
+  const [selectedCharacter, setSelectedCharacter] = useState<
+    string | undefined
+  >();
+
+  const onLetterChange = useCallback((key: string) => {
+    setSelectedCharacter(key);
+  }, []);
+  useKeyDown(onLetterChange, SUPPORTED_KEYBOARD_CHARACTERS);
+
+  // TODO: Do we need to do this?
+  const onLetterInput = useCallback(() => {
+    setSelectedCharacter(undefined);
+  }, []);
+
   return (
     <>
       <Menu
@@ -126,7 +208,43 @@ export function PuzzleEditor({
       >
         <div className="relative h-full w-full grid grid-rows-[1fr_auto_auto]">
           <Carousel currentIndex={carouselIndex}>
-            <div>Puzzle</div>
+            <PuzzleCanvas
+              isInitialized={true}
+              onInitialize={console.log}
+              puzzle={puzzle}
+              svgTextureAtlas={svgTextureAtlas}
+              svgTextureAtlasLookup={svgTextureAtlasLookup}
+              svgGridSize={svgGridSize}
+              characterTextureAtlasLookup={characterTextureAtlasLookup}
+              cellNumberTextureAtlasLookup={cellNumberTextureAtlasLookup}
+              selected={selected}
+              onSelectedChange={setSelected}
+              currentKey={selectedCharacter}
+              updateCharacterPosition={updateCharacterPosition}
+              onLetterInput={onLetterInput}
+              fontColor={fontColor}
+              fontDraftColor={fontDraftColor}
+              selectedColor={defaultColor}
+              errorColor={errorColor}
+              correctColor={correctColor}
+              isVerticalOrientation={false}
+              onVerticalOrientationChange={noop}
+              autoCheckEnabled={false}
+              selectNextBlankEnabled={false}
+              characterPositionArray={characterPositions}
+              cellValidationArray={noopArray}
+              cellDraftModeArray={noopArray}
+              autoNextEnabled={false}
+              setGoToNextWord={() => {}}
+              theme={theme}
+              isSingleSided={isSingleSided}
+              isPuzzleSolved={false}
+              sparkColors={sparkColors}
+              // onSelectedSideChange={setSelectedSide}
+              // onSideOffsetChange={setSideOffset}
+              // shouldTurn={shouldTurn}
+              // onTurnReset={onTurnComplete}
+            />
             <ClueEditor puzzle={puzzle} />
             {style === 'emoji' && <EmojiSelector className="h-full" />}
           </Carousel>

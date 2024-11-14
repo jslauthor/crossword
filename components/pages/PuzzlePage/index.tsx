@@ -18,6 +18,7 @@ import {
   getRangeForCell,
   getType,
   isCellWithNumber,
+  isPuzzleSingleSided,
   isSingleCell,
 } from 'lib/utils/puzzle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -39,21 +40,12 @@ import PuzzlePrompt from 'components/composed/PuzzlePrompt';
 import { usePageVisibility } from 'lib/utils/hooks/usePageVisibility';
 import posthog from 'posthog-js';
 import PuzzleHeaderSettings from 'components/composed/PuzzleHeaderSettings';
-import Keyboard, { KeyboardLayoutType } from 'components/composed/Keyboard';
+import Keyboard, {
+  KeyboardLayoutType,
+  SUPPORTED_KEYBOARD_CHARACTERS,
+} from 'components/composed/Keyboard';
 import PuzzleCanvas from 'components/composed/PuzzleCanvas';
 import { RotatingBoxProps } from 'components/core/3d/Box';
-
-const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
-for (let x = 0; x < 10; x++) {
-  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
-}
-for (let x = 0; x <= 25; x++) {
-  SUPPORTED_KEYBOARD_CHARACTERS.push(String.fromCharCode(65 + x));
-}
-for (let x = 0; x <= 1000; x++) {
-  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
-}
-SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
 
 const SolvedContainer = styled.div`
   position: absolute;
@@ -173,21 +165,7 @@ export default function Puzzle({
   characterTextureAtlasLookup,
   cellNumberTextureAtlasLookup,
 }: PuzzleProps) {
-  const [width, rowLength] = useMemo(() => {
-    const { width } = puzzle.data[0].dimensions;
-    return [width, width * puzzle.data.length - puzzle.data.length];
-  }, [puzzle.data]);
-
-  const isSingleSided = useMemo(() => {
-    for (let j = 0; j < puzzle.record.solution.length; j++) {
-      const { value: cell } = puzzle.record.solution[j];
-      const side = Math.floor((j % rowLength) / width);
-      if (cell !== '#' && side > 0) {
-        return false;
-      }
-    }
-    return true;
-  }, [puzzle.record.solution, rowLength, width]);
+  const isSingleSided = useMemo(() => isPuzzleSingleSided(puzzle), [puzzle]);
 
   const { theme } = useTheme();
   const layout = useMemo<keyof KeyboardLayoutType>(

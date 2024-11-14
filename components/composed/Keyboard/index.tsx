@@ -6,6 +6,18 @@ import SimpleKeyboard from 'react-simple-keyboard';
 import 'react-simple-keyboard/build/css/index.css';
 import { PuzzleLayout } from 'lib/stores/puzzle-editor';
 
+export const SUPPORTED_KEYBOARD_CHARACTERS: string[] = [];
+for (let x = 0; x < 10; x++) {
+  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
+}
+for (let x = 0; x <= 25; x++) {
+  SUPPORTED_KEYBOARD_CHARACTERS.push(String.fromCharCode(65 + x));
+}
+for (let x = 0; x <= 1000; x++) {
+  SUPPORTED_KEYBOARD_CHARACTERS.push(x.toString(10));
+}
+SUPPORTED_KEYBOARD_CHARACTERS.push('BACKSPACE');
+
 export type KeyboardLayoutType = Record<PuzzleLayout, string[]>;
 export type CssMapType = Record<string, [string, string]>;
 export type KeyboardProps = {

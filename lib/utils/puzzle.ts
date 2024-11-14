@@ -84,6 +84,20 @@ type SolutionType = {
   style?: CellStyle;
 };
 
+export function isPuzzleSingleSided(puzzle: PuzzleType) {
+  const { width } = puzzle.data[0].dimensions;
+  const rowLength = width * puzzle.data.length - puzzle.data.length;
+
+  for (let j = 0; j < puzzle.record.solution.length; j++) {
+    const { value: cell } = puzzle.record.solution[j];
+    const side = Math.floor((j % rowLength) / width);
+    if (cell !== '#' && side > 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Invert the dictionary for faster lookups
 export const invertAtlas = memoizeOne(
   (atlas: Record<string, [number, number]>) => {

@@ -1,4 +1,10 @@
 import { createStore } from 'zustand/vanilla';
+import * as Y from 'yjs';
+import { PuzzleType } from 'types/types';
+import { createFloat32Array } from 'lib/utils/puzzle';
+
+export const GAME_STATE_KEY = 'GAME_STATE_KEY';
+export const CHARACTER_POSITIONS_KEY = 'characterPositions';
 
 export type PuzzleLayout = 'default' | 'emoji';
 export type PuzzleDimensionType = '2d' | '3d';
@@ -10,6 +16,7 @@ export type PuzzleEditorState = {
   type: PuzzleDimensionType;
   size: PuzzleSizeType;
   showSettings: boolean;
+  characterPositions: Float32Array;
   // Empty Map to hold all 26 keys and their corresponding emojis
   keyMap: Map<number, [string, string]>;
 };
@@ -28,6 +35,13 @@ export type PuzzleEditorActions = {
   updateType: (type: PuzzleDimensionType) => void;
   updateSize: (size: PuzzleSizeType) => void;
   toggleSettings: (val: boolean) => void;
+  initializeCharacterPositions: (puzzle: PuzzleType) => void;
+  updateCharacterPosition: (
+    selectedIndex: number,
+    key: string,
+    x: number,
+    y: number,
+  ) => boolean;
 };
 
 export type PuzzleEditorStore = PuzzleEditorState & PuzzleEditorActions;
@@ -40,14 +54,54 @@ export const createPuzzleEditorStore = (
     size: 5,
     showSettings: false,
     keyMap: generateKeyMap(),
+    characterPositions: new Float32Array(),
   },
 ) => {
-  return createStore<PuzzleEditorStore>((set) => ({
+  const puzzleState = new Y.Doc();
+
+  const store = createStore<PuzzleEditorStore>((set, get) => ({
     ...initialState,
+    initializeCharacterPositions: (puzzle: PuzzleType) => {
+      const positions = createFloat32Array(puzzle);
+      puzzleState
+        .getMap(GAME_STATE_KEY)
+        .set(CHARACTER_POSITIONS_KEY, Y.Array.from(Array.from(positions)));
+    },
     updateTitle: (title) => set({ title }),
     updateStyle: (style) => set({ style }),
     updateType: (type) => set({ type }),
     updateSize: (size) => set({ size }),
     toggleSettings: (val: boolean) => set({ showSettings: val }),
+    updateCharacterPosition: (
+      selectedIndex: number,
+      key: string,
+      x: number,
+      y: number,
+    ) => {
+      const characterPositions = get().characterPositions;
+      const newArray = new Float32Array([...characterPositions]);
+      newArray[selectedIndex * 2] = x;
+      newArray[selectedIndex * 2 + 1] = y;
+      puzzleState
+        .getMap(GAME_STATE_KEY)
+        .set(
+          CHARACTER_POSITIONS_KEY,
+          Y.Array.from(Array.from(characterPositions)),
+        );
+      return true;
+    },
   }));
+
+  puzzleState.getMap(GAME_STATE_KEY).observe((event: Y.YMapEvent<unknown>) => {
+    event.keysChanged.forEach((key) => {
+      if (key === CHARACTER_POSITIONS_KEY) {
+        const positions = new Float32Array(
+          event.target.get(CHARACTER_POSITIONS_KEY) as number[],
+        );
+        store.setState({ characterPositions: positions });
+      }
+    });
+  });
+
+  return store;
 };
