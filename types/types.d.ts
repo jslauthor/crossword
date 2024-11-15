@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Object3DNode, MaterialNode } from '@react-three/fiber';
 import { PuzzlePreviewProps } from 'components/composed/PuzzlePreview';
 import { CharacterRecord, CrosscubeType } from 'lib/utils/puzzle';
+import { crosscubeTypes } from 'types';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -151,7 +152,6 @@ export type PuzzleType = Omit<
 };
 
 export type CrosscubeType = 'moji' | 'mini' | 'cube' | 'mega';
-export const crosscubeTypes = ['cube', 'mega', 'mini', 'moji'] as const;
 type CheckAllUnions = {
   [K in CrosscubeType]: K extends (typeof crosscubeTypes)[number]
     ? true
