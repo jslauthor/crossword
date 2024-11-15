@@ -47,6 +47,7 @@ const CategoryList: React.FC<CategoryListType> = ({
 }) => {
   const Items = useMemo(() => {
     return CATEGORIES.map((category) => {
+      if (category.unicode == null) return null;
       const imgPath = `${SVG_BASE_PATH}${category.unicode}.svg`;
       return (
         <div
@@ -212,6 +213,7 @@ export function EmojiSelector({
   const dropdownMenu = useMemo(() => {
     // +1 because the first index is the base emoji
     const selected = emojiToneCodes[selectedEmojiToneIndex + 1];
+    if (selected == null) return null;
     const imgPath = `${SVG_BASE_PATH}${selected}.svg`;
     return (
       <DropdownMenu>
@@ -221,6 +223,7 @@ export function EmojiSelector({
         <DropdownMenuContent className="flex flex-col gap-2">
           {emojiToneCodes.map((tone, index) => {
             const imgPath = SVG_BASE_PATH + tone + '.svg';
+            if (tone == null) return null;
             return (
               <DropdownMenuItem
                 key={tone}
