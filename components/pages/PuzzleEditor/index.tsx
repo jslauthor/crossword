@@ -25,9 +25,8 @@ import { InstancedMesh } from 'three';
 import { useKeyDown } from 'lib/utils/hooks/useKeyDown';
 import { useTheme } from 'lib/utils/hooks/theme';
 import tinycolor from 'tinycolor2';
-import { isPuzzleSingleSided } from 'lib/utils/puzzle';
+import { createInt16Array, isPuzzleSingleSided } from 'lib/utils/puzzle';
 
-const noopArray = new Int16Array();
 const noop = () => {};
 
 enum TabsEnum {
@@ -77,6 +76,9 @@ export function PuzzleEditor({
   const updateCharacterPosition = usePuzzleEditorStore(
     (store) => store.updateCharacterPosition,
   );
+
+  const [cellValidationArray] = useState<Int16Array>(createInt16Array(puzzle));
+  const [cellDraftModeArray] = useState<Int16Array>(createInt16Array(puzzle));
 
   useEffect(() => {
     initializeCharacterPositions(puzzle);
@@ -232,8 +234,8 @@ export function PuzzleEditor({
               autoCheckEnabled={false}
               selectNextBlankEnabled={false}
               characterPositionArray={characterPositions}
-              cellValidationArray={noopArray}
-              cellDraftModeArray={noopArray}
+              cellValidationArray={cellValidationArray}
+              cellDraftModeArray={cellDraftModeArray}
               autoNextEnabled={false}
               setGoToNextWord={() => {}}
               theme={theme}
