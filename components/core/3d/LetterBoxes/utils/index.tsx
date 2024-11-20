@@ -1,3 +1,4 @@
+import CustomShaderMaterial from 'lib/csm';
 import {
   DoubleSide,
   MeshBasicMaterial,
@@ -7,7 +8,6 @@ import {
   Vector3,
   Vector4,
 } from 'three';
-import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 
 export const BORDER_RADIUS = 0.08;
 export const CUBE_SIZE: [number, number, number] = [0.92, 0.92, 0.92];
@@ -41,7 +41,7 @@ export enum CellStyleEnum {
   BottomBar = 1 << 4,
 }
 
-const vertexShader = `
+const vertexShader = /* glsl */ `
   attribute float cellStyle;
   attribute vec2 cellValidation;
   attribute vec2 cellDraftMode;
@@ -60,8 +60,7 @@ const vertexShader = `
   varying vec3 vWorldPosition;
   varying float vCellStyle;
 
-  void main()
-  {
+  void main() {
       vUv = uv;
       vCellValidation = cellValidation;
       vCellDraftMode = cellDraftMode;
@@ -75,7 +74,7 @@ const vertexShader = `
   }
 `;
 
-const fragmentShader = `
+const fragmentShader = /* glsl */ `
   #ifdef GL_ES
   precision highp float;
   #endif
@@ -119,8 +118,7 @@ const fragmentShader = `
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
   }
 
-  void main(void)
-  {
+  void main() {
     vec3 viewDir = normalize(cameraPosition - vWorldPosition);
     float dotProduct = dot(normalize(vWorldNormal), viewDir);
 
@@ -282,7 +280,7 @@ const fragmentShader = `
   }
 `;
 
-const vertexCellShader = `
+const vertexCellShader = /* glsl */ `
   attribute float matcapIndex;
   attribute float visibility;
 
@@ -312,7 +310,7 @@ const vertexCellShader = `
   }
 `;
 
-const fragmentCellShader = `
+const fragmentCellShader = /* glsl */ `
   #ifdef GL_ES
   precision highp float;
   #endif
@@ -327,7 +325,7 @@ const fragmentCellShader = `
   varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
 
-  void main(void) {
+  void main() {
     vec4 matcapColor = vec4(0.0, 0.0, 0.0, 0.0);
     if (vMatcapIndex == 0.0 || vMatcapIndex == 1.0) { // cell color
       matcapColor = texture2D(cellTextureAtlas, vMatcapUV);

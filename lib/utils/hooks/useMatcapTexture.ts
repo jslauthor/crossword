@@ -55,13 +55,15 @@ export function useMatcapTextureAtlas(matcapTextures: THREE.Texture[]) {
       if (texture.image?.complete) {
         onLoad();
       } else {
-        texture.addEventListener('load', onLoad);
+        texture.image.onload = onLoad;
       }
     });
 
     return () => {
       matcapTextures.forEach((texture) => {
-        texture.removeEventListener('load', onLoad);
+        if (texture.image) {
+          texture.image.onload = null;
+        }
       });
     };
   }, [atlasTexture, matcapTextures, size, gridSize]);

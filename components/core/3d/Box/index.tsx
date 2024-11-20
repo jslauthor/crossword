@@ -11,7 +11,7 @@ import { Canvas, extend } from '@react-three/fiber';
 import styled from 'styled-components';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
 import { CubeSidesEnum } from 'components/core/3d/LetterBoxes/utils';
-import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
+import CustomShaderMaterial from 'lib/csm';
 import { hexToVector } from 'lib/utils/color';
 extend({ RoundedBoxGeometry });
 
@@ -25,14 +25,14 @@ interface BoxProps {
   textColor: number;
 }
 
-const vertexShader = `
+const vertexShader = /* glsl */ `
   varying vec2 vUv;
   void main() {
     vUv = uv;
   }
 `;
 
-const fragmentShader = `
+const fragmentShader = /* glsl */ `
   #ifdef GL_ES
   precision highp float;
   #endif

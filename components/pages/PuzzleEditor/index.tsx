@@ -212,7 +212,7 @@ export function PuzzleEditor({
           <Carousel currentIndex={carouselIndex}>
             <PuzzleCanvas
               isInitialized={true}
-              onInitialize={console.log}
+              // onInitialize={console.log}
               puzzle={puzzle}
               svgTextureAtlas={svgTextureAtlas}
               svgTextureAtlasLookup={svgTextureAtlasLookup}
