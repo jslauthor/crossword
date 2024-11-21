@@ -153,8 +153,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       meshline:
-        specifier: ^3.2.0
-        version: 3.2.0(three@0.170.0)
+        specifier: ^3.3.1
+        version: 3.3.1(three@0.170.0)
       nanoid:
         specifier: ^5.0.6
         version: 5.0.6
@@ -179,6 +179,9 @@ importers:
       posthog-js:
         specifier: ^1.154.5
         version: 1.154.5
+      postprocessing:
+        specifier: ^6.36.4
+        version: 6.36.4(three@0.170.0)
       react:
         specifier: ^18.2.0
         version: 18.2.0
@@ -3303,11 +3306,6 @@ packages:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
     engines: {node: '>= 8'}
 
-  meshline@3.2.0:
-    resolution: {integrity: sha512-ZaJkC967GTuef7UBdO0rGPX544oIWaNo7tYedVHSoR2lje6RR16fX8IsgMxgxoYYERtjqsRWIYBSPBxG4QR84Q==}
-    peerDependencies:
-      three: '>=0.137'
-
   meshline@3.3.1:
     resolution: {integrity: sha512-/TQj+JdZkeSUOl5Mk2J7eLcYTLiQm2IDzmlSvYm7ov15anEcDJ92GHqqazxTSreeNgfnYu24kiEvvv0WlbCdFQ==}
     peerDependencies:
@@ -3744,11 +3742,10 @@ packages:
   posthog-js@1.154.5:
     resolution: {integrity: sha512-YYhWckDIRObfCrQpiLq+fdcDTIbQp8ebiKi0ueGohMRgugIG9LJVSpBgCeCHZm2C7sOxDUNcAr3T5VBDUSQoOg==}
 
-  postprocessing@6.34.3:
-    resolution: {integrity: sha512-AjsxAGWeHMKlCTuWLeahNnPyFwR0c/pEmveq5mBz767lFBc1+HHYzk0aRGBCE9PZIjiA27oRL7lATd+fVOscRA==}
-    engines: {node: '>= 0.13.2'}
+  postprocessing@6.36.4:
+    resolution: {integrity: sha512-3fAyBGuLNR7Rg/q+f2SNlsVCI5mDrymvxhOif3tPKEej8M38z4TvwzNZm+RNpRY2tACE7qQUNE5IHyMcqgvlAg==}
     peerDependencies:
-      three: '>= 0.138.0 < 0.162.0'
+      three: '>= 0.157.0 < 0.171.0'
 
   potpack@1.0.2:
     resolution: {integrity: sha512-choctRBIV9EMT9WGAZHn3V7t0Z2pMQyl0EZE6pFc/6ml3ssw7Dlf/oAOvFwjm1HVsqfQN8GfeFyJ+d8tRzqueQ==}
@@ -4267,11 +4264,6 @@ packages:
     deprecated: Deprecated due to three.js version incompatibility. Please use v0.8.0, instead.
     peerDependencies:
       three: '>= 0.151.0'
-
-  three-stdlib@2.32.2:
-    resolution: {integrity: sha512-ZN25Na/Xg7APhGKwJ1zhGdhZDsDGGnnm1k5Z+9LLlnfsFye4jigvbN3eA/Ta8hQmBNmEHXoozpmpKK1x8dCePQ==}
-    peerDependencies:
-      three: '>=0.128.0'
 
   three-stdlib@2.34.0:
     resolution: {integrity: sha512-U5qJYWgUKBFJqr1coMSbczA964uvouzBjQbtJlaI9LfMwy7hr+kc1Mfh0gqi/2872KmGu9utgff6lj8Oti8+VQ==}
@@ -5988,7 +5980,7 @@ snapshots:
 
   '@react-three/fiber@8.17.10(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(three@0.170.0)':
     dependencies:
-      '@babel/runtime': 7.24.1
+      '@babel/runtime': 7.26.0
       '@types/debounce': 1.2.4
       '@types/react-reconciler': 0.26.7
       '@types/webxr': 0.5.14
@@ -6010,11 +6002,11 @@ snapshots:
       '@react-three/fiber': 8.17.10(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(three@0.170.0)
       buffer: 6.0.3
       maath: 0.6.0(@types/three@0.170.0)(three@0.170.0)
-      n8ao: 1.8.1(postprocessing@6.34.3(three@0.170.0))(three@0.170.0)
-      postprocessing: 6.34.3(three@0.170.0)
+      n8ao: 1.8.1(postprocessing@6.36.4(three@0.170.0))(three@0.170.0)
+      postprocessing: 6.36.4(three@0.170.0)
       react: 18.2.0
       three: 0.170.0
-      three-stdlib: 2.32.2(three@0.170.0)
+      three-stdlib: 2.34.0(three@0.170.0)
     transitivePeerDependencies:
       - '@types/three'
 
@@ -7750,10 +7742,6 @@ snapshots:
 
   merge2@1.4.1: {}
 
-  meshline@3.2.0(three@0.170.0):
-    dependencies:
-      three: 0.170.0
-
   meshline@3.3.1(three@0.170.0):
     dependencies:
       three: 0.170.0
@@ -7826,9 +7814,9 @@ snapshots:
       object-assign: 4.1.1
       thenify-all: 1.6.0
 
-  n8ao@1.8.1(postprocessing@6.34.3(three@0.170.0))(three@0.170.0):
+  n8ao@1.8.1(postprocessing@6.36.4(three@0.170.0))(three@0.170.0):
     dependencies:
-      postprocessing: 6.34.3(three@0.170.0)
+      postprocessing: 6.36.4(three@0.170.0)
       three: 0.170.0
 
   nanoid@3.3.7: {}
@@ -8106,7 +8094,7 @@ snapshots:
       preact: 10.23.1
       web-vitals: 4.2.3
 
-  postprocessing@6.34.3(three@0.170.0):
+  postprocessing@6.36.4(three@0.170.0):
     dependencies:
       three: 0.170.0
 
@@ -8711,16 +8699,6 @@ snapshots:
 
   three-mesh-bvh@0.7.8(three@0.170.0):
     dependencies:
-      three: 0.170.0
-
-  three-stdlib@2.32.2(three@0.170.0):
-    dependencies:
-      '@types/draco3d': 1.4.9
-      '@types/offscreencanvas': 2019.7.3
-      '@types/webxr': 0.5.14
-      draco3d: 1.5.7
-      fflate: 0.6.10
-      potpack: 1.0.2
       three: 0.170.0
 
   three-stdlib@2.34.0(three@0.170.0):
