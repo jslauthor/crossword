@@ -11,7 +11,7 @@ import { Canvas, extend } from '@react-three/fiber';
 import styled from 'styled-components';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
 import { CubeSidesEnum } from 'components/core/3d/LetterBoxes/utils';
-import CustomShaderMaterial from 'lib/csm';
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { hexToVector } from 'lib/utils/color';
 extend({ RoundedBoxGeometry });
 

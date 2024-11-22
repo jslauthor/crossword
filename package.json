@@ -82,6 +82,7 @@
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.170.0",
+    "three-custom-shader-material": "^6.2.0",
     "tinycolor2": "^1.6.0",
     "typescript": "5.2.2",
     "url-slug": "^4.0.1",

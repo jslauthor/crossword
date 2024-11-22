@@ -5,6 +5,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { EffectComposer, Outline } from '@react-three/postprocessing';
+import { BlendFunction } from 'postprocessing';
 import { ThreeEvent, extend, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
@@ -13,6 +15,7 @@ import {
   Euler,
   Mesh,
   Texture,
+  HalfFloatType,
 } from 'three';
 import { InstancedMesh } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
@@ -26,7 +29,12 @@ import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation'
 import { hexToVector } from 'lib/utils/color';
 import { constrain, rangeOperation } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
-import { MeshTransmissionMaterial, useTexture } from '@react-three/drei';
+import {
+  AsciiRenderer,
+  Edges,
+  MeshTransmissionMaterial,
+  useTexture,
+} from '@react-three/drei';
 import PulsatingLight from '../PulsatingLight';
 import { PuzzleType } from 'types/types';
 import { AtlasType } from 'lib/utils/atlas';
@@ -43,6 +51,7 @@ import {
   uniformDefaults,
   updateCubeSideDisplay,
 } from './utils';
+
 extend({ RoundedBoxGeometry });
 
 export type LetterBoxesProps = {

@@ -1,4 +1,4 @@
-import CustomShaderMaterial from 'lib/csm';
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import {
   DoubleSide,
   MeshBasicMaterial,
