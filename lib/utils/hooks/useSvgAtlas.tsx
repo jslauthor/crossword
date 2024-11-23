@@ -12,9 +12,6 @@ const MAX_RETRIES = 3;
 const RETRY_DELAY = 200;
 const SCALE_FACTOR = 0.7; // Scale the emoji to 80% of its bounding box
 const VERTICAL_OFFSET_FACTOR = 0.1; // Move the emoji down by 10% of its bounding box
-const LIGHTNESS_THRESHOLD = 0.85; // Adjust this value as needed (0-1 range)
-const SHADOW_COLOR = 'rgba(0, 0, 0, 1)';
-const SHADOW_BLUR = 8;
 
 // Fallback emoji SVG
 const FALLBACK_SVG = `
@@ -160,21 +157,6 @@ function useSvgAtlas(unicodeValues?: string[]) {
           // Ensure the emoji stays within its bounding box
           const adjustedOffsetY = Math.min(offsetY, svgSize - height);
           ctx.drawImage(img, x + offsetX, y + adjustedOffsetY, width, height);
-
-          // Calculate average lightness
-          const avgLightness = calculateAverageLightness(img);
-
-          // Apply shadow if the average lightness is above the threshold
-          if (avgLightness > LIGHTNESS_THRESHOLD) {
-            ctx.shadowColor = SHADOW_COLOR;
-            ctx.shadowBlur = SHADOW_BLUR;
-          }
-
-          ctx.drawImage(img, x + offsetX, y + offsetY, width, height);
-
-          // Reset shadow
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
         });
 
         const texture = new THREE.CanvasTexture(canvas);

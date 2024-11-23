@@ -95,6 +95,8 @@ const fragmentShader = /* glsl */ `
   
   // Add a new uniform for the shrink factor
   uniform float shrinkFactor;
+  uniform float outlineWidth;
+  uniform vec4 outlineColor;
 
   varying vec2 vUv;
   varying vec2 vCellValidation;
@@ -116,6 +118,30 @@ const fragmentShader = /* glsl */ `
   float roundedRectangle(vec2 uv, vec2 size, float radius) {
     vec2 q = abs(uv) - (size - 0.01) + radius;
     return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - radius;
+  }
+
+  float sampleOutline(vec2 uv, vec2 offset) {
+    vec2 sampleUV = uv + offset;
+    
+    if (sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0) {
+      return 0.0;
+    }
+
+    if (vCharacterPosition.x >= 0.0 && vCharacterPosition.y >= 0.0) {
+      vec2 position, size, coord;
+      if (useSvgTexture) {
+        position = vec2(vCharacterPosition.x/svgGridSize, 1.0 - (vCharacterPosition.y/svgGridSize + 1.0/svgGridSize));
+        size = vec2(1.0 / svgGridSize, 1.0 / svgGridSize);
+        coord = position + size * fract(sampleUV);
+        return texture2D(svgTexture, coord).a;
+      } else {
+        position = vec2(vCharacterPosition.x/charactersGridSize, -(vCharacterPosition.y/charactersGridSize + 1.0/charactersGridSize));
+        size = vec2(1.0 / charactersGridSize, 1.0 / charactersGridSize);
+        coord = position + size * fract(sampleUV);
+        return texture2D(characterTexture, coord).a;
+      }
+    }
+    return 0.0;
   }
 
   void main() {
@@ -276,8 +302,23 @@ const fragmentShader = /* glsl */ `
       }
     }
     
-    csm_DiffuseColor = finalColor;
-  }
+    // Draw a light border around the svg texture to make it pop more
+    float outlineAlpha = 0.0;
+    float angle = 0.0;
+    float width = outlineWidth / 100.0;
+    
+    for (float i = 0.0; i < 8.0; i++) {
+      angle = (i / 8.0) * 2.0 * PI;
+      vec2 offset = vec2(cos(angle) * width, sin(angle) * width);
+      float s = sampleOutline(adjustedUV, offset);
+      outlineAlpha = max(outlineAlpha, s);
+    }
+    
+    float centerAlpha = sampleOutline(adjustedUV, vec2(0.0));
+    outlineAlpha = clamp(outlineAlpha - centerAlpha, 0.0, 1.0);
+    
+    csm_DiffuseColor = mix(finalColor, outlineColor, outlineAlpha);
+}
 `;
 
 const vertexCellShader = /* glsl */ `
@@ -289,6 +330,9 @@ const vertexCellShader = /* glsl */ `
 
   varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
+
+  attribute float outline;
+  varying float vOutline;
 
   void main() {
     vMatcapIndex = matcapIndex;
@@ -307,6 +351,8 @@ const vertexCellShader = /* glsl */ `
 
     vWorldNormal = normalWorld;
     vWorldPosition = pos.xyz;
+
+    vOutline = outline;
   }
 `;
 
@@ -324,6 +370,8 @@ const fragmentCellShader = /* glsl */ `
 
   varying vec3 vWorldNormal;
   varying vec3 vWorldPosition;
+
+  varying float vOutline;
 
   void main() {
     vec4 matcapColor = vec4(0.0, 0.0, 0.0, 0.0);
@@ -401,6 +449,8 @@ export const createBasicMaterial = (
         sideIndex: { value: sideEnum },
         charactersGridSize: { value: 6.0 },
         ...uniforms,
+        outlineWidth: { value: 1.0 },
+        outlineColor: { value: new Vector4(0, 0, 0, 0.25) },
       },
       side: DoubleSide,
       transparent: true,

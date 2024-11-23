@@ -5,8 +5,6 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { EffectComposer, Outline } from '@react-three/postprocessing';
-import { BlendFunction } from 'postprocessing';
 import { ThreeEvent, extend, useFrame, useLoader } from '@react-three/fiber';
 import {
   TextureLoader,
@@ -15,7 +13,6 @@ import {
   Euler,
   Mesh,
   Texture,
-  HalfFloatType,
 } from 'three';
 import { InstancedMesh } from 'three';
 import { rotateAroundPoint } from '../../../../lib/utils/three';
@@ -29,12 +26,7 @@ import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation'
 import { hexToVector } from 'lib/utils/color';
 import { constrain, rangeOperation } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
-import {
-  AsciiRenderer,
-  Edges,
-  MeshTransmissionMaterial,
-  useTexture,
-} from '@react-three/drei';
+import { MeshTransmissionMaterial, useTexture } from '@react-three/drei';
 import PulsatingLight from '../PulsatingLight';
 import { PuzzleType } from 'types/types';
 import { AtlasType } from 'lib/utils/atlas';
@@ -99,6 +91,7 @@ export type LetterBoxesProps = {
   theme?: string;
   isSpinning?: boolean;
   isSingleSided?: boolean;
+  selectedCellStyle?: 'transmission' | 'outline';
 };
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
@@ -134,6 +127,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   setGoToNextWord,
   theme,
   isSingleSided,
+  selectedCellStyle = 'transmission',
 }) => {
   const [cellPositions, setCellPositions] = useState<Record<number, Vector3>>(
     {},
@@ -256,6 +250,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [size],
   );
 
+  const outlineArray = useMemo(
+    () => Float32Array.from(new Array(size).fill(0)),
+    [size],
+  );
+
   const updateVisibility = useCallback(
     (index: number, isVisible: boolean) => {
       if (cellsRef) {
@@ -264,6 +263,16 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     },
     [cellsRef, visibilityArray],
+  );
+
+  const updateOutline = useCallback(
+    (index: number, showOutline: boolean) => {
+      if (cellsRef) {
+        outlineArray[index] = showOutline ? 1 : 0;
+        cellsRef.geometry.attributes.outline.needsUpdate = true;
+      }
+    },
+    [cellsRef, outlineArray],
   );
 
   useEffect(() => {
@@ -455,6 +464,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     if (cellsDisplayRef == null || cellsRef == null) return;
     for (let id = 0; id < record.solution.length; id++) {
       updateVisibility(id, true);
+      updateOutline(id, false);
       if (
         prevHover !== hovered ||
         prevSelected !== selected ||
@@ -502,8 +512,11 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     }
 
     if (selected != null && cellPositions[selected] != null) {
-      // Selected cell is no longer visible
-      updateVisibility(selected, false);
+      // Hide the selected cell if we are using the transmission style
+      if (selectedCellStyle === 'transmission') {
+        updateVisibility(selected, false);
+      }
+      updateOutline(selected, true);
 
       if (
         lastPosition.current == null ||
@@ -991,30 +1004,38 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             itemSize={1}
             array={visibilityArray}
           />
+          <instancedBufferAttribute
+            attach="attributes-outline"
+            count={outlineArray.length}
+            itemSize={1}
+            array={outlineArray}
+          />
         </roundedBoxGeometry>
       </instancedMesh>
       <PulsatingLight position={lightPosition} color={selectedColor} />
-      <mesh ref={selectedCellRef} position={lightPosition}>
-        <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
-        <MeshTransmissionMaterial
-          color={selectedColor}
-          backside={true}
-          distortion={1}
-          chromaticAberration={1}
-          anisotropicBlur={1}
-          transmission={0.5}
-          backsideThickness={0.0}
-          thickness={0.2}
-          samples={4}
-          resolution={256}
-          roughness={0.33}
-          metalness={0.0}
-          anisotropy={1}
-          backsideResolution={256}
-          clearcoat={1}
-          clearcoatRoughness={0.1}
-        />
-      </mesh>
+      {selectedCellStyle === 'transmission' && (
+        <mesh ref={selectedCellRef} position={lightPosition}>
+          <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
+          <MeshTransmissionMaterial
+            color={selectedColor}
+            backside={true}
+            distortion={1}
+            chromaticAberration={1}
+            anisotropicBlur={1}
+            transmission={0.5}
+            backsideThickness={0.0}
+            thickness={0.2}
+            samples={4}
+            resolution={256}
+            roughness={0.33}
+            metalness={0.0}
+            anisotropy={1}
+            backsideResolution={256}
+            clearcoat={1}
+            clearcoatRoughness={0.1}
+          />
+        </mesh>
+      )}
     </>
   );
 };
