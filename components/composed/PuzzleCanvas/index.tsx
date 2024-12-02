@@ -210,7 +210,7 @@ function PuzzleCanvas({
         },
       });
     },
-    [api, onTurnReset, updateSideOffset],
+    [api, sideOffset, updateSideOffset],
   );
 
   const onSwipeLeft = useCallback(
@@ -221,7 +221,7 @@ function PuzzleCanvas({
         updateSideOffset(sideOffset + (offset ?? 1));
       }
     },
-    [api, isSingleSided, sideOffset, updateSideOffset, animateCannotTurn],
+    [isSingleSided, sideOffset, updateSideOffset, animateCannotTurn],
   );
 
   const onSwipeRight = useCallback(
@@ -232,7 +232,7 @@ function PuzzleCanvas({
         updateSideOffset(sideOffset - (offset ?? 1));
       }
     },
-    [api, isSingleSided, sideOffset, updateSideOffset, animateCannotTurn],
+    [isSingleSided, sideOffset, updateSideOffset, animateCannotTurn],
   );
 
   // Track rotation so we can update the shader in letterboxes

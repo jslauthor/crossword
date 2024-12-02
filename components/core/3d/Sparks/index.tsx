@@ -31,10 +31,10 @@ const Fatline: React.FC<FatLineProps> = ({ curve, width, color, speed }) => {
   });
   return (
     <mesh raycast={raycast}>
-      {/* @ts-ignore */}
+      {/* @ts-expect-error -- outdated api */}
       <meshLineGeometry attach="geometry" points={curve} />
       <meshLineMaterial
-        // @ts-ignore
+        // @ts-expect-error -- outdated api
         ref={material}
         transparent
         depthTest={false}
