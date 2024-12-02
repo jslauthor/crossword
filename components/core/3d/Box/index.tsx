@@ -48,8 +48,7 @@ const fragmentShader = /* glsl */ `
     return vec4(newColor.rgb, color.a); // Change white to the target color
   }
 
-  void main(void)
-  {
+  void main() {
     vec3 c = color.rgb;
     vec4 Cb = texture2D(numberTexture, vUv);
     Cb = applyColorChange(Cb, textColor);
