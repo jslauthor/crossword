@@ -87,7 +87,7 @@ function PuzzleCanvas({
   onSideOffsetChange,
   shouldTurn,
   onTurnReset,
-  selectedCellStyle,
+  mode,
 }: PuzzleCanvasProps) {
   const [puzzleWidth] = useMemo(() => {
     if (puzzle == null || puzzle.data.length < 1) {
@@ -319,7 +319,7 @@ function PuzzleCanvas({
               theme={theme}
               isSpinning={isSpinning}
               isSingleSided={isSingleSided}
-              selectedCellStyle={selectedCellStyle}
+              mode={mode}
             />
           </group>
         </SwipeControls>

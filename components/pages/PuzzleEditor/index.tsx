@@ -242,7 +242,7 @@ export function PuzzleEditor({
               isSingleSided={isSingleSided}
               isPuzzleSolved={false}
               sparkColors={sparkColors}
-              selectedCellStyle="outline"
+              mode="editor"
               // onSelectedSideChange={setSelectedSide}
               // onSideOffsetChange={setSideOffset}
               // shouldTurn={shouldTurn}

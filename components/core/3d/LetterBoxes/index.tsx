@@ -26,7 +26,11 @@ import { useScaleAnimation } from 'lib/utils/hooks/animations/useScaleAnimation'
 import { hexToVector } from 'lib/utils/color';
 import { constrain, rangeOperation } from 'lib/utils/math';
 import { RoundedBoxGeometry } from 'components/three/RoundedBoxGeometry';
-import { MeshTransmissionMaterial, useTexture } from '@react-three/drei';
+import {
+  MeshTransmissionMaterial,
+  Outlines,
+  useTexture,
+} from '@react-three/drei';
 import PulsatingLight from '../PulsatingLight';
 import { PuzzleType } from 'types/types';
 import { AtlasType } from 'lib/utils/atlas';
@@ -91,7 +95,7 @@ export type LetterBoxesProps = {
   theme?: string;
   isSpinning?: boolean;
   isSingleSided?: boolean;
-  selectedCellStyle?: 'transmission' | 'outline';
+  mode?: 'puzzle' | 'editor';
 };
 
 export const LetterBoxes: React.FC<LetterBoxesProps> = ({
@@ -127,14 +131,15 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
   setGoToNextWord,
   theme,
   isSingleSided,
-  selectedCellStyle = 'transmission',
+  mode = 'puzzle',
 }) => {
   const [cellPositions, setCellPositions] = useState<Record<number, Vector3>>(
     {},
   );
   const selectedCellRef = useRef<Mesh>(null);
-
+  const hoveredCellRef = useRef<Mesh>(null);
   const [lightPosition, setLightPosition] = useState(new Vector3(0, 0, 0));
+  const [hoveredPosition, setHoveredPosition] = useState<Vector3 | null>(null);
 
   const characterTextureAtlas = useLoader(TextureLoader, '/texture_atlas.webp');
   useEffect(() => {
@@ -250,11 +255,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [size],
   );
 
-  const outlineArray = useMemo(
-    () => Float32Array.from(new Array(size).fill(0)),
-    [size],
-  );
-
   const updateVisibility = useCallback(
     (index: number, isVisible: boolean) => {
       if (cellsRef) {
@@ -263,16 +263,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       }
     },
     [cellsRef, visibilityArray],
-  );
-
-  const updateOutline = useCallback(
-    (index: number, showOutline: boolean) => {
-      if (cellsRef) {
-        outlineArray[index] = showOutline ? 1 : 0;
-        cellsRef.geometry.attributes.outline.needsUpdate = true;
-      }
-    },
-    [cellsRef, outlineArray],
   );
 
   useEffect(() => {
@@ -341,6 +331,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     cellsDisplayRef,
     cellsRef,
     selectedCellRef.current,
+    hoveredCellRef.current,
   ]);
 
   // Initial setup (orient the instanced boxes)
@@ -464,7 +455,6 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     if (cellsDisplayRef == null || cellsRef == null) return;
     for (let id = 0; id < record.solution.length; id++) {
       updateVisibility(id, true);
-      updateOutline(id, false);
       if (
         prevHover !== hovered ||
         prevSelected !== selected ||
@@ -486,38 +476,38 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
         const { solution } = record;
         const cell = solution[id];
 
-        if (cell.value !== '#' && id !== hovered && id !== selected) {
-          matcapIndexArray[id] = MatcapIndexEnum.default;
-        } else if (id === hovered) {
-          matcapIndexArray[id] = MatcapIndexEnum.adjacent;
-        }
-
-        if (selected != null && isVisibleSide(selected) === true) {
-          const range = getRangeForCell(
-            puzzle,
-            selected,
-            selectedSide,
-            isVerticalOrientation,
-          );
-          if (range.length > 1) {
-            range.forEach((index) => {
-              if (index === selected) return;
-              matcapIndexArray[index] = MatcapIndexEnum.adjacent;
-            });
+        // Only change the matcap in puzzle mode
+        if (mode === 'puzzle') {
+          if (cell.value !== '#' && id !== hovered && id !== selected) {
+            matcapIndexArray[id] = MatcapIndexEnum.default;
+          } else if (id === hovered) {
+            matcapIndexArray[id] = MatcapIndexEnum.adjacent;
           }
-        }
 
-        cellsRef.geometry.attributes.matcapIndex.needsUpdate = true;
+          if (selected != null && isVisibleSide(selected) === true) {
+            const range = getRangeForCell(
+              puzzle,
+              selected,
+              selectedSide,
+              isVerticalOrientation,
+            );
+            if (range.length > 1) {
+              range.forEach((index) => {
+                if (index === selected) return;
+                matcapIndexArray[index] = MatcapIndexEnum.adjacent;
+              });
+            }
+          }
+
+          cellsRef.geometry.attributes.matcapIndex.needsUpdate = true;
+        }
       }
     }
 
     if (selected != null && cellPositions[selected] != null) {
-      // Hide the selected cell if we are using the transmission style
-      if (selectedCellStyle === 'transmission') {
+      if (mode === 'puzzle') {
         updateVisibility(selected, false);
       }
-      updateOutline(selected, true);
-
       if (
         lastPosition.current == null ||
         lastPosition.current.equals(cellPositions[selected]) === false
@@ -893,34 +883,43 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
     [cellsUniforms],
   );
 
-  // Set up materials for the blank cells
-
   const onPointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       // Check if the user is hovering over a cell as the visible side
-      if (isVisibleSide(e.instanceId) === false) {
+      if (mode === 'puzzle' && isVisibleSide(e.instanceId) === false) {
         return;
       }
 
       e.stopPropagation();
       setHovered(e.instanceId);
+
+      if (e.instanceId != null) {
+        const position = cellPositions[e.instanceId];
+        setHoveredPosition(position);
+      }
     },
-    [isVisibleSide],
+    [isVisibleSide, mode, cellPositions],
   );
 
-  const onPointerOut = useCallback(() => setHovered(undefined), []);
+  const onPointerOut = useCallback(() => {
+    setHovered(undefined);
+    setHoveredPosition(null);
+  }, []);
 
   const onPointerDown = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
-      // Check if the user is selecting the cell as the visible side
-      if (isVisibleSide(e.instanceId) === false) {
-        return;
-      }
+      // We always want to select the cell in editor mode
+      if (mode === 'puzzle') {
+        // Check if the user is selecting the cell as the visible side
+        if (isVisibleSide(e.instanceId) === false) {
+          return;
+        }
 
-      if (e.instanceId === selected) {
-        onVerticalOrientationChange(!isVerticalOrientation);
-        // setVerticalOrientation(!isVerticalOrientation);
-        return;
+        if (e.instanceId === selected) {
+          onVerticalOrientationChange(!isVerticalOrientation);
+          // setVerticalOrientation(!isVerticalOrientation);
+          return;
+        }
       }
 
       e.stopPropagation();
@@ -932,6 +931,7 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
       onSelectedChange,
       onVerticalOrientationChange,
       selected,
+      mode,
     ],
   );
 
@@ -1004,18 +1004,14 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             itemSize={1}
             array={visibilityArray}
           />
-          <instancedBufferAttribute
-            attach="attributes-outline"
-            count={outlineArray.length}
-            itemSize={1}
-            array={outlineArray}
-          />
         </roundedBoxGeometry>
       </instancedMesh>
-      <PulsatingLight position={lightPosition} color={selectedColor} />
-      {selectedCellStyle === 'transmission' && (
-        <mesh ref={selectedCellRef} position={lightPosition}>
-          <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
+      {mode === 'puzzle' && (
+        <PulsatingLight position={lightPosition} color={selectedColor} />
+      )}
+      <mesh ref={selectedCellRef} position={lightPosition}>
+        <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
+        {mode === 'puzzle' ? (
           <MeshTransmissionMaterial
             color={selectedColor}
             backside={true}
@@ -1034,6 +1030,19 @@ export const LetterBoxes: React.FC<LetterBoxesProps> = ({
             clearcoat={1}
             clearcoatRoughness={0.1}
           />
+        ) : (
+          <>
+            <meshStandardMaterial opacity={0} transparent={true} />
+            <Outlines thickness={10} color={selectedColor} />
+          </>
+        )}
+      </mesh>
+      {/** Hovered outline for editor mode */}
+      {hoveredPosition != null && mode === 'editor' && (
+        <mesh ref={hoveredCellRef} position={hoveredPosition}>
+          <roundedBoxGeometry args={ROUNDED_CUBE_SIZE} />
+          <meshStandardMaterial opacity={0} transparent={true} />
+          <Outlines thickness={5} color={selectedColor} />
         </mesh>
       )}
     </>
